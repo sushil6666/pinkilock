@@ -135,6 +135,12 @@ export function createSupabaseBackend(url: string, anonKey: string, storage: Ses
         const id = (payload.new as Row)?.id;
         if (id) refreshCards([id]);
       })
+      // Joining the channel and the database feed starting are two moments: Realtime says
+      // SUBSCRIBED first and only later reports that postgres_changes is flowing. A change
+      // committed in between is never delivered, so re-read at both.
+      .on('system', {}, (payload: Row) => {
+        if (payload.extension === 'postgres_changes' && payload.status === 'ok') resync().catch(() => {});
+      })
       .subscribe((status) => {
         // Every (re)connect: close the gap between the last thing I read and the live feed.
         if (status === 'SUBSCRIBED') resync().catch(() => {});
