@@ -30,6 +30,8 @@ jobs:
       SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
       SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
       SUPABASE_PROJECT_REF: ${{ vars.SUPABASE_PROJECT_REF }}
+      # This workflow is the confirmation: running it means "apply supabase/ to the project".
+      SUPABASE_YES: '1'
     steps:
       - uses: actions/checkout@v4
       - name: Check that the project values are set
