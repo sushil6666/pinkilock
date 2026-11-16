@@ -1,0 +1,88 @@
+# The analytics worker in the cloud: DuckDB reads the event log from Supabase, computes Trust
+# Scores, the funnel and retention, and writes them back. Every 5 minutes (the shortest schedule
+# GitHub offers; under load GitHub may start a run late).
+#
+# It connects as pinkilock_analytics, a role that can read events, invites and profiles and write
+# only trust_scores and analytics.* (see the first migration). It holds no other credential.
+#
+# Needs, in the repository's Actions settings:
+#   secret     ANALYTICS_DB_PASSWORD   the password of the pinkilock_analytics role (the Supabase
+#                                      deploy workflow sets it on the role from this same secret)
+#   variables  SUPABASE_PROJECT_REF    the project ref
+#              SUPABASE_POOLER_HOST    the session pooler host, e.g. aws-0-ap-south-1.pooler.supabase.com
+#                                      (the direct database host is IPv6-only; GitHub runners are not)
+#
+# A failed run is not silent: it opens (or adds to) an issue labelled analytics-worker, and
+# GitHub emails the failure. The next good run closes the issue.
+name: Analytics worker
+
+on:
+  schedule:
+    - cron: '*/5 * * * *'
+  workflow_dispatch:
+
+# One at a time. A run that is still going makes the next one wait rather than overlap.
+concurrency:
+  group: analytics-worker
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    # Nothing to do until the project values exist (a fresh fork, or before go-live).
+    if: ${{ vars.SUPABASE_PROJECT_REF != '' && vars.SUPABASE_POOLER_HOST != '' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: analytics/requirements.txt
+      - run: pip install -r analytics/requirements.txt
+      - name: Run the pipeline
+        # `shell: bash` turns on pipefail, so a failing pipeline fails the step despite the tee.
+        shell: bash
+        env:
+          ANALYTICS_DB_PASSWORD: ${{ secrets.ANALYTICS_DB_PASSWORD }}
+          REF: ${{ vars.SUPABASE_PROJECT_REF }}
+          POOLER_HOST: ${{ vars.SUPABASE_POOLER_HOST }}
+        run: |
+          if [ -z "$ANALYTICS_DB_PASSWORD" ]; then echo "::error::ANALYTICS_DB_PASSWORD is not set"; exit 1; fi
+          # The DSN is put together here and lives only in this step's environment.
+          PINKILOCK_PG_DSN="$(python3 -c 'import os, urllib.parse as u; print("postgresql://pinkilock_analytics.%s:%s@%s:5432/postgres?sslmode=require" % (os.environ["REF"], u.quote(os.environ["ANALYTICS_DB_PASSWORD"], safe=""), os.environ["POOLER_HOST"]))')"
+          export PINKILOCK_PG_DSN
+          python analytics/duckdb_pipeline.py 2>&1 | tee run.log
+          {
+            echo '### Analytics worker'
+            grep -E '^(read|wrote) ' run.log | sed 's/^/- /'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Make a failure visible
+        if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          gh label create analytics-worker --color B60205 --description "The analytics worker is failing" --repo "$GITHUB_REPOSITORY" 2>/dev/null || true
+          open="$(gh issue list --repo "$GITHUB_REPOSITORY" --label analytics-worker --state open --json number --jq '.[0].number')"
+          if [ -n "$open" ]; then
+            gh issue comment "$open" --repo "$GITHUB_REPOSITORY" --body "Failed again: $RUN_URL"
+          else
+            gh issue create --repo "$GITHUB_REPOSITORY" --label analytics-worker \
+              --title "Analytics worker is failing: trust scores are not being refreshed" \
+              --body "The scheduled DuckDB pipeline failed. Trust badges keep showing the last scores it wrote until it runs again. First failing run: $RUN_URL. This issue closes itself on the next good run."
+          fi
+
+      - name: Close the failure issue after a good run
+        if: success()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          for n in $(gh issue list --repo "$GITHUB_REPOSITORY" --label analytics-worker --state open --json number --jq '.[].number' 2>/dev/null); do
+            gh issue close "$n" --repo "$GITHUB_REPOSITORY" --comment "The worker is running again."
+          done

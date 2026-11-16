@@ -18,6 +18,15 @@ insert into public.profile_private (profile_id, contact_kind, contact_handle) va
 select t.ok((select (schedule, command) = ('* * * * *', 'select public.sweep_invites()') from cron.job where jobname = 'pinkilock-sweep'),
   'sweep_invites is scheduled every minute');
 
+-- The analytics worker's role: exactly these table rights, nothing that a later migration slipped in.
+select t.ok((select string_agg(table_schema || '.' || table_name || ':' || privs, ' ' order by table_schema, table_name) from (
+    select table_schema, table_name, string_agg(privilege_type, ',' order by privilege_type) as privs
+    from information_schema.role_table_grants where grantee = 'pinkilock_analytics' group by 1, 2) g)
+  = 'analytics.metrics_daily:DELETE,INSERT,SELECT,UPDATE analytics.retention_weekly:DELETE,INSERT,SELECT,UPDATE '
+    'public.events:SELECT public.invites:SELECT public.profiles:SELECT public.trust_scores:DELETE,INSERT,SELECT,UPDATE',
+  'the analytics role reads events, invites, profiles and writes only its own results');
+select t.ok(not has_table_privilege('pinkilock_analytics', 'public.profile_private', 'select'), 'the analytics role cannot read contact handles');
+
 -- Signed out (anon) there is nothing: no table, no function.
 set role anon;
 select t.ok(t.fails('select count(*) from profiles'), 'anon cannot read profiles');

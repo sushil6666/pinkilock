@@ -6,7 +6,8 @@
 #              SUPABASE_DB_PASSWORD    the project's database password
 #   variables  SUPABASE_PROJECT_REF    the project ref
 #              EXPO_PUBLIC_SUPABASE_ANON_KEY   the anon (publishable) key, for the test that follows
-#   optional   secret EXPO_ACCESS_TOKEN (Expo push with enhanced security)
+#   optional   secret ANALYTICS_DB_PASSWORD (lets the analytics worker log in; see analytics.yml)
+#              secret EXPO_ACCESS_TOKEN (Expo push with enhanced security)
 name: Supabase deploy
 
 on:
@@ -54,6 +55,23 @@ jobs:
         run: npx supabase db push --include-all
       - name: Show what is applied
         run: npx supabase migration list
+      - name: Let the analytics worker log in
+        # Sets the pinkilock_analytics password from the same secret the worker uses. Its
+        # rights come from the migrations and are not changed here.
+        env:
+          ANALYTICS_DB_PASSWORD: ${{ secrets.ANALYTICS_DB_PASSWORD }}
+        run: |
+          if [ -n "$ANALYTICS_DB_PASSWORD" ]; then
+            scripts/analytics-role.sh "$(scripts/supabase-db-url.sh postgres "$SUPABASE_DB_PASSWORD")"
+          else
+            echo "::warning::ANALYTICS_DB_PASSWORD is not set, so the analytics worker cannot log in yet"
+          fi
+      - name: Say where the session pooler is
+        # Not a secret. The analytics workflow needs it as the SUPABASE_POOLER_HOST variable.
+        run: |
+          host="$(python3 -c 'import sys, urllib.parse as u; print(u.urlsplit(open("supabase/.temp/pooler-url").read().strip()).hostname)')"
+          echo "Session pooler host: $host"
+          echo "Set the repository variable \`SUPABASE_POOLER_HOST\` to \`$host\`" >> "$GITHUB_STEP_SUMMARY"
       - name: Deploy the push function
         run: npx supabase functions deploy push --project-ref "$SUPABASE_PROJECT_REF"
       - name: Connect Postgres to the push function
