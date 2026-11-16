@@ -56,6 +56,17 @@
         }
       ]
     ],
-    "icon": "./assets/icon.png"
+    "icon": "./assets/icon.png",
+    "extra": {
+      "eas": {
+        "projectId": "1bafeacf-67dd-44df-8cf4-6f46e78955ef"
+      }
+    },
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/1bafeacf-67dd-44df-8cf4-6f46e78955ef"
+    }
   }
 }
