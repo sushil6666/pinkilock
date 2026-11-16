@@ -1,0 +1,73 @@
+# On every push: TypeScript strict, the database tests on a throwaway Postgres, and the two-user,
+# push and two-phone tests against a local Supabase stack. No project keys are used here.
+name: CI
+
+on:
+  push:
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  typecheck:
+    # A push to a branch with an open pull request would otherwise run everything twice.
+    if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name != github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck
+
+  database:
+    if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name != github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          # pgserver publishes no wheels for 3.13 yet.
+          python-version: '3.12'
+      - run: pip install pgserver -r analytics/requirements.txt
+      - name: Migrations, RLS, promise functions, push outbox, DuckDB pipeline
+        run: python tests/db/run.py
+
+  local-stack:
+    if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name != github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Start Supabase locally
+        run: npx supabase start -x studio,imgproxy,vector,logflare,storage-api,postgres-meta,mailpit,supavisor
+      - name: Point the push function at the fake Expo
+        run: |
+          EXPO_PUSH_URL=http://host.docker.internal:54399 scripts/push-config.sh local
+          npx supabase stop
+          npx supabase start -x studio,imgproxy,vector,logflare,storage-api,postgres-meta,mailpit,supavisor
+      - name: Two users through the live backend
+        run: npm run test:live:local
+      - name: Push, end to end
+        run: npm run test:push:local
+      - name: Two phones through the real screens
+        run: |
+          npx playwright install --with-deps chromium
+          npm run test:app:local
+      - name: Edge Function logs
+        if: failure()
+        run: docker logs supabase_edge_runtime_pinkilock 2>&1 | tail -100

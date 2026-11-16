@@ -1,0 +1,105 @@
+# Builds the app on EAS. Run it by hand: Actions, EAS build, Run workflow, pick a profile.
+#
+#   development   a dev client. It loads JavaScript from your laptop, so the backend is whatever
+#                 your own .env says (mock, `supabase start`, or a project).
+#   preview       an installable APK for testers, pointed at the Supabase project in
+#                 SUPABASE_PROJECT_REF / EXPO_PUBLIC_SUPABASE_ANON_KEY.
+#   production    a store bundle, pointed at PROD_SUPABASE_PROJECT_REF /
+#                 PROD_EXPO_PUBLIC_SUPABASE_ANON_KEY. It refuses to build until those exist, so a
+#                 store build can never quietly ship against the test project.
+#
+# The Supabase URL and anon key are public by design (they are inside every app), so they are
+# repository variables, and this workflow copies them into the matching EAS environment before
+# it builds. The service role key is not used anywhere in the app or in this workflow.
+#
+# Needs: secret EXPO_TOKEN. Optional: secret GOOGLE_SERVICES_JSON (the contents of Firebase's
+# google-services.json; without it the build works but Android push stays off).
+name: EAS build
+
+on:
+  workflow_dispatch:
+    inputs:
+      profile:
+        description: Build profile
+        type: choice
+        options: [preview, development, production]
+        default: preview
+      platform:
+        description: Platform
+        type: choice
+        options: [android, ios]
+        default: android
+
+  # TEMPORARY, removed before this branch merges: a preview Android build from the phase 2
+  # branch, by touching .github/triggers/eas-build.
+  push:
+    branches: [claude/project-thread-5n9g9n]
+    paths: ['.github/triggers/eas-build']
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    env:
+      EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+      PROFILE: ${{ inputs.profile || 'preview' }}
+      PLATFORM: ${{ inputs.platform || 'android' }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check the Expo token and project id
+        run: |
+          if [ -z "$EXPO_TOKEN" ]; then echo "::error::EXPO_TOKEN is not set (Settings, Secrets and variables, Actions)"; exit 1; fi
+          if ! grep -q '"projectId"' app.json; then
+            echo "::error::app.json has no extra.eas.projectId yet. Run the 'EAS init' workflow once and commit the id it prints."
+            exit 1
+          fi
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm install --global eas-cli@latest
+
+      - name: Point the ${{ inputs.profile || 'preview' }} environment at its backend
+        env:
+          PREVIEW_REF: ${{ vars.SUPABASE_PROJECT_REF }}
+          PREVIEW_KEY: ${{ vars.EXPO_PUBLIC_SUPABASE_ANON_KEY }}
+          PROD_REF: ${{ vars.PROD_SUPABASE_PROJECT_REF }}
+          PROD_KEY: ${{ vars.PROD_EXPO_PUBLIC_SUPABASE_ANON_KEY }}
+          GOOGLE_SERVICES_JSON_CONTENT: ${{ secrets.GOOGLE_SERVICES_JSON }}
+        run: |
+          put() { eas env:create --environment "$PROFILE" --name "$1" --value "$2" --visibility plaintext --force --non-interactive >/dev/null; echo "set $1 for $PROFILE"; }
+          case "$PROFILE" in
+            preview)     ref="$PREVIEW_REF"; key="$PREVIEW_KEY" ;;
+            production)  ref="$PROD_REF"; key="$PROD_KEY" ;;
+            development) ref=""; key="" ;;
+          esac
+          if [ "$PROFILE" != development ]; then
+            if [ -z "$ref" ] || [ -z "$key" ]; then echo "::error::No Supabase project is configured for the $PROFILE profile (see the top of this workflow)"; exit 1; fi
+            put EXPO_PUBLIC_SUPABASE_URL "https://$ref.supabase.co"
+            put EXPO_PUBLIC_SUPABASE_ANON_KEY "$key"
+          fi
+          if [ -n "$GOOGLE_SERVICES_JSON_CONTENT" ]; then
+            file="$RUNNER_TEMP/google-services.json"
+            printf '%s' "$GOOGLE_SERVICES_JSON_CONTENT" > "$file"
+            eas env:create --environment "$PROFILE" --name GOOGLE_SERVICES_JSON --type file --value "$file" --visibility secret --force --non-interactive >/dev/null
+            rm -f "$file"
+            echo "set GOOGLE_SERVICES_JSON for $PROFILE"
+          else
+            echo "::warning::GOOGLE_SERVICES_JSON is not set: this build will install and run, but Android push will be off"
+          fi
+
+      - name: Build on EAS
+        run: |
+          eas build --profile "$PROFILE" --platform "$PLATFORM" --non-interactive --wait --json > build.json
+          node -e '
+            const b = JSON.parse(require("fs").readFileSync("build.json", "utf8"))[0];
+            const url = b.artifacts?.applicationArchiveUrl ?? b.artifacts?.buildUrl ?? "(no artifact)";
+            const page = `https://expo.dev/accounts/${b.project?.ownerAccount?.name}/projects/${b.project?.slug}/builds/${b.id}`;
+            console.log("status:", b.status, "\ninstall:", url, "\nbuild page:", page);
+            require("fs").appendFileSync(process.env.GITHUB_STEP_SUMMARY, `### EAS ${b.buildProfile} build (${b.platform})\n\n- Status: **${b.status}**\n- Install: ${url}\n- Build page: ${page}\n`);
+            if (b.status !== "FINISHED") process.exit(1);
+          '

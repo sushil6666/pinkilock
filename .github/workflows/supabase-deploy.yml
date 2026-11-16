@@ -12,8 +12,10 @@ name: Supabase deploy
 
 on:
   push:
-    branches: [main]
-    paths: ['supabase/**', '.github/workflows/supabase-deploy.yml']
+    # The second branch and the trigger path are TEMPORARY, removed before this branch merges:
+    # they let the phase 2 branch deploy by touching .github/triggers/supabase-deploy.
+    branches: [main, claude/project-thread-5n9g9n]
+    paths: ['supabase/**', '.github/workflows/supabase-deploy.yml', '.github/triggers/supabase-deploy']
   workflow_dispatch:
 
 concurrency:

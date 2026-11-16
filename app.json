@@ -8,16 +8,18 @@
     "userInterfaceStyle": "dark",
     "backgroundColor": "#0A0A0C",
     "newArchEnabled": true,
-    "splash": {
-      "backgroundColor": "#0A0A0C"
-    },
     "ios": {
       "bundleIdentifier": "com.pinkilock.app",
       "supportsTablet": false
     },
     "android": {
       "package": "com.pinkilock.app",
-      "softwareKeyboardLayoutMode": "resize"
+      "softwareKeyboardLayoutMode": "resize",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "monochromeImage": "./assets/adaptive-icon-mono.png",
+        "backgroundColor": "#0A0A0C"
+      }
     },
     "androidNavigationBar": {
       "backgroundColor": "#0A0A0C",
@@ -29,19 +31,30 @@
     },
     "web": {
       "bundler": "metro",
-      "output": "single"
+      "output": "single",
+      "favicon": "./assets/favicon.png"
     },
     "plugins": [
       "expo-router",
       "expo-font",
       "expo-asset",
       [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#0A0A0C",
+          "image": "./assets/splash-icon.png",
+          "imageWidth": 220
+        }
+      ],
+      [
         "expo-notifications",
         {
+          "icon": "./assets/notification-icon.png",
           "color": "#FF2E93",
           "defaultChannel": "promises"
         }
       ]
-    ]
+    ],
+    "icon": "./assets/icon.png"
   }
 }

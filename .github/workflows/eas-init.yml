@@ -1,0 +1,42 @@
+# One-off: creates the EAS project for this app under the account that owns EXPO_TOKEN and
+# prints its id. The id is not a secret; it goes into app.json (expo.extra.eas.projectId) so
+# that builds and push tokens know which project they belong to.
+name: EAS init
+
+on:
+  workflow_dispatch:
+  # TEMPORARY, removed before this branch merges: lets the phase 2 branch run this workflow
+  # before it exists on main, by touching .github/triggers/eas-init.
+  push:
+    branches: [claude/project-thread-5n9g9n]
+    paths: ['.github/triggers/eas-init']
+
+permissions:
+  contents: read
+
+jobs:
+  init:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check the Expo token
+        run: if [ -z "$EXPO_TOKEN" ]; then echo "::error::EXPO_TOKEN is not set (Settings, Secrets and variables, Actions)"; exit 1; fi
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm install --global eas-cli@latest
+      - name: Create or find the project
+        run: |
+          eas whoami
+          eas init --force --non-interactive
+          id="$(node -e 'console.log(require("./app.json").expo.extra?.eas?.projectId ?? "")')"
+          owner="$(node -e 'console.log(require("./app.json").expo.owner ?? "")')"
+          if [ -z "$id" ]; then id="$(eas project:info --json 2>/dev/null | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{try{console.log(JSON.parse(s).id)}catch{console.log("")}})')"; fi
+          if [ -z "$id" ]; then echo "::error::eas init did not report a project id"; exit 1; fi
+          echo "EAS project id: $id  owner: ${owner:-$(eas whoami | head -1)}"
+          echo "EAS project id: \`$id\`" >> "$GITHUB_STEP_SUMMARY"

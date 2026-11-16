@@ -10,7 +10,6 @@
     "web": "expo start --web",
     "typecheck": "tsc --noEmit",
     "test:db": "python tests/db/run.py",
-    "supabase": "supabase",
     "db:start": "supabase start",
     "db:stop": "supabase stop",
     "db:reset": "supabase db reset",

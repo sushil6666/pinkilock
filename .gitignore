@@ -10,3 +10,7 @@ expo-env.d.ts
 ios/
 android/
 .DS_Store
+
+# Firebase config for Android push: supplied to builds as an EAS file variable, never committed
+google-services.json
+GoogleService-Info.plist
