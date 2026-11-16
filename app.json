@@ -1,0 +1,40 @@
+{
+  "expo": {
+    "name": "Pinkilock",
+    "slug": "pinkilock",
+    "scheme": "pinkilock",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "dark",
+    "backgroundColor": "#0A0A0C",
+    "newArchEnabled": true,
+    "splash": {
+      "backgroundColor": "#0A0A0C"
+    },
+    "ios": {
+      "bundleIdentifier": "com.pinkilock.app",
+      "supportsTablet": false
+    },
+    "android": {
+      "package": "com.pinkilock.app",
+      "softwareKeyboardLayoutMode": "resize"
+    },
+    "androidNavigationBar": {
+      "backgroundColor": "#0A0A0C",
+      "barStyle": "light-content"
+    },
+    "androidStatusBar": {
+      "backgroundColor": "#0A0A0C",
+      "barStyle": "light-content"
+    },
+    "web": {
+      "bundler": "metro",
+      "output": "single"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-font",
+      "expo-asset"
+    ]
+  }
+}
