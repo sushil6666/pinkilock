@@ -2,6 +2,7 @@
   "expo": {
     "name": "Pinkilock",
     "slug": "pinkilock",
+    "owner": "pinkilock",
     "scheme": "pinkilock",
     "version": "0.1.0",
     "orientation": "portrait",
