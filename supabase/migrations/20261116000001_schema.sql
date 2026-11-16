@@ -1,7 +1,9 @@
 -- Pinkilock: live database (Supabase / PostgreSQL 15+).
 --
--- Run once in the Supabase SQL editor, or: psql "$SUPABASE_DB_URL" -f supabase/schema.sql
--- Auth: turn on Anonymous sign-ins (Authentication, Providers). Clock: schedule sweep_invites (below).
+-- This folder is the one source of truth for the schema. It reaches a project with
+-- `supabase db push`, a local stack with `supabase start`, and the throwaway Postgres in
+-- tests/db/run.py, which applies these same files in order. Never edit an applied migration:
+-- add a new one.
 --
 -- Shape of the thing:
 --   * Clients read through Row-Level Security and write promises ONLY through the functions at
@@ -160,7 +162,9 @@ create policy trust_read on public.trust_scores for select to authenticated usin
 
 -- events: RLS on, no policy. Only the functions below (definer) and the analytics role touch it.
 
-revoke all on public.invites, public.events, public.trust_scores from anon, authenticated;
+-- Supabase grants ALL on every new table in public to anon and authenticated by default. Take all
+-- of it back and hand out exactly what the app uses, so that RLS is the second lock, not the only one.
+revoke all on all tables in schema public from anon, authenticated;
 grant select on public.invites, public.trust_scores, public.ideas, public.profile_cards to authenticated;
 grant select, insert, update on public.profiles, public.profile_private to authenticated;
 grant select, insert, delete on public.passes to authenticated;
@@ -280,8 +284,7 @@ begin
   return inv;
 end $$;
 
--- The clock. Schedule every minute with pg_cron:
---   select cron.schedule('pinkilock-sweep', '* * * * *', 'select public.sweep_invites()');
+-- The clock. The next migration schedules it every minute with pg_cron.
 create or replace function public.sweep_invites()
 returns int language plpgsql security definer set search_path = public as $$
 declare

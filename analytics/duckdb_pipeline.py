@@ -141,18 +141,19 @@ order by 1, 2;
 """
 
 # One Postgres transaction, so the app never reads a half-written set of scores.
+# computed_at is set here, not left to the column default: DuckDB 2 sends NULL for a column it was not given.
 LOAD = """
 begin;
 delete from pg.public.trust_scores;
-insert into pg.public.trust_scores (profile_id, score, kept, flaked, late_bails, no_shows, median_answer_minutes)
-  select profile_id, score, kept, flaked, late_bails, no_shows, median_answer_minutes from trust_scores;
+insert into pg.public.trust_scores (profile_id, score, kept, flaked, late_bails, no_shows, median_answer_minutes, computed_at)
+  select profile_id, score, kept, flaked, late_bails, no_shows, median_answer_minutes, now() from trust_scores;
 delete from pg.analytics.metrics_daily;
 insert into pg.analytics.metrics_daily (day, asks_sent, first_pinkies, locks, kept, flaked, declined, expired,
-                                        ask_to_lock_rate, lock_to_kept_rate, median_minutes_to_lock)
-  select * from metrics_daily;
+                                        ask_to_lock_rate, lock_to_kept_rate, median_minutes_to_lock, computed_at)
+  select *, now() from metrics_daily;
 delete from pg.analytics.retention_weekly;
-insert into pg.analytics.retention_weekly (cohort_week, week_n, cohort_size, active, rate)
-  select * from retention_weekly;
+insert into pg.analytics.retention_weekly (cohort_week, week_n, cohort_size, active, rate, computed_at)
+  select *, now() from retention_weekly;
 commit;
 """
 
@@ -170,7 +171,7 @@ def run(dsn: str, snapshot: str, dry_run: bool) -> None:
     for sql in (TRUST, FUNNEL, RETENTION):
         con.execute(sql)
 
-    counts = {t: con.execute(f"select count(*) from {t}").fetchone()[0] for t in ("events", "invites", "profiles")}
+    counts = {t: con.execute(f"select count(*) from {t}").fetchall()[0][0] for t in ("events", "invites", "profiles")}
     print(f"read   {counts['events']} events, {counts['invites']} invites, {counts['profiles']} profiles")
     print("\ntrust scores (lowest first)")
     con.sql("select * from trust_scores order by score, kept desc limit 15").show()
@@ -187,9 +188,9 @@ def run(dsn: str, snapshot: str, dry_run: bool) -> None:
     except Exception:
         con.execute("rollback")
         raise
-    print(f"wrote  {con.execute('select count(*) from trust_scores').fetchone()[0]} trust scores, "
-          f"{con.execute('select count(*) from metrics_daily').fetchone()[0]} daily rows, "
-          f"{con.execute('select count(*) from retention_weekly').fetchone()[0]} retention rows")
+    print(f"wrote  {con.execute('select count(*) from trust_scores').fetchall()[0][0]} trust scores, "
+          f"{con.execute('select count(*) from metrics_daily').fetchall()[0][0]} daily rows, "
+          f"{con.execute('select count(*) from retention_weekly').fetchall()[0][0]} retention rows")
 
 
 def main() -> int:

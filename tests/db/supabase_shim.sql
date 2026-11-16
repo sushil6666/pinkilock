@@ -1,13 +1,28 @@
--- The few things Supabase provides that plain Postgres does not, so schema.sql can be tested
--- on a throwaway server: the API roles, auth.users and auth.uid(). Test-only; never run on Supabase.
+-- The few things Supabase provides that plain Postgres does not, so the migrations can be tested
+-- on a throwaway server: the API roles, their default privileges, auth.users, auth.uid() and a
+-- stand-in for pg_cron. Test-only; never run on Supabase.
 create role anon nologin;
 create role authenticated nologin;
+create role service_role nologin bypassrls;
 create schema auth;
 create table auth.users (id uuid primary key);
 create function auth.uid() returns uuid language sql stable as
   $$ select nullif(current_setting('request.jwt.claim.sub', true), '')::uuid $$;
-grant usage on schema auth to anon, authenticated;
-grant usage on schema public to anon, authenticated;
+grant usage on schema auth to anon, authenticated, service_role;
+grant usage on schema public to anon, authenticated, service_role;
+-- Supabase hands every new object in public to the API roles. Copy that here, so that a table
+-- the migrations forget to lock down fails these tests the same way it would leak in production.
+alter default privileges in schema public grant all on tables to anon, authenticated, service_role;
+alter default privileges in schema public grant all on functions to anon, authenticated, service_role;
+alter default privileges in schema public grant all on sequences to anon, authenticated, service_role;
+
+-- pg_cron stand-in: records the job so that the tests can check what was scheduled.
+create schema cron;
+create table cron.job (jobid bigint generated always as identity primary key, jobname text unique, schedule text not null, command text not null);
+create function cron.schedule(job_name text, schedule text, command text) returns bigint language sql as $$
+  insert into cron.job (jobname, schedule, command) values (job_name, schedule, command)
+  on conflict (jobname) do update set schedule = excluded.schedule, command = excluded.command
+  returning jobid $$;
 
 create schema t;
 grant usage on schema t to public;

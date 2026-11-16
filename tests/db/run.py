@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
-"""Database checks on a throwaway Postgres: schema.sql, RLS, the promise functions, then the
-DuckDB pipeline end to end.
+"""Database checks on a throwaway Postgres: every file in supabase/migrations in order (the same
+SQL that `supabase db push` sends to the project), RLS, the promise functions, then the DuckDB
+pipeline end to end.
 
     pip install pgserver duckdb
     python tests/db/run.py
@@ -29,7 +30,8 @@ def main() -> int:
         srv = pgserver.get_server(pathlib.Path(tmp) / "pgdata", cleanup_mode="stop")
         try:
             uri = srv.get_uri()
-            for f in (HERE / "supabase_shim.sql", ROOT / "supabase" / "schema.sql", HERE / "scenario.sql"):
+            migrations = sorted((ROOT / "supabase" / "migrations").glob("*.sql"))
+            for f in (HERE / "supabase_shim.sql", *migrations, HERE / "scenario.sql"):
                 print(f"== {f.relative_to(ROOT)}")
                 out = subprocess.run(["psql", uri, "-v", "ON_ERROR_STOP=1", "-q", "-f", str(f)], capture_output=True, text=True)
                 print("\n".join(l for l in out.stdout.splitlines() if l.strip().startswith("ok")))

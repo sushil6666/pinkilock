@@ -14,7 +14,20 @@ insert into public.profiles (id, name, age, area, created_at) values
 insert into public.profile_private (profile_id, contact_kind, contact_handle) values
   (:'a', 'Instagram', '@asha'), (:'b', 'Instagram', '@bela'), (:'c', 'Snapchat', 'chirag');
 
+-- The clock is scheduled by a migration, not by hand.
+select t.ok((select (schedule, command) = ('* * * * *', 'select public.sweep_invites()') from cron.job where jobname = 'pinkilock-sweep'),
+  'sweep_invites is scheduled every minute');
+
+-- Signed out (anon) there is nothing: no table, no function.
+set role anon;
+select t.ok(t.fails('select count(*) from profiles'), 'anon cannot read profiles');
+select t.ok(t.fails('select count(*) from ideas'), 'anon cannot read the catalogue');
+select t.ok(t.fails($$select log_event('app_open')$$), 'anon cannot call a function');
+reset role;
+
 set role authenticated;
+select t.ok(t.fails('truncate passes'), 'a signed-in user cannot truncate a table');
+select t.ok(t.fails($$delete from ideas where id = 'boba_run' returning 1/0$$), 'a signed-in user cannot delete from the catalogue');
 
 -- A: sees every card, only their own private row, cannot write invites or read events directly.
 select t.as_user(:'a');
