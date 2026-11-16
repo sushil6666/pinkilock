@@ -26,8 +26,8 @@ case "$mode" in
     ;;
   remote)
     db="${2:?usage: push-config.sh remote <db-url>}"
-    ref="$(cat supabase/.temp/project-ref)"
-    npx supabase secrets set "PUSH_HOOK_SECRET=$secret" --project-ref "$ref" >/dev/null
+    ref="${SUPABASE_PROJECT_REF:-$(cat supabase/.temp/project-ref)}"
+    npx supabase secrets set "PUSH_HOOK_SECRET=$secret" >/dev/null
     url="https://$ref.supabase.co/functions/v1/push"
     ;;
   *)

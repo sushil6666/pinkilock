@@ -54,9 +54,9 @@ jobs:
             -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" -H "Content-Type: application/json" \
             -d '{"external_anonymous_users_enabled": true}' -o /dev/null
       - name: Apply migrations
-        run: npx supabase db push --include-all
+        run: npx supabase db push --remote --include-all
       - name: Show what is applied
-        run: npx supabase migration list
+        run: npx supabase migration list --remote
       - name: Let the analytics worker log in
         # Sets the pinkilock_analytics password from the same secret the worker uses. Its
         # rights come from the migrations and are not changed here.
@@ -71,11 +71,11 @@ jobs:
       - name: Say where the session pooler is
         # Not a secret. The analytics workflow needs it as the SUPABASE_POOLER_HOST variable.
         run: |
-          host="$(python3 -c 'import sys, urllib.parse as u; print(u.urlsplit(open("supabase/.temp/pooler-url").read().strip()).hostname)')"
+          host="$(scripts/supabase-db-url.sh postgres x | python3 -c 'import sys, urllib.parse as u; print(u.urlsplit(sys.stdin.read().strip()).hostname)')"
           echo "Session pooler host: $host"
           echo "Set the repository variable \`SUPABASE_POOLER_HOST\` to \`$host\`" >> "$GITHUB_STEP_SUMMARY"
       - name: Deploy the push function
-        run: npx supabase functions deploy push --project-ref "$SUPABASE_PROJECT_REF"
+        run: npx supabase functions deploy push --use-api --no-verify-jwt
       - name: Connect Postgres to the push function
         # A fresh shared secret on every deploy, stored as a function secret and in Vault.
         run: scripts/push-config.sh remote "$(scripts/supabase-db-url.sh postgres "$SUPABASE_DB_PASSWORD")"
@@ -85,7 +85,7 @@ jobs:
           EXPO_ACCESS_TOKEN: ${{ secrets.EXPO_ACCESS_TOKEN }}
         run: |
           if [ -n "$EXPO_ACCESS_TOKEN" ]; then
-            npx supabase secrets set "EXPO_ACCESS_TOKEN=$EXPO_ACCESS_TOKEN" --project-ref "$SUPABASE_PROJECT_REF" >/dev/null
+            npx supabase secrets set "EXPO_ACCESS_TOKEN=$EXPO_ACCESS_TOKEN" >/dev/null
           fi
 
   live-test:
