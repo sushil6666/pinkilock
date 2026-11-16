@@ -1,0 +1,60 @@
+# Sends supabase/ to the real project: auth settings, migrations (schema, RLS, cron), and then
+# proves it with the two-user test. Nothing is set up by hand in the Supabase dashboard.
+#
+# Needs, in the repository's Actions settings:
+#   secrets    SUPABASE_ACCESS_TOKEN   personal access token (supabase.com/dashboard/account/tokens)
+#              SUPABASE_DB_PASSWORD    the project's database password
+#   variables  SUPABASE_PROJECT_REF    the project ref
+#              EXPO_PUBLIC_SUPABASE_ANON_KEY   the anon (publishable) key, for the test that follows
+name: Supabase deploy
+
+on:
+  push:
+    branches: [main]
+    paths: ['supabase/**', '.github/workflows/supabase-deploy.yml']
+  workflow_dispatch:
+
+concurrency:
+  group: supabase-deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+      SUPABASE_PROJECT_REF: ${{ vars.SUPABASE_PROJECT_REF }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check that the project values are set
+        run: |
+          missing=0
+          for name in SUPABASE_ACCESS_TOKEN SUPABASE_DB_PASSWORD SUPABASE_PROJECT_REF; do
+            if [ -z "${!name}" ]; then echo "::error::$name is not set (Settings, Secrets and variables, Actions)"; missing=1; fi
+          done
+          exit $missing
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Link the project
+        run: npx supabase link --project-ref "$SUPABASE_PROJECT_REF"
+      - name: Turn on anonymous sign-ins
+        # The one Auth setting the app depends on. Set through the Management API so that it is
+        # code, and so that nothing else in the project's Auth config is touched.
+        run: |
+          curl -fsS -X PATCH "https://api.supabase.com/v1/projects/$SUPABASE_PROJECT_REF/config/auth" \
+            -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" -H "Content-Type: application/json" \
+            -d '{"external_anonymous_users_enabled": true}' -o /dev/null
+      - name: Apply migrations
+        run: npx supabase db push --include-all
+      - name: Show what is applied
+        run: npx supabase migration list
+
+  live-test:
+    needs: deploy
+    uses: ./.github/workflows/live-test.yml
+    secrets: inherit

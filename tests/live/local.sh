@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+# Run the two-user test against the local stack (`supabase start`), using its own URL and keys.
+set -euo pipefail
+cd "$(dirname "$0")/../.."
+eval "$(npx supabase status -o env 2>/dev/null | grep -E '^(API_URL|ANON_KEY|DB_URL)=')"
+export EXPO_PUBLIC_SUPABASE_URL="$API_URL" EXPO_PUBLIC_SUPABASE_ANON_KEY="$ANON_KEY" E2E_DB_URL="$DB_URL"
+exec npx tsx --test tests/live/two_users.test.ts

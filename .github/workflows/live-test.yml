@@ -1,0 +1,41 @@
+# The two-user test against the real Supabase project: two anonymous users go through onboard,
+# ask, lock, check in, reveal, bail and expiry, over the public API and Realtime, exactly as two
+# phones would. Run it by hand (Actions, Live two-user test, Run workflow) or after a deploy.
+# The two test users are deleted at the end.
+name: Live two-user test
+
+on:
+  workflow_dispatch:
+  workflow_call:
+
+jobs:
+  two-users:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+      SUPABASE_PROJECT_REF: ${{ vars.SUPABASE_PROJECT_REF }}
+      EXPO_PUBLIC_SUPABASE_URL: https://${{ vars.SUPABASE_PROJECT_REF }}.supabase.co
+      EXPO_PUBLIC_SUPABASE_ANON_KEY: ${{ vars.EXPO_PUBLIC_SUPABASE_ANON_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check that the project values are set
+        run: |
+          missing=0
+          for name in SUPABASE_ACCESS_TOKEN SUPABASE_DB_PASSWORD SUPABASE_PROJECT_REF EXPO_PUBLIC_SUPABASE_ANON_KEY; do
+            if [ -z "${!name}" ]; then echo "::error::$name is not set (Settings, Secrets and variables, Actions)"; missing=1; fi
+          done
+          exit $missing
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Link the project (for the clean-up connection)
+        run: npx supabase link --project-ref "$SUPABASE_PROJECT_REF"
+      - name: Two users, the whole flow
+        run: |
+          E2E_DB_URL="$(scripts/supabase-db-url.sh postgres "$SUPABASE_DB_PASSWORD")"
+          export E2E_DB_URL
+          npm run test:live

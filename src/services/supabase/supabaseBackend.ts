@@ -5,12 +5,13 @@
  * Row-Level Security, so this file contains no access rules of its own. Sign-in is anonymous for
  * the MVP (enable "Anonymous sign-ins" in Supabase Auth): a real auth.uid() with zero friction,
  * which can later be linked to a phone number without changing a row.
+ *
+ * Nothing here imports React Native: the session store is passed in (src/services/index.ts gives
+ * it AsyncStorage), so tests/live can drive this exact file from Node as two separate people.
  */
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
-import 'react-native-url-polyfill/auto';
 import { ideaOf } from '../../domain/ideas';
-import { otherId } from '../../domain/invites';
+import { CHECK_IN_CLOSES_AFTER, otherId } from '../../domain/invites';
 import type { Invite, MyContact, Profile, Reveal } from '../../domain/types';
 import type { Backend, BackendEvent, Changes, Notice, Snapshot } from '../backend';
 
@@ -36,9 +37,16 @@ function toProfile(r: Row): Profile {
   };
 }
 
-export function createSupabaseBackend(url: string, anonKey: string): Backend {
+/** Where the session is kept between launches: AsyncStorage on a phone, memory in tests. */
+export interface SessionStorage {
+  getItem(key: string): Promise<string | null>;
+  setItem(key: string, value: string): Promise<void>;
+  removeItem(key: string): Promise<void>;
+}
+
+export function createSupabaseBackend(url: string, anonKey: string, storage: SessionStorage): Backend {
   const db: SupabaseClient = createClient(url, anonKey, {
-    auth: { storage: AsyncStorage, autoRefreshToken: true, persistSession: true, detectSessionInUrl: false },
+    auth: { storage, autoRefreshToken: true, persistSession: true, detectSessionInUrl: false },
   });
   const listeners = new Set<(e: BackendEvent) => void>();
   const known = new Map<string, Invite>();
@@ -60,51 +68,92 @@ export function createSupabaseBackend(url: string, anonKey: string): Backend {
     return (meId = res.data.user.id);
   }
 
-  /** What changed for me, in words, when the other person moves an invite. */
+  /** What changed for me, in words, when the other person (or the clock) moves an invite. */
   function noticeFor(prev: Invite | undefined, next: Invite): Notice | undefined {
-    if (!prev || prev.status === next.status) return undefined;
     const name = names.get(otherId(next, meId)) ?? 'They';
     const idea = ideaOf(next.ideaId).title;
+    if (!prev) {
+      return next.status === 'sent' && next.toId === meId
+        ? { tone: 'pink', title: `${name} asked you`, body: `${idea}. Lock it or pass.`, inviteId: next.id }
+        : undefined;
+    }
+    if (prev.status === next.status) return undefined;
     if (next.status === 'half_locked' && next.firstPinkyBy !== meId) return { tone: 'pink', title: `${name}'s pinky is out`, body: `${idea}. Slide in to seal it.`, inviteId: next.id };
     if (next.status === 'declined' && next.declinedBy !== meId) return { tone: 'flare', title: `${name} passed`, body: 'No hard feelings. Your ask slot is free again.', inviteId: next.id };
     if (next.status === 'kept') return { tone: 'volt', title: 'Promise kept', body: `You and ${name} both showed. The reveal is open.`, inviteId: next.id };
     if (next.status === 'flaked') {
-      return next.flakedBy === meId
-        ? { tone: 'flare', title: 'Promise missed', body: `Check-in with ${name} closed without you. That is on your record.`, inviteId: next.id }
-        : { tone: 'flare', title: `${name} flaked`, body: 'Their score takes the hit, not yours.', inviteId: next.id };
+      // Resolved inside the window means someone bailed; after it, the clock closed it.
+      const bailed = (next.resolvedAt ?? 0) <= next.startsAt + CHECK_IN_CLOSES_AFTER;
+      if (next.flakedBy === meId) {
+        // My own bail needs no banner: I just did it.
+        return bailed ? undefined : { tone: 'flare', title: 'Promise missed', body: `Check-in with ${name} closed without you. That is on your record.`, inviteId: next.id };
+      }
+      if (!next.flakedBy) return { tone: 'flare', title: 'Promise missed', body: `Neither of you checked in for ${idea}.`, inviteId: next.id };
+      return { tone: 'flare', title: bailed ? `${name} bailed` : `${name} flaked`, body: 'Their score takes the hit, not yours.', inviteId: next.id };
     }
     return undefined;
+  }
+
+  /** One invite row arrived (Realtime or a re-read). Tell the store, with a banner if it is news. */
+  async function takeInvite(next: Invite) {
+    const prev = known.get(next.id);
+    if (prev && JSON.stringify(prev) === JSON.stringify(next)) return;
+    // Mark it known before any await, so the same row arriving twice is only announced once.
+    known.set(next.id, next);
+    // Someone who joined after I booted: fetch their card before the invite needs their name.
+    const them = otherId(next, meId);
+    if (!names.has(them)) await refreshCards([them]);
+    const notice = noticeFor(prev, next);
+    listeners.forEach((l) => l({ changes: { invites: [next] }, notice }));
+    if (next.status === 'kept' || next.status === 'flaked') refreshCards([next.fromId, next.toId]);
+  }
+
+  /** Re-read what I can see: catches whatever happened while the socket was down or the app asleep. */
+  async function resync() {
+    const [cards, invites] = await Promise.all([
+      db.from('profile_cards').select('*').limit(200),
+      db.from('invites').select('*').order('created_at', { ascending: false }),
+    ]);
+    if (cards.data) announceCards(cards.data.map(toProfile));
+    for (const row of invites.data ?? []) await takeInvite(toInvite(row));
   }
 
   function listen() {
     if (live) return;
     live = true;
     // RLS filters the feed: only invites I am on ever arrive here.
-    db.channel('invites')
+    db.channel('pinkilock')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'invites' }, (payload) => {
-        if (payload.eventType === 'DELETE') return;
-        const next = toInvite(payload.new);
-        const notice = noticeFor(known.get(next.id), next);
-        known.set(next.id, next);
-        listeners.forEach((l) => l({ changes: { invites: [next] }, notice }));
-        if (next.status === 'kept' || next.status === 'flaked') refreshCards([next.fromId, next.toId]);
+        if (payload.eventType !== 'DELETE') takeInvite(toInvite(payload.new)).catch(() => {});
       })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'trust_scores' }, (payload) => {
         const id = (payload.new as Row)?.profile_id;
         if (id) refreshCards([id]);
       })
-      .subscribe();
+      // People joining (or editing their card) while I am looking at Discover.
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'profiles' }, (payload) => {
+        const id = (payload.new as Row)?.id;
+        if (id) refreshCards([id]);
+      })
+      .subscribe((status) => {
+        // Every (re)connect: close the gap between the last thing I read and the live feed.
+        if (status === 'SUBSCRIBED') resync().catch(() => {});
+      });
+  }
+
+  function announceCards(cards: Profile[]) {
+    if (!cards.length) return;
+    cards.forEach((c) => names.set(c.id, c.name));
+    const mine = cards.find((c) => c.id === meId);
+    const changes: Changes = { profiles: cards.filter((c) => c.id !== meId) };
+    if (mine) changes.me = mine;
+    listeners.forEach((l) => l({ changes }));
   }
 
   /** Scores come from the analytics worker, so re-read the cards it may have touched. */
   async function refreshCards(ids: string[]) {
     const { data } = await db.from('profile_cards').select('*').in('id', ids);
-    if (!data) return;
-    const cards = data.map(toProfile);
-    const mine = cards.find((c) => c.id === meId);
-    const changes: Changes = { profiles: cards.filter((c) => c.id !== meId) };
-    if (mine) changes.me = mine;
-    listeners.forEach((l) => l({ changes }));
+    if (data) announceCards(data.map(toProfile));
   }
 
   async function snapshot(): Promise<Snapshot> {
