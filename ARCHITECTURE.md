@@ -4,7 +4,7 @@ Pinkilock is a one-on-one pre-dating app. A match is not a chat thread: it is on
 time-bound micro-date that both people lock with a pinky promise. This file says how the system is
 put together and why. The look and the gesture are specified in `DESIGN_SYSTEM.md`.
 
-## 1. The three parts
+## 1. The parts
 
 ```
   Phone (Expo / React Native)            Supabase (PostgreSQL, OLTP)            Analytics worker (OLAP)
@@ -12,8 +12,11 @@ put together and why. The look and the gesture are specified in `DESIGN_SYSTEM.m
  | screens -> store -> Backend| -----> | promise functions (definer)   | ----> | DuckDB + postgres scanner |
  |            ^               |        | invites, profiles, RLS        |       | trust, funnel, retention  |
  |            +--- Realtime --| <----- | events (append-only log)      | <---- | writes trust_scores back  |
- +----------------------------+        +-------------------------------+ write +---------------------------+
-        mock backend when no keys
+ +----------------------------+        | pg_cron: sweep every minute   | write | (GitHub Actions, 5 min)   |
+        mock backend when no keys      | notifications (outbox)        |       +---------------------------+
+              ^                        +---------------+---------------+
+              |                                        | pg_net
+              +------ Expo push service <------ Edge Function `push`
 ```
 
 | Layer | Choice | Why |
@@ -23,7 +26,9 @@ put together and why. The look and the gesture are specified in `DESIGN_SYSTEM.m
 | Touch feedback | Expo Haptics behind `src/lib/haptics.ts` | One vocabulary on both platforms, silent on web |
 | Client state | Zustand (`src/state/store.ts`) | Small, no providers, narrow re-renders |
 | Live data (OLTP) | Supabase: Postgres, Auth, Realtime, Row-Level Security | Promises are small transactions that must be right |
-| Analytics (OLAP) | DuckDB with its `postgres` extension, in a Python worker | Whole-log scans stay off the live database |
+| Analytics (OLAP) | DuckDB with its `postgres` extension, in a Python worker on a GitHub Actions schedule | Whole-log scans stay off the live database |
+| Push | Outbox table + pg_net + a Supabase Edge Function + Expo push | A promise with a start time has to reach a locked phone; only the server may send |
+| Delivery | Supabase CLI migrations, GitHub Actions, EAS Build | Nothing is set up by clicking in a dashboard |
 | Fallback | Mock backend in the phone (`src/services/mock`) | The full flow is testable before any key exists |
 
 ## 2. Folder structure
@@ -53,10 +58,19 @@ src/
     mock/                    seed.ts, mockBackend.ts (latency + a simulated other person)
     supabase/                supabaseBackend.ts (Auth, rpc, RLS reads, Realtime)
   state/store.ts             Zustand: cache of backend rows + actions
-  lib/                       haptics, useNow, useReveal
-supabase/schema.sql          Tables, RLS policies, promise functions, analytics role
+  lib/                       haptics, useNow, useReveal, push (register this device, route taps)
+supabase/
+  config.toml                Local stack and function settings (Supabase CLI)
+  migrations/                The schema, and the only source of it: tables, RLS, promise
+                             functions, analytics role, the pg_cron schedule, push
+  functions/push/            Edge Function: drains the notification outbox to Expo
 analytics/duckdb_pipeline.py DuckDB worker: Trust Scores, conversion funnel, retention
-tests/db/                    Throwaway-Postgres checks for the schema, RLS and the pipeline
+scripts/                     push-config, analytics-role, supabase-db-url, make-icons
+tests/db/                    Throwaway-Postgres checks: migrations, RLS, functions, push outbox, pipeline
+tests/live/                  Two real users against a real Supabase: backend, push, and the screens
+.github/workflows/           ci, supabase-deploy, live-test, analytics, eas-init, eas-build
+assets/                      Placeholder icon, adaptive icon, splash and notification icon
+app.json, app.config.js      App config; eas.json holds the three build profiles
 ```
 
 Rule of thumb: `domain/` knows the rules, `services/` knows where data lives, `state/` knows what
@@ -82,8 +96,10 @@ screen -> store action -> backend.method() -> rows -> merge -> screen
 ```
 
 `backend.subscribe` is the realtime channel. With Supabase it is a Realtime `postgres_changes`
-subscription on `invites` and `trust_scores` (RLS filters the feed to rows I may read). In the mock
-it carries the simulated other person.
+subscription on `invites`, `trust_scores` and `profiles` (RLS filters the feed to rows I may read).
+Every time the socket connects or reconnects, the backend re-reads the cards and my invites and
+announces whatever changed, so nothing that happened while the phone was asleep or offline is
+lost. In the mock it carries the simulated other person.
 
 ## 4. The invite state machine
 
@@ -105,14 +121,14 @@ it carries the simulated other person.
 - **flaked**: someone bailed after locking, or did not check in. Only that person's record moves.
 
 The rules exist twice, on purpose, and must match: `src/domain/invites.ts` (used by the mock and
-for what the UI offers) and the SQL functions in `supabase/schema.sql` (the authority in live mode).
+for what the UI offers) and the SQL functions in `supabase/migrations` (the authority in live mode).
 
 Limits that keep intent high: 3 open asks at a time, one live invite per pair (a unique partial
 index), a note of at most 80 characters, and no free-text chat anywhere before the micro-date.
 
 ## 5. Live database (Supabase / PostgreSQL)
 
-Full DDL is `supabase/schema.sql`. Tables:
+Full DDL is `supabase/migrations`. Tables:
 
 | Table | What it holds | Who can touch it |
 | --- | --- | --- |
@@ -124,13 +140,19 @@ Full DDL is `supabase/schema.sql`. Tables:
 | `events` | Append-only behaviour log | No client access. Written by the functions, read by analytics |
 | `trust_scores` | One row per person, written by the DuckDB worker | Read: any signed-in user |
 | `profile_cards` (view) | `profiles` joined to `trust_scores` | What the app selects for a card |
+| `push_tokens` | One row per device: Expo push token, owner, platform | No client access. Written through `register_push_token` |
+| `notifications` | The push outbox: recipient, invite, kind, title, body, delivery state | No client access. Written by a trigger and the sweep, read by the Edge Function |
 | `analytics.metrics_daily`, `analytics.retention_weekly` | Worker output | Analytics role only |
 
 **Writes go through functions, not tables.** `send_invite`, `offer_pinky`, `decline_invite`,
 `check_in`, `bail` are `security definer` functions that check `auth.uid()`, lock the row, apply
 one transition and append to `events`. `sweep_invites` is the clock (expire asks, turn missed
-check-ins into flakes); schedule it every minute with pg_cron. `log_event` lets the app record
-`app_open` and nothing else.
+check-ins into flakes, announce that check-in opened); a migration schedules it every minute with
+pg_cron. `log_event` lets the app record `app_open` and nothing else.
+
+**Privileges are explicit.** Supabase grants every API role full rights on new tables in `public`
+by default. The first migration takes all of that back and grants exactly what the app uses, so
+RLS is the second lock rather than the only one. `anon` (signed out) can read and call nothing.
 
 **The accountable reveal is an RLS policy, not a blur.** `private_after_kept` on `profile_private`
 returns a row only when a `kept` invite exists between the reader and the owner. The app never
@@ -140,10 +162,55 @@ back until both people have checked in.
 **Auth.** Anonymous sign-in for the MVP: a real `auth.uid()` with zero friction, so RLS works from
 the first screen. Linking a phone number later keeps the same user id.
 
-## 6. Analytics and the trust engine (DuckDB)
+## 6. Push notifications
 
-`analytics/duckdb_pipeline.py` runs every few minutes (cron or a scheduled job), as the
-`pinkilock_analytics` role:
+A push is sent by the server and only by the server. The app has no code that can send one.
+
+```
+promise function / sweep -> invites row changes -> trigger invites_notify -> notifications (outbox)
+     -> trigger -> pg_net POST -> Edge Function `push` -> Expo push API -> APNs / FCM -> phone
+```
+
+| Kind | When | Who is told |
+| --- | --- | --- |
+| `new_ask` | An ask is sent | The person asked |
+| `pinky_out` | The receiver put their pinky out | The sender, who has to seal it |
+| `locked` | The sender sealed it | The receiver |
+| `checkin_open` | The sweep sees the window open (10 minutes before the start) | Whoever has not checked in |
+| `bailed` | Someone bailed on a locked plan | The other person |
+| `no_show` / `missed` | The window closed without both check-ins | The one who showed / the one who did not |
+
+- **The outbox is written in the same transaction as the change**, so a notification exists
+  exactly when the change committed. `unique (invite_id, recipient_id, kind)` means nothing is
+  announced twice, however often the sweep runs.
+- **What a notification says is decided in SQL**, from the invite the recipient is on, the other
+  person's public name and the idea's title: all things RLS already lets them read. No statement
+  on this path reads `profile_private`, and the push payload carries only `inviteId` and `kind`.
+  The note and the place stay out as well.
+- **Delivery.** A trigger on the outbox calls the Edge Function through pg_net; the sweep calls it
+  again every minute while anything is unsent. The function claims rows with one atomic `update`
+  (two overlapping runs cannot take the same row), posts to Expo in batches of 100, marks rows
+  sent, deletes tokens Expo reports as `DeviceNotRegistered`, and leaves failures for the next
+  sweep (5 attempts, then it gives up; rows older than an hour are not sent).
+- **Who may call the function.** Only Postgres: it sends a shared secret that lives in Supabase
+  Vault and as a function secret, regenerated by every deploy. The gateway's JWT check is off for
+  this function because the caller is not a user.
+- **The phone's part** is `src/lib/push.ts`: ask permission once there is a profile, get the Expo
+  push token, hand it to `backend.registerPushToken`, and on a tap open the invite or the plan.
+  While the app is in the foreground the system banner is suppressed, because the in-app banner
+  (driven by Realtime) already says it.
+- **Not built:** Expo push receipts are not polled, so a delivery that Expo accepts and APNs or
+  FCM later rejects is not noticed until that device's next send.
+
+## 7. Analytics and the trust engine (DuckDB)
+
+`analytics/duckdb_pipeline.py` runs every 5 minutes in GitHub Actions
+(`.github/workflows/analytics.yml`), as the `pinkilock_analytics` role. That role can read
+`events`, `invites` and `profiles` and write `trust_scores` and `analytics.*`, and nothing else; a
+database test pins that list. Its password is the workflow's only secret. A failed run opens an
+issue labelled `analytics-worker` (and GitHub emails it); the next good run closes it. GitHub may
+start scheduled runs late and pauses schedules in a repository with no activity for 60 days.
+Each run:
 
 1. `ATTACH` the Postgres database with DuckDB's `postgres` extension and copy `events`, `invites`
    and `profiles` into DuckDB in one read transaction.
@@ -169,18 +236,24 @@ In live mode the badge shows `profile_cards.trust_score`, so a score changes whe
 runs, not the instant a promise resolves. In mock mode there is no worker: `src/domain/trust.ts`
 applies the same formula with every flake weighted 1.
 
-## 7. Repository layer: mock and live
+## 8. Repository layer: mock and live
 
 `src/services/backend.ts` is the only thing screens and the store know. `src/services/index.ts`
 returns the Supabase implementation when `EXPO_PUBLIC_SUPABASE_URL` and
 `EXPO_PUBLIC_SUPABASE_ANON_KEY` are set, otherwise the mock.
+
+`supabaseBackend.ts` imports nothing from React Native: `index.ts` hands it AsyncStorage for the
+session. That is what lets `tests/live` run the very same file from Node as two people.
+Whatever one backend can do, the other can too: `registerPushToken` exists on both, and on the
+mock it records the token and sends nothing, because its other person only moves while the app is
+open and the in-app banner already covers that.
 
 The mock keeps a small database in AsyncStorage, answers with about 280 ms of latency, and plays
 the other person: they answer an ask after 7 seconds, seal a lock after 2.4, check in after 1.8, and
 one of them (Nikhil) always passes so the declined state can be seen. Pending reactions are stored
 as due times, so a restart loses nothing.
 
-## 8. Cross-platform notes
+## 9. Cross-platform notes
 
 - **Safe areas**: every screen is a `Screen` (`src/components/ui/Screen.tsx`) that pads with
   `useSafeAreaInsets`, so notches, the Dynamic Island, the home indicator and Android gesture or
@@ -200,16 +273,45 @@ as due times, so a restart loses nothing.
 - **Back**: Android hardware back works on every stack screen; the lock ignores it only during the
   one second of sealing.
 
-## 9. Tests
+## 10. Environments and delivery
+
+| | Backend | How it gets there |
+| --- | --- | --- |
+| Local | `supabase start` (Docker), or the mock with no keys | `npm run db:start`, `.env` |
+| Development build | Whatever the developer's `.env` says: the dev client loads JS from the laptop | `eas.json` profile `development` |
+| Preview build | The Supabase project in `SUPABASE_PROJECT_REF` | profile `preview`, installable APK |
+| Production build | The project in `PROD_SUPABASE_PROJECT_REF` | profile `production`; refuses to build until that is set |
+
+- **Database and function**: `.github/workflows/supabase-deploy.yml` runs on a push to `main` that
+  touches `supabase/`. It turns on anonymous sign-ins (the one Auth setting the app needs), runs
+  `supabase db push`, deploys the `push` function, rotates the shared secret, sets the analytics
+  role's password, and then runs the live two-user test against what it just deployed.
+- **App**: `.github/workflows/eas-build.yml` copies the public Supabase URL and anon key for the
+  chosen profile into the matching EAS environment and starts the build. Both values are public
+  by design; the service role key is used by nothing in the app, the repo or these workflows (the
+  Edge Function gets its own from the platform).
+- **Secrets** live in GitHub Actions secrets, Supabase function secrets and Supabase Vault. None
+  is in the repository. `.env`, `supabase/functions/.env` and `google-services.json` are ignored.
+
+## 11. Tests
 
 - `npm run typecheck`: TypeScript strict over the app.
 - `python tests/db/run.py`: starts a throwaway Postgres (pgserver), applies a small Supabase shim
-  (roles, `auth.uid()`), runs `supabase/schema.sql`, walks three users through the state machine
-  as the `authenticated` role (27 checks on RLS and the functions, including the reveal), runs the
-  DuckDB pipeline against it and checks the scores and funnel it wrote back.
+  (roles, their default privileges, `auth.uid()`, a pg_cron stand-in), runs every file in
+  `supabase/migrations`, walks three users through the state machine as the `authenticated` role
+  (RLS, the functions, the reveal, the cron schedule, the analytics role's rights), runs the DuckDB
+  pipeline and checks what it wrote, then checks the push outbox: who is told what, that nothing
+  private is in it, and that clients cannot touch it.
+- `npm run test:live:local` (or `test:live` with a project's URL and anon key): two anonymous
+  users drive `supabaseBackend.ts` through onboard, ask, lock, check-in, reveal, bail and expiry
+  over GoTrue, PostgREST, RLS and Realtime. Expiry waits for the real pg_cron sweep.
+- `npm run test:push:local`: the whole push chain on the local stack, with a stand-in for Expo.
+- `npm run test:app:local`: the web build in two browser sessions, through the real screens.
+- CI runs all of the above on every push. The live two-user test also runs against the real
+  project after each deploy.
 
-## 10. Not in the MVP, on purpose
+## 12. Not in the MVP, on purpose
 
-Real photos and the video room itself, push notifications, phone-number auth, distance (live mode
-shows area only), calendar export, and reporting and blocking. Reporting and blocking must ship
-before real users do.
+Real photos and the video room itself, phone-number auth, distance (live mode shows area only),
+calendar export, separate app ids per build profile, push receipts, and reporting and blocking.
+Reporting and blocking must ship before real users do.

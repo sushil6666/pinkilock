@@ -17,6 +17,7 @@ npx expo start          # scan the QR code with Expo Go (Android) or the Camera 
 ```
 
 On WSL, the phone cannot reach the laptop's dev server directly: use `npx expo start --tunnel`.
+Push notifications do not work in Expo Go; they need a preview or development build (below).
 
 With no keys set, the app runs on ten made-up people who answer by themselves. A good first pass:
 
@@ -29,45 +30,116 @@ With no keys set, the app runs on ten made-up people who answer by themselves. A
    Nikhil always passes, so you can see that too.
 5. On any locked plan: **Can't make it** shows what a bail costs. **Me** has the reset.
 
-## Go live on Supabase
+## Run the backend locally (Docker)
 
-1. Create a Supabase project. In Authentication, Providers, turn on **Anonymous sign-ins**.
-2. Run `supabase/schema.sql` in the SQL editor.
-3. Schedule the clock (Database, Extensions: enable `pg_cron`):
-   `select cron.schedule('pinkilock-sweep', '* * * * *', 'select public.sweep_invites()');`
-4. Copy `.env.example` to `.env`, fill in the project URL and anon key, restart `npx expo start`.
+```bash
+npm run db:start                  # Supabase on your machine: Postgres, Auth, Realtime, Edge Functions
+npx supabase status               # prints the local API URL and anon key
+```
 
-The **Me** tab shows which backend is in use. A live project starts empty: people appear in
-Discover as they onboard, so try it with two phones.
+Put that URL and key in `.env` (copy `.env.example`) and `npx expo start` talks to the local
+stack. `npm run db:reset` rebuilds the database from `supabase/migrations`, which is the only
+place the schema lives. To change the schema, add a migration (`npx supabase migration new name`);
+never edit one that has been applied.
+
+## Go live
+
+Everything is applied by GitHub Actions. Nothing is clicked in the Supabase dashboard.
+
+**1. Create a Supabase project and an Expo account**, then add these in the GitHub repository
+under Settings, Secrets and variables, Actions:
+
+| Kind | Name | Value |
+| --- | --- | --- |
+| Secret | `SUPABASE_ACCESS_TOKEN` | A personal access token from supabase.com/dashboard/account/tokens |
+| Secret | `SUPABASE_DB_PASSWORD` | The project's database password |
+| Secret | `ANALYTICS_DB_PASSWORD` | A new password you make up, for the analytics worker's role |
+| Secret | `EXPO_TOKEN` | expo.dev, Account settings, Access tokens |
+| Secret | `GOOGLE_SERVICES_JSON` | The contents of Firebase's `google-services.json` (Android push; see below) |
+| Variable | `SUPABASE_PROJECT_REF` | The project ref (the id in the project URL) |
+| Variable | `EXPO_PUBLIC_SUPABASE_ANON_KEY` | Project Settings, API: the anon / publishable key |
+| Variable | `SUPABASE_POOLER_HOST` | Printed by the first deploy run, e.g. `aws-0-ap-south-1.pooler.supabase.com` |
+
+The service role key is not needed anywhere and must not be added.
+
+**2. Deploy the backend.** Run the **Supabase deploy** workflow (it also runs on every push to
+`main` that touches `supabase/`). It turns on anonymous sign-ins, applies the migrations (schema,
+RLS, the every-minute `sweep_invites` schedule, push), deploys the `push` Edge Function, connects
+Postgres to it with a fresh shared secret, sets the analytics role's password, and finishes by
+running the live two-user test against the project.
+
+**3. Build the app.** Run **EAS init** once and commit the project id it prints into `app.json`
+(`expo.extra.eas.projectId`). Then run **EAS build** with the `preview` profile: it produces an
+installable Android APK pointed at the project above, and puts the install link in the run summary.
+
+| Profile | What it is | Backend |
+| --- | --- | --- |
+| `development` | Dev client; loads JavaScript from your laptop | Your own `.env` |
+| `preview` | Installable APK for testers | `SUPABASE_PROJECT_REF` |
+| `production` | Store bundle | `PROD_SUPABASE_PROJECT_REF` and `PROD_EXPO_PUBLIC_SUPABASE_ANON_KEY`; refuses to build until both exist |
+
+**4. Android push needs Firebase** (iOS push needs an Apple developer account and is set up by
+EAS when you first build for iOS). In the Firebase console create a project, add an Android app
+with package `com.pinkilock.app`, and download `google-services.json`: its contents go in the
+`GOOGLE_SERVICES_JSON` secret. Then, in Firebase, Project settings, Service accounts, generate a
+private key and upload it on expo.dev under the project's Credentials, Android, FCM V1 service
+account key. Without these the app builds and runs, and the Me tab shows that push is off.
+
+The **Me** tab shows which backend is in use and whether push is on for this phone. A live
+project starts empty: people appear in Discover as they onboard, so try it with two phones.
+
+## Push notifications
+
+Sent only by the server: a database trigger queues them, an Edge Function delivers them through
+Expo. The app registers its device token and nothing else. You get one for a new ask, the other
+person's pinky, the lock, check-in opening, and a bail or a no-show. See `ARCHITECTURE.md`
+section 6.
 
 ## Analytics worker (DuckDB)
 
+In the cloud it runs every 5 minutes as the **Analytics worker** workflow, with the restricted
+`pinkilock_analytics` role. If a run fails, an issue labelled `analytics-worker` is opened and
+GitHub emails you; the next good run closes it. Trust badges in live mode read what it writes.
+
+By hand:
+
 ```bash
 pip install -r analytics/requirements.txt
-# once, in the Supabase SQL editor:  alter role pinkilock_analytics login password '...';
-export PINKILOCK_PG_DSN="postgresql://pinkilock_analytics:...@db.<ref>.supabase.co:5432/postgres"
+export PINKILOCK_PG_DSN="postgresql://pinkilock_analytics.<ref>:<password>@<pooler host>:5432/postgres?sslmode=require"
 python analytics/duckdb_pipeline.py --dry-run     # compute and print only
 python analytics/duckdb_pipeline.py               # write trust_scores and analytics.* back
 ```
-
-Run it every few minutes. Trust badges in live mode read what it writes.
 
 ## Checks
 
 ```bash
 npm run typecheck
-pip install pgserver duckdb && python tests/db/run.py    # schema, RLS, functions, pipeline on a throwaway Postgres
+pip install pgserver duckdb && python tests/db/run.py   # migrations, RLS, functions, push outbox, pipeline (Python 3.12)
+npm run test:live:local     # two users through the live backend, against `supabase start`
+npm run test:push:local     # the push chain with a stand-in for Expo (setup: top of tests/live/local_push.sh)
+npm run test:app:local      # the real screens in two browser sessions (npx playwright install chromium)
+npm run test:live           # the two-user test against EXPO_PUBLIC_SUPABASE_URL / _ANON_KEY
 ```
+
+CI runs all but the last on every push. The last runs against the real project after each deploy,
+and on demand as the **Live two-user test** workflow.
 
 ## Status
 
-Verified: TypeScript strict passes; Metro bundles for Android and web; the whole mock flow
-(onboarding, lock by dragging, partner sealing, check-in, reveal, sending an ask, sealing, bail)
-was driven end to end in headless Chromium on the web build; the database checks above pass,
-including the DuckDB pipeline writing scores back.
+**Verified locally** (a full Supabase stack in Docker, and in CI on every push): the migrations
+apply cleanly and pg_cron runs the sweep; two separately signed-in users go through onboard, ask,
+both pinkies, lock, check-in, reveal, bail and expiry using the app's own backend code; each
+hears the other over Realtime; the reveal returns nothing before a kept invite; the same flow
+works through the real screens in two browser sessions; a push travels from trigger to outbox to
+Edge Function to a stand-in for Expo with nothing private in it; the analytics worker runs as its
+restricted role.
 
-Not yet verified: a run on a physical Android or iOS device (haptics, safe areas and 60fps can
-only be judged there), and the Supabase client against a real project (`supabaseBackend.ts` is
-typechecked and matches the tested schema, but has not talked to a live Supabase).
+**Verified against the real project:** nothing yet. This section is updated when the deploy and
+the live two-user test have run against it.
 
-There is no app icon or splash artwork yet, and the video room named in video plans is not built.
+**Not verified:** anything on a physical phone. That means a push actually arriving (the last
+hop, Expo to APNs or FCM to the device), tapping one to open the right screen, the permission
+prompt, haptics, safe areas, and 60fps on the lock gesture. iOS builds have not been attempted.
+
+The icon and splash are placeholders drawn from the lock mark. The video room named in video
+plans is not built.

@@ -1,7 +1,7 @@
 /**
  * The accountable reveal. Locked: blurred tiles and a masked handle, with the line that says what
  * opens them. Open: the handle and the photos. The locked state holds no real data at all; the
- * server only returns it for a kept promise (ARCHITECTURE.md section 6).
+ * server only returns it for a kept promise (ARCHITECTURE.md section 5).
  */
 import { Feather } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
