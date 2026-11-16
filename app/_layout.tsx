@@ -15,6 +15,7 @@ import { Platform, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { NoticeBanner } from '@/components/NoticeBanner';
+import { startPush } from '@/lib/push';
 import { useStore } from '@/state/store';
 import { color } from '@/theme/tokens';
 
@@ -24,6 +25,7 @@ export default function RootLayout() {
   const [fontsLoaded, fontError] = useFonts({ ArchivoBlack_400Regular, SpaceGrotesk_400Regular, SpaceGrotesk_500Medium, SpaceGrotesk_700Bold });
   const ready = useStore((s) => s.ready);
   const boot = useStore((s) => s.boot);
+  const onboarded = useStore((s) => !!s.me);
 
   useEffect(() => {
     boot();
@@ -34,6 +36,11 @@ export default function RootLayout() {
       NavigationBar.setButtonStyleAsync('light').catch(() => {});
     }
   }, [boot]);
+
+  // Once there is a profile to attach a device to: ask for notifications and register the phone.
+  useEffect(() => {
+    if (onboarded) startPush();
+  }, [onboarded]);
 
   const up = (fontsLoaded || !!fontError) && ready;
   useEffect(() => {

@@ -15,4 +15,4 @@ const wantsLive = process.env.EXPO_PUBLIC_BACKEND !== 'mock';
 
 export const backend: Backend = wantsLive && url && key ? createSupabaseBackend(url, key, AsyncStorage) : createMockBackend();
 
-export type { Backend, BackendEvent, Changes, Notice, Snapshot } from './backend';
+export type { Backend, BackendEvent, Changes, Notice, PushPlatform, Snapshot } from './backend';

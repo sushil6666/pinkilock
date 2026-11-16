@@ -17,7 +17,8 @@
     "db:push": "supabase db push",
     "test:live": "tsx --test tests/live/two_users.test.ts",
     "test:live:local": "bash tests/live/local.sh",
-    "test:app:local": "bash tests/live/local_app.sh"
+    "test:app:local": "bash tests/live/local_app.sh",
+    "test:push:local": "bash tests/live/local_push.sh"
   },
   "dependencies": {
     "@expo-google-fonts/archivo-black": "^0.2.3",
@@ -30,11 +31,13 @@
     "expo-asset": "~11.0.5",
     "expo-blur": "~14.0.3",
     "expo-constants": "~17.0.8",
+    "expo-device": "~7.0.3",
     "expo-font": "~13.0.4",
     "expo-haptics": "~14.0.1",
     "expo-linear-gradient": "~14.0.2",
     "expo-linking": "~7.0.5",
     "expo-navigation-bar": "~4.0.9",
+    "expo-notifications": "~0.29.14",
     "expo-router": "~4.0.20",
     "expo-splash-screen": "~0.29.24",
     "expo-status-bar": "~2.0.1",

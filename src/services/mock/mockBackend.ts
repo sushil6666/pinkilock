@@ -25,6 +25,8 @@ interface Db {
   invites: Invite[];
   passedIds: string[];
   due: Record<string, number>;
+  /** Kept so the mock honours the same contract; there is no server here to send anything. */
+  pushTokens?: string[];
 }
 
 const wait = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
@@ -265,6 +267,20 @@ export function createMockBackend(): Backend {
     subscribe(listener) {
       listeners.add(listener);
       return () => listeners.delete(listener);
+    },
+
+    // The other person lives inside this phone and only moves while the app is open, where the
+    // in-app banner already announces them. So the mock records the token and sends nothing.
+    async registerPushToken(token) {
+      const d = await load();
+      d.pushTokens = [...new Set([...(d.pushTokens ?? []), token])];
+      save();
+    },
+
+    async unregisterPushToken(token) {
+      const d = await load();
+      d.pushTokens = (d.pushTokens ?? []).filter((t) => t !== token);
+      save();
     },
 
     async demoReset() {

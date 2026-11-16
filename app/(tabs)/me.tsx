@@ -1,7 +1,7 @@
 /** Me: my card as others see it, my trust score and how it is worked out, and the prototype tools. */
 import { Feather } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { Portrait } from '@/components/Portrait';
 import { TrustBadge } from '@/components/TrustBadge';
@@ -11,6 +11,7 @@ import { Screen } from '@/components/ui/Screen';
 import { T } from '@/components/ui/T';
 import { IDEAS } from '@/domain/ideas';
 import { trustScore } from '@/domain/trust';
+import { pushStatus, watchPush } from '@/lib/push';
 import { backend } from '@/services';
 import { useStore } from '@/state/store';
 import { color, radius, space } from '@/theme/tokens';
@@ -22,6 +23,8 @@ export default function Me() {
   const demoReset = useStore((s) => s.demoReset);
   const [error, setError] = useState('');
   const [resetting, setResetting] = useState(false);
+  const [push, setPush] = useState(pushStatus);
+  useEffect(() => watchPush(setPush), []);
   if (!me) return null;
 
   const toggleIdea = async (id: string) => {
@@ -87,6 +90,15 @@ export default function Me() {
         <View style={{ flex: 1 }}>
           <T v="bodyBold">{live ? 'Live: Supabase' : 'Mock data on this phone'}</T>
           <T v="caption" c={color.textDim}>{live ? 'Postgres with row-level security and realtime.' : 'Ten made-up people who answer by themselves. Add Supabase keys to go live.'}</T>
+        </View>
+      </View>
+
+      <T v="label" c={color.textDim} style={styles.section}>Notifications</T>
+      <View style={styles.panel}>
+        <Feather name={push.state === 'on' ? 'bell' : 'bell-off'} size={18} color={push.state === 'on' ? color.volt : push.state === 'unavailable' ? color.textDim : color.flare} />
+        <View style={{ flex: 1 }}>
+          <T v="bodyBold">{push.state === 'on' ? 'On for this phone' : push.state === 'denied' ? 'Turned off' : push.state === 'error' ? 'Not working' : 'Not available here'}</T>
+          <T v="caption" c={color.textDim}>{push.detail}</T>
         </View>
       </View>
 

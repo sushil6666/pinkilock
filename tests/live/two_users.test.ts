@@ -19,84 +19,10 @@ import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
 import { after, before, test } from 'node:test';
 import { createClient } from '@supabase/supabase-js';
-import type { Invite, OnboardingInput } from '../../src/domain/types';
-import type { Backend, BackendEvent } from '../../src/services/backend';
-import { createSupabaseBackend, type SessionStorage } from '../../src/services/supabase/supabaseBackend';
+import type { Invite } from '../../src/domain/types';
+import { createSupabaseBackend } from '../../src/services/supabase/supabaseBackend';
+import { KEY, MIN, SWEEP_WAIT, URL, inviteIs, one, person, profile, type Person } from './helpers';
 
-const URL = process.env.EXPO_PUBLIC_SUPABASE_URL;
-const KEY = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
-if (!URL || !KEY) throw new Error('Set EXPO_PUBLIC_SUPABASE_URL and EXPO_PUBLIC_SUPABASE_ANON_KEY (or use npm run test:live:local).');
-
-const MIN = 60_000;
-/** pg_cron fires on the minute; allow one full cycle plus slack. */
-const SWEEP_WAIT = 100_000;
-
-function memoryStorage(): SessionStorage & { dump(): Map<string, string> } {
-  const m = new Map<string, string>();
-  return {
-    getItem: async (k) => m.get(k) ?? null,
-    setItem: async (k, v) => void m.set(k, v),
-    removeItem: async (k) => void m.delete(k),
-    dump: () => m,
-  };
-}
-
-interface Person {
-  name: string;
-  backend: Backend;
-  storage: ReturnType<typeof memoryStorage>;
-  id: string;
-  events: BackendEvent[];
-  /** Resolves with the first event (past or future) that matches. */
-  hears(what: string, match: (e: BackendEvent) => boolean, timeout?: number): Promise<BackendEvent>;
-  /** Forget what was heard so far, so the next `hears` is about what happens next. */
-  quiet(): void;
-}
-
-function person(name: string): Person {
-  const storage = memoryStorage();
-  const backend = createSupabaseBackend(URL!, KEY!, storage);
-  const events: BackendEvent[] = [];
-  const waiters = new Set<(e: BackendEvent) => void>();
-  backend.subscribe((e) => {
-    events.push(e);
-    waiters.forEach((w) => w(e));
-  });
-  return {
-    name, backend, storage, events, id: '',
-    quiet: () => void (events.length = 0),
-    hears(what, match, timeout = 15_000) {
-      const seen = events.find(match);
-      if (seen) return Promise.resolve(seen);
-      return new Promise((resolve, reject) => {
-        const timer = setTimeout(() => {
-          waiters.delete(w);
-          reject(new Error(`${name} never heard: ${what} (waited ${timeout / 1000}s, got ${events.length} other events)`));
-        }, timeout);
-        const w = (e: BackendEvent) => {
-          if (!match(e)) return;
-          clearTimeout(timer);
-          waiters.delete(w);
-          resolve(e);
-        };
-        waiters.add(w);
-      });
-    },
-  };
-}
-
-const profile = (name: string, handle: string): OnboardingInput => ({
-  name, age: 24, area: 'Bandra', pronouns: '', tagline: 'automated test, please ignore', vibes: ['tests'],
-  ideaIds: ['boba_run', 'video_coffee'], contactKind: 'Instagram', contactHandle: handle,
-});
-
-const inviteIs = (id: string, status: Invite['status']) => (e: BackendEvent) =>
-  !!e.changes.invites?.some((i) => i.id === id && i.status === status);
-
-const one = (c: { invites?: Invite[] }): Invite => {
-  assert.equal(c.invites?.length, 1, 'the backend returns exactly the invite it changed');
-  return c.invites![0];
-};
 
 const a = person('E2E Asha');
 const b = person('E2E Bela');

@@ -24,6 +24,8 @@ export interface Changes {
   passedIds?: string[];
 }
 
+export type PushPlatform = 'ios' | 'android';
+
 export type Notice = { tone: 'pink' | 'volt' | 'flare'; title: string; body: string; inviteId?: string };
 
 /** Something the other person (or the clock) did. */
@@ -53,6 +55,14 @@ export interface Backend {
   getReveal(inviteId: string): Promise<Reveal>;
 
   subscribe(listener: (e: BackendEvent) => void): () => void;
+
+  /**
+   * Hand this device's Expo push token to the server, which is the only thing that ever sends a
+   * push (ARCHITECTURE.md section 6). The app never sends one and never sees anyone else's token.
+   */
+  registerPushToken(token: string, platform: PushPlatform): Promise<void>;
+  /** This device should stop getting pushes (signing out, permission withdrawn). */
+  unregisterPushToken(token: string): Promise<void>;
 
   /** Prototype tools (Me tab), mock only. The live backend rejects them. */
   demoReset(): Promise<Snapshot>;

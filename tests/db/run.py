@@ -42,12 +42,13 @@ def main() -> int:
             run = subprocess.run([args.duckdb_python, str(ROOT / "analytics" / "duckdb_pipeline.py"), "--dsn", uri])
             if run.returncode != 0:
                 return 1
-            print("== tests/db/check_scores.sql")
-            out = subprocess.run(["psql", uri, "-v", "ON_ERROR_STOP=1", "-q", "-f", str(HERE / "check_scores.sql")], capture_output=True, text=True)
-            print("\n".join(l for l in out.stdout.splitlines() if l.strip().startswith("ok")))
-            if out.returncode != 0:
-                print(out.stderr, file=sys.stderr)
-                return 1
+            for f in (HERE / "check_scores.sql", HERE / "push.sql"):
+                print(f"== {f.relative_to(ROOT)}")
+                out = subprocess.run(["psql", uri, "-v", "ON_ERROR_STOP=1", "-q", "-f", str(f)], capture_output=True, text=True)
+                print("\n".join(l for l in out.stdout.splitlines() if l.strip().startswith("ok")))
+                if out.returncode != 0:
+                    print(out.stderr, file=sys.stderr)
+                    return 1
             print("\nALL DATABASE CHECKS PASSED")
             return 0
         finally:

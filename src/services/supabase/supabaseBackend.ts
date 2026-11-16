@@ -254,6 +254,16 @@ export function createSupabaseBackend(url: string, anonKey: string, storage: Ses
       return () => listeners.delete(listener);
     },
 
+    async registerPushToken(token, platform) {
+      await uid();
+      check(await db.rpc('register_push_token', { p_token: token, p_platform: platform }));
+    },
+
+    async unregisterPushToken(token) {
+      await uid();
+      check(await db.rpc('unregister_push_token', { p_token: token }));
+    },
+
     async demoReset() {
       throw new Error('Prototype tools only work on mock data.');
     },
