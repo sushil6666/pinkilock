@@ -21,6 +21,8 @@ export const color = {
   pinkDeep: '#C2457E',
   pinkWash: 'rgba(255,111,174,0.16)',
   pinkHalo: 'rgba(255,111,174,0.38)',
+  /** Light catching the top of a clay shape (the logo's fingers). */
+  shine: 'rgba(255,255,255,0.34)',
   flare: '#FF8466',
   flareWash: 'rgba(255,132,102,0.14)',
   onGold: '#241A63',

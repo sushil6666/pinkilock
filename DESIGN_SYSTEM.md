@@ -23,6 +23,7 @@ alive: stars twinkle, the moon glows, buttons spring. All values below are in
 | `moon` | `#FFE6A3` | The moon, stars and lit windows on the first screen only |
 | `pink` | `#FF6FAE` | Their pinky, the lock, eyebrows, selected chips (5.8:1 on `bg`) |
 | `pinkDeep` | `#C2457E` | Knuckle lines, gradients |
+| `shine` | `rgba(255,255,255,0.34)` | Light along the top of the logo's fingers |
 | `pinkWash` / `pinkHalo` | `rgba(255,111,174,0.16 / 0.38)` | Tinted fills behind pink text; the nail on my pinky |
 | `flare` | `#FF8466` | Flakes and destructive actions only (6.2:1 on `bg`) |
 | `onGold` / `onPink` | `#241A63` | Text on gold (9.6:1) and on pink (5.8:1): the sky's own indigo |
@@ -95,7 +96,9 @@ Font scaling is allowed up to 1.3x (`maxFontSizeMultiplier`) so layouts hold on 
   hooking; a padlock clicking shut). Drawn on `bg` and keyed out, so it only goes on `bg`, never on a
   card. Decoration: hidden from screen readers, and a still frame (the lock closed) with reduced
   motion. The welcome screen and the not-found screen use them.
-- **Logo**: the two pinkies locked (pink theirs, gold mine, the app icon's geometry) beside
+- **Logo**: the two pinkies locked (pink theirs, gold mine, the app icon's geometry), turned 45
+  degrees so they rise to the right and standing on a 14-unit block of `pinkDeep` and `goldDeep`
+  (3D depth straight down the screen) with a `shine` along each finger, beside
   "pinkilock" in Sora, slanted 12 degrees like an italic, with a gold full stop (`src/components/Logo.tsx`). It sits top centre on
   every screen: `Screen` draws it in the header, with the back control left and the screen's title
   as a small label under it. A page with its own top bar passes `logo={false}`. Read out as
