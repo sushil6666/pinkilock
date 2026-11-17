@@ -56,7 +56,25 @@ const FILES = [
   { name: 'favicon.png', size: 48, scale: 0.13, bg: C.bg },
 ];
 
+// The website's own files (served as they are from public/): the home-screen icons the manifest
+// names, Apple's touch icon, and the picture a shared link shows.
+const WEB = path.join(OUT, '..', 'public');
+const WEB_FILES = [
+  { name: 'icon-192.png', size: 192, scale: 0.47, bg: C.bg },
+  { name: 'icon-512.png', size: 512, scale: 1.25, bg: C.bg },
+  { name: 'apple-touch-icon.png', size: 180, scale: 0.44, bg: C.bg },
+];
+const SHARE = { name: 'share.png', width: 1200, height: 630 };
+const share = `
+  <svg xmlns="http://www.w3.org/2000/svg" width="${SHARE.width}" height="${SHARE.height}" viewBox="0 0 ${SHARE.width} ${SHARE.height}">
+    <rect width="${SHARE.width}" height="${SHARE.height}" fill="${C.bg}"/>
+    <g transform="translate(${SHARE.width / 2} 250) scale(1.5)">${mark()}</g>
+    <text x="${SHARE.width / 2}" y="500" text-anchor="middle" fill="${C.text}" font-family="Arial Black, Arial, Helvetica, sans-serif" font-weight="900" font-size="76" letter-spacing="2">PINKILOCK</text>
+    <text x="${SHARE.width / 2}" y="560" text-anchor="middle" fill="${C.textDim}" font-family="Arial, Helvetica, sans-serif" font-size="32">No ghosting. No endless swiping.</text>
+  </svg>`;
+
 mkdirSync(OUT, { recursive: true });
+mkdirSync(WEB, { recursive: true });
 const browser = await chromium.launch();
 for (const f of FILES) {
   const page = await browser.newPage({ viewport: { width: f.size, height: f.size }, deviceScaleFactor: 1 });
@@ -64,5 +82,19 @@ for (const f of FILES) {
   await page.screenshot({ path: path.join(OUT, f.name), omitBackground: !f.bg, clip: { x: 0, y: 0, width: f.size, height: f.size } });
   await page.close();
   console.log(`assets/${f.name}  ${f.size}x${f.size}`);
+}
+for (const f of WEB_FILES) {
+  const page = await browser.newPage({ viewport: { width: f.size, height: f.size }, deviceScaleFactor: 1 });
+  await page.setContent(`<style>html,body{margin:0}svg{display:block}</style>${svg(f)}`);
+  await page.screenshot({ path: path.join(WEB, f.name), clip: { x: 0, y: 0, width: f.size, height: f.size } });
+  await page.close();
+  console.log(`public/${f.name}  ${f.size}x${f.size}`);
+}
+{
+  const page = await browser.newPage({ viewport: { width: SHARE.width, height: SHARE.height }, deviceScaleFactor: 1 });
+  await page.setContent(`<style>html,body{margin:0}svg{display:block}</style>${share}`);
+  await page.screenshot({ path: path.join(WEB, SHARE.name), clip: { x: 0, y: 0, width: SHARE.width, height: SHARE.height } });
+  await page.close();
+  console.log(`public/${SHARE.name}  ${SHARE.width}x${SHARE.height}`);
 }
 await browser.close();

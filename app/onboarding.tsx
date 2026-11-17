@@ -5,8 +5,9 @@
  */
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { StyleSheet, TextInput, View } from 'react-native';
+import { StyleSheet, TextInput, View, useWindowDimensions } from 'react-native';
 import Animated, { FadeInDown, FadeInRight } from 'react-native-reanimated';
+import { Welcome } from '@/components/Welcome';
 import { Button } from '@/components/ui/Button';
 import { Chip, Tag } from '@/components/ui/Chip';
 import { inputStyle } from '@/components/ui/input';
@@ -40,6 +41,9 @@ export default function Onboarding() {
   const [handle, setHandle] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+  // The first screen spreads into two columns in a wide browser window; every other step stays a column.
+  const { width } = useWindowDimensions();
+  const wide = step === 0 && width >= 960;
 
   const ageNum = Number(age);
   const under18 = age.length >= 2 && ageNum < 18;
@@ -72,7 +76,7 @@ export default function Onboarding() {
     : <Button label={step === 0 ? 'Start' : 'Next'} icon="arrow-right" onPress={() => setStep(step + 1)} disabled={!canNext} />;
 
   return (
-    <Screen back={step > 0 ? 'back' : false} onBack={() => setStep(step - 1)} title={step > 0 ? `${step} of ${STEPS - 1}` : undefined} footer={footer}>
+    <Screen wide={wide} back={step > 0 ? 'back' : false} onBack={() => setStep(step - 1)} title={step > 0 ? `${step} of ${STEPS - 1}` : undefined} footer={wide ? undefined : footer}>
       {step > 0 && (
         <View style={styles.progress} accessibilityRole="progressbar" accessibilityValue={{ min: 0, max: STEPS - 1, now: step }}>
           {Array.from({ length: STEPS - 1 }, (_, i) => <View key={i} style={[styles.bar, i < step && { backgroundColor: color.pink }]} />)}
@@ -80,22 +84,7 @@ export default function Onboarding() {
       )}
 
       <Animated.View key={step} entering={step === 0 ? FadeInDown.duration(500) : FadeInRight.duration(260)} style={{ gap: space.xl }}>
-        {step === 0 && (
-          <View style={{ gap: space.xl, paddingTop: space.x5 }}>
-            <T v="label" c={color.pink}>Pinkilock</T>
-            <T v="mega" style={{ fontSize: 46, lineHeight: 48 }}>No ghosting.{'\n'}No endless{'\n'}swiping.</T>
-            <T v="heading" c={color.textDim}>One person. One tiny plan. One pinky promise that you both show up.</T>
-            <View style={{ gap: space.md, marginTop: space.lg }}>
-              {[['01', 'Send a vibe check: a real plan with a time on it.'], ['02', 'Lock pinkies. Now it is a promise.'], ['03', 'Show up. Unlock each other. Build your record.']].map(([n, line]) => (
-                <View key={n} style={styles.rule}>
-                  <T v="label" c={color.pink}>{n}</T>
-                  <T style={{ flex: 1 }}>{line}</T>
-                </View>
-              ))}
-            </View>
-            <Button kind="quiet" icon="log-in" label="I already have an account" onPress={() => router.push({ pathname: '/account/sign-in', params: { mode: 'sign_in' } })} />
-          </View>
-        )}
+        {step === 0 && <Welcome wide={wide} onStart={() => setStep(1)} />}
 
         {step === 1 && (
           <>
@@ -202,6 +191,5 @@ const styles = StyleSheet.create({
   progress: { flexDirection: 'row', gap: 6, marginBottom: space.xxl },
   bar: { flex: 1, height: 3, borderRadius: 2, backgroundColor: color.line },
   wrap: { flexDirection: 'row', flexWrap: 'wrap', gap: space.sm },
-  rule: { flexDirection: 'row', gap: space.md, alignItems: 'baseline', borderTopWidth: 1, borderTopColor: color.line, paddingTop: space.md },
   oath: { borderLeftWidth: 3, borderLeftColor: color.pink, paddingLeft: space.lg, gap: 2 },
 });
