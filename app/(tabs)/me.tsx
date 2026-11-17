@@ -15,6 +15,7 @@ import { Screen } from '@/components/ui/Screen';
 import { Sheet } from '@/components/ui/Sheet';
 import { T } from '@/components/ui/T';
 import { IDEAS } from '@/domain/ideas';
+import { maskEmail } from '@/domain/email';
 import { maskPhone } from '@/domain/phone';
 import { trustScore } from '@/domain/trust';
 import { pushStatus, watchPush } from '@/lib/push';
@@ -31,6 +32,8 @@ export default function Me() {
   const [resetting, setResetting] = useState(false);
   const [push, setPush] = useState(pushStatus);
   const account = useStore((s) => s.account);
+  /** Whether this account can be got back on another phone. */
+  const keeps = !!(account?.email || account?.phone);
   const loadAccount = useStore((s) => s.loadAccount);
   const deleteAccount = useStore((s) => s.deleteAccount);
   const signOut = useStore((s) => s.signOut);
@@ -131,16 +134,16 @@ export default function Me() {
 
       <T v="label" c={color.textDim} style={styles.section}>Account</T>
       <View style={styles.panel}>
-        <Feather name="phone" size={18} color={account?.phone ? color.volt : color.textDim} />
+        <Feather name={account?.email && !account.phone ? 'mail' : 'phone'} size={18} color={keeps ? color.volt : color.textDim} />
         <View style={{ flex: 1 }}>
-          <T v="bodyBold">{account?.phone ? maskPhone(account.phone) : 'No phone number yet'}</T>
-          <T v="caption" c={color.textDim}>{account?.phone ? 'You can sign in with it on any phone.' : 'Add one to keep this account if you change phones. Without it, losing this phone loses your record.'}</T>
+          <T v="bodyBold">{keeps ? [account?.email && maskEmail(account.email), account?.phone && maskPhone(account.phone)].filter(Boolean).join(' · ') : 'No email or phone number yet'}</T>
+          <T v="caption" c={color.textDim}>{keeps ? 'You can sign in with it on any phone.' : 'Add one to keep this account if you change phones. Without it, losing this phone loses your record.'}</T>
         </View>
       </View>
       <View style={{ gap: space.sm, marginTop: space.sm }}>
-        {account?.phone
-          ? <Button kind="ghost" icon="log-out" label="Sign out" onPress={() => setSheet('sign_out')} />
-          : <Button kind="ghost" icon="phone" label="Add your phone number" onPress={() => router.push({ pathname: '/account/phone', params: { mode: 'link' } })} />}
+        {!account?.email ? <Button kind="ghost" icon="mail" label="Add your email" onPress={() => router.push({ pathname: '/account/sign-in', params: { mode: 'link', kind: 'email' } })} /> : null}
+        {!account?.phone ? <Button kind="ghost" icon="phone" label="Add your phone number" onPress={() => router.push({ pathname: '/account/sign-in', params: { mode: 'link', kind: 'phone' } })} /> : null}
+        {keeps ? <Button kind="ghost" icon="log-out" label="Sign out" onPress={() => setSheet('sign_out')} /> : null}
         <Button kind="ghost" icon="slash" label="Blocked people" onPress={() => router.push('/account/blocked')} />
         <Button kind="ghost" icon="download" label="Download my data" busy={busy === 'export'} onPress={exportData} />
         <Button kind="danger" icon="trash-2" label="Delete my account" onPress={() => setSheet('delete')} />
@@ -190,7 +193,7 @@ export default function Me() {
         onClose={() => setSheet(null)}
         eyebrow="Sign out"
         title="Sign out of this phone?"
-        body={`Your account stays. Sign back in any time with ${account?.phone ? maskPhone(account.phone) : 'your number'}. This phone stops getting your notifications.`}
+        body={`Your account stays. Sign back in any time with ${account?.email ? maskEmail(account.email) : account?.phone ? maskPhone(account.phone) : 'your email or number'}. This phone stops getting your notifications.`}
       >
         {accountError ? <T v="caption" c={color.flare}>{accountError}</T> : null}
         <Button kind="danger" label="Sign out" busy={busy === 'sign_out'} onPress={() => leave('sign_out')} />

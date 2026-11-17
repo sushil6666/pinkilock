@@ -41,7 +41,7 @@ app/                         Routes only. A route file wires state to components
   (tabs)/                    _layout (custom tab bar), index (Discover), invites, plans, me
   profile/[id].tsx           Someone's profile, locked reveal, block or report
   report/[id].tsx            Report someone (always blocks too)
-  account/phone.tsx          Add a phone number (link) or sign back in with one
+  account/sign-in.tsx        Add an email or a phone number (link), or sign back in with one
   account/blocked.tsx        People I blocked, with unblock
   invite/new.tsx             Vibe check composer
   invite/[id].tsx            One invitation: lock, seal, pass, take back
@@ -199,14 +199,18 @@ person's record does not change, because Trust Scores count kept promises from t
 (section 7). `tests/db/account.sql` scans every uuid column afterwards for the deleted id.
 
 **Auth.** Sign-in starts anonymous: a real `auth.uid()` with zero friction, so RLS works from the
-first screen. Adding a phone number (Me, Account) calls `updateUser({ phone })` and then
-`verifyOtp({ type: 'phone_change' })`, which turns the same user into a phone user: the id, and so
-every row, stays. On a new phone, "I already have an account" signs in with the number
-(`signInWithOtp` with `shouldCreateUser: false`, so no account is ever made that way). Signing out
-is offered only once a number is linked, since an anonymous account could not be got back. The
-SMS provider is Twilio Verify, switched on by the deploy workflow once its three secrets exist;
-until then the app reads `/auth/v1/settings` and says phone sign-in is not on yet. Locally,
-`supabase/config.toml` turns phone sign-in on with test numbers that send no SMS.
+first screen. Adding an email or a phone number (Me, Account) calls `updateUser({ email })` or
+`updateUser({ phone })` and then `verifyOtp` with type `email_change` or `phone_change`, which
+turns the same user into an email or phone user: the id, and so every row, stays. On a new phone,
+"I already have an account" signs in with either (`signInWithOtp` with `shouldCreateUser: false`,
+so no account is ever made that way). Signing out is offered only once one of them is linked,
+since an anonymous account could not be got back. Email is offered first because it is free to
+send: the deploy workflow points Auth at our own SMTP sender and installs the code-only templates
+in `supabase/templates` once the `SMTP_*` settings exist, and switches email off until then
+(Supabase's own mailer only reaches the project's team). The SMS provider is Twilio Verify,
+switched on once its three secrets exist. The app reads `/auth/v1/settings` and says which of the
+two is not on yet. Locally, `supabase/config.toml` turns both on: email goes to Mailpit, and phone
+uses test numbers that send no SMS.
 
 ## 6. Push notifications
 
@@ -288,7 +292,7 @@ applies the same formula with every flake weighted 1.
 
 `src/services/backend.ts` is the only thing screens and the store know. Besides the promise
 methods it has `block`, `unblock`, `blockedPeople`, `report`, `exportMyData`, `deleteAccount`,
-`account`, `sendPhoneCode`, `verifyPhoneCode` and `signOut`. `Changes.removed` names people and
+`account`, `sendCode`, `verifyCode` (by email or phone) and `signOut`. `Changes.removed` names people and
 invites the backend can no longer see, and the store drops them; the live backend works that out
 on every re-read and from Realtime deletes, and is never told why. `src/services/index.ts`
 returns the Supabase implementation when `EXPO_PUBLIC_SUPABASE_URL` and
@@ -345,7 +349,8 @@ as due times, so a restart loses nothing.
   environment (where required reviewers can be added), and is refused until its ref and database
   password exist; its values never fall back to preview ones. Each run turns on anonymous sign-ins,
   runs `supabase db push`, deploys the `push` function, rotates the shared secret, sets the
-  analytics role's password, turns on Twilio Verify phone sign-in if its secrets exist, and, for
+  analytics role's password, turns on email sign-in if an SMTP sender is set (and off if not) and
+  Twilio Verify phone sign-in if its secrets exist, and, for
   preview only, runs the live tests against what it just deployed. The live tests are not run on
   production, where their test people would show up in real Discover.
 - **Analytics**: the worker runs once per project that has a ref and a pooler host, every 5

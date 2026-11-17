@@ -12,7 +12,7 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import { ideaOf } from '../../domain/ideas';
 import { CHECK_IN_CLOSES_AFTER, otherId } from '../../domain/invites';
-import type { Account, BlockedPerson, Invite, MyContact, PhoneMode, Profile, Reveal } from '../../domain/types';
+import type { Account, BlockedPerson, CodeKind, Invite, MyContact, Profile, Reveal } from '../../domain/types';
 import type { Backend, BackendEvent, Changes, Notice, Snapshot } from '../backend';
 
 type Row = Record<string, any>;
@@ -44,15 +44,19 @@ export interface SessionStorage {
   removeItem(key: string): Promise<void>;
 }
 
-/** GoTrue's words for the phone cases, in the app's voice. */
-function phoneError(message: string): Error {
+/** GoTrue's words for the sign-in code cases, in the app's voice. */
+function codeError(message: string, kind: CodeKind): Error {
   const m = message.toLowerCase();
-  if (m.includes('provider') || ((m.includes('sms') || m.includes('phone')) && m.includes('disabled')))
+  const what = kind === 'phone' ? 'number' : 'email address';
+  if (kind === 'phone' && (m.includes('provider') || ((m.includes('sms') || m.includes('phone')) && m.includes('disabled'))))
     return new Error('Phone sign-in is not switched on yet.');
+  if (kind === 'email' && (m.includes('email') && (m.includes('disabled') || m.includes('not enabled'))))
+    return new Error('Email sign-in is not switched on yet.');
+  if (m.includes('invalid') && m.includes('format')) return new Error(`That does not look like a ${kind === 'phone' ? 'phone number' : 'email address'}.`);
   if (m.includes('already') && (m.includes('registered') || m.includes('exists')))
-    return new Error('That number is already on another account. Sign in with it instead.');
+    return new Error(`That ${what} is already on another account. Sign in with it instead.`);
   if (m.includes('signups not allowed') || m.includes('user not found'))
-    return new Error('No account uses that number yet. Set one up first, then add the number in Me.');
+    return new Error(`No account uses that ${what} yet. Set one up first, then add it in Me.`);
   if (m.includes('expired') || (m.includes('invalid') && (m.includes('otp') || m.includes('token'))))
     return new Error('That code did not match or has expired. Check it, or send a new one.');
   if (m.includes('rate') || m.includes('seconds')) return new Error('Wait a moment before asking for another code.');
@@ -174,17 +178,18 @@ export function createSupabaseBackend(url: string, anonKey: string, storage: Ses
     meId = '';
   }
 
-  let phoneAvailable: boolean | null = null;
-  async function phoneSignInAvailable(): Promise<boolean> {
-    if (phoneAvailable !== null) return phoneAvailable;
+  // What GoTrue can send, from its public settings. Asked once per launch.
+  let available: { phone: boolean; email: boolean } | null = null;
+  async function codesAvailable(): Promise<{ phone: boolean; email: boolean }> {
+    if (available) return available;
     try {
       const res = await fetch(`${url.replace(/\/$/, '')}/auth/v1/settings`, { headers: { apikey: anonKey } });
-      const body = (await res.json()) as { external?: { phone?: boolean } };
-      phoneAvailable = !!body.external?.phone;
+      const body = (await res.json()) as { external?: { phone?: boolean; email?: boolean } };
+      available = { phone: !!body.external?.phone, email: !!body.external?.email };
     } catch {
-      return false;
+      return { phone: false, email: false };
     }
-    return phoneAvailable;
+    return available;
   }
 
   function listen() {
@@ -398,40 +403,52 @@ export function createSupabaseBackend(url: string, anonKey: string, storage: Ses
     },
 
     async account(): Promise<Account> {
-      const [{ data }, available] = await Promise.all([db.auth.getSession(), phoneSignInAvailable()]);
-      const phone = data.session?.user.phone;
-      return { phone: phone ? `+${phone.replace(/^\+/, '')}` : null, phoneAvailable: available };
+      const [{ data }, can] = await Promise.all([db.auth.getSession(), codesAvailable()]);
+      const user = data.session?.user;
+      return {
+        phone: user?.phone ? `+${user.phone.replace(/^\+/, '')}` : null,
+        email: user?.email || null,
+        phoneAvailable: can.phone,
+        emailAvailable: can.email,
+      };
     },
 
-    async sendPhoneCode(phone, mode) {
+    async sendCode(kind, address, mode) {
       if (mode === 'link') {
         await uid();
-        // On an anonymous user this sends a code to the new number; verifying it turns the same
-        // user into a phone user (type phone_change), so the id and the whole history stay.
-        const { error } = await db.auth.updateUser({ phone });
-        if (error) throw phoneError(error.message);
-      } else {
-        // Getting back into an existing account. No new accounts are made this way: a new person
-        // onboards first and adds a number in Me.
-        const { error } = await db.auth.signInWithOtp({ phone, options: { shouldCreateUser: false } });
-        if (error) throw phoneError(error.message);
+        // On an anonymous user this sends a code to the new number or address; verifying it turns
+        // the same user into a phone or email user, so the id and the whole history stay.
+        const { error } = await db.auth.updateUser(kind === 'phone' ? { phone: address } : { email: address });
+        if (error) throw codeError(error.message, kind);
+        return;
       }
+      // Getting back into an existing account. No new accounts are made this way: a new person
+      // onboards first and adds a number or address in Me.
+      const { error } = await db.auth.signInWithOtp(
+        kind === 'phone' ? { phone: address, options: { shouldCreateUser: false } } : { email: address, options: { shouldCreateUser: false } },
+      );
+      if (error) throw codeError(error.message, kind);
     },
 
-    async verifyPhoneCode(phone, code, mode) {
+    async verifyCode(kind, address, code, mode) {
       if (mode === 'link') {
         await uid();
-        // A project with phone confirmations off links the number at once, with no code to check.
+        // A project with confirmations off links at once, with no code to check.
         const { data: now } = await db.auth.getUser();
-        if (now.user?.phone && `+${now.user.phone.replace(/^\+/, '')}` === phone) return snapshot();
-        const { error } = await db.auth.verifyOtp({ phone, token: code, type: 'phone_change' });
-        if (error) throw phoneError(error.message);
+        const has = kind === 'phone' ? (now.user?.phone ? `+${now.user.phone.replace(/^\+/, '')}` : null) : now.user?.email || null;
+        if (has === address) return snapshot();
+        const { error } = kind === 'phone'
+          ? await db.auth.verifyOtp({ phone: address, token: code, type: 'phone_change' })
+          : await db.auth.verifyOtp({ email: address, token: code, type: 'email_change' });
+        if (error) throw codeError(error.message, kind);
         return snapshot();
       }
       // Whoever was on this phone before (an anonymous user who never finished onboarding) is
-      // simply left; the account that owns the number takes over.
-      const { data, error } = await db.auth.verifyOtp({ phone, token: code, type: 'sms' });
-      if (error || !data.user) throw phoneError(error?.message ?? 'That code did not match.');
+      // simply left; the account that owns the number or address takes over.
+      const { data, error } = kind === 'phone'
+        ? await db.auth.verifyOtp({ phone: address, token: code, type: 'sms' })
+        : await db.auth.verifyOtp({ email: address, token: code, type: 'email' });
+      if (error || !data.user) throw codeError(error?.message ?? 'That code did not match.', kind);
       await reset();
       meId = data.user.id;
       return snapshot();
@@ -439,7 +456,7 @@ export function createSupabaseBackend(url: string, anonKey: string, storage: Ses
 
     async signOut() {
       const { data } = await db.auth.getSession();
-      if (!data.session?.user.phone) throw new Error('Add a phone number first, or you could not get back in.');
+      if (!data.session?.user.phone && !data.session?.user.email) throw new Error('Add a phone number or an email first, or you could not get back in.');
       await db.auth.signOut({ scope: 'local' });
       await reset();
       return emptySnapshot();

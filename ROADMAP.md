@@ -43,6 +43,11 @@ Supabase stack and in CI; it reaches the real project when the PR merges.
   keeps its rows with the person's id removed; Trust Scores now count kept promises from the log.
 - [x] **Phone-number sign-in**, linked to the anonymous user so that the id and history are kept,
   behind the Backend interface. Sign-in on a new phone, and sign-out once a number is linked.
+- [x] **Email sign-in codes**, the free alternative to SMS, the same way: link keeps the id, sign
+  in on a new phone, code-only templates. On once an SMTP sender (e.g. Resend) is configured.
+- [ ] A mail sender (`SMTP_*`), then email sign-in tried on a real phone.
+- [ ] WhatsApp codes, cheaper than SMS in India: needs a Meta-approved WhatsApp Business sender,
+  then either Twilio's WhatsApp channel or Supabase's send-SMS hook calling Meta directly.
 - [x] **A production project, prepared**: the deploy and analytics workflows take a target, and
   nothing touches production until `PROD_SUPABASE_PROJECT_REF` exists.
 - [ ] Twilio Verify keys, then phone sign-in tried on a real phone.
@@ -53,7 +58,7 @@ Supabase stack and in CI; it reaches the real project when the PR merges.
   testing. (Skipped for now.)
 - [ ] A way to review reports other than the SQL editor.
 
-**Done when** a stranger can sign up with a phone number on a store test build, block or report
+**Done when** a stranger can keep their account with an email or a phone number on a store test build, block or report
 someone, and delete their account, on both platforms, against the production project.
 
 ## Phase 4: The date itself (planned)

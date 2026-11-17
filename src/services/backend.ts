@@ -5,7 +5,7 @@
  * seeded data, latency and a simulated other person; a Supabase implementation maps each method
  * to one rpc() or select() (ARCHITECTURE.md section 8) and `subscribe` to a Realtime channel.
  */
-import type { Account, BlockedPerson, Invite, MyContact, NewInvite, NewReport, OnboardingInput, PhoneMode, Profile, Reveal } from '../domain/types';
+import type { Account, BlockedPerson, Invite, MyContact, NewInvite, NewReport, OnboardingInput, CodeKind, CodeMode, Profile, Reveal } from '../domain/types';
 
 export interface Snapshot {
   me: Profile | null;
@@ -88,13 +88,14 @@ export interface Backend {
   deleteAccount(): Promise<Snapshot>;
 
   /**
-   * Phone sign-in. `link` adds a number to the person already signed in, so the id and history
-   * stay; `sign_in` gets back into an existing account on a new phone (no new accounts this way).
+   * Sign-in codes, by text (`phone`, E.164) or by email (`email`, lower case). `link` adds the
+   * number or address to the person already signed in, so the id and history stay; `sign_in` gets
+   * back into an existing account on a new phone (no new accounts are made this way).
    */
   account(): Promise<Account>;
-  sendPhoneCode(phone: string, mode: PhoneMode): Promise<void>;
-  verifyPhoneCode(phone: string, code: string, mode: PhoneMode): Promise<Snapshot>;
-  /** Only once a phone is linked: otherwise signing out would lose the account. */
+  sendCode(kind: CodeKind, address: string, mode: CodeMode): Promise<void>;
+  verifyCode(kind: CodeKind, address: string, code: string, mode: CodeMode): Promise<Snapshot>;
+  /** Only once a phone or an email is linked: otherwise signing out would lose the account. */
   signOut(): Promise<Snapshot>;
 
   /** Prototype tools (Me tab), mock only. The live backend rejects them. */

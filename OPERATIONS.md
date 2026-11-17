@@ -48,6 +48,8 @@ All of these live in GitHub, under Settings, Secrets and variables, Actions. Non
 | Variable | `EXPO_PUBLIC_SUPABASE_ANON_KEY` | Live test, EAS build | Public by design, but rotating it needs a new app build |
 | Variable | `SUPABASE_POOLER_HOST` | Analytics worker | Printed in the summary of every **Supabase deploy** run |
 | Secret | `TWILIO_VERIFY_ACCOUNT_SID`, `TWILIO_VERIFY_AUTH_TOKEN`, `TWILIO_VERIFY_SERVICE_SID` | Deploy turns on phone sign-in with them (both projects) | Make a new auth token in Twilio, update the secret, run **Supabase deploy** |
+| Secret | `SMTP_PASSWORD` | Deploy gives it to Auth as the mail sender's password (email sign-in codes) | Make a new API key at the sender (e.g. Resend), update the secret, run **Supabase deploy**, revoke the old key |
+| Variable | `SMTP_HOST`, `SMTP_USER`, `SMTP_SENDER_EMAIL`, `SMTP_PORT` | Deploy: email sign-in is on only when the first three and `SMTP_PASSWORD` exist | Not secrets. Set them as `production` environment variables to give production its own sender |
 | Variable | `PROD_SUPABASE_PROJECT_REF`, `PROD_EXPO_PUBLIC_SUPABASE_ANON_KEY` | Deploy (target `production`), EAS `production`, analytics | Empty until there is a production project |
 | Secret | `PROD_SUPABASE_DB_PASSWORD`, `PROD_ANALYTICS_DB_PASSWORD` | Same as their staging twins, for production | As for staging |
 | Variable | `PROD_SUPABASE_POOLER_HOST` | Analytics worker (production) | Printed by a production deploy run |
@@ -197,6 +199,15 @@ Both are in the app: Me, Account, **Download my data** and **Delete my account**
 immediate and cannot be undone; the events log keeps anonymous rows, and reports keep their
 rows without the id.
 
+### Email sign-in does not work
+
+- The app says "Email sign-in is not switched on yet": the `SMTP_*` settings are not all set, or
+  the deploy has not run since. Its run summary says whether email sign-in is on. Without them the
+  deploy switches email off on purpose.
+- Codes never arrive: check the sender's logs (Resend, Emails) and the spam folder. A domain that
+  is not verified at the sender is refused there. Supabase also caps emails per hour (Auth, Rate
+  limits); a burst of sign-ins past it gets "Wait a moment before asking for another code".
+
 ### Phone sign-in does not work
 
 - The app says "Phone sign-in is not switched on yet": the three `TWILIO_VERIFY_*` secrets are not
@@ -244,7 +255,7 @@ rows without the id.
 From `ROADMAP.md`, Phase 3. All of these must be true first:
 
 - [ ] Reporting and blocking shipped, enforced by RLS (built in PR #3; ships to staging on merge)
-- [ ] Phone sign-in, account deletion and data export (built in PR #3; phone needs Twilio)
+- [ ] Email and phone sign-in, account deletion and data export (built in PR #3; email needs an SMTP sender, phone needs Twilio)
 - [ ] A production Supabase project, separate from staging, with backups (and ideally PITR); the
       workflows are ready for it (`docs/phase-3-checklist.md`, step 3)
 - [ ] `PROD_*` variables set, and a `production` build tested on Android and iOS

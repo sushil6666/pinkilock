@@ -69,6 +69,8 @@ under Settings, Secrets and variables, Actions:
 | Variable | `EXPO_PUBLIC_SUPABASE_ANON_KEY` | Project Settings, API: the anon / publishable key |
 | Variable | `SUPABASE_POOLER_HOST` | Printed by the first deploy run, e.g. `aws-1-ap-south-1.pooler.supabase.com` |
 | Secret | `TWILIO_VERIFY_ACCOUNT_SID`, `TWILIO_VERIFY_AUTH_TOKEN`, `TWILIO_VERIFY_SERVICE_SID` | Optional: phone sign-in (step 5). Until all three exist, phone sign-in stays off |
+| Secret | `SMTP_PASSWORD` | Optional: email sign-in (step 5). Your mail sender's SMTP password or API key |
+| Variable | `SMTP_HOST`, `SMTP_USER`, `SMTP_SENDER_EMAIL`, optional `SMTP_PORT` (default 465) | Optional: email sign-in. Until all four exist, email sign-in stays off |
 
 The service role key is not needed anywhere and must not be added.
 
@@ -97,7 +99,19 @@ with package `com.pinkilock.app`, and download `google-services.json`: its conte
 private key and upload it on expo.dev under the project's Credentials, Android, FCM V1 service
 account key. Without these the app builds and runs, and the Me tab shows that push is off.
 
-**5. Phone sign-in (Twilio Verify).** In Twilio, create a Verify service, then add its Account
+**5. Sign-in codes: email (free) and phone (Twilio Verify).** People keep their account by adding
+an email or a phone number; the app offers email first because it costs nothing to send.
+
+*Email.* Supabase's built-in mailer only reaches the project's own team, a few emails an hour, so
+the deploy leaves email sign-in off until you give it a sender. Resend's free tier (3,000 emails a
+month) is plenty to start: verify a domain there, then set `SMTP_HOST` = `smtp.resend.com`,
+`SMTP_USER` = `resend`, `SMTP_SENDER_EMAIL` = an address on that domain (variables) and
+`SMTP_PASSWORD` = a Resend API key (secret), and run **Supabase deploy**. It switches email on and
+installs the code-only templates in `supabase/templates`. Any SMTP sender works the same way.
+Supabase caps a project at 30 emails an hour by default once your own sender is set; raise it in
+the dashboard's Auth rate limits if sign-ins are refused for that.
+
+*Phone.* In Twilio, create a Verify service, then add its Account
 SID, Auth Token and Service SID as the three `TWILIO_VERIFY_*` secrets and run **Supabase deploy**:
 it switches the project's phone provider on. Twilio Verify sends codes from its own pre-registered
 templates, which is what Indian DLT rules require for OTP texts, so there is no sender ID or
@@ -170,10 +184,12 @@ project was built on EAS and is installable.
 merges): blocking hides two people from each other, every invite between them and the reveal,
 through RLS, and ends live plans with no flake; reports are stored where no client can read them
 and block too; data export; account deletion removes the person and keeps the log anonymised;
-a phone number links to the anonymous user with the same id and history, and signs back in on a
-new phone (with the local stack's test numbers). Through the real screens: block from a profile,
+an email address or a phone number links to the anonymous user with the same id and history, and
+signs back in on a new phone (email codes read back from the local stack's Mailpit; phone with its
+test numbers). Through the real screens: block from a profile,
 download data and delete the account from Me. None of it has run against the real project yet:
-it deploys there when the branch merges, and phone sign-in needs the Twilio secrets.
+it deploys there when the branch merges; email sign-in needs a mail sender and phone sign-in the
+Twilio secrets.
 
 **Not verified:** a real push delivery (needs Firebase for Android, see Go live step 4), the
 analytics worker's first cloud run (needs `ANALYTICS_DB_PASSWORD` and `SUPABASE_POOLER_HOST`), and

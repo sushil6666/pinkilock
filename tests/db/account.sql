@@ -6,7 +6,7 @@
 \set f '00000000-0000-0000-0000-00000000000f'
 \set g '00000000-0000-0000-0000-000000000009'
 
-insert into auth.users (id, phone, is_anonymous) values (:'f', '919000000001', false), (:'g', null, true);
+insert into auth.users (id, phone, email, is_anonymous) values (:'f', '919000000001', 'farah@example.com', false), (:'g', null, null, true);
 insert into public.profiles (id, name, age, area) values (:'f', 'Farah', 25, 'Andheri'), (:'g', 'Gauri', 26, 'Powai');
 insert into public.profile_private (profile_id, contact_kind, contact_handle) values (:'f', 'Instagram', '@farah'), (:'g', 'Snapchat', 'gauri.g');
 
@@ -36,8 +36,8 @@ select report_user(:'c', 'other', 'f-report-about-c');
 
 -- Export: everything about me, nothing about anyone else that I could not already read.
 select export_my_data()::text as fx \gset
-select t.ok((select (x -> 'account' ->> 'id', x -> 'account' ->> 'phone', x -> 'profile' ->> 'name', x -> 'contact' ->> 'handle')
-  = (:'f', '919000000001', 'Farah', '@farah') from (select :'fx'::jsonb as x) s), 'the export has my account, profile and contact');
+select t.ok((select (x -> 'account' ->> 'id', x -> 'account' ->> 'phone', x -> 'account' ->> 'email', x -> 'profile' ->> 'name', x -> 'contact' ->> 'handle')
+  = (:'f', '919000000001', 'farah@example.com', 'Farah', '@farah') from (select :'fx'::jsonb as x) s), 'the export has my account (phone and email), profile and contact');
 select t.ok((select (jsonb_array_length(x -> 'invites'), jsonb_array_length(x -> 'passes'), jsonb_array_length(x -> 'blocks'),
   jsonb_array_length(x -> 'reports_made'), jsonb_array_length(x -> 'devices'))
   = (2, 1, 1, 1, 1) from (select :'fx'::jsonb as x) s), 'the export has my invites, passes, blocks, reports and devices');
