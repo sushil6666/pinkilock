@@ -23,11 +23,17 @@ const TITLES: Record<string, string> = {
   'plan/[id]': 'Plan',
   'account/sign-in': 'Sign in',
   'account/blocked': 'Blocked',
+  'account/requests': 'Ask us',
+  'legal/[doc]': 'Terms and privacy',
+  safety: 'Safety',
   '+not-found': 'Not found',
 };
 
-/** Open without a profile: the gate itself, onboarding, signing back in, and the not-found page. */
-const OPEN = new Set(['', 'onboarding', 'account/sign-in', '+not-found']);
+/**
+ * Open without a profile: the gate itself, onboarding, signing back in, the not-found page, and
+ * the terms and privacy policy, which onboarding asks a person to agree to before a profile exists.
+ */
+const OPEN = new Set(['', 'onboarding', 'account/sign-in', '+not-found', 'legal/[doc]']);
 
 const key = (segments: readonly string[]) => segments.join('/');
 
