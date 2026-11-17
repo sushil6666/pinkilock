@@ -14,7 +14,7 @@
     "db:stop": "supabase stop",
     "db:reset": "supabase db reset",
     "db:push": "supabase db push",
-    "test:live": "tsx --test tests/live/two_users.test.ts",
+    "test:live": "tsx --test tests/live/two_users.test.ts tests/live/safety.test.ts",
     "test:live:local": "bash tests/live/local.sh",
     "test:app:local": "bash tests/live/local_app.sh",
     "test:push:local": "bash tests/live/local_push.sh"

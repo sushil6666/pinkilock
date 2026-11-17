@@ -205,7 +205,7 @@ email_sent = 2
 # Number of SMS messages that can be sent per hour. Requires auth.sms to be enabled.
 sms_sent = 30
 # Number of anonymous sign-ins that can be made per hour per IP address. Requires enable_anonymous_sign_ins = true.
-anonymous_users = 30
+anonymous_users = 300
 # Number of sessions that can be refreshed in a 5 minute interval per IP address.
 token_refresh = 150
 # Number of sign up and sign-in requests that can be made in a 5 minute interval per IP address (excludes anonymous users).
@@ -266,9 +266,14 @@ otp_expiry = 3600
 [auth.sms]
 # Allow/disallow the phone provider. When false, users can't sign up or sign in with SMS.
 # To block new signups only, set enable_signup = false under [auth] instead.
-enabled = false
+# Pinkilock: on for the LOCAL stack only, so that tests/live can link and sign in with the test
+# numbers below (no SMS is sent for them). The hosted project's phone provider is set by the
+# Supabase deploy workflow from the TWILIO_VERIFY_* secrets, and stays off until they exist; the
+# deploy never pushes this file's auth settings.
+enabled = true
 # If enabled, users need to confirm their phone number before signing in.
-enable_confirmations = false
+# Pinkilock: on, as it is on a hosted project, so that linking a number needs its code locally too.
+enable_confirmations = true
 # Template for sending OTP to users
 template = "Your code is {{ .Code }}"
 # Controls the minimum amount of time that must pass before sending another sms otp.
@@ -276,8 +281,10 @@ max_frequency = "5s"
 
 # Use pre-defined map of phone number to OTP for testing.
 # Keys are the phone number with country code and without the + prefix.
-# [auth.sms.test_otp]
-# 14152127777 = "123456"
+[auth.sms.test_otp]
+919000000101 = "123456"
+919000000102 = "123456"
+919000000103 = "123456"
 
 # Configure logged in session timeouts.
 # [auth.sessions]
@@ -297,12 +304,15 @@ max_frequency = "5s"
 # uri = "pg-functions://<database>/<schema>/<hook_name>"
 
 # Configure one of the supported SMS providers: `twilio`, `twilio_verify`, `messagebird`, `textlocal`, `vonage`.
+# Pinkilock, LOCAL stack only: GoTrue switches phone sign-in on only when some provider is set,
+# so this one is set with placeholder values. They are not credentials and reach nothing: only
+# the test_otp numbers above are used locally, and GoTrue sends no SMS for those. The hosted
+# project never reads this file's auth settings (see [auth.sms] above).
 [auth.sms.twilio]
-enabled = false
-account_sid = ""
-message_service_sid = ""
-# DO NOT commit your Twilio auth token to git. Use environment variable substitution instead:
-auth_token = "env(SUPABASE_AUTH_SMS_TWILIO_AUTH_TOKEN)"
+enabled = true
+account_sid = "local-placeholder"
+message_service_sid = "local-placeholder"
+auth_token = "local-placeholder"
 
 # Multi-factor-authentication is available to Supabase Pro plan.
 [auth.mfa]
