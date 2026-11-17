@@ -7,7 +7,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { haptic } from '../lib/haptics';
 import { useStore } from '../state/store';
 import { elevation } from '../theme/elevation';
-import { color, gutter, radius, space } from '../theme/tokens';
+import { color, columnMax, gutter, radius, space } from '../theme/tokens';
 import { T } from './ui/T';
 
 const TONE = { pink: color.pink, volt: color.volt, flare: color.flare };
@@ -53,7 +53,7 @@ export function NoticeBanner() {
 }
 
 const styles = StyleSheet.create({
-  wrap: { position: 'absolute', left: gutter, right: gutter, zIndex: 50 },
-  card: { flexDirection: 'row', gap: space.md, alignItems: 'center', backgroundColor: color.surfaceHi, borderWidth: 1, borderRadius: radius.card, padding: space.md, overflow: 'hidden' },
+  wrap: { position: 'absolute', left: 0, right: 0, paddingHorizontal: gutter, alignItems: 'center', zIndex: 50 },
+  card: { width: '100%', maxWidth: columnMax - 2 * gutter, flexDirection: 'row', gap: space.md, alignItems: 'center', backgroundColor: color.surfaceHi, borderWidth: 1, borderRadius: radius.card, padding: space.md, overflow: 'hidden' },
   stripe: { width: 4, alignSelf: 'stretch', borderRadius: 2 },
 });
