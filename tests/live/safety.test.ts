@@ -21,9 +21,9 @@ import type { Invite } from '../../src/domain/types';
 import { createSupabaseBackend } from '../../src/services/supabase/supabaseBackend';
 import { KEY, MIN, URL, inviteIs, memoryStorage, one, person, profile, type Person } from './helpers';
 
-const a = person('E2E Avni');
-const b = person('E2E Bhavin');
-const c = person('E2E Chitra');
+const a = person('TestAvni');
+const b = person('TestBhavin');
+const c = person('TestChitra');
 const everyone = [a, b, c];
 const allIds = new Set<string>();
 

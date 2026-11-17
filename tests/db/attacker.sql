@@ -37,7 +37,7 @@ select t.ok((select string_agg(table_schema || '.' || table_name || ':' || privs
     select table_schema, table_name, string_agg(privilege_type, ',' order by privilege_type) as privs
     from information_schema.role_table_grants where grantee = 'authenticated' and table_schema <> 't' group by 1, 2) g)
   = 'public.ideas:SELECT public.invites:SELECT public.passes:DELETE,INSERT,SELECT public.profile_cards:SELECT '
-    'public.profile_private:INSERT,SELECT,UPDATE public.profiles:INSERT,SELECT,UPDATE public.trust_scores:SELECT',
+    'public.profile_private:SELECT public.profiles:SELECT public.trust_scores:SELECT public.vibes:SELECT',
   'a signed-in user holds exactly these table rights and no others');
 select t.ok(not exists (select 1 from information_schema.role_table_grants where grantee = 'anon'),
   'signed out, there is no right on any table in any schema');
@@ -46,7 +46,7 @@ select t.ok((select string_agg(n.nspname || '.' || p.proname, ' ' order by n.nsp
     where n.nspname in ('public', 'private', 'analytics') and has_function_privilege('authenticated', p.oid, 'execute'))
   = 'private.blocked_pair public.bail public.block_user public.check_in public.decline_invite public.delete_my_account '
     'public.export_my_data public.log_client_error public.log_event public.my_blocks public.offer_pinky public.register_push_token public.report_user '
-    'public.send_invite public.unblock_user public.unregister_push_token',
+    'public.save_profile public.send_invite public.unblock_user public.unregister_push_token',
   'a signed-in user can call exactly these functions and no others');
 select t.ok(not exists (select 1 from pg_proc p join pg_namespace n on n.oid = p.pronamespace
     where n.nspname in ('public', 'private', 'analytics') and has_function_privilege('anon', p.oid, 'execute')),
@@ -71,9 +71,9 @@ select t.ok((select count(*) from profile_private) = 1, 'X reads one private row
 select t.ok((select count(*) from profile_private where profile_id = :'y') = 0, 'X cannot read Y''s contact: no kept promise');
 select t.ok(t.fails(format($$insert into profiles (id, name, age) values (%L, 'Ghost', 30)$$, gen_random_uuid())), 'X cannot create a profile for another id');
 select t.ok(t.fails(format($$insert into profile_private values (%L, 'Instagram', '@planted')$$, :'crowd1')), 'X cannot plant a contact on someone else');
--- These run without error and must change nothing: RLS hides the rows. Checked after reset role.
-update profiles set name = 'Owned' where id = :'y';
-update profile_private set contact_handle = '@owned' where profile_id = :'y';
+-- Checked again after reset role: nothing of Y's changed.
+select t.ok(t.fails(format($$update profiles set name = 'Owned' where id = %L$$, :'y'))
+  and t.fails(format($$update profile_private set contact_handle = '@owned' where profile_id = %L$$, :'y')), 'X cannot write Y''s profile or contact');
 delete from passes where profile_id = :'y';
 
 select t.ok(t.fails(format($$insert into invites (from_id, to_id, idea_id, starts_at, minutes, expires_at)
@@ -149,27 +149,30 @@ select t.ok((select count(*) from profile_private where profile_id = :'y') = 0, 
 -- 5. Known gaps, written as the defence that should hold (docs/build-plan.md, section 2).
 -- ---------------------------------------------------------------------------------------------
 
--- G1, G18: a contact goes out in free text, plainly or in code.
-select t.gap(t.fails(format($$update profiles set tagline = 'dm me on insta @xavier.real' where id = %L$$, :'x')), 'G1',
-  'a profile line can carry a handle');
-select t.gap(t.fails(format($$update profiles set name = 'xavier.real_99' where id = %L$$, :'x')), 'G1',
-  'a name can be a handle');
-select t.gap(t.fails(format($$select decline_invite((send_invite(%L, 'boba_run', now() + interval '2 hours', 'wa.me/919876543210', 'call me 98765 43210')).id)$$, :'crowd1')), 'G1',
-  'an ask can carry a phone number in its note and a link in its place');
-select t.gap(t.fails(format($$update profiles set tagline = 'nine eight seven six five, then four three two one zero' where id = %L$$, :'x')), 'G18',
-  'a contact spelled out in words is stored and shown with no review');
+-- G1, G2, G3, G21 are closed (supabase/migrations/20261117000009_profile_rules.sql): profiles are
+-- written only through save_profile, which checks every field. tests/db/profile_rules.sql has
+-- each rule; these are the attacker's versions.
+select t.ok(t.fails(format($$update profiles set tagline = 'dm me on insta @xavier.real' where id = %L$$, :'x'))
+  and t.fails($$select save_profile('Xavier', 25, 'Bandra', '', 'dm me on insta @xavier.real', '{}', array['boba_run','chai_walk','meme_duel'])$$),
+  'G1 closed: a profile line cannot carry a handle, by the table or by the function');
+select t.ok(t.fails($$select save_profile('xavier.real_99', 25, 'Bandra', '', '', '{}', array['boba_run','chai_walk','meme_duel'])$$),
+  'G1 closed: a name cannot be a handle');
+select t.ok(t.fails(format($$select send_invite(%L, 'boba_run', now() + interval '2 hours', 'wa.me/919876543210', '')$$, :'crowd1'))
+  and t.fails(format($$select send_invite(%L, 'boba_run', now() + interval '2 hours', '', 'call me 98765 43210')$$, :'crowd1')),
+  'G1 closed: an ask cannot carry a phone number in its note or a link in its place');
+select t.ok(t.fails($$select save_profile('Xavier', 25, 'Bandra', '', '', array_fill('any text at all'::text, array[50]), array['boba_run','chai_walk','meme_duel'])$$)
+  and t.fails($$select save_profile('Xavier', 25, 'Bandra', '', '', '{}', array['not_an_idea','boba_run','chai_walk'])$$)
+  and t.fails($$select save_profile('Xavier', 25, repeat('a', 5000), repeat('b', 5000), '', '{}', array['boba_run','chai_walk','meme_duel'])$$),
+  'G2 closed: tags and ideas come from the catalogues, and every field has a length limit');
+select t.ok(t.fails(format($$update profiles set photo_count = 99, city = 'Anywhere', created_at = now() - interval '5 years' where id = %L$$, :'x')),
+  'G3 closed: X cannot set their own photo count, city or join date');
+select t.ok(t.fails(format($$update profile_private set photos = (select jsonb_agg(repeat('x', 1000)) from generate_series(1, 1000)) where profile_id = %L$$, :'x')),
+  'G21 closed: the photos field cannot be written by a client');
 
--- G2: no limits on what a card can hold.
-select t.gap(t.fails(format($$update profiles set vibes = array_fill('any text at all'::text, array[50]) where id = %L$$, :'x')), 'G2',
-  'a card can carry 50 tags of any text');
-select t.gap(t.fails(format($$update profiles set idea_ids = array['not_an_idea'] where id = %L$$, :'x')), 'G2',
-  'a card can list ideas that do not exist');
-select t.gap(t.fails(format($$update profiles set area = repeat('a', 5000), pronouns = repeat('b', 5000) where id = %L$$, :'x')), 'G2',
-  'area and pronouns take 5000 characters each');
-
--- G3: columns the server should own.
-select t.gap(t.fails(format($$update profiles set photo_count = 99, city = 'Anywhere', created_at = now() - interval '5 years' where id = %L$$, :'x')), 'G3',
-  'X can set their own photo count, city and join date');
+-- G18: a pattern cannot see an invented code. Until lines are reviewed before anyone sees them
+-- (WP1, later part), this one is stored and shown.
+select t.gap(t.fails($$select save_profile('Xavier', 25, 'Bandra', '', 'shift each letter back by one: jotub tbn', '{}', array['boba_run','chai_walk','meme_duel'])$$), 'G18',
+  'a contact written in a made-up code is stored and shown with no review');
 
 -- G4: an account that cost nothing can ask people out. (Every test user here is anonymous.)
 select t.gap(t.fails(format($$select decline_invite((send_invite(%L, 'boba_run', now() + interval '2 hours', '', '')).id)$$, :'crowd1')), 'G4',
@@ -186,10 +189,6 @@ select t.gap(t.fails($$select log_event('app_open', jsonb_build_object('junk', r
   'the event log takes 100 kB from the app in one call');
 select t.gap(t.fails(format($$insert into passes (profile_id, passed_id) select %L, id from profiles where name = 'Crowd'$$, :'x')), 'G6',
   'X can pass on 220 people in one go');
-
--- G21: the private row takes anything.
-select t.gap(t.fails(format($$update profile_private set photos = (select jsonb_agg(repeat('x', 1000)) from generate_series(1, 1000)) where profile_id = %L$$, :'x')), 'G21',
-  'the photos field takes a megabyte of anything');
 
 -- G7: check-in is a button. X and Y "keep" two promises without proving they met.
 select (send_invite(:'y', 'video_coffee', now() + interval '5 minutes', '', '')).id as xy3 \gset

@@ -36,6 +36,11 @@ npm run test:app:local      # the real screens in two browser sessions
   `supabase/migrations`. Change both together and rerun `tests/db`.
 - The micro-date catalogue also exists twice: `src/domain/ideas.ts` and the `ideas` table. A new idea
   is a row in both (a new migration), and gets an opener in `OPENERS`.
+- The profile tags also exist twice: `VIBE_GROUPS` in `src/domain/ideas.ts` and the `vibes` table. So do
+  the profile and ask rules: `src/domain/profile.ts` and `save_profile` / `send_invite` /
+  `private.looks_like_contact` in SQL. Change both together; `CONTACT_CASES` is the shared test table
+  (`UPDATE_CASES=1 npm run test:unit` regenerates the SQL copy).
+- Profiles are written only through `save_profile`. No direct writes to `profiles` or `profile_private`.
 - Schema changes are new migrations (`npx supabase migration new <name>`). Never edit a migration
   that has been applied.
 - Blocks are enforced by RLS (`private.blocked_pair`), not by the UI. Reports are readable by no
