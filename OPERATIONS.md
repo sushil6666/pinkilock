@@ -134,7 +134,7 @@ the certificate is present).
 Version 0.2.0 adds native modules (encrypted session storage, screenshot blocking on the reveal),
 so it needs a new binary; an over-the-air update cannot reach 0.1.0 builds. A production build
 without the Supabase keys fails at build time and refuses to start (`EXPO_PUBLIC_APP_ENV`).
-Android release builds are shrunk and obfuscated (R8). Signing out revokes the session on the
+Android release builds are shrunk and obfuscated (R8; missing classes are warnings, D064). Signing out revokes the session on the
 server, not only on the phone. GitHub Actions are pinned to commits; Dependabot opens monthly pull
 requests for actions and npm packages, except the packages the Expo SDK pins (`expo`, `expo-*`,
 `react`, `react-native-*` and the rest listed in `.github/dependabot.yml`). Those move together in an
