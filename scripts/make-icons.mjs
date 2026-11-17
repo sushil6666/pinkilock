@@ -70,7 +70,7 @@ const share = `
   <svg xmlns="http://www.w3.org/2000/svg" width="${SHARE.width}" height="${SHARE.height}" viewBox="0 0 ${SHARE.width} ${SHARE.height}">
     <rect width="${SHARE.width}" height="${SHARE.height}" fill="${C.bg}"/>
     <g transform="translate(${SHARE.width / 2} 250) scale(1.5)">${mark()}</g>
-    <text x="${SHARE.width / 2}" y="500" text-anchor="middle" fill="${C.text}" font-family="Arial Black, Arial, Helvetica, sans-serif" font-weight="900" font-size="76">pinkilock<tspan fill="${C.gold}">.</tspan></text>
+    <text x="${SHARE.width / 2}" y="500" text-anchor="middle" fill="${C.text}" font-family="Arial Black, Arial, Helvetica, sans-serif" font-weight="900" font-style="italic" font-size="76">pinkilock<tspan fill="${C.gold}">.</tspan></text>
     <text x="${SHARE.width / 2}" y="560" text-anchor="middle" fill="${C.textDim}" font-family="Arial, Helvetica, sans-serif" font-size="32">No ghosting. No endless swiping.</text>
   </svg>`;
 

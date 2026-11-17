@@ -102,16 +102,16 @@ export function NightSky({ children }: { children?: ReactNode }) {
 const MOON = 72;
 /** Moonlight: a soft gold glow around the moon, drawn as a shadow so it never muddies the sky. */
 const GLOW = Platform.select({
-  web: { boxShadow: `0 0 36px 10px ${color.goldWash}, 0 0 80px 24px ${color.goldWash}` },
+  web: { boxShadow: `0 0 28px 8px ${color.goldWash}, 0 0 48px 14px ${color.goldWash}` },
   default: { shadowColor: color.gold, shadowOpacity: 0.6, shadowRadius: 30, shadowOffset: { width: 0, height: 0 } },
 }) as object;
 const styles = StyleSheet.create({
-  sky: { position: 'relative', paddingTop: MOON * 0.6 },
+  sky: { position: 'relative', paddingTop: MOON * 0.9 },
   float: { zIndex: 1 },
   // The city runs to the screen's edges, past the gutter.
   city: { marginHorizontal: -gutter },
   star: { position: 'absolute', backgroundColor: color.moon },
-  moonWrap: { position: 'absolute', right: 4, top: 0, width: MOON, height: MOON, alignItems: 'center', justifyContent: 'center' },
+  moonWrap: { position: 'absolute', right: 8, top: 40, width: MOON, height: MOON, alignItems: 'center', justifyContent: 'center' },
   moon: { width: MOON, height: MOON, borderRadius: MOON / 2, backgroundColor: color.moon },
   crater: { position: 'absolute', borderRadius: 99, backgroundColor: color.gold, opacity: 0.55 },
 });

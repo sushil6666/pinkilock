@@ -96,7 +96,7 @@ Font scaling is allowed up to 1.3x (`maxFontSizeMultiplier`) so layouts hold on 
   card. Decoration: hidden from screen readers, and a still frame (the lock closed) with reduced
   motion. The welcome screen and the not-found screen use them.
 - **Logo**: the two pinkies locked (pink theirs, gold mine, the app icon's geometry) beside
-  "pinkilock" in Sora with a gold full stop (`src/components/Logo.tsx`). It sits top centre on
+  "pinkilock" in Sora, slanted 12 degrees like an italic, with a gold full stop (`src/components/Logo.tsx`). It sits top centre on
   every screen: `Screen` draws it in the header, with the back control left and the screen's title
   as a small label under it. A page with its own top bar passes `logo={false}`. Read out as
   "Pinkilock".
