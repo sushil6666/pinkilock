@@ -254,6 +254,29 @@ Open the failing run.
 
 The app keeps showing the last good scores in the meantime, so nothing breaks for users.
 
+### Review profile lines and act on reports
+
+Everything goes through `scripts/moderate.sh` with the database URL (the `postgres` role); no app,
+API key or service role key is involved, and every action needs a reason, which is kept.
+
+```bash
+scripts/moderate.sh "$DB" queue                                  # open reports, and lines waiting for a person
+scripts/moderate.sh "$DB" report 42 hide_line "spelled-out number"  # act on a report
+scripts/moderate.sh "$DB" person <uuid> approve_line "ordinary"  # act on a person (lines, suspensions)
+scripts/moderate.sh "$DB" history <uuid>                         # what was done to them, and why
+```
+
+Actions: `dismiss`, `hide_line` (removes the line, no new line for 30 days, one strike; a second
+strike suspends), `suspend`, `unsuspend`, `approve_line`, `reject_line`. A suspended account is out
+of Discover and cannot ask, lock or edit.
+
+**Line review mode** (`private.config` key `line_review`): `off` shows a line after the pattern
+check only (the default); `ai` sends new lines to the `review-line` Edge Function, which asks
+Claude and holds anything unsure for a person; `human` holds every new line for a person. The deploy
+workflow sets `ai` when the `ANTHROPIC_API_KEY` secret exists, otherwise `off`. Only the line itself
+is sent to Claude. Its log has one JSON line per decision with the profile id and the outcome, never
+the line.
+
 ### Trace a bug
 
 Every error the app shows has a reference under it, for example `PL033 · 7F3K2M9Q`: an error

@@ -13,7 +13,7 @@ insert into public.profile_private (profile_id, contact_kind, contact_handle) va
 set role authenticated;
 select t.as_user(:'f');
 select log_event('app_open', '{"device": "f-phone"}');
-select (send_invite(:'g', 'momo_stop', now() + interval '1 hour', 'Lokhandwala', 'extra chutney')).id as fg \gset
+select (send_invite(:'g', 'momo_stop', now() + interval '1 hour', 'Lokhandwala', 'i will be the one looking lost.')).id as fg \gset
 select t.as_user(:'g');
 select offer_pinky(:'fg') is not null;
 select t.as_user(:'f');

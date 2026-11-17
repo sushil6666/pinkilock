@@ -373,6 +373,12 @@ export function createSupabaseBackend(url: string, anonKey: string, storage: Ses
       return { passedIds: [] };
     },
 
+    async myLineReview() {
+      await uid();
+      const rows = await rpc<{ text: string; status: 'pending' | 'held' | 'rejected' }[]>('my_line_review');
+      return rows?.[0] ?? null;
+    },
+
     async moreProfiles() {
       await uid();
       const page = await discoverPage();

@@ -60,6 +60,8 @@ export interface Backend {
    * different people a day), because no one can read the whole user base; the mock has them all.
    */
   moreProfiles(): Promise<Changes>;
+  /** My own profile line, if a new one is waiting for review or was not accepted. Null when the card shows what I wrote. */
+  myLineReview(): Promise<{ text: string; status: 'pending' | 'held' | 'rejected' } | null>;
   pass(profileId: string): Promise<Changes>;
   restorePasses(): Promise<Changes>;
 

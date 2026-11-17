@@ -74,7 +74,7 @@ select t.ok(t.fails('select sweep_invites()'), 'A cannot run the sweep');
 select log_event('app_open');
 
 -- A asks B. Receiver goes first, sender seals.
-select (send_invite(:'b', 'boba_run', now() + interval '1 hour', ' Linking Road ', 'taro or nothing')).id as ab \gset
+select (send_invite(:'b', 'boba_run', now() + interval '1 hour', ' Linking Road ', 'loser pays. not nervous at all.')).id as ab \gset
 select t.ok(t.fails(format('select offer_pinky(%L)', :'ab')), 'sender cannot go first');
 select t.ok(t.fails(format($$select send_invite(%L, 'chai_walk', now() + interval '2 hours', '', '')$$, :'b')), 'one live invite per pair');
 

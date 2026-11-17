@@ -44,6 +44,12 @@ export default function Me() {
   const signOut = useStore((s) => s.signOut);
   const [sheet, setSheet] = useState<'delete' | 'sign_out' | null>(null);
   const [editVibes, setEditVibes] = useState(false);
+  // A new profile line may be waiting for review (or was not accepted): say so, since the card
+  // keeps showing the last approved one.
+  const [lineReview, setLineReview] = useState<{ text: string; status: 'pending' | 'held' | 'rejected' } | null>(null);
+  useEffect(() => {
+    if (me) backend.myLineReview().then(setLineReview, quiet('me.line_review'));
+  }, [me?.tagline, me]);
   const [busy, setBusy] = useState('');
   const [accountError, setAccountError] = useState('');
   useEffect(() => watchPush(setPush), []);
@@ -142,6 +148,13 @@ export default function Me() {
       </T>
 
       {me.tagline ? <T v="heading" style={{ marginTop: space.xl }}>{me.tagline}</T> : null}
+      {lineReview ? (
+        <T v="caption" c={lineReview.status === 'rejected' ? color.flare : color.textDim} style={{ marginTop: space.sm }}>
+          {lineReview.status === 'rejected'
+            ? `"${lineReview.text}" was not accepted: it reads like a way to reach you outside the app.`
+            : `"${lineReview.text}" is being checked before others see it.`}
+        </T>
+      ) : null}
       <View style={[styles.wrap, { marginTop: space.md, alignItems: 'center' }]}>
         {me.vibes.map((v) => <Chip key={v} label={v} />)}
         <Tag label={editVibes ? 'Done' : 'Change tags'} tone={editVibes ? color.volt : color.textDim} onPress={() => setEditVibes(!editVibes)} />

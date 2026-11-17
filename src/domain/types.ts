@@ -102,7 +102,7 @@ export interface BlockedPerson {
   blockedAt: number;
 }
 
-export type ReportReason = 'fake' | 'harassment' | 'inappropriate' | 'underage' | 'unsafe' | 'other';
+export type ReportReason = 'fake' | 'harassment' | 'inappropriate' | 'underage' | 'unsafe' | 'shared_contact' | 'other';
 
 export interface NewReport {
   profileId: string;

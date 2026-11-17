@@ -149,7 +149,7 @@ test('G1, G3 closed: profiles are written only through save_profile, which refus
   await assert.rejects(x.backend.updateMe({ name: 'xavier.real' }), (e: unknown) => e instanceof AppError && e.code === 'PL060', 'a handle as the name');
   await assert.rejects(x.backend.updateMe({ vibes: ['any text at all'] }), (e: unknown) => e instanceof AppError && e.code === 'PL062', 'a tag that is not in the catalogue');
   await assert.rejects(x.backend.sendInvite({ toId: y.id, ideaId: 'boba_run', startsAt: Date.now() + 60 * MIN, place: 'Linking Road', note: 'call me 98765 43210' }),
-    (e: unknown) => e instanceof AppError && e.code === 'PL065', 'a number in an ask');
+    (e: unknown) => e instanceof AppError && e.code === 'PL069', 'a number in an ask: asks carry only a picked line (PL069)');
   const after = await x.backend.updateMe({ tagline: 'still here' });
   assert.equal(after.me?.tagline, 'still here', 'an ordinary edit still saves');
   assert.equal(after.me?.name, me.name, 'and nothing refused got through');
