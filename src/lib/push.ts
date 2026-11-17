@@ -52,6 +52,8 @@ function whyUnavailable(): string | null {
 function open(data: unknown) {
   const inviteId = (data as { inviteId?: unknown } | null)?.inviteId;
   const kind = (data as { kind?: unknown } | null)?.kind;
+  // The local after-date check (src/lib/safetyCheck.ts) leads to the Safety screen.
+  if (kind === 'safety_check') return void router.push('/safety');
   if (typeof inviteId !== 'string') return;
   const isPlan = kind !== 'new_ask' && kind !== 'pinky_out';
   router.push(isPlan ? `/plan/${inviteId}` : `/invite/${inviteId}`);

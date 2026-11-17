@@ -64,6 +64,7 @@ first table with its date.
 | D046 | 2026-11-17 | India and Mumbai are the only open country and city; others are listed but closed | O06's recommendation, accepted under D032; Discover is per city and the venue list is Mumbai's | Owner (via D032) | `countries`, `cities` | In force once merged |
 | D047 | 2026-11-17 | The network's country is checked only for a first profile; a set-up account keeps working while travelling | Locking people out abroad would be worse than the risk it removes | Claude | `save_profile` | In force once merged |
 | D048 | 2026-11-17 | Draft terms and privacy text ship in the app, marked as drafts, until a lawyer replaces them | Consent must point at something true; a draft that matches the app is better than nothing | Claude | `src/legal/drafts.ts` | Until the lawyer's versions |
+| D049 | 2026-11-17 | Share my date uses the phone's share sheet and a local notification; no trusted contact is stored and nothing is sent automatically | An automatic alert needs a stored contact and an SMS or email sender; keeping it on the phone holds no one else's data | Claude | `src/components/ShareMyDate.tsx` | In force once merged |
 
 ## Waiting for the owner
 

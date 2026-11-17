@@ -10,6 +10,7 @@ import Animated, { FadeInDown } from 'react-native-reanimated';
 import { CheckInCodes } from '@/components/CheckInCodes';
 import { Countdown } from '@/components/Countdown';
 import { DateFeedback } from '@/components/DateFeedback';
+import { ShareMyDate } from '@/components/ShareMyDate';
 import { LockedReveal } from '@/components/LockedReveal';
 import { Portrait } from '@/components/Portrait';
 import { TrustBadge } from '@/components/TrustBadge';
@@ -166,6 +167,7 @@ export default function PlanScreen() {
         {error ? <ErrorText text={error} /> : null}
 
         {kept && <DateFeedback inviteId={invite.id} otherId={other.id} name={name} />}
+        {locked && <ShareMyDate invite={invite} other={other} idea={idea.title} />}
 
         {!flaked && (
           <View style={{ gap: space.sm }}>

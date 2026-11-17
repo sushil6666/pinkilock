@@ -407,6 +407,13 @@ what the server did (`OPERATIONS.md`, "Trace a bug").
 - **Builds.** `src/lib/build.ts`: version, git commit (stamped by the EAS build workflow) and
   update id, shown at the bottom of Me and sent with every report.
 
+### Share my date and the after-date check
+
+A locked plan offers "Share my date" (who, what, where, when, through the phone's share sheet; no
+contact handle) and "Check on me after" (a local notification 15 minutes after the end that opens
+the Safety screen). Both stay on the phone: Pinkilock keeps no trusted contact and cannot alert
+anyone by itself.
+
 ### On the phone
 
 The session is stored encrypted: a fresh key per item in the keystore (`expo-secure-store`), the
