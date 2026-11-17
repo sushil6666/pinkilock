@@ -6,12 +6,12 @@ import { ArchivoBlack_400Regular } from '@expo-google-fonts/archivo-black';
 import { SpaceGrotesk_400Regular, SpaceGrotesk_500Medium, SpaceGrotesk_700Bold } from '@expo-google-fonts/space-grotesk';
 import { useFonts } from 'expo-font';
 import * as NavigationBar from 'expo-navigation-bar';
-import { Stack, usePathname, type ErrorBoundaryProps } from 'expo-router';
+import { Stack, router, usePathname, useSegments, type ErrorBoundaryProps } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import * as SystemUI from 'expo-system-ui';
 import { useEffect, useMemo } from 'react';
-import { Platform, View } from 'react-native';
+import { Platform, StyleSheet, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { NoticeBanner } from '@/components/NoticeBanner';
@@ -23,6 +23,8 @@ import { Button } from '@/components/ui/Button';
 import { ErrorText } from '@/components/ui/ErrorText';
 import { T } from '@/components/ui/T';
 import { shown } from '@/lib/report';
+import { needsProfile, titleFor } from '@/lib/routes';
+import { setPageTitle } from '@/lib/web';
 import { space } from '@/theme/tokens';
 
 SplashScreen.preventAutoHideAsync().catch(quiet('/_layout'));
@@ -70,6 +72,18 @@ export default function RootLayout() {
     if (up) SplashScreen.hideAsync().catch(quiet('/_layout'));
   }, [up]);
 
+  // Where we are, as the route's own name: "plan/[id]", never the id.
+  const route = useSegments().join('/');
+  useEffect(() => setPageTitle(titleFor(route.split('/'))), [route]);
+
+  // A link straight to a screen that belongs to a person, opened by someone with no profile
+  // (a shared link, a bookmark after signing out): send them through the gate at "/", which
+  // leads to onboarding or says why it cannot connect. Checked here once, not in every screen.
+  const shut = up && !onboarded && needsProfile(route.split('/'));
+  useEffect(() => {
+    if (shut) router.replace('/');
+  }, [shut]);
+
   if (!up) return <View style={{ flex: 1, backgroundColor: color.bg }} />;
 
   return (
@@ -84,6 +98,8 @@ export default function RootLayout() {
           {/* No swipe-back on the lock: the pan belongs to the pinky. */}
           <Stack.Screen name="lock/[id]" options={{ animation: 'fade', gestureEnabled: false }} />
         </Stack>
+        {/* Nothing of the screen underneath may show for the moment before the gate takes over. */}
+        {shut ? <View style={[StyleSheet.absoluteFill, { backgroundColor: color.bg }]} /> : null}
         <NoticeBanner />
       </SafeAreaProvider>
     </GestureHandlerRootView>
