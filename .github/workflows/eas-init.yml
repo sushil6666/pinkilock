@@ -5,11 +5,6 @@ name: EAS init
 
 on:
   workflow_dispatch:
-  # TEMPORARY, removed before this branch merges: lets the phase 2 branch run this workflow
-  # before it exists on main, by touching .github/triggers/eas-init.
-  push:
-    branches: [claude/project-thread-5n9g9n]
-    paths: ['.github/triggers/eas-init']
 
 permissions:
   contents: read
