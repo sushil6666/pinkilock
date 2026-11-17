@@ -37,8 +37,10 @@ const ORIGIN = `http://127.0.0.1:${server.address().port}`;
 
 const sql = (q) => execFileSync('psql', [DB, '-v', 'ON_ERROR_STOP=1', '-qAt', '-c', q], { encoding: 'utf8' }).trim();
 const stamp = Date.now().toString(36).slice(-4);
-const A = { name: `E2E Asha ${stamp}`, handle: `@asha_${stamp}` };
-const B = { name: `E2E Bela ${stamp}`, handle: `@bela_${stamp}` };
+// Names are one word of letters (the server refuses anything else), so the stamp is spelled in letters.
+const letters = [...stamp].map((c) => 'abcdefghijklmnopqrstuvwxyzabcdefghij'[parseInt(c, 36)]).join('');
+const A = { name: `Asha${letters}`, handle: `@asha_${stamp}` };
+const B = { name: `Bela${letters}`, handle: `@bela_${stamp}` };
 
 let step = 0;
 const ok = (msg) => console.log(`ok  ${String(++step).padStart(2)}  ${msg}`);
