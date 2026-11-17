@@ -14,7 +14,7 @@ import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
 import http from 'node:http';
 import { after, before, test } from 'node:test';
-import { KEY, MIN, SWEEP_WAIT, URL, one, person, profile } from './helpers';
+import { KEY, MIN, SWEEP_WAIT, TEST_EMAIL_DOMAIN, URL, one, person, profile } from './helpers';
 
 const PORT = Number(process.env.FAKE_EXPO_PORT ?? 54399);
 const DB = process.env.E2E_DB_URL;
@@ -74,7 +74,7 @@ before(async () => {
 after(() => {
   expo.close();
   const list = [a.id, b.id].filter(Boolean).map((id) => `'${id}'`).join(', ');
-  if (list) sql(`delete from public.events where actor_id in (${list}); delete from auth.users where id in (${list}) and is_anonymous;`);
+  if (list) sql(`delete from public.events where actor_id in (${list}); delete from auth.users where id in (${list}) and (is_anonymous or email like '%@${TEST_EMAIL_DOMAIN}');`);
   setTimeout(() => process.exit(process.exitCode ?? 0), 200).unref();
 });
 

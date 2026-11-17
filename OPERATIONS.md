@@ -440,6 +440,11 @@ and the workflow clears it at the end, pass or fail. If a cancelled run left one
 `select private.set_config('network_check_token', '')`. Opening a country is only the migration
 above (D063).
 
+When the link gate is on, the live test links its test people in the database right after they
+set up (address `test-<id>@e2e.pinkilock.invalid`, a domain that never receives mail) and deletes
+them at the end. A cancelled run can leave some behind: `delete from auth.users where email like
+'%@e2e.pinkilock.invalid'`.
+
 ### Retention
 
 `private.retention()` runs daily (pg_cron): finished plans lose their place and line after 90 days,

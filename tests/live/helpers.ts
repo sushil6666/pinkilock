@@ -1,5 +1,6 @@
 /** Shared by the live tests: a "person" is the app's own Supabase backend with a session of its own. */
 import assert from 'node:assert/strict';
+import { execFileSync } from 'node:child_process';
 import type { Invite, OnboardingInput } from '../../src/domain/types';
 import type { Backend, BackendEvent } from '../../src/services/backend';
 import { createSupabaseBackend, type SessionStorage } from '../../src/services/supabase/supabaseBackend';
@@ -42,9 +43,37 @@ export interface Person {
   quiet(): void;
 }
 
+const DB = process.env.E2E_DB_URL;
+const sqlOne = (q: string): string => execFileSync('psql', [DB!, '-v', 'ON_ERROR_STOP=1', '-qtA', '-c', q], { encoding: 'utf8' }).trim();
+
+/**
+ * Whether the project's link gate is on (asks and pinkies need an email or phone, WP2). The deploy
+ * switches it on once a mail sender or SMS provider exists, and then an anonymous test person can
+ * neither ask nor be seen in Discover. Read once, with the database URL; false without one.
+ */
+export const LINK_GATE = !!DB && sqlOne(`select private.config_on('require_linked')`) === 't';
+
+/**
+ * With the gate on, a test person is linked as soon as they are set up, the way a real person
+ * would link an email: here by marking the account in the database, since the test has no
+ * mailbox on a hosted project. The address is on a reserved domain that can never receive mail.
+ */
+export const TEST_EMAIL_DOMAIN = 'e2e.pinkilock.invalid';
+function linkInDb(id: string) {
+  sqlOne(`update auth.users set is_anonymous = false, email = 'test-' || id || '@${TEST_EMAIL_DOMAIN}' where id = '${id}'`);
+}
+
 export function person(name: string): Person {
   const storage = memoryStorage();
   const backend = createSupabaseBackend(URL!, KEY!, storage);
+  if (LINK_GATE) {
+    const setUp = backend.completeOnboarding.bind(backend);
+    backend.completeOnboarding = async (input) => {
+      const snap = await setUp(input);
+      linkInDb(snap.me!.id);
+      return snap;
+    };
+  }
   const events: BackendEvent[] = [];
   const waiters = new Set<(e: BackendEvent) => void>();
   backend.subscribe((e) => {
