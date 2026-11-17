@@ -15,6 +15,7 @@ import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
 import { after, before, test } from 'node:test';
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
+import { AppError } from '../../src/domain/errors';
 import { KEY, MIN, URL, person, profile, type Person } from './helpers';
 
 const x = person('E2E Xavier');
@@ -107,6 +108,24 @@ test('the push function answers only Postgres', async () => {
   for (const auth of [undefined, `Bearer ${KEY}`, 'Bearer guess']) {
     const res = await fetch(`${URL!.replace(/\/$/, '')}/functions/v1/push`, { method: 'POST', headers: { apikey: KEY!, ...(auth ? { Authorization: auth } : {}) }, body: '{}' });
     assert.notEqual(res.status, 200, `push accepted a caller with ${auth ?? 'no'} authorization`);
+  }
+});
+
+test('errors carry a code and a trace id, and the phone error log cannot be read or forged', async () => {
+  const self = x.backend.sendInvite({ toId: x.id, ideaId: 'boba_run', startsAt: Date.now() + 60 * MIN, place: '', note: '' });
+  await assert.rejects(self, (e: unknown) => e instanceof AppError && e.code === 'PL020' && /^[0-9A-Z]{8}$/.test(e.trace), 'a refusal is an AppError with the server code');
+  await x.backend.logClientError({ code: 'PL020', trace: 'TESTTRAC', route: '/invite/new', appVersion: 'e2e', platform: null });
+  assert.ok((await raw.from('client_errors').select('*').limit(1)).error, 'read client errors');
+  assert.ok((await raw.from('client_errors').insert({ code: 'PC001' })).error, 'write client errors directly');
+  assert.ok((await raw.rpc('log_client_error', { p_code: 'not a code', p_trace: null, p_route: '', p_app_version: '', p_platform: null })).error, 'a made-up code');
+  assert.ok((await raw.schema('private' as never).rpc('invite_timeline', { p_invite: x.id })).error, 'the operator timeline');
+  if (withDb) {
+    assert.equal(sql(`select code || ' ' || route from public.client_errors where user_id = '${x.id}' and trace = 'TESTTRAC'`), 'PL020 /invite/new', 'the report landed');
+    // The refused ask logged no event; an accepted call does, with the trace the phone sent.
+    await raw.rpc('log_event', { p_type: 'app_open' }).setHeader('x-trace-id', 'TESTTRC2');
+    assert.equal(sql(`select count(*) from public.events where actor_id = '${x.id}' and props ->> 'trace' = 'TESTTRC2'`), '1', 'the trace header reaches the event log');
+    await raw.rpc('log_event', { p_type: 'app_open' }).setHeader('x-trace-id', "x'; drop table events; --");
+    assert.equal(sql(`select count(*) from public.events where actor_id = '${x.id}' and props ->> 'trace' like '%drop%'`), '0', 'a malformed trace header is ignored');
   }
 });
 

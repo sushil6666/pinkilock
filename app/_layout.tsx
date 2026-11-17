@@ -6,11 +6,11 @@ import { ArchivoBlack_400Regular } from '@expo-google-fonts/archivo-black';
 import { SpaceGrotesk_400Regular, SpaceGrotesk_500Medium, SpaceGrotesk_700Bold } from '@expo-google-fonts/space-grotesk';
 import { useFonts } from 'expo-font';
 import * as NavigationBar from 'expo-navigation-bar';
-import { Stack } from 'expo-router';
+import { Stack, usePathname, type ErrorBoundaryProps } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import * as SystemUI from 'expo-system-ui';
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import { Platform, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -18,8 +18,31 @@ import { NoticeBanner } from '@/components/NoticeBanner';
 import { startPush } from '@/lib/push';
 import { useStore } from '@/state/store';
 import { color } from '@/theme/tokens';
+import { quiet } from '@/lib/log';
+import { Button } from '@/components/ui/Button';
+import { ErrorText } from '@/components/ui/ErrorText';
+import { T } from '@/components/ui/T';
+import { shown } from '@/lib/report';
+import { space } from '@/theme/tokens';
 
-SplashScreen.preventAutoHideAsync().catch(() => {});
+SplashScreen.preventAutoHideAsync().catch(quiet('/_layout'));
+
+/**
+ * A crash in any screen lands here instead of a white screen: it is reported once, with a code
+ * and a trace id the person can read out, and "Try again" re-renders the screen that broke.
+ */
+export function ErrorBoundary({ error, retry }: ErrorBoundaryProps) {
+  const path = usePathname();
+  // Reported once per crash. The path's ids are dropped: only its shape is sent.
+  const text = useMemo(() => shown(error, path.replace(/[0-9a-f]{8}-[0-9a-f-]{27}|inv_\w+/g, '[id]'), 'PC009'), [error, path]);
+  return (
+    <View style={{ flex: 1, backgroundColor: color.bg, justifyContent: 'center', padding: space.xl, gap: space.lg }}>
+      <T v="display">That{'\n'}broke.</T>
+      <ErrorText text={text} tone={color.textDim} />
+      <Button label="Try again" icon="rotate-ccw" onPress={retry} />
+    </View>
+  );
+}
 
 export default function RootLayout() {
   const [fontsLoaded, fontError] = useFonts({ ArchivoBlack_400Regular, SpaceGrotesk_400Regular, SpaceGrotesk_500Medium, SpaceGrotesk_700Bold });
@@ -29,11 +52,11 @@ export default function RootLayout() {
 
   useEffect(() => {
     boot();
-    SystemUI.setBackgroundColorAsync(color.bg).catch(() => {});
+    SystemUI.setBackgroundColorAsync(color.bg).catch(quiet('/_layout'));
     if (Platform.OS === 'android') {
       // Obsidian behind the 3-button or gesture bar, with light buttons.
-      NavigationBar.setBackgroundColorAsync(color.bg).catch(() => {});
-      NavigationBar.setButtonStyleAsync('light').catch(() => {});
+      NavigationBar.setBackgroundColorAsync(color.bg).catch(quiet('/_layout'));
+      NavigationBar.setButtonStyleAsync('light').catch(quiet('/_layout'));
     }
   }, [boot]);
 
@@ -44,7 +67,7 @@ export default function RootLayout() {
 
   const up = (fontsLoaded || !!fontError) && ready;
   useEffect(() => {
-    if (up) SplashScreen.hideAsync().catch(() => {});
+    if (up) SplashScreen.hideAsync().catch(quiet('/_layout'));
   }, [up]);
 
   if (!up) return <View style={{ flex: 1, backgroundColor: color.bg }} />;

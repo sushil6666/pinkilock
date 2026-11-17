@@ -158,6 +158,7 @@ Full DDL is `supabase/migrations`. Tables:
 | `notifications` | The push outbox: recipient, invite, kind, title, body, delivery state | No client access. Written by a trigger and the sweep, read by the Edge Function |
 | `blocks` | Who blocked whom | No client access, not even the service role. Written by `block_user`, `report_user`, `unblock_user`; my own list through `my_blocks()` |
 | `reports` | Reporter, reported person, reason, detail, the shared invite, review fields | No client access, not even the service role. Written only by `report_user`; read by a moderator with the database role |
+| `client_errors` | Errors phones showed: code, trace id, screen, build. No content. Kept 30 days | No client access, not even the service role. Written by `log_client_error`; read by an operator with the database role |
 | `analytics.metrics_daily`, `analytics.retention_weekly` | Worker output | Analytics role only |
 
 **Writes go through functions, not tables.** `send_invite`, `offer_pinky`, `decline_invite`,
@@ -317,6 +318,30 @@ the other person: they answer an ask after 7 seconds, seal a lock after 2.4, che
 one of them (Nikhil) always passes so the declined state can be seen. Pending reactions are stored
 as due times, so a restart loses nothing.
 
+### Errors and tracing
+
+Every error has a code, and every action a trace id, so that what a person saw can be tied to
+what the server did (`OPERATIONS.md`, "Trace a bug").
+
+- **Codes.** `src/domain/errors.ts` is the catalogue: `PL` for a refusal by a database function
+  (each `raise` in the migrations carries the same code as its SQLSTATE), `PA` for sign-in, `PC`
+  for the app itself. The live backend maps on the code, never on message text; the mock and the
+  shared rules in `src/domain/invites.ts` throw the same codes. A server error that is not one of
+  ours is shown as `PC002` and its text is dropped, because it can quote row values.
+- **Trace ids.** The live backend sends a fresh 8-character id as `x-trace-id` with each call to
+  a database function. Triggers copy it onto every `events` row and every `notifications` row the
+  call causes, and the push function logs it. The header is accepted only in that exact shape.
+- **On screen.** `ErrorText` shows the words and, under them, `CODE · TRACE`. `src/lib/report.ts`
+  is the one place a shown error goes: it is remembered for diagnostics and sent to
+  `client_errors` as code, trace, route pattern and build, never the words.
+- **Nothing is swallowed.** A failure that is safe to carry on from goes to `quiet(where)` in
+  `src/lib/log.ts`; a unit test fails on any empty catch. The logger keeps the last 100 lines in
+  memory and drops any field that is not a number, a boolean or an id-shaped string.
+- **Crashes.** `ErrorBoundary` in `app/_layout.tsx` replaces a white screen with the reference
+  and "Try again", and reports itself as `PC009`.
+- **Builds.** `src/lib/build.ts`: version, git commit (stamped by the EAS build workflow) and
+  update id, shown at the bottom of Me and sent with every report.
+
 ## 9. Cross-platform notes
 
 - **Safe areas**: every screen is a `Screen` (`src/components/ui/Screen.tsx`) that pads with
@@ -368,6 +393,8 @@ as due times, so a restart loses nothing.
 ## 11. Tests
 
 - `npm run typecheck`: TypeScript strict over the app.
+- `npm run test:unit`: the error catalogue matches the SQL in both directions, the logger keeps no
+  content, the on-screen reference round-trips, and no catch in `src` or `app` is empty.
 - `python tests/db/run.py`: starts a throwaway Postgres (pgserver), applies a small Supabase shim
   (roles, their default privileges, `auth.uid()`, a pg_cron stand-in), runs every file in
   `supabase/migrations`, walks three users through the state machine as the `authenticated` role
@@ -377,6 +404,8 @@ as due times, so a restart loses nothing.
   Last, the attacker suite (`attacker.sql`): one signed-in person with a modified app tries the
   tables and functions directly. It pins exactly which tables and functions the API roles hold,
   and marks each known gap from `docs/build-plan.md` as a `gap` line until it is closed.
+  Then `tracing.sql`: every function raises with a code, a trace header lands on the event and
+  the push row, a malformed one is ignored, and the phone error log cannot be read or flooded.
 - `npm run test:live:local` (or `test:live` with a project's URL and anon key): two anonymous
   users drive `supabaseBackend.ts` through onboard, ask, lock, check-in, reveal, bail and expiry
   over GoTrue, PostgREST, RLS and Realtime. Expiry waits for the real pg_cron sweep. Then three

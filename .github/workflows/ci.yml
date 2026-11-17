@@ -1,4 +1,4 @@
-# On every pull request and every push to main: TypeScript strict, the database tests on a throwaway Postgres (the attacker
+# On every pull request and every push to main: TypeScript strict and the unit tests, the database tests on a throwaway Postgres (the attacker
 # suite included), a secret scan and a dependency audit, and the two-user, attacker, push and two-phone tests against a local
 # Supabase stack. No project keys are used here.
 #
@@ -32,6 +32,8 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run typecheck
+      - name: Unit tests (error catalogue, logger, no silent failures)
+        run: npm run test:unit
 
   security:
     # Nothing secret may be committed, and no new high or critical advisory may ship.

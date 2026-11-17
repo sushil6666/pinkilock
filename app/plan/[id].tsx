@@ -27,6 +27,8 @@ import { useReveal } from '@/lib/useReveal';
 import { backend } from '@/services';
 import { useInvite, usePerson, useStore } from '@/state/store';
 import { color, radius, space } from '@/theme/tokens';
+import { ErrorText } from '@/components/ui/ErrorText';
+import { shown } from '@/lib/report';
 
 export default function PlanScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -73,7 +75,7 @@ export default function PlanScreen() {
       ok();
     } catch (e) {
       haptic.warning();
-      setError(e instanceof Error ? e.message : 'That did not go through. Try again.');
+      setError(shown(e, '/plan/[id]'));
     }
     setBusy(false);
   };
@@ -157,7 +159,7 @@ export default function PlanScreen() {
           </View>
         )}
 
-        {error ? <T v="caption" c={color.flare}>{error}</T> : null}
+        {error ? <ErrorText text={error} /> : null}
 
         {!flaked && (
           <View style={{ gap: space.sm }}>

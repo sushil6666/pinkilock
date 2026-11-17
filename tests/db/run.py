@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """Database checks on a throwaway Postgres: every file in supabase/migrations in order (the same
 SQL that `supabase db push` sends to the project), RLS, the promise functions, the DuckDB
-pipeline end to end, the push outbox, blocking and reporting, data export and account deletion.
+pipeline end to end, the push outbox, blocking and reporting, data export and account deletion,
+the attacker suite, and error codes and tracing.
 
     pip install pgserver duckdb
     python tests/db/run.py
@@ -52,7 +53,8 @@ def main() -> int:
             # third pipeline run over what it did.
             gaps = 0
             for step in ("pipeline", HERE / "check_scores.sql", HERE / "push.sql", HERE / "safety.sql", HERE / "account.sql",
-                         "pipeline", HERE / "check_after.sql", HERE / "attacker.sql", "pipeline", HERE / "attacker_after.sql"):
+                         "pipeline", HERE / "check_after.sql", HERE / "attacker.sql", "pipeline", HERE / "attacker_after.sql",
+                         HERE / "tracing.sql"):
                 if step == "pipeline":
                     print("== analytics/duckdb_pipeline.py")
                     run = subprocess.run([args.duckdb_python, str(ROOT / "analytics" / "duckdb_pipeline.py"), "--dsn", uri])

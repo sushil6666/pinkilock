@@ -7,6 +7,8 @@ import { create } from 'zustand';
 import type { Account, Invite, MyContact, NewInvite, NewReport, OnboardingInput, CodeKind, CodeMode, Profile } from '../domain/types';
 import { stopPush } from '../lib/push';
 import { backend, type Changes, type Notice, type Snapshot } from '../services';
+import { fail } from '../domain/errors';
+import { shown } from '../lib/report';
 
 interface State {
   ready: boolean;
@@ -99,7 +101,7 @@ export const useStore = create<State>((set, get) => {
         const snap = await backend.boot();
         set({ ...fromSnapshot(snap), ready: true, bootError: null });
       } catch (e) {
-        set({ ready: true, bootError: e instanceof Error ? e.message : 'Could not reach the server.' });
+        set({ ready: true, bootError: shown(e, '/boot', 'PC001') });
       }
     },
 
@@ -158,7 +160,7 @@ export const useStore = create<State>((set, get) => {
     },
     async signOut() {
       const acct = await backend.account();
-      if (!acct.phone && !acct.email) throw new Error('Add a phone number or an email first, or you could not get back in.');
+      if (!acct.phone && !acct.email) fail('PA008');
       await stopPush();
       const snap = await backend.signOut();
       set({ ...fromSnapshot(snap), notice: null, account: null });

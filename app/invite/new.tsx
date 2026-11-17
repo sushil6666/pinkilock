@@ -19,6 +19,8 @@ import { dayOptions, slotOptions, timeLabel } from '@/domain/time';
 import { haptic } from '@/lib/haptics';
 import { usePerson, useStore } from '@/state/store';
 import { color, space, type } from '@/theme/tokens';
+import { shown } from '@/lib/report';
+import { ErrorText } from '@/components/ui/ErrorText';
 
 const REMOTE_PLACE = { video: 'Pinkilock video room', game: 'Voice chat in the app' } as const;
 
@@ -65,13 +67,13 @@ export default function NewInvite() {
       router.replace(`/invite/${invite.id}`);
     } catch (e) {
       haptic.warning();
-      setError(e instanceof Error ? e.message : 'That did not send. Try again.');
+      setError(shown(e, '/invite/new'));
       setBusy(false);
     }
   };
 
   const hint = error || full
-    ? <T v="caption" c={color.flare}>{error || `You have ${MAX_OPEN_ASKS} asks open. Wait for an answer or take one back.`}</T>
+    ? <ErrorText text={error || `You have ${MAX_OPEN_ASKS} asks open. Wait for an answer or take one back.`} />
     : <T v="caption" c={color.textDim}>{missing || `${person.name} gets 24 hours to answer. Ask ${openAsks + 1} of ${MAX_OPEN_ASKS}.`}</T>;
 
   return (
