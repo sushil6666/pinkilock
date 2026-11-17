@@ -1,6 +1,6 @@
 /**
  * A short clay animation: two pinkies hooking, or a padlock clicking shut. They are GIFs drawn by
- * scripts/make-loops.mjs from a 3D scene, on the page's own blue, so they sit on `bg` with no edge.
+ * scripts/make-loops.mjs from a 3D scene, on the page's own `bg`, so they sit on `bg` with no edge.
  * Put them only on `bg`, never on a card.
  *
  * They are decoration: hidden from screen readers, and with reduced motion on they hold still on

@@ -57,10 +57,10 @@ export function MyPinky({ w, cx, cy }: Props) {
   const x = cx - offset;
   return (
     <Svg width={w} height={FINGER.stageH} pointerEvents="none">
-      <Path d={myPath(w, cx, cy)} {...common} stroke={color.text} />
-      <Line x1={x} x2={x} y1={cy - 30} y2={cy - 46} stroke="rgba(255,46,147,0.38)" strokeWidth={16} strokeLinecap="round" />
-      <Line x1={cx + 62} x2={cx + 62} y1={cy + offset - 9} y2={cy + offset + 9} stroke={color.textDim} strokeWidth={3} strokeLinecap="round" />
-      <Line x1={cx + 74} x2={cx + 74} y1={cy + offset - 9} y2={cy + offset + 9} stroke={color.textDim} strokeWidth={3} strokeLinecap="round" />
+      <Path d={myPath(w, cx, cy)} {...common} stroke={color.gold} />
+      <Line x1={x} x2={x} y1={cy - 30} y2={cy - 46} stroke={color.pinkHalo} strokeWidth={16} strokeLinecap="round" />
+      <Line x1={cx + 62} x2={cx + 62} y1={cy + offset - 9} y2={cy + offset + 9} stroke={color.goldDeep} strokeWidth={3} strokeLinecap="round" />
+      <Line x1={cx + 74} x2={cx + 74} y1={cy + offset - 9} y2={cy + offset + 9} stroke={color.goldDeep} strokeWidth={3} strokeLinecap="round" />
     </Svg>
   );
 }

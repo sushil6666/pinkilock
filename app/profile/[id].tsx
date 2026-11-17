@@ -101,7 +101,7 @@ export default function ProfileScreen() {
                   <T v="bodyBold">{idea.title}</T>
                   <T v="caption" c={color.textDim}>{idea.minutes} min  /  {idea.blurb}</T>
                 </View>
-                {shared.includes(ideaId) ? <Tag label="You too" tone={color.volt} /> : !live ? <Feather name="arrow-up-right" size={18} color={color.textMute} /> : null}
+                {shared.includes(ideaId) ? <Tag label="You too" tone={color.gold} /> : !live ? <Feather name="arrow-up-right" size={18} color={color.textMute} /> : null}
               </Pressable>
             );
           })}

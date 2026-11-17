@@ -33,7 +33,7 @@ export function ShareMyDate({ invite, other, idea }: { invite: Invite; other: Pr
       <T v="label" c={color.textDim}>Stay safe</T>
       <Button kind="ghost" icon="share-2" label="Share my date with a friend" onPress={share} />
       {safetyCheckAvailable() ? (
-        checkSet ? <T v="caption" c={color.volt}>{`We will ask "Home safe?" at ${timeLabel(endsAt + 15 * 60_000)}.`}</T>
+        checkSet ? <T v="caption" c={color.gold}>{`We will ask "Home safe?" at ${timeLabel(endsAt + 15 * 60_000)}.`}</T>
           : <Button kind="ghost" icon="bell" label="Check on me after" onPress={check} />
       ) : null}
       {checkSet === false ? <T v="caption" c={color.textDim}>Turn on notifications for Pinkilock to get the check.</T> : null}

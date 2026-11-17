@@ -38,13 +38,13 @@ export function Spark({ me, person }: { me: Profile; person: Profile }) {
       accessibilityLabel={`${spark.title}. ${spark.count} ${spark.count === 1 ? 'thing lines' : 'things line'} up with ${person.name}: ${summary}`}
     >
       <View style={styles.head}>
-        <Feather name="zap" size={16} color={color.volt} />
-        <T v="label" c={color.volt} style={{ flex: 1 }}>{spark.title}</T>
+        <Feather name="zap" size={16} color={color.gold} />
+        <T v="label" c={color.gold} style={{ flex: 1 }}>{spark.title}</T>
         <T v="label" c={color.textDim}>{spark.count} {spark.count === 1 ? 'lines up' : 'line up'}</T>
       </View>
       {spark.vibes.length + spark.ideaIds.length > 0 && (
         <View style={styles.wrap}>
-          {spark.vibes.map((v) => <Tag key={v} label={v} tone={color.volt} />)}
+          {spark.vibes.map((v) => <Tag key={v} label={v} tone={color.gold} />)}
           {spark.ideaIds.map((id) => <Tag key={id} label={`${ideaOf(id).emoji} ${ideaOf(id).title}`} tone={color.text} />)}
         </View>
       )}
@@ -56,7 +56,7 @@ export function Spark({ me, person }: { me: Profile; person: Profile }) {
 }
 
 const styles = StyleSheet.create({
-  card: { gap: space.sm, borderWidth: 1, borderColor: color.volt, borderRadius: radius.card, backgroundColor: color.voltWash, padding: space.md },
+  card: { gap: space.sm, borderWidth: 1, borderColor: color.gold, borderRadius: radius.card, backgroundColor: color.goldWash, padding: space.md },
   head: { flexDirection: 'row', alignItems: 'center', gap: space.sm },
   wrap: { flexDirection: 'row', flexWrap: 'wrap', gap: space.sm },
 });

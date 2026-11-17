@@ -2,9 +2,9 @@
  * App shell: fonts, the gesture root, safe-area provider, dark system bars on both platforms,
  * and the one-time boot of the backend. Screens below can assume all of that is in place.
  */
-import { ArchivoBlack_400Regular } from '@expo-google-fonts/archivo-black';
 import { CaveatBrush_400Regular } from '@expo-google-fonts/caveat-brush';
-import { SpaceGrotesk_400Regular, SpaceGrotesk_500Medium, SpaceGrotesk_700Bold } from '@expo-google-fonts/space-grotesk';
+import { PlusJakartaSans_400Regular, PlusJakartaSans_500Medium, PlusJakartaSans_700Bold } from '@expo-google-fonts/plus-jakarta-sans';
+import { Sora_800ExtraBold } from '@expo-google-fonts/sora';
 import { useFonts } from 'expo-font';
 import * as NavigationBar from 'expo-navigation-bar';
 import { Stack, router, usePathname, useSegments, type ErrorBoundaryProps } from 'expo-router';
@@ -48,7 +48,7 @@ export function ErrorBoundary({ error, retry }: ErrorBoundaryProps) {
 }
 
 export default function RootLayout() {
-  const [fontsLoaded, fontError] = useFonts({ ArchivoBlack_400Regular, CaveatBrush_400Regular, SpaceGrotesk_400Regular, SpaceGrotesk_500Medium, SpaceGrotesk_700Bold });
+  const [fontsLoaded, fontError] = useFonts({ Sora_800ExtraBold, CaveatBrush_400Regular, PlusJakartaSans_400Regular, PlusJakartaSans_500Medium, PlusJakartaSans_700Bold });
   const ready = useStore((s) => s.ready);
   const boot = useStore((s) => s.boot);
   const onboarded = useStore((s) => !!s.me);
@@ -57,7 +57,7 @@ export default function RootLayout() {
     boot();
     SystemUI.setBackgroundColorAsync(color.bg).catch(quiet('/_layout'));
     if (Platform.OS === 'android') {
-      // Royal blue behind the 3-button or gesture bar, with light buttons.
+      // The night sky behind the 3-button or gesture bar, with light buttons.
       NavigationBar.setBackgroundColorAsync(color.bg).catch(quiet('/_layout'));
       NavigationBar.setButtonStyleAsync('light').catch(quiet('/_layout'));
     }

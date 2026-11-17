@@ -26,7 +26,7 @@ export function statusLine(i: Invite, meId: string, name: string, now: number): 
     case 'locked':
       return { text: 'Locked', tone: color.pink };
     case 'kept':
-      return { text: 'Promise kept', tone: color.volt };
+      return { text: 'Promise kept', tone: color.gold };
     case 'flaked':
       return { text: i.flakedBy === meId ? 'You flaked' : `${upper} flaked`, tone: color.flare };
     case 'declined':

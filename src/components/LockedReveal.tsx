@@ -37,12 +37,12 @@ export function LockedReveal({ person, reveal, hint }: Props) {
   return (
     <View style={{ gap: space.md }}>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.sm }}>
-        <Feather name={open ? 'unlock' : 'lock'} size={14} color={open ? color.volt : color.pink} />
-        <T v="label" c={open ? color.volt : color.pink}>{open ? 'Unlocked: you both showed' : 'Locked'}</T>
+        <Feather name={open ? 'unlock' : 'lock'} size={14} color={open ? color.gold : color.pink} />
+        <T v="label" c={open ? color.gold : color.pink}>{open ? 'Unlocked: you both showed' : 'Locked'}</T>
       </View>
 
       <View style={styles.contact} accessible accessibilityLabel={open ? `${reveal.contactKind}: ${reveal.contactHandle}` : `Contact locked. ${hint}`}>
-        <Feather name="at-sign" size={18} color={open ? color.volt : color.textMute} />
+        <Feather name="at-sign" size={18} color={open ? color.gold : color.textMute} />
         <View style={{ flex: 1 }}>
           <T v="label" c={color.textMute}>{open ? reveal.contactKind : 'Contact'}</T>
           {open ? (
@@ -66,7 +66,7 @@ export function LockedReveal({ person, reveal, hint }: Props) {
               <>
                 {/* Android's blur is costly and uneven across devices, so it gets a dense scrim instead. */}
                 {Platform.OS === 'ios' ? <BlurView intensity={70} tint="dark" style={StyleSheet.absoluteFill} /> : null}
-                <View style={[StyleSheet.absoluteFill, styles.scrim, Platform.OS !== 'ios' && { backgroundColor: 'rgba(0,18,58,0.78)' }]}>
+                <View style={[StyleSheet.absoluteFill, styles.scrim, Platform.OS !== 'ios' && { backgroundColor: 'rgba(20,14,60,0.78)' }]}>
                   <Feather name="lock" size={20} color={color.text} />
                 </View>
               </>
@@ -87,6 +87,6 @@ const styles = StyleSheet.create({
   grid: { flexDirection: 'row', gap: space.sm },
   tile: { flex: 1, aspectRatio: 3 / 4, borderRadius: radius.card, overflow: 'hidden', backgroundColor: color.surface },
   tileOpen: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: space.sm },
-  caption: { position: 'absolute', left: space.sm, right: space.sm, bottom: space.sm, backgroundColor: 'rgba(0,18,58,0.72)', borderRadius: radius.chip, paddingHorizontal: 6, paddingVertical: 3, overflow: 'hidden' },
-  scrim: { alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(0,18,58,0.35)' },
+  caption: { position: 'absolute', left: space.sm, right: space.sm, bottom: space.sm, backgroundColor: 'rgba(20,14,60,0.72)', borderRadius: radius.chip, paddingHorizontal: 6, paddingVertical: 3, overflow: 'hidden' },
+  scrim: { alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(20,14,60,0.35)' },
 });

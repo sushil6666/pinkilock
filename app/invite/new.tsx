@@ -145,7 +145,7 @@ export default function NewInvite() {
             {venues.length > 0 && (
               <View style={styles.wrap}>
                 {!showAllVenues && venues.length > 6 && <Tag label={`${venues.length - 6} more places`} onPress={() => setShowAllVenues(true)} />}
-                <Tag label="Somewhere else" tone={venueId === 'other' ? color.volt : color.textDim} selected={venueId === 'other'} onPress={() => setVenueId(venueId === 'other' ? null : 'other')} />
+                <Tag label="Somewhere else" tone={venueId === 'other' ? color.gold : color.textDim} selected={venueId === 'other'} onPress={() => setVenueId(venueId === 'other' ? null : 'other')} />
               </View>
             )}
             {typing && <TextInput value={place} onChangeText={setPlace} placeholder="Boba counter, Linking Road" placeholderTextColor={color.textMute} maxLength={PLACE_MAX} style={[inputStyle, type.body]} accessibilityLabel="Where to meet" />}
@@ -159,7 +159,7 @@ export default function NewInvite() {
 
       <Section n="04" label="One line (optional)">
         <View style={styles.wrap}>
-          {NOTE_TONES.map((t) => <Tag key={t.id} label={t.label} tone={tone === t.id ? color.volt : color.textDim} selected={tone === t.id} onPress={() => setTone(t.id)} />)}
+          {NOTE_TONES.map((t) => <Tag key={t.id} label={t.label} tone={tone === t.id ? color.gold : color.textDim} selected={tone === t.id} onPress={() => setTone(t.id)} />)}
         </View>
         <View style={styles.wrap}>
           {noteStarters(idea.kind, tone).map((line) => (

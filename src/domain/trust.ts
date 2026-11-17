@@ -30,7 +30,7 @@ export function trustOf(p: { kept: number; flaked: number; trustScore?: number }
   const score = p.trustScore ?? trustScore(p.kept, p.flaked);
   const base = { score, kept: p.kept, flaked: p.flaked };
   if (p.kept + p.flaked < MIN_FINISHED_FOR_TIER) return { ...base, tier: 'new', label: 'New here', tone: color.text };
-  if (score >= 90) return { ...base, tier: 'keeper', label: 'Promise Keeper', tone: color.volt };
+  if (score >= 90) return { ...base, tier: 'keeper', label: 'Promise Keeper', tone: color.gold };
   if (score >= 75) return { ...base, tier: 'solid', label: 'Mostly solid', tone: color.text };
   if (score >= 55) return { ...base, tier: 'shaky', label: 'Shaky', tone: color.flare };
   return { ...base, tier: 'risk', label: 'Flake risk', tone: color.flare };

@@ -9,8 +9,8 @@
  * read from src/theme/tokens.ts, so a palette change is one rerun. The GIFs are committed, so nobody
  * needs to run this to build.
  *
- * The background is drawn in the page's blue and then keyed out, so the GIF's own colour table can
- * never shift it: the page shows through, and the soft edges were already drawn against that blue.
+ * The background is drawn in the page's own `bg` and then keyed out, so the GIF's own colour table can
+ * never shift it: the page shows through, and the soft edges were already drawn against that colour.
  */
 import { execFileSync } from 'node:child_process';
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, statSync, writeFileSync, createReadStream, existsSync } from 'node:fs';
@@ -27,7 +27,7 @@ const OUT = path.join(ROOT, 'assets', 'loops');
 const tokens = Object.fromEntries(
   [...readFileSync(path.join(ROOT, 'src/theme/tokens.ts'), 'utf8').matchAll(/^\s+(\w+): '(#[0-9A-Fa-f]{6})',/gm)].map((m) => [m[1], m[2]]),
 );
-for (const k of ['bg', 'pink', 'pinkDeep', 'text', 'textDim', 'textMute', 'onPink']) if (!tokens[k]) throw new Error(`token ${k} not found in tokens.ts`);
+for (const k of ['bg', 'pink', 'pinkDeep', 'gold', 'goldDeep', 'text', 'textDim', 'textMute', 'onPink']) if (!tokens[k]) throw new Error(`token ${k} not found in tokens.ts`);
 
 /** name: file name. scene: export in scene.js. w, h: output size. frames, fps. still: the moment kept for reduced motion. */
 const LOOPS = [

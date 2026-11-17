@@ -159,7 +159,7 @@ export default function Me() {
       ) : null}
       <View style={[styles.wrap, { marginTop: space.md, alignItems: 'center' }]}>
         {me.vibes.map((v) => <Chip key={v} label={v} />)}
-        <Tag label={editVibes ? 'Done' : 'Change tags'} tone={editVibes ? color.volt : color.textDim} onPress={() => setEditVibes(!editVibes)} />
+        <Tag label={editVibes ? 'Done' : 'Change tags'} tone={editVibes ? color.gold : color.textDim} onPress={() => setEditVibes(!editVibes)} />
       </View>
       {editVibes && VIBE_GROUPS.map((group) => (
         <View key={group.label} style={{ gap: space.sm, marginTop: space.lg }}>
@@ -202,7 +202,7 @@ export default function Me() {
 
       <T v="label" c={color.textDim} style={styles.section}>Account</T>
       <View style={styles.panel}>
-        <Feather name={account?.email && !account.phone ? 'mail' : 'phone'} size={18} color={keeps ? color.volt : color.textDim} />
+        <Feather name={account?.email && !account.phone ? 'mail' : 'phone'} size={18} color={keeps ? color.gold : color.textDim} />
         <View style={{ flex: 1 }}>
           <T v="bodyBold">{keeps ? [account?.email && maskEmail(account.email), account?.phone && maskPhone(account.phone)].filter(Boolean).join(' · ') : 'No email or phone number yet'}</T>
           <T v="caption" c={color.textDim}>{keeps ? 'You can sign in with it on any phone.' : 'Add one to keep this account if you change phones. Without it, losing this phone loses your record.'}</T>
@@ -220,7 +220,7 @@ export default function Me() {
 
       <T v="label" c={color.textDim} style={styles.section}>Data</T>
       <View style={styles.panel}>
-        <Feather name={live ? 'cloud' : 'smartphone'} size={18} color={live ? color.volt : color.textDim} />
+        <Feather name={live ? 'cloud' : 'smartphone'} size={18} color={live ? color.gold : color.textDim} />
         <View style={{ flex: 1 }}>
           <T v="bodyBold">{live ? 'Live: Supabase' : 'Mock data on this phone'}</T>
           <T v="caption" c={color.textDim}>{live ? 'Postgres with row-level security and realtime.' : 'Ten made-up people who answer by themselves. Add Supabase keys to go live.'}</T>
@@ -229,7 +229,7 @@ export default function Me() {
 
       <T v="label" c={color.textDim} style={styles.section}>Notifications</T>
       <View style={styles.panel}>
-        <Feather name={push.state === 'on' ? 'bell' : 'bell-off'} size={18} color={push.state === 'on' ? color.volt : push.state === 'unavailable' ? color.textDim : color.flare} />
+        <Feather name={push.state === 'on' ? 'bell' : 'bell-off'} size={18} color={push.state === 'on' ? color.gold : push.state === 'unavailable' ? color.textDim : color.flare} />
         <View style={{ flex: 1 }}>
           <T v="bodyBold">{push.state === 'on' ? 'On for this phone' : push.state === 'denied' ? 'Turned off' : push.state === 'error' ? 'Not working' : 'Not available here'}</T>
           <T v="caption" c={color.textDim}>{push.detail}</T>

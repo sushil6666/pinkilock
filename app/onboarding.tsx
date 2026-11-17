@@ -132,14 +132,14 @@ export default function Onboarding() {
                 ))}
               </View>
             ))}
-            <T v="caption" c={ideaIds.length >= 3 ? color.volt : color.textDim}>{ideaIds.length} picked{ideaIds.length < 3 ? `, ${3 - ideaIds.length} to go` : ''} (6 max)</T>
+            <T v="caption" c={ideaIds.length >= 3 ? color.gold : color.textDim}>{ideaIds.length} picked{ideaIds.length < 3 ? `, ${3 - ideaIds.length} to go` : ''} (6 max)</T>
           </>
         )}
 
         {step === 3 && (
           <>
             <T v="display">Your vibe,{'\n'}briefly.</T>
-            <T v="caption" c={vibes.length > 0 ? color.volt : color.textDim}>{vibes.length} of 3 tags picked</T>
+            <T v="caption" c={vibes.length > 0 ? color.gold : color.textDim}>{vibes.length} of 3 tags picked</T>
             {VIBE_GROUPS.map((group) => (
               <View key={group.label} style={{ gap: space.sm }}>
                 <T v="label" c={color.textDim}>{group.label}</T>
@@ -151,7 +151,7 @@ export default function Onboarding() {
             <View style={{ gap: space.sm }}>
               <T v="label" c={color.textDim}>One line about you (optional)</T>
               <View style={styles.wrap}>
-                {TAGLINE_PROMPTS.map((p) => <Tag key={p} label={p.trim()} tone={tagline.startsWith(p) ? color.volt : color.textDim} selected={tagline.startsWith(p)} onPress={() => setTagline(p)} />)}
+                {TAGLINE_PROMPTS.map((p) => <Tag key={p} label={p.trim()} tone={tagline.startsWith(p) ? color.gold : color.textDim} selected={tagline.startsWith(p)} onPress={() => setTagline(p)} />)}
               </View>
               <TextInput value={tagline} onChangeText={setTagline} placeholder="Will judge your chai order." placeholderTextColor={color.textMute} maxLength={80} style={[inputStyle, type.body]} accessibilityLabel="One line about you" />
               {looksLikeContact(tagline) && <T v="caption" c={color.flare}>Contacts unlock after a kept promise. Take that out.</T>}

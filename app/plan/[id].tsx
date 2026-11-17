@@ -90,11 +90,11 @@ export default function PlanScreen() {
     <Screen back="back" title={kept ? 'Promise kept' : flaked ? 'Promise broken' : 'Locked plan'} footer={footer}>
       <Animated.View entering={FadeInDown.duration(360)} style={{ gap: space.xl }}>
         <View style={{ gap: space.sm }}>
-          <T v="label" c={kept ? color.volt : flaked ? color.flare : color.pink}>
+          <T v="label" c={kept ? color.gold : flaked ? color.flare : color.pink}>
             {kept ? 'You both showed' : flaked ? (myFlake ? 'You flaked' : `${name} flaked`) : now >= invite.startsAt ? 'Happening now' : 'Starts in'}
           </T>
-          {locked && <Countdown target={invite.startsAt} now={now} tone={phase === 'open' ? color.volt : color.text} />}
-          {kept && <T v="mega" c={color.volt}>Kept.</T>}
+          {locked && <Countdown target={invite.startsAt} now={now} tone={phase === 'open' ? color.gold : color.text} />}
+          {kept && <T v="mega" c={color.gold}>Kept.</T>}
           {flaked && <T v="mega" c={color.flare}>{myFlake ? 'Missed.' : 'Stood up.'}</T>}
         </View>
 
@@ -212,10 +212,10 @@ function Meta({ icon, text }: { icon: keyof typeof Feather.glyphMap; text: strin
 function Check({ label, done }: { label: string; done: boolean }) {
   return (
     <View style={{ alignItems: 'center', gap: 6, width: 96 }} accessible accessibilityLabel={`${label}: ${done ? 'checked in' : 'not checked in yet'}`}>
-      <View style={[styles.dot, done && { backgroundColor: color.volt, borderColor: color.volt }]}>
+      <View style={[styles.dot, done && { backgroundColor: color.gold, borderColor: color.gold }]}>
         <Feather name={done ? 'check' : 'clock'} size={18} color={done ? color.bg : color.textMute} />
       </View>
-      <T v="label" c={done ? color.volt : color.textDim} numberOfLines={1}>{label}</T>
+      <T v="label" c={done ? color.gold : color.textDim} numberOfLines={1}>{label}</T>
     </View>
   );
 }
