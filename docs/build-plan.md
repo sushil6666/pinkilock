@@ -324,6 +324,13 @@ assume fewer than 20 other people in the test city.
 cannot produce a `kept` plan without the other account's code, and repeated kept plans between one
 pair move the score once.
 
+**Status, 2026-11-17: built.** G7 and G8 are closed and are permanent checks. One change from
+the design: codes are stored as they are, not hashed, because a person must be able to read their
+own code back; the table is readable by no client role and emptied when the plan resolves. A wrong
+code returns the plan unchanged (an error would undo the count of wrong tries). **Breaking:** the
+one-argument `check_in` is gone, so an app built before this cannot check in once the migration is
+deployed; ship the app update with it.
+
 ### WP5. Client hardening (G9, G10, G11)
 
 Second layer only. None of it is a reason to relax a server rule.

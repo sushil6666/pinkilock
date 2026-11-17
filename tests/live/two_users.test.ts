@@ -21,7 +21,7 @@ import { after, before, test } from 'node:test';
 import { createClient } from '@supabase/supabase-js';
 import type { Invite } from '../../src/domain/types';
 import { createSupabaseBackend } from '../../src/services/supabase/supabaseBackend';
-import { KEY, MIN, SWEEP_WAIT, URL, inviteIs, one, person, profile, type Person } from './helpers';
+import { KEY, MIN, SWEEP_WAIT, URL, checkInWith, inviteIs, one, person, profile, type Person } from './helpers';
 
 
 const a = person('TestAsha');
@@ -123,7 +123,7 @@ test('RLS: no direct writes, no early contact, nothing for a stranger', async ()
 test('bail: lock, then one person bails; the other hears it and nothing is revealed', async () => {
   const inv = await lock(60 * MIN);
   await locked(a, inv.id, 'at locked');
-  await assert.rejects(a.backend.checkIn(inv.id), /Check-in is not open/, 'check-in is closed an hour early');
+  await assert.rejects(a.backend.checkIn(inv.id, '0000'), /Check-in is not open/, 'check-in is closed an hour early');
   await assert.rejects(a.backend.sendInvite({ toId: b.id, ideaId: 'video_coffee', startsAt: Date.now() + 90 * MIN, place: '', note: '' }), /already have something open/);
 
   b.quiet();
@@ -159,14 +159,17 @@ test('kept: lock, both check in, and only then does the reveal open', async () =
 
   a.quiet();
   b.quiet();
-  const first = one(await a.backend.checkIn(inv.id));
+  // A wrong code, then the right one: B's code, shown across the table.
+  await b.backend.myCheckInCode(inv.id);
+  await assert.rejects(a.backend.checkIn(inv.id, 'xxxx'), /not right/i, 'a wrong code is refused');
+  const first = one(await checkInWith(a, b, inv.id));
   assert.equal(first.status, 'locked');
   assert.deepEqual(first.checkIns, [a.id]);
   await b.hears("A's check-in", (e) => !!e.changes.invites?.some((i) => i.id === inv.id && i.checkIns.includes(a.id)));
   await locked(a, inv.id, 'after one check-in');
   await locked(b, inv.id, 'after one check-in');
 
-  const kept = (await b.backend.checkIn(inv.id)).invites!.find((i) => i.id === inv.id)!;
+  const kept = (await checkInWith(b, a, inv.id)).invites!.find((i) => i.id === inv.id)!;
   assert.equal(kept.status, 'kept');
   const heard = await a.hears('kept', inviteIs(inv.id, 'kept'));
   assert.equal(heard.notice?.title, 'Promise kept');

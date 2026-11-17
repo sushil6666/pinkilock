@@ -383,7 +383,17 @@ export function createSupabaseBackend(url: string, anonKey: string, storage: Ses
       rpcInvite('send_invite', { p_to: input.toId, p_idea: input.ideaId, p_starts_at: new Date(input.startsAt).toISOString(), p_place: input.venueId ? '' : input.place, p_note: input.note, p_venue: input.venueId ?? null }),
     offerPinky: (inviteId) => rpcInvite('offer_pinky', { p_invite: inviteId }),
     declineInvite: (inviteId) => rpcInvite('decline_invite', { p_invite: inviteId }),
-    checkIn: (inviteId) => rpcInvite('check_in', { p_invite: inviteId }),
+    async myCheckInCode(inviteId) {
+      await uid();
+      return rpc<string>('my_checkin_code', { p_invite: inviteId });
+    },
+    async checkIn(inviteId, theirCode) {
+      const changes = await rpcInvite('check_in', { p_invite: inviteId, p_code: theirCode });
+      // A wrong code comes back as the plan unchanged (an error would undo the server's count of
+      // wrong tries), so "still not checked in" is the refusal.
+      if (!changes.invites?.[0]?.checkIns.includes(meId)) throw new AppError('PL039');
+      return changes;
+    },
     bail: (inviteId) => rpcInvite('bail', { p_invite: inviteId }),
 
     async getReveal(inviteId): Promise<Reveal> {

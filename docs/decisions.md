@@ -51,6 +51,8 @@ first table with its date.
 | D033 | 2026-11-17 | The link gate is a server switch, off until a sign-in code can be sent and set by every deploy; passing on an ask never needs a link | Turning it on with no mail sender would lock everyone out, including the post-deploy live test | Claude | `private.config`, `scripts/gate-config.sh` | In force once merged |
 | D034 | 2026-11-17 | Captcha is not built: the link gate plus attestation (WP6) instead | On a phone captcha needs a web view in sign-in, and the gate already makes bulk accounts useless for asking | Claude | Build plan WP2 status | O08 stays open for the website |
 | D035 | 2026-11-17 | Discover order is random per person and day (fixed within the day), not ranked by the spark or by score | A ranking would be a second thing to explain and to game; the daily order keeps paging stable and fair | Claude | `discover()` | In force once merged |
+| D036 | 2026-11-17 | Check-in codes are kept readable (not hashed) in a table no client can read, and deleted when the plan resolves | Each person must see their own code; hashing a 4-digit code would protect nothing | Claude | `private.checkin_codes` | In force once merged |
+| D037 | 2026-11-17 | Farming rule: one kept promise per pair per 30-day period counts toward a Trust Score; none with an unlinked account while the gate is on | Two accounts could otherwise raise each other's score without limit | Claude | `analytics/duckdb_pipeline.py` | In force once merged |
 
 ## Waiting for the owner
 

@@ -7,6 +7,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
+import { CheckInCodes } from '@/components/CheckInCodes';
 import { Countdown } from '@/components/Countdown';
 import { LockedReveal } from '@/components/LockedReveal';
 import { Portrait } from '@/components/Portrait';
@@ -81,8 +82,7 @@ export default function PlanScreen() {
   };
 
   let footer = null;
-  if (locked && phase === 'open' && !iAmIn) footer = <Button icon="check" label="I'm here. Check in" onPress={() => run(() => checkIn(invite.id), haptic.success)} busy={busy} />;
-  else if (!locked) footer = <Button kind="ghost" icon="user" label={`${name}'s profile`} onPress={() => router.push(`/profile/${other.id}`)} />;
+  if (!locked) footer = <Button kind="ghost" icon="user" label={`${name}'s profile`} onPress={() => router.push(`/profile/${other.id}`)} />;
 
   return (
     <Screen back="back" title={kept ? 'Promise kept' : flaked ? 'Promise broken' : 'Locked plan'} footer={footer}>
@@ -129,6 +129,9 @@ export default function PlanScreen() {
                 : iAmIn ? `You are in. Waiting for ${name} to check in.`
                 : `Open for another ${shortCountdown(invite.startsAt + CHECK_IN_CLOSES_AFTER, now)}. Miss it and it counts as a flake.`}
             </T>
+            {phase === 'open' && !(iAmIn && theyAreIn) && (
+              <CheckInCodes inviteId={invite.id} name={name} remote={idea.kind !== 'irl'} done={iAmIn} onCheckIn={async (code) => { await checkIn(invite.id, code); haptic.success(); }} />
+            )}
             {idea.kind === 'irl' && <Meta icon="shield" text="Meet somewhere public and tell a friend where you are." />}
           </View>
         )}

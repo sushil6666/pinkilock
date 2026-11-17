@@ -6,6 +6,27 @@
 \set b '00000000-0000-0000-0000-00000000000b'
 \set c '00000000-0000-0000-0000-00000000000c'
 
+-- Check-in now needs the other person's code (WP4). This stands in for "they showed me their code":
+-- it makes sure the other person's code exists, reads it, and checks in with it, as the caller.
+create or replace function t.check_in(p_invite uuid) returns public.invites language plpgsql security definer as $$
+declare
+  me uuid := auth.uid();
+  inv public.invites;
+  other uuid;
+  v_code text;
+  caller text := current_user;
+begin
+  select * into inv from public.invites where id = p_invite;
+  other := case when me = inv.from_id then inv.to_id else inv.from_id end;
+  if other is not null then
+    insert into private.checkin_codes (invite_id, user_id, code) values (p_invite, other, lpad(floor(random() * 10000)::int::text, 4, '0'))
+    on conflict do nothing;
+    select code into v_code from private.checkin_codes where invite_id = p_invite and user_id = other;
+  end if;
+  return public.check_in(p_invite, v_code);
+end $$;
+grant execute on function t.check_in(uuid) to public;
+
 insert into auth.users (id) values (:'a'), (:'b'), (:'c');
 insert into public.profiles (id, name, age, area, created_at) values
   (:'a', 'Asha', 22, 'Bandra', now() - interval '15 days'),
@@ -22,8 +43,8 @@ select t.ok((select (schedule, command) = ('* * * * *', 'select public.sweep_inv
 select t.ok((select string_agg(table_schema || '.' || table_name || ':' || privs, ' ' order by table_schema, table_name) from (
     select table_schema, table_name, string_agg(privilege_type, ',' order by privilege_type) as privs
     from information_schema.role_table_grants where grantee = 'pinkilock_analytics' group by 1, 2) g)
-  = 'analytics.metrics_daily:DELETE,INSERT,SELECT,UPDATE analytics.retention_weekly:DELETE,INSERT,SELECT,UPDATE '
-    'public.events:SELECT public.invites:SELECT public.profiles:SELECT public.trust_scores:DELETE,INSERT,SELECT,UPDATE',
+  = 'analytics.accounts:SELECT analytics.metrics_daily:DELETE,INSERT,SELECT,UPDATE analytics.retention_weekly:DELETE,INSERT,SELECT,UPDATE '
+    'analytics.settings:SELECT public.events:SELECT public.invites:SELECT public.profiles:SELECT public.trust_scores:DELETE,INSERT,SELECT,UPDATE',
   'the analytics role reads events, invites, profiles and writes only its own results');
 select t.ok(not has_table_privilege('pinkilock_analytics', 'public.profile_private', 'select'), 'the analytics role cannot read contact handles');
 
@@ -67,17 +88,17 @@ select t.ok((offer_pinky(:'ab')).status = 'half_locked', 'B puts a pinky out: ha
 select t.as_user(:'a');
 select t.ok((offer_pinky(:'ab')).status = 'locked', 'A seals: locked');
 select t.ok((select count(*) from profile_private) = 1, 'locked is not enough: B''s contact still hidden from A');
-select t.ok(t.fails(format('select check_in(%L)', :'ab')), 'check-in is closed an hour early');
+select t.ok(t.fails(format('select t.check_in(%L)', :'ab')), 'check-in is closed an hour early');
 
 reset role;
 update public.invites set starts_at = now() + interval '5 minutes' where id = :'ab';
 set role authenticated;
 
 select t.as_user(:'a');
-select t.ok((check_in(:'ab')).status = 'locked', 'A checks in: still locked until B does');
+select t.ok((t.check_in(:'ab')).status = 'locked', 'A checks in: still locked until B does');
 select t.ok((select count(*) from profile_private) = 1, 'one check-in is not enough for the reveal');
 select t.as_user(:'b');
-select t.ok((check_in(:'ab')).status = 'kept', 'B checks in: kept');
+select t.ok((t.check_in(:'ab')).status = 'kept', 'B checks in: kept');
 select t.ok((select count(*) from profile_private where profile_id = :'a') = 1, 'THE REVEAL: B can now read A''s contact');
 select t.as_user(:'a');
 select t.ok((select contact_handle from profile_private where profile_id = :'b') = '@bela', 'THE REVEAL: A can now read B''s contact');
@@ -104,7 +125,7 @@ select offer_pinky(:'ca') is not null;
 reset role;
 update public.invites set starts_at = now() + interval '5 minutes' where id = :'ca';
 set role authenticated;
-select check_in(:'ca') is not null;
+select t.check_in(:'ca') is not null;
 -- B asks C and nobody answers.
 select t.as_user(:'b');
 select (send_invite(:'c', 'meme_duel', now() + interval '3 hours', '', '')).id as bc \gset

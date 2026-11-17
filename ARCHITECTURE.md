@@ -130,6 +130,9 @@ lost. In the mock it carries the simulated other person.
 - **locked**: the sender sealed it. Both have performed the gesture; the Anti-Ghosting Promise
   applies and the countdown starts. This is one `update` in Postgres, pushed to both phones by Realtime.
 - **kept**: both checked in inside the window (10 minutes before the start to 30 minutes after).
+  Checking in takes the other person's 4-digit code (`my_checkin_code`, `check_in(invite, code)`):
+  shown across the table or read out on the call, so only two people who are together can do it.
+  Five wrong codes wait five minutes; codes are deleted when the plan stops being locked.
 - **flaked**: someone bailed after locking, or did not check in. Only that person's record moves.
 - **ended**: one of the two blocked the other, or deleted their account, while it was live. It is
   nobody's flake: no bail, no-show or decline is logged, and no one's score moves. Nothing is
@@ -187,6 +190,10 @@ the gate is on, in an order that is fixed for the day and different for every pe
 reaches at most 200 different people a day (`private.discover_seen`). New people are therefore
 fetched, not pushed: the app asks again when Discover opens, every minute while it is open, and
 when fewer than three cards are left (`backend.moreProfiles`).
+
+**Trust Scores resist farming.** The worker counts promises kept with the same person once per
+30-day period, and, while the link gate is on, none with an account that has no email or phone
+(`analytics.accounts`, `analytics.settings`).
 
 **Limits and the link gate.** `send_invite` refuses an 11th ask in a day and a second ask to
 someone within 7 days of them passing; a trigger on `passes` counts passes (200 a day) in

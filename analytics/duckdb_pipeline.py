@@ -44,17 +44,32 @@ create or replace table events as
   select id, "at" as ts, actor_id, invite_id, type, cast(props as varchar) as props from pg.public.events;
 create or replace table profiles as
   select id, created_at from pg.public.profiles;
+create or replace table accounts as
+  select id, linked from pg.analytics.accounts;
+create or replace table settings as
+  select require_linked from pg.analytics.settings;
 """
 
 TRUST = f"""
 create or replace table trust_scores as
 -- Kept promises come from the log, like flakes: when the other person deletes their account the
 -- invite goes, but your own `kept` row stays (supabase/migrations/20261117000003_account.sql).
+-- Farming (docs/build-plan.md, G8): promises kept with the same person count once per 30-day
+-- period, and while the link gate is on, a promise with an account that has no email or phone
+-- counts for nothing. An invite that is gone (the other person deleted their account) still counts.
 with kept as (
-  select actor_id as person, count(distinct invite_id) as kept
-  from events
-  where type = 'kept' and actor_id is not null
-  group by actor_id
+  select e.actor_id as person,
+         count(distinct case when i.id is null then cast(e.invite_id as varchar)
+                             else cast(least(i.from_id, i.to_id) as varchar) || cast(greatest(i.from_id, i.to_id) as varchar)
+                                  || '/' || cast(floor(epoch(e.ts) / (30 * 86400)) as varchar) end) as kept
+  from events e
+  left join invites i on i.id = e.invite_id
+  left join accounts a1 on a1.id = i.from_id
+  left join accounts a2 on a2.id = i.to_id
+  where e.type = 'kept' and e.actor_id is not null
+    and (i.id is null or not (select coalesce(bool_or(require_linked), false) from settings)
+         or (coalesce(a1.linked, true) and coalesce(a2.linked, true)))
+  group by e.actor_id
 ),
 flakes as (
   select actor_id as person,

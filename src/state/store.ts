@@ -32,7 +32,7 @@ interface State {
   sendInvite(input: NewInvite): Promise<Invite>;
   offerPinky(inviteId: string): Promise<void>;
   declineInvite(inviteId: string): Promise<void>;
-  checkIn(inviteId: string): Promise<void>;
+  checkIn(inviteId: string, theirCode: string): Promise<void>;
   bail(inviteId: string): Promise<void>;
   block(profileId: string): Promise<void>;
   unblock(profileId: string): Promise<void>;
@@ -134,8 +134,8 @@ export const useStore = create<State>((set, get) => {
     async declineInvite(inviteId) {
       await apply(backend.declineInvite(inviteId));
     },
-    async checkIn(inviteId) {
-      await apply(backend.checkIn(inviteId));
+    async checkIn(inviteId, theirCode) {
+      await apply(backend.checkIn(inviteId, theirCode));
     },
     async bail(inviteId) {
       await apply(backend.bail(inviteId));

@@ -67,7 +67,15 @@ export interface Backend {
   /** Do my half of the lock. Receiver goes first, sender seals. */
   offerPinky(inviteId: string): Promise<Changes>;
   declineInvite(inviteId: string): Promise<Changes>;
-  checkIn(inviteId: string): Promise<Changes>;
+  /**
+   * My 4-digit code for a plan whose check-in is open. I show it (or read it out) to the other
+   * person; they enter it to check in, and I enter theirs (WP4). Never in a push or Realtime.
+   */
+  myCheckInCode(inviteId: string): Promise<string>;
+  /** Check in with the other person's code. A wrong code is PL039; five wrong codes wait five minutes (PL037). */
+  checkIn(inviteId: string, theirCode: string): Promise<Changes>;
+  /** Mock only: the code the made-up other person would read out to me, so the flow can be tried alone. */
+  demoTheirCode?(inviteId: string): string;
   bail(inviteId: string): Promise<Changes>;
 
   /** Refuses unless the invite is kept: the reveal is gated on the server, not by a blur. */

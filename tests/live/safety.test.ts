@@ -19,7 +19,7 @@ import { after, before, test } from 'node:test';
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import type { Invite } from '../../src/domain/types';
 import { createSupabaseBackend } from '../../src/services/supabase/supabaseBackend';
-import { KEY, MIN, URL, inviteIs, memoryStorage, one, person, profile, type Person } from './helpers';
+import { KEY, MIN, URL, checkInWith, inviteIs, memoryStorage, one, person, profile, type Person } from './helpers';
 
 const a = person('TestAvni');
 const b = person('TestBhavin');
@@ -68,8 +68,8 @@ after(async () => {
 test('block: the blocked person loses the card, every shared invite and the reveal, through RLS', async () => {
   // A kept promise (so the reveal is open) and a live plan, between A and B.
   const keptPlan = await lockBetween(a, b, 5 * MIN);
-  await a.backend.checkIn(keptPlan.id);
-  await b.backend.checkIn(keptPlan.id);
+  await checkInWith(a, b, keptPlan.id);
+  await checkInWith(b, a, keptPlan.id);
   assert.equal((await a.backend.getReveal(keptPlan.id)).contactHandle, '@e2e_bhavin', 'before: the reveal is open');
   const livePlan = await lockBetween(b, a, 60 * MIN);
   assert.equal(livePlan.status, 'locked');
@@ -90,7 +90,7 @@ test('block: the blocked person loses the card, every shared invite and the reve
     assert.ok((await client.from('blocks').select('*')).error, `${p.name} cannot read the blocks table`);
   }
   await assert.rejects(a.backend.getReveal(keptPlan.id), 'A cannot get the reveal any more');
-  await assert.rejects(a.backend.checkIn(livePlan.id), 'A cannot act on the plan');
+  await assert.rejects(a.backend.checkIn(livePlan.id, '0000'), 'A cannot act on the plan');
   await assert.rejects(a.backend.sendInvite({ toId: b.id, ideaId: 'boba_run', startsAt: Date.now() + 90 * MIN, place: '', note: '' }), /not available/, 'A cannot ask B');
 
   const forC = await createSupabaseBackend(URL!, KEY!, c.storage).boot();
