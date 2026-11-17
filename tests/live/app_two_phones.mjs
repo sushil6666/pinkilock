@@ -44,7 +44,7 @@ const B = { name: `Bela${letters}`, handle: `@bela_${stamp}` };
 
 let step = 0;
 const ok = (msg) => console.log(`ok  ${String(++step).padStart(2)}  ${msg}`);
-const shot = async (who, name) => SHOTS && who.page.screenshot({ path: path.join(SHOTS, `${String(step).padStart(2, '0')}-${who.name.split(' ')[1]}-${name}.png`) });
+const shot = async (who, name) => SHOTS && who.page.screenshot({ path: path.join(SHOTS, `${String(step).padStart(2, '0')}-${who.name}-${name}.png`) });
 const btn = (page, name) => page.getByRole('button', { name }).last();
 const hold = async (page, name) => {
   const box = await btn(page, name).boundingBox();
@@ -108,11 +108,13 @@ try {
   await A.page.getByText('To what').waitFor();
   // First time slot offered.
   await A.page.getByRole('button', { name: /^\d{1,2}:\d{2}/ }).first().click();
-  await A.page.getByPlaceholder('Boba counter, Linking Road').fill('Boba counter, Linking Road');
+  // Where: both live in Bandra, so the nearest suggested venues come first. Pick one.
+  await A.page.getByRole('button', { name: /^Carter Road Promenade/ }).click();
   await shot(A, 'composer');
   await hold(A.page, `Hold to ask ${B.name}`);
   await A.page.getByText(`Waiting on ${B.name}.`).waitFor();
   ok('A sent the ask');
+  sqlIs(`select place || ' / ' || venue_id from public.invites where from_id = '${aId}' and to_id = '${bId}'`, 'Carter Road Promenade, Bandra West / mum_carter_road', 'the ask carries the picked venue, written by the server');
 
   // B hears it live: the banner, with no reload.
   await btn(B.page, new RegExp(`${A.name} asked you`)).waitFor({ timeout: 15000 });
