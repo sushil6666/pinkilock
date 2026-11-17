@@ -21,6 +21,7 @@ import { usePerson, useStore } from '@/state/store';
 import { color, space, type } from '@/theme/tokens';
 import { shown } from '@/lib/report';
 import { ErrorText } from '@/components/ui/ErrorText';
+import { PLACE_MAX, looksLikeContact } from '@/domain/profile';
 
 const REMOTE_PLACE = { video: 'Pinkilock video room', game: 'Voice chat in the app' } as const;
 
@@ -55,7 +56,9 @@ export default function NewInvite() {
   const day = days.find((option) => option.id === dayId);
   const slots = day ? slotOptions(day.start, now) : [];
   const full = openAsks >= MAX_OPEN_ASKS;
-  const missing = !startsAt ? 'Pick a time.' : !remotePlace && place.trim().length < 3 ? 'Say where: somewhere public.' : '';
+  const leaks = looksLikeContact(note) || (!remotePlace && looksLikeContact(place));
+  const missing = !startsAt ? 'Pick a time.' : !remotePlace && place.trim().length < 3 ? 'Say where: somewhere public.'
+    : leaks ? 'Contacts unlock after a kept promise. Take that out.' : '';
 
   const submit = async () => {
     if (!startsAt) return;
@@ -118,7 +121,7 @@ export default function NewInvite() {
           </View>
         ) : (
           <>
-            <TextInput value={place} onChangeText={setPlace} placeholder="Boba counter, Linking Road" placeholderTextColor={color.textMute} maxLength={48} style={[inputStyle, type.body]} accessibilityLabel="Where to meet" />
+            <TextInput value={place} onChangeText={setPlace} placeholder="Boba counter, Linking Road" placeholderTextColor={color.textMute} maxLength={PLACE_MAX} style={[inputStyle, type.body]} accessibilityLabel="Where to meet" />
             <View style={{ flexDirection: 'row', gap: space.sm }}>
               <Feather name="shield" size={14} color={color.textDim} style={{ marginTop: 2 }} />
               <T v="caption" c={color.textDim} style={{ flex: 1 }}>Somewhere public and busy. Tell a friend where you will be.</T>

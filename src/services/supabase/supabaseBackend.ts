@@ -311,32 +311,30 @@ export function createSupabaseBackend(url: string, anonKey: string, storage: Ses
 
     boot: snapshot,
 
+    // Profiles are written only through save_profile: the tables take no direct writes, and the
+    // server checks every field (src/domain/profile.ts has the same rules for the app's side).
     async completeOnboarding(input) {
-      const id = await uid();
-      check(await db.from('profiles').upsert({
-        id, name: input.name, age: input.age, area: input.area, pronouns: input.pronouns, tagline: input.tagline,
-        vibes: input.vibes, idea_ids: input.ideaIds,
-      }).select('id'));
-      check(await db.from('profile_private').upsert({ profile_id: id, contact_kind: input.contactKind, contact_handle: input.contactHandle }).select('profile_id'));
+      await uid();
+      await rpc('save_profile', {
+        p_name: input.name, p_age: input.age, p_area: input.area, p_pronouns: input.pronouns, p_tagline: input.tagline,
+        p_vibes: input.vibes, p_idea_ids: input.ideaIds, p_contact_kind: input.contactKind, p_contact_handle: input.contactHandle,
+      });
       return snapshot();
     },
 
     async updateMe(patch) {
       const id = await uid();
-      const row: Row = {};
-      if (patch.name !== undefined) row.name = patch.name;
-      if (patch.age !== undefined) row.age = patch.age;
-      if (patch.area !== undefined) row.area = patch.area;
-      if (patch.pronouns !== undefined) row.pronouns = patch.pronouns;
-      if (patch.tagline !== undefined) row.tagline = patch.tagline;
-      if (patch.vibes !== undefined) row.vibes = patch.vibes;
-      if (patch.ideaIds !== undefined) row.idea_ids = patch.ideaIds;
-      if (Object.keys(row).length) check(await db.from('profiles').update(row).eq('id', id).select('id'));
+      // save_profile takes the whole card, so start from what is there now.
+      const now = toProfile(check(await db.from('profile_cards').select('*').eq('id', id).single()) as unknown as Row);
+      const hasContact = !!(patch.contactKind && patch.contactHandle);
+      await rpc('save_profile', {
+        p_name: patch.name ?? now.name, p_age: patch.age ?? now.age, p_area: patch.area ?? now.area,
+        p_pronouns: patch.pronouns ?? now.pronouns, p_tagline: patch.tagline ?? now.tagline,
+        p_vibes: patch.vibes ?? now.vibes, p_idea_ids: patch.ideaIds ?? now.ideaIds,
+        p_contact_kind: hasContact ? patch.contactKind : null, p_contact_handle: hasContact ? patch.contactHandle : null,
+      });
       const changes: Changes = {};
-      if (patch.contactKind && patch.contactHandle) {
-        check(await db.from('profile_private').upsert({ profile_id: id, contact_kind: patch.contactKind, contact_handle: patch.contactHandle }).select('profile_id'));
-        changes.myContact = { kind: patch.contactKind, handle: patch.contactHandle };
-      }
+      if (hasContact) changes.myContact = { kind: patch.contactKind!, handle: patch.contactHandle! };
       const card = check(await db.from('profile_cards').select('*').eq('id', id).single());
       return { ...changes, me: toProfile(card as unknown as Row) };
     },
