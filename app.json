@@ -64,8 +64,7 @@
         {
           "android": {
             "enableProguardInReleaseBuilds": true,
-            "enableShrinkResourcesInReleaseBuilds": true,
-            "extraProguardRules": "-ignorewarnings"
+            "enableShrinkResourcesInReleaseBuilds": true
           }
         }
       ]
