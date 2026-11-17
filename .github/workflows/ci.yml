@@ -71,3 +71,9 @@ jobs:
       - name: Edge Function logs
         if: failure()
         run: docker logs supabase_edge_runtime_pinkilock 2>&1 | tail -100
+      - name: Auth and mail logs
+        # For the email sign-in test: what GoTrue sent, and what Mailpit received.
+        if: failure()
+        run: |
+          docker logs supabase_auth_pinkilock 2>&1 | grep -iE 'mail|smtp|"/user"|otp|error' | tail -60
+          docker logs supabase_inbucket_pinkilock 2>&1 | tail -30

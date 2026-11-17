@@ -131,20 +131,28 @@ test('export: my data, and nobody else\'s contact', async () => {
   assert.ok(!text.includes('@e2e_bhavin') && !text.includes('e2e report'), "no one else's contact, no report about me");
 });
 
-/** The newest code Mailpit holds for an address, waiting until one newer than `after` arrives. */
+/**
+ * The newest code Mailpit holds for an address, waiting until one other than `after` arrives.
+ * Reads the inbox list rather than Mailpit's search, and on a timeout says what the inbox did
+ * hold, so a miss in CI can be told apart from a slow delivery.
+ */
 async function codeFor(address: string, after: string | null): Promise<{ code: string; id: string }> {
   const box = process.env.E2E_MAILBOX!.replace(/\/$/, '');
-  for (let i = 0; i < 40; i++) {
-    const list = (await (await fetch(`${box}/api/v1/search?query=${encodeURIComponent(`to:"${address}"`)}&limit=1`)).json()) as { messages?: { ID: string }[] };
-    const id = list.messages?.[0]?.ID;
-    if (id && id !== after) {
-      const msg = (await (await fetch(`${box}/api/v1/message/${id}`)).json()) as { Text?: string; HTML?: string };
+  type Item = { ID: string; To?: { Address: string }[]; Created?: string };
+  let seen: Item[] = [];
+  const deadline = Date.now() + 30_000;
+  while (Date.now() < deadline) {
+    seen = ((await (await fetch(`${box}/api/v1/messages?limit=50`)).json()) as { messages?: Item[] }).messages ?? [];
+    const mine = seen.find((m) => m.To?.some((x) => x.Address.toLowerCase() === address));
+    if (mine && mine.ID !== after) {
+      const msg = (await (await fetch(`${box}/api/v1/message/${mine.ID}`)).json()) as { Text?: string; HTML?: string };
       const code = `${msg.Text ?? ''} ${msg.HTML ?? ''}`.match(/\b(\d{6})\b/)?.[1];
-      if (code) return { code, id };
+      if (code) return { code, id: mine.ID };
     }
     await new Promise((r) => setTimeout(r, 250));
   }
-  throw new Error(`no email code reached ${address}`);
+  const recent = seen.slice(0, 5).map((m) => `${m.To?.map((x) => x.Address).join(',')} at ${m.Created}`).join('; ');
+  throw new Error(`no email code reached ${address} in 30s (inbox holds ${seen.length}; newest: ${recent || 'none'})`);
 }
 
 test('email: link keeps the id and history; sign in on a new phone gets them back', async (t) => {
