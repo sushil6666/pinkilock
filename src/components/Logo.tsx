@@ -2,7 +2,7 @@
  * The Pinkilock logo: the two pinkies in their locked pose (the same geometry as the app icon,
  * scripts/make-icons.mjs, and PinkyFinger.tsx), turned 45 degrees and given 3D depth, beside the
  * name in the display face, slanted forward (Sora has no italic, so the wordmark is skewed 12
- * degrees), with a gold full stop. It sits centred at the top of every screen (Screen draws it).
+ * degrees). It sits centred at the top of every screen (Screen draws it).
  *
  * `size` is the height of the wordmark's letters; the mark scales with it. `mark` alone drops the
  * name, for tight spots. The logo is one image to a screen reader: "Pinkilock".
@@ -68,7 +68,7 @@ export function Logo({ size = 20, mark = false, style }: { size?: number; mark?:
       <LogoMark height={size * 2} />
       {!mark && (
         <T style={{ fontFamily: font.display, fontSize: size, lineHeight: size * 1.2, letterSpacing: -size * 0.03, transform: [{ skewX: '-12deg' }] }} maxFontSizeMultiplier={1} importantForAccessibility="no" accessibilityElementsHidden>
-          pinkilock<T style={{ fontFamily: font.display, fontSize: size, lineHeight: size * 1.2 }} c={color.gold}>.</T>
+          pinkilock
         </T>
       )}
     </View>

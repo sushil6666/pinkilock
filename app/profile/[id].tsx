@@ -54,7 +54,7 @@ export default function ProfileScreen() {
       <Screen back="back" scroll={false}>
         <View style={{ flex: 1, justifyContent: 'center', gap: space.md }}>
           <T v="display">Gone.</T>
-          <T c={color.textDim}>This profile is not around any more.</T>
+          <T c={color.textDim}>This profile is no longer available.</T>
         </View>
       </Screen>
     );

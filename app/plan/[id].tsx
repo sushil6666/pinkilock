@@ -53,7 +53,7 @@ export default function PlanScreen() {
       <Screen back="back" scroll={false}>
         <View style={{ flex: 1, justifyContent: 'center', gap: space.md }}>
           <T v="display">No plan{'\n'}here.</T>
-          <T c={color.textDim}>This plan does not exist any more.</T>
+          <T c={color.textDim}>This plan is no longer available.</T>
         </View>
       </Screen>
     );
@@ -127,9 +127,9 @@ export default function PlanScreen() {
               <Check label={name} done={theyAreIn} />
             </View>
             <T c={color.textDim}>
-              {phase === 'early' ? `Opens at ${timeLabel(invite.startsAt - CHECK_IN_OPENS_BEFORE)}, ten minutes before. Both of you check in and the promise is kept.`
-                : iAmIn ? `You are in. Waiting for ${name} to check in.`
-                : `Open for another ${shortCountdown(invite.startsAt + CHECK_IN_CLOSES_AFTER, now)}. Miss it and it counts as a flake.`}
+              {phase === 'early' ? `Check-in opens at ${timeLabel(invite.startsAt - CHECK_IN_OPENS_BEFORE)}, ten minutes before. When you both check in, the promise is kept.`
+                : iAmIn ? `You're checked in. Waiting for ${name}.`
+                : `Check-in is open for another ${shortCountdown(invite.startsAt + CHECK_IN_CLOSES_AFTER, now)}. Missing it counts as a flake.`}
             </T>
             {phase === 'open' && !(iAmIn && theyAreIn) && (
               <CheckInCodes inviteId={invite.id} name={name} remote={idea.kind !== 'irl'} done={iAmIn} onCheckIn={async (code) => { await checkIn(invite.id, code); haptic.success(); }} />
@@ -142,7 +142,7 @@ export default function PlanScreen() {
           <View style={{ gap: space.sm }}>
             <T v="label" c={color.textDim}>Break the ice</T>
             <T v="heading">{openerOf(idea.id)}</T>
-            <T v="caption" c={color.textDim}>No chat before the date, so here is your first line.</T>
+            <T v="caption" c={color.textDim}>There's no chat before the date, so here's an opener.</T>
           </View>
         )}
 
@@ -160,7 +160,7 @@ export default function PlanScreen() {
         {flaked && (
           <View style={[styles.banner, { borderColor: color.flare, backgroundColor: color.flareWash }]}>
             <T v="bodyBold">{myFlake ? 'This one is on your record.' : `This is on ${name}'s record, not yours.`}</T>
-            <T c={color.textDim}>{myFlake ? `Your score is now ${trustOf(me).score}. Keeping the next few brings it back.` : 'You showed up for it. Your score did not move.'}</T>
+            <T c={color.textDim}>{myFlake ? `Your score is now ${trustOf(me).score}. Keep your next few promises to bring it back up.` : "You showed up, so your score didn't change."}</T>
           </View>
         )}
 

@@ -53,7 +53,7 @@ export default function Plans() {
       ) : (
         <View style={styles.empty}>
           <T v="title">Nothing locked.</T>
-          <T c={color.textDim}>A plan shows up here the moment two pinkies hook. Answer an ask or send one.</T>
+          <T c={color.textDim}>Plans appear here as soon as both pinkies lock. Answer an ask, or send one to get started.</T>
           <Button icon="send" label="See your asks" onPress={() => router.push('/(tabs)/invites')} />
         </View>
       )}

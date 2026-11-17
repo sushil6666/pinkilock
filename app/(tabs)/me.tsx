@@ -104,7 +104,7 @@ export default function Me() {
   const toggleIdea = async (id: string) => {
     const has = me.ideaIds.includes(id);
     if (has && me.ideaIds.length <= 3) return setError('Keep at least three. They are how people ask you out.');
-    if (!has && me.ideaIds.length >= 6) return setError('Six is the cap. Drop one first.');
+    if (!has && me.ideaIds.length >= 6) return setError('You can pick up to six. Remove one first.');
     setError('');
     try {
       await updateMe({ ideaIds: has ? me.ideaIds.filter((x) => x !== id) : [...me.ideaIds, id] });
@@ -115,7 +115,7 @@ export default function Me() {
 
   const toggleVibe = async (v: string) => {
     const has = me.vibes.includes(v);
-    if (!has && me.vibes.length >= 3) return setError('Three tags is the cap. Drop one first.');
+    if (!has && me.vibes.length >= 3) return setError('You can pick up to three tags. Remove one first.');
     setError('');
     try {
       await updateMe({ vibes: has ? me.vibes.filter((x) => x !== v) : [...me.vibes, v] });
@@ -145,8 +145,8 @@ export default function Me() {
       <TrustBadge person={me} size="lg" />
       <T v="caption" c={color.textDim} style={{ marginTop: space.sm }}>
         {live
-          ? 'Worked out from your kept promises, bails and no-shows. Refreshes every few minutes.'
-          : `Kept promises push it up, flakes pull it down. One flake from here would make it ${trustScore(me.kept, me.flaked + 1)}.`}
+          ? 'Based on your kept promises, bails and no-shows. Updates every few minutes.'
+          : `Keeping promises raises it and flaking lowers it. One more flake would take it to ${trustScore(me.kept, me.flaked + 1)}.`}
       </T>
 
       {me.tagline ? <T v="heading" style={{ marginTop: space.xl }}>{me.tagline}</T> : null}
@@ -189,7 +189,7 @@ export default function Me() {
           return <Chip key={w.id} label={w.label} selected={on} onPress={() => saveAvailability(on ? (me.freeWindows ?? []).filter((x) => x !== w.id) : [...(me.freeWindows ?? []), w.id]).catch((e) => setError(shown(e, '/(tabs)/me')))} />;
         })}
       </View>
-      <T v="caption" c={color.textDim} style={{ marginTop: space.sm }}>People asking you see these times first. None picked means any time.</T>
+      <T v="caption" c={color.textDim} style={{ marginTop: space.sm }}>People see these times first when they ask you out. Leave them all off to show any time.</T>
 
       <T v="label" c={color.textDim} style={styles.section}>Unlocks when a promise is kept</T>
       <View style={styles.panel}>
@@ -239,7 +239,7 @@ export default function Me() {
       <T v="label" c={color.textDim} style={styles.section}>Safety and privacy</T>
       <View style={{ gap: space.sm }}>
         <Button kind="ghost" icon="shield" label="Safety and emergency numbers" onPress={() => router.push('/safety')} />
-        <Button kind="ghost" icon="message-square" label="Ask us: your data, your score, an appeal" onPress={() => router.push('/account/requests')} />
+        <Button kind="ghost" icon="message-square" label="Contact us about your data, score or an appeal" onPress={() => router.push('/account/requests')} />
         <View style={{ flexDirection: 'row', gap: space.md }}>
           <Tag label="Terms" onPress={() => router.push('/legal/terms')} />
           <Tag label="Privacy" onPress={() => router.push('/legal/privacy')} />

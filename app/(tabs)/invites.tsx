@@ -52,8 +52,8 @@ export default function Invites() {
         {open.map(row)}
         {open.length === 0 && (
           <View style={styles.empty}>
-            <T v="title">{side === 'in' ? 'Nobody waiting on you.' : 'Nothing out there yet.'}</T>
-            <T c={color.textDim}>{side === 'in' ? 'When someone asks you to something, it lands here with a clock on it.' : 'Pick a person, pick one tiny plan, put a time on it.'}</T>
+            <T v="title">{side === 'in' ? 'No asks waiting for you.' : 'No asks sent yet.'}</T>
+            <T c={color.textDim}>{side === 'in' ? 'When someone asks you out, it appears here with a countdown.' : 'Pick a person, choose one small plan and set a time.'}</T>
             <Button kind="ghost" icon="compass" label="Go to Discover" onPress={() => router.push('/(tabs)')} />
           </View>
         )}

@@ -54,7 +54,7 @@ export default function Discover() {
         <View style={{ flex: 1, justifyContent: 'center', gap: space.lg }}>
           <T v="label" c={color.pink}>Discover</T>
           <T v="display">That's{'\n'}everyone{'\n'}for now.</T>
-          <T c={color.textDim}>No infinite deck here. {busyWith.size > 0 ? `You have ${busyWith.size} ${busyWith.size === 1 ? 'person' : 'people'} in play: go keep those promises.` : 'New people show up as they join near you.'}</T>
+          <T c={color.textDim}>No infinite deck here. {busyWith.size > 0 ? `You have ${busyWith.size} ${busyWith.size === 1 ? 'plan' : 'plans'} in motion. Go keep those promises.` : 'New people appear here as they join near you.'}</T>
           {passedIds.length > 0 && <Button kind="ghost" icon="rotate-ccw" label={`Look again at ${passedIds.length} you passed`} onPress={restore} />}
           {busyWith.size > 0 && <Button label="See your asks" icon="send" onPress={() => router.push('/(tabs)/invites')} />}
         </View>

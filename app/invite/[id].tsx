@@ -32,7 +32,7 @@ export default function InviteScreen() {
       <Screen back="back" scroll={false}>
         <View style={{ flex: 1, justifyContent: 'center', gap: space.md }}>
           <T v="display">Gone.</T>
-          <T c={color.textDim}>This ask does not exist any more.</T>
+          <T c={color.textDim}>This ask is no longer available.</T>
         </View>
       </Screen>
     );
@@ -64,16 +64,16 @@ export default function InviteScreen() {
     head = [`${name} wants to lock this in.`, `You go first: slide your pinky in, then ${name} seals it. Until both are in, nothing is promised.`];
     footer = <><Button icon="lock" label="Lock it" onPress={toLock} /><Button kind="ghost" label="Pass" onPress={() => setSheet(true)} /></>;
   } else if (role === 'seal') {
-    head = [`${name}'s pinky is out.`, 'They said yes with the gesture. Seal it with yours and it is a promise.'];
+    head = [`${name}'s pinky is out.`, 'They said yes. Add your pinky to seal it and make it a promise.'];
     footer = <><Button icon="lock" label="Seal it" onPress={toLock} /><Button kind="ghost" label="Take it back" onPress={() => setSheet(true)} /></>;
   } else if (invite.status === 'sent') {
-    head = [`Waiting on ${name}.`, `Your ask is out. It expires in ${shortCountdown(invite.expiresAt, now)} if they do not answer.`];
+    head = [`Waiting on ${name}.`, `Your ask has been sent. It expires in ${shortCountdown(invite.expiresAt, now)} if they don't reply.`];
     footer = <Button kind="ghost" label="Take it back" onPress={() => setSheet(true)} />;
   } else if (myPinkyOut) {
     head = ['Your pinky is out.', `${name} still has to seal it. You will see it lock the moment they do.`];
     footer = <><Button icon="eye" label="Watch the lock" onPress={toLock} /><Button kind="ghost" label="Pull it back" onPress={() => setSheet(true)} /></>;
   } else if (invite.status === 'locked' || invite.status === 'kept' || invite.status === 'flaked') {
-    head = ['This one is locked.', 'It lives in your plans now.'];
+    head = ['This one is locked.', "It's now in your plans."];
     footer = <Button icon="lock" label="Open the plan" onPress={() => router.replace(`/plan/${invite.id}`)} />;
   } else if (invite.status === 'declined') {
     head = invite.declinedBy === meId
@@ -84,7 +84,7 @@ export default function InviteScreen() {
     head = ['This one ended.', 'It closed without anyone flaking, so nothing goes on anyone\'s record.'];
     footer = toDiscover;
   } else {
-    head = ['This ask ran out.', `Nobody answered in time. ${iSent ? 'Your ask slot is free again.' : 'Nothing goes on your record.'}`];
+    head = ['This ask ran out.', `No one replied in time. ${iSent ? 'Your ask slot is free again.' : 'Nothing goes on your record.'}`];
     footer = toDiscover;
   }
 

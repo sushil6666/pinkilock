@@ -67,7 +67,7 @@ export default function NewInvite() {
   const venue = !remotePlace && !typing ? venueOf(venueId) : undefined;
   const leaks = looksLikeContact(note) || (typing && looksLikeContact(place));
   const missing = !startsAt ? 'Pick a time.' : !remotePlace && !venue && !typing ? 'Pick where to meet.'
-    : typing && place.trim().length < 3 ? 'Say where: somewhere public.'
+    : typing && place.trim().length < 3 ? 'Add a public place to meet.'
     : leaks ? 'Contacts unlock after a kept promise. Take that out.' : '';
 
   const submit = async () => {
@@ -86,7 +86,7 @@ export default function NewInvite() {
   };
 
   const hint = error || full
-    ? <ErrorText text={error || `You have ${MAX_OPEN_ASKS} asks open. Wait for an answer or take one back.`} />
+    ? <ErrorText text={error || `You have ${MAX_OPEN_ASKS} asks open. Wait for a reply or withdraw one.`} />
     : <T v="caption" c={color.textDim}>{missing || `${person.name} gets 24 hours to answer. Ask ${openAsks + 1} of ${MAX_OPEN_ASKS}.`}</T>;
 
   return (
@@ -166,7 +166,7 @@ export default function NewInvite() {
             <Chip key={line} label={line} selected={note === line} onPress={() => setNote(note === line ? '' : line)} />
           ))}
         </View>
-        <T v="caption" c={color.textDim}>Pick one, or none. Lines are picked, never typed: nothing can ride along in them.</T>
+        <T v="caption" c={color.textDim}>Pick one if you like. Lines are chosen from a list, never typed, so asks stay safe.</T>
       </Section>
     </Screen>
   );

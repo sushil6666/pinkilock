@@ -99,7 +99,7 @@ Font scaling is allowed up to 1.3x (`maxFontSizeMultiplier`) so layouts hold on 
 - **Logo**: the two pinkies locked (pink theirs, gold mine, the app icon's geometry), turned 45
   degrees so they rise to the right and standing on a 14-unit block of `pinkDeep` and `goldDeep`
   (3D depth straight down the screen) with a `shine` along each finger, beside
-  "pinkilock" in Sora, slanted 12 degrees like an italic, with a gold full stop (`src/components/Logo.tsx`). It sits top centre on
+  "pinkilock" in Sora, slanted 12 degrees like an italic, with no full stop (`src/components/Logo.tsx`). It sits top centre on
   every screen: `Screen` draws it in the header, with the back control left and the screen's title
   as a small label under it. A page with its own top bar passes `logo={false}`. Read out as
   "Pinkilock".

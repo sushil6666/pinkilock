@@ -96,7 +96,7 @@ export default function Onboarding() {
             <View style={{ gap: space.sm }}>
               <T v="label" c={color.textDim}>First name</T>
               <TextInput value={name} onChangeText={setName} placeholder="Riya" placeholderTextColor={color.textMute} maxLength={NAME_MAX} autoCapitalize="words" autoCorrect={false} style={inputStyle} accessibilityLabel="First name" returnKeyType="next" />
-              {name.trim().length >= 2 && !nameOk(name) && <T v="caption" c={color.flare}>Just your first name: letters only, no numbers, spaces or symbols.</T>}
+              {name.trim().length >= 2 && !nameOk(name) && <T v="caption" c={color.flare}>First name only, in letters. No numbers, spaces or symbols.</T>}
             </View>
             <View style={{ flexDirection: 'row', gap: space.md }}>
               <View style={{ gap: space.sm, width: 104 }}>
@@ -123,7 +123,7 @@ export default function Onboarding() {
           <>
             <View style={{ gap: space.sm }}>
               <T v="display">What are{'\n'}you up for?</T>
-              <T c={color.textDim}>Pick at least three. These replace the bio: people ask you out to one of them.</T>
+              <T c={color.textDim}>Pick at least three. They are your bio: people ask you out to one of them.</T>
             </View>
             {KIND_ORDER.map((kind) => (
               <View key={kind} style={{ gap: space.sm }}>
@@ -163,7 +163,7 @@ export default function Onboarding() {
                 {CONTACTS.map((k) => <Chip key={k} label={k} selected={contactKind === k} onPress={() => setContactKind(k)} />)}
               </View>
               <TextInput value={handle} onChangeText={setHandle} placeholder={contactKind === 'WhatsApp' ? '+91 number' : '@yourhandle'} placeholderTextColor={color.textMute} maxLength={40} autoCapitalize="none" autoCorrect={false} keyboardType={contactKind === 'WhatsApp' ? 'phone-pad' : 'default'} style={inputStyle} accessibilityLabel={`${contactKind} handle`} />
-              <T v="caption" c={color.textDim}>Nobody sees this until a promise with you is kept. Not before, not for a match, not for a lock.</T>
+              <T v="caption" c={color.textDim}>Nobody sees this until you both keep a promise. Not when you match, and not when you lock a plan.</T>
             </View>
           </>
         )}
@@ -175,7 +175,7 @@ export default function Onboarding() {
             <View style={{ gap: space.md }}>
               {[
                 ['If I lock it, I show up.', 'On time, for the whole ten minutes or the whole boba.'],
-                ['If I cannot, I say so early.', 'Bailing still counts as a flake. Vanishing counts for more.'],
+                ['If I cannot, I say so early.', 'Bailing still counts as a flake, but vanishing counts for more.'],
                 ['My record is public.', 'Kept and flaked promises show on my profile as my trust score.'],
               ].map(([head, sub]) => (
                 <View key={head} style={styles.oath}>
