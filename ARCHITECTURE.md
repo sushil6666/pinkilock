@@ -341,6 +341,10 @@ as due times, so a restart loses nothing.
   centres its header, content and footer in that column and draws a hairline down each side; the
   tab bar, sheets and the notice banner use `column` from `Screen.tsx`. A phone is narrower than
   the column, so nothing changes there. No screen sets its own width.
+  `public/index.html` is the page the web build loads into: it paints `bg` before the app has
+  loaded, and `app.json` (`web.themeColor`) gives the browser bar the same blue. Those two files
+  are the only places a colour is written outside `src/theme/tokens.ts`, because neither can
+  import it.
 - **Browser**: the web build (`npx expo export -p web`) is the same screens. Anything a browser
   needs differently lives in `src/lib/web.ts` or in the shared component, never in a copied
   screen. So far: a hold that completes under a finger eats the click the browser makes when the
