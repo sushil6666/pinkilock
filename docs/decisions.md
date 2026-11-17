@@ -58,6 +58,7 @@ first table with its date.
 | D040 | 2026-11-17 | Owner: "build all". Open recommendations O01 (link gate), O02 (check-in codes), O03 (pick-only ask line) and O13 (double date after WP4) are taken as accepted; work that needs an account, money or a lawyer is built only as far as it can run without one | The owner asked for everything to be built and to merge later | Owner | This log | In force |
 | D041 | 2026-11-17 | The link gate is a server switch, off until a sign-in code can be sent and set by every deploy; passing on an ask never needs a link | Turning it on with no mail sender would lock everyone out, including the post-deploy live test | Claude | `private.config`, `scripts/gate-config.sh` | In force once merged |
 | D042 | 2026-11-17 | Captcha is not built: the link gate plus attestation (WP6) instead | On a phone captcha needs a web view in sign-in, and the gate already makes bulk accounts useless for asking | Claude | Build plan WP2 status | O08 stays open for the website |
+| D043 | 2026-11-17 | Discover order is random per person and day (fixed within the day), not ranked by the spark or by score | A ranking would be a second thing to explain and to game; the daily order keeps paging stable and fair | Claude | `discover()` | In force once merged |
 
 ## Waiting for the owner
 

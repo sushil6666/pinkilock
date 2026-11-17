@@ -88,6 +88,8 @@ export function createSupabaseBackend(url: string, anonKey: string, storage: Ses
   const listeners = new Set<(e: BackendEvent) => void>();
   const known = new Map<string, Invite>();
   const names = new Map<string, string>();
+  /** People who reached me only through discover(): RLS will not return them, so a re-read must not call them gone. */
+  const discovered = new Set<string>();
   let meId = '';
   let live = false;
 
@@ -159,7 +161,7 @@ export function createSupabaseBackend(url: string, anonKey: string, storage: Ses
   /** Re-read what I can see: catches whatever happened while the socket was down or the app asleep. */
   async function resync() {
     const [cards, invites] = await Promise.all([
-      db.from('profile_cards').select('*').limit(200),
+      db.from('profile_cards').select('*'),
       db.from('invites').select('*').order('created_at', { ascending: false }),
     ]);
     if (cards.data) announceCards(cards.data.map(toProfile));
@@ -171,7 +173,7 @@ export function createSupabaseBackend(url: string, anonKey: string, storage: Ses
       let goneProfiles: string[] = [];
       if (cards.data) {
         const listed = new Set(cards.data.map((r: Row) => r.id as string));
-        const missing = [...names.keys()].filter((id) => id !== meId && !listed.has(id));
+        const missing = [...names.keys()].filter((id) => id !== meId && !listed.has(id) && !discovered.has(id));
         // The card list is capped, so ask about the missing ones before calling them gone.
         if (missing.length) {
           const still = await db.from('profile_cards').select('id').in('id', missing);
@@ -202,6 +204,7 @@ export function createSupabaseBackend(url: string, anonKey: string, storage: Ses
     live = false;
     known.clear();
     names.clear();
+    discovered.clear();
     meId = '';
   }
 
@@ -270,15 +273,30 @@ export function createSupabaseBackend(url: string, anonKey: string, storage: Ses
     if (data) announceCards(data.map(toProfile));
   }
 
+  /** The next page of Discover (at most 20, from the server's own order and limits). */
+  async function discoverPage(): Promise<Profile[]> {
+    const page = (await rpc<Row[]>('discover', { p_limit: 20 })).map(toProfile);
+    page.forEach((p) => {
+      discovered.add(p.id);
+      names.set(p.id, p.name);
+    });
+    return page;
+  }
+
   async function snapshot(): Promise<Snapshot> {
     const id = await uid();
+    // My own card and everyone I share an invite with (all RLS returns), plus the first page of Discover.
     const [cards, invites, passes, priv] = await Promise.all([
-      db.from('profile_cards').select('*').limit(200),
+      db.from('profile_cards').select('*'),
       db.from('invites').select('*').order('created_at', { ascending: false }),
       db.from('passes').select('passed_id'),
       db.from('profile_private').select('contact_kind, contact_handle').eq('profile_id', id).maybeSingle(),
     ]);
     const all = check(cards).map(toProfile);
+    if (all.some((p) => p.id === id)) {
+      const known = new Set(all.map((p) => p.id));
+      for (const p of await discoverPage()) if (!known.has(p.id)) all.push(p);
+    }
     all.forEach((p) => names.set(p.id, p.name));
     const list = check(invites).map(toInvite);
     list.forEach((i) => known.set(i.id, i));
@@ -301,7 +319,11 @@ export function createSupabaseBackend(url: string, anonKey: string, storage: Ses
     } catch (e) {
       // Gone or unavailable usually means a block happened that this phone has not heard about
       // (a block is never announced). Re-read, so the stale card and invite drop away.
-      if (e instanceof AppError && RESYNC_CODES.includes(e.code)) resync().catch(quiet('resync.after_refusal'));
+      if (e instanceof AppError && RESYNC_CODES.includes(e.code)) {
+        // Someone from Discover who is no longer there (a block, a deletion): RLS cannot tell me, so drop them here.
+        if (fn === 'send_invite' && (e.code === 'PL003' || e.code === 'PL004') && discovered.has(args.p_to)) forget([args.p_to], []);
+        resync().catch(quiet('resync.after_refusal'));
+      }
       throw e;
     }
   }
@@ -349,6 +371,12 @@ export function createSupabaseBackend(url: string, anonKey: string, storage: Ses
       const id = await uid();
       check(await db.from('passes').delete().eq('profile_id', id).select('passed_id'));
       return { passedIds: [] };
+    },
+
+    async moreProfiles() {
+      await uid();
+      const page = await discoverPage();
+      return page.length ? { profiles: page } : {};
     },
 
     sendInvite: (input) =>

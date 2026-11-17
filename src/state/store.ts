@@ -25,6 +25,8 @@ interface State {
   boot(): Promise<void>;
   completeOnboarding(input: OnboardingInput): Promise<void>;
   updateMe(patch: Partial<OnboardingInput>): Promise<void>;
+  /** Ask for more people for Discover (opening Discover, a timer, a short queue). */
+  refill(): Promise<void>;
   pass(profileId: string): Promise<void>;
   restorePasses(): Promise<void>;
   sendInvite(input: NewInvite): Promise<Invite>;
@@ -108,6 +110,11 @@ export const useStore = create<State>((set, get) => {
     async completeOnboarding(input) {
       set(fromSnapshot(await backend.completeOnboarding(input)));
     },
+    async refill() {
+      if (!get().me) return;
+      await apply(backend.moreProfiles());
+    },
+
     async updateMe(patch) {
       await apply(backend.updateMe(patch));
     },

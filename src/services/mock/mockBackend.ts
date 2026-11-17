@@ -241,6 +241,11 @@ export function createMockBackend(): Backend {
         return { me: d.me, myContact: d.myContact ?? undefined };
       }),
 
+    // Every made-up person is already in the snapshot.
+    async moreProfiles() {
+      return {};
+    },
+
     pass: (profileId) =>
       mutate((d, now) => {
         passTimes = passTimes.filter((t) => t > now - rules.DAY);
