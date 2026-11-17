@@ -31,6 +31,10 @@ export const gutter = space.xl;
  * wide browser window or on a tablet every screen sits in a centred column of this width.
  */
 export const columnMax = 480;
+/** The first screen in a wide browser window is the one place drawn wider: two columns, up to this. */
+export const wideMax = 1080;
+/** How far a button stands off its slab, and how far it sinks when pressed. */
+export const depth = 5;
 
 export const radius = { chip: 6, card: 14, sheet: 28, pill: 999 } as const;
 
@@ -39,6 +43,7 @@ export const font = {
   regular: 'SpaceGrotesk_400Regular',
   medium: 'SpaceGrotesk_500Medium',
   bold: 'SpaceGrotesk_700Bold',
+  hand: 'CaveatBrush_400Regular',
 } as const;
 
 const tabular: TextStyle = { fontVariant: ['tabular-nums'] };
@@ -52,6 +57,7 @@ export const type = {
   bodyBold: { fontFamily: font.bold, fontSize: 16, lineHeight: 23 },
   label: { fontFamily: font.bold, fontSize: 12, lineHeight: 16, letterSpacing: 1.4, textTransform: 'uppercase' },
   caption: { fontFamily: font.medium, fontSize: 13, lineHeight: 18 },
+  hand: { fontFamily: font.hand, fontSize: 24, lineHeight: 27 },
 } as const satisfies Record<string, TextStyle>;
 
 export type TypeName = keyof typeof type;

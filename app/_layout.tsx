@@ -3,6 +3,7 @@
  * and the one-time boot of the backend. Screens below can assume all of that is in place.
  */
 import { ArchivoBlack_400Regular } from '@expo-google-fonts/archivo-black';
+import { CaveatBrush_400Regular } from '@expo-google-fonts/caveat-brush';
 import { SpaceGrotesk_400Regular, SpaceGrotesk_500Medium, SpaceGrotesk_700Bold } from '@expo-google-fonts/space-grotesk';
 import { useFonts } from 'expo-font';
 import * as NavigationBar from 'expo-navigation-bar';
@@ -47,7 +48,7 @@ export function ErrorBoundary({ error, retry }: ErrorBoundaryProps) {
 }
 
 export default function RootLayout() {
-  const [fontsLoaded, fontError] = useFonts({ ArchivoBlack_400Regular, SpaceGrotesk_400Regular, SpaceGrotesk_500Medium, SpaceGrotesk_700Bold });
+  const [fontsLoaded, fontError] = useFonts({ ArchivoBlack_400Regular, CaveatBrush_400Regular, SpaceGrotesk_400Regular, SpaceGrotesk_500Medium, SpaceGrotesk_700Bold });
   const ready = useStore((s) => s.ready);
   const boot = useStore((s) => s.boot);
   const onboarded = useStore((s) => !!s.me);
