@@ -4,7 +4,7 @@
  * footer that stays above the keyboard, so no screen handles insets itself.
  *
  * It also owns the width. Nothing is drawn wider than `columnMax`: in a wide browser window or
- * on a tablet the screen is a centred column with the obsidian background around it and a
+ * on a tablet the screen is a centred column with the app's own background around it and a
  * hairline down each side. Things drawn outside a Screen (the tab bar, sheets, the notice
  * banner) use `column` from here, so the rule lives in one place.
  */
