@@ -30,12 +30,6 @@ on:
         options: [android, ios]
         default: android
 
-  # TEMPORARY, removed before this branch merges: a preview Android build from the phase 2
-  # branch, by touching .github/triggers/eas-build.
-  push:
-    branches: [claude/project-thread-5n9g9n]
-    paths: ['.github/triggers/eas-build']
-
 permissions:
   contents: read
 
