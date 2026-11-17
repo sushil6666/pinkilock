@@ -277,6 +277,13 @@ Open the failing run.
 
 The app keeps showing the last good scores in the meantime, so nothing breaks for users.
 
+### The satisfaction figure
+
+`select * from analytics.satisfaction_daily order by day desc limit 7;` gives, per day, the answers
+to "Worth showing up?" in the 28 days before, how many said yes, the rate (empty under 50 answers:
+report "not enough data", never a percentage), and how many said they felt unsafe. The target is
+96% or more (`docs/build-plan.md`, target B). Every "felt unsafe" also opens a report.
+
 ### Review profile lines and act on reports
 
 Everything goes through `scripts/moderate.sh` with the database URL (the `postgres` role); no app,

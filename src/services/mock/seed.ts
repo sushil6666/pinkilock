@@ -15,7 +15,7 @@ const people: Seed[] = [
     id: 'aanya', name: 'Aanya', age: 22, area: 'Bandra West', pronouns: 'she/her', distanceKm: 2,
     tagline: 'Will judge your boba order. Lovingly.',
     vibes: ['foodie', 'thrifter', 'shameless flirt'], ideaIds: ['boba_run', 'bookstore_lap', 'meme_duel', 'thrift_dare', 'rizz_off'],
-    palette: ['#FF2E93', '#5B0F3A'], glyph: '🧋', kept: 14, flaked: 0, photoCount: 3,
+    palette: ['#FF2E93', '#5B0F3A'], glyph: '🧋', kept: 14, flaked: 0, photoCount: 3, answerMinutes: 12,
     contact: ['Instagram', '@aanya.frames'], photos: [['Thrift haul, Hill Road', '🛍️'], ['Carter Road, 6pm', '🌊'], ['Film camera era', '📷']],
   },
   {
@@ -43,7 +43,7 @@ const people: Seed[] = [
     id: 'zoya', name: 'Zoya', age: 22, area: 'Colaba', pronouns: 'she/her', distanceKm: 14,
     tagline: 'Golden hour or nothing.',
     vibes: ['concert goer', 'foodie', 'dog person'], ideaIds: ['sunset_spot', 'ice_cream_lap', 'playlist_swap', 'photo_booth'],
-    palette: ['#FF8A2E', '#4A1B00'], glyph: '🌇', kept: 19, flaked: 1, photoCount: 3,
+    palette: ['#FF8A2E', '#4A1B00'], glyph: '🌇', kept: 19, flaked: 1, photoCount: 3, answerMinutes: 25,
     contact: ['Instagram', '@zoya.afterfive'], photos: [['Marine Drive, obviously', '🌊'], ['Biscuit, my indie', '🐕'], ['Front row, last gig', '🎤']],
   },
   {
@@ -64,14 +64,14 @@ const people: Seed[] = [
     id: 'arjun', name: 'Arjun', age: 23, area: 'Dadar', pronouns: 'he/him', distanceKm: 8,
     tagline: 'Rates every momo place out of ten. Has a spreadsheet.',
     vibes: ['foodie', 'certified menace', 'meme dealer'], ideaIds: ['momo_stop', 'boba_run', 'coop_game', 'pani_puri_duel', 'red_flag_roast'],
-    palette: ['#FFD12E', '#3F3000'], glyph: '🥟', kept: 7, flaked: 1, photoCount: 2,
+    palette: ['#FFD12E', '#3F3000'], glyph: '🥟', kept: 7, flaked: 1, photoCount: 2, answerMinutes: 95,
     contact: ['WhatsApp', '+91 00000 00177'], photos: [['The spreadsheet', '📊'], ['Shivaji Park, 7am', '🏏']],
   },
   {
     id: 'tara', name: 'Tara', age: 22, area: 'Bandra East', pronouns: 'they/them', distanceKm: 4,
     tagline: 'Three songs. I will know everything about you.',
     vibes: ['concert goer', 'slow burn', 'cat person'], ideaIds: ['playlist_swap', 'ice_cream_lap', 'bad_portraits', 'hot_takes', 'karaoke_duet'],
-    palette: ['#FF2ED1', '#3A0A45'], glyph: '🎶', kept: 8, flaked: 0, photoCount: 3,
+    palette: ['#FF2ED1', '#3A0A45'], glyph: '🎶', kept: 8, flaked: 0, photoCount: 3, answerMinutes: 40,
     contact: ['Instagram', '@tara.on.shuffle'], photos: [['Gig poster wall', '🎸'], ['Noor, asleep again', '🐈'], ['BKC, blue hour', '🌃']],
   },
   {

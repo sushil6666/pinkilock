@@ -408,6 +408,13 @@ the attacker suite against a staging project.
 **Done when:** a kept plan in the local live test produces a rating row, the worker reports the
 figure, and a forced crash in a preview build arrives in the crash tool with nothing private in it.
 
+**Status, 2026-11-17: built, except the crash tool.** The rating after a kept promise, round two
+(from the market review), the satisfaction figure in the worker, and the moderation tool
+(`scripts/moderate.sh`, built with WP1). The "usually answers in" badge from the market review came
+with it. Clients can no longer read the moderation columns of `profiles`. **Not built:** crash and
+error reporting with stack traces needs an account (O09); until then `client_errors` (WP0b)
+carries codes and trace ids. Age checks beyond the 18+ declaration remain an owner decision.
+
 ### WP7b. Photos that cannot carry a contact (G18; do this with Phase 4's photo upload)
 
 The roadmap's Phase 4 adds real photos. A public photo is the widest possible channel for a

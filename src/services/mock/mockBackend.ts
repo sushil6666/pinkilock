@@ -53,6 +53,7 @@ export function createMockBackend(): Backend {
   const codeTries = new Map<string, { fails: number; until: number }>();
   /** When the name and the line last changed (the first ones after joining are free). */
   const changed: { name?: number; tagline?: number } = {};
+  const ratings = new Map<string, boolean>();
   let db: Db | null = null;
   const reveals = seedReveals();
   const listeners = new Set<(e: BackendEvent) => void>();
@@ -248,6 +249,18 @@ export function createMockBackend(): Backend {
         if (contactKind && contactHandle) d.myContact = { kind: contactKind, handle: contactHandle };
         return { me: d.me, myContact: d.myContact ?? undefined };
       }),
+
+    // The made-up other person always wants round two, so the whole flow can be seen.
+    async rateDate(inviteId, answer) {
+      const d = await load();
+      if (find(d, inviteId).status !== 'kept') fail('PL074');
+      if (!ratings.has(inviteId)) ratings.set(inviteId, answer.again);
+    },
+
+    async dateFeedback(inviteId) {
+      const mine = ratings.get(inviteId);
+      return { rated: mine !== undefined, roundTwo: mine === true };
+    },
 
     // The mock has no review step: what I write is what the card shows.
     async myLineReview() {

@@ -57,6 +57,8 @@ export const ERRORS = {
   PL071: 'You changed your line this week. You can change it again 7 days after.',
   PL072: 'This account is paused while we look at a report.',
   PL073: 'Your line was removed after a report. You can add one again later.',
+  PL074: 'Only a kept promise can be rated.',
+  PL075: 'Answer both questions.',
   PL090: 'That moderation step is not valid.',
 
   PA001: 'Phone sign-in is not switched on yet.',

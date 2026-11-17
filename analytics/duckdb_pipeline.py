@@ -48,6 +48,8 @@ create or replace table accounts as
   select id, linked from pg.analytics.accounts;
 create or replace table settings as
   select require_linked from pg.analytics.settings;
+create or replace table date_ratings as
+  select invite_id, user_id, worth, again, unsafe, "at" as ts from pg.public.date_ratings;
 """
 
 TRUST = f"""
@@ -156,6 +158,19 @@ group by c.cohort_week, a.week, s.cohort_size
 order by 1, 2;
 """
 
+# Satisfaction (build plan, target B): of the "Worth showing up?" answers in the last 28 days, the
+# share of yes. No rate under 50 answers: too few to be a percentage.
+SATISFACTION = """
+create or replace table satisfaction_daily as
+select current_date as day,
+       cast(count(*) as integer) as answers_28d,
+       cast(count(*) filter (where worth) as integer) as yes_28d,
+       case when count(*) >= 50 then round(count(*) filter (where worth) / count(*)::double, 3) end as rate_28d,
+       cast(count(*) filter (where unsafe) as integer) as unsafe_28d
+from date_ratings
+where ts > now() - interval 28 day;
+"""
+
 # One Postgres transaction, so the app never reads a half-written set of scores.
 # computed_at is set here, not left to the column default: DuckDB 2 sends NULL for a column it was not given.
 LOAD = """
@@ -167,6 +182,9 @@ delete from pg.analytics.metrics_daily;
 insert into pg.analytics.metrics_daily (day, asks_sent, first_pinkies, locks, kept, flaked, declined, expired,
                                         ask_to_lock_rate, lock_to_kept_rate, median_minutes_to_lock, computed_at)
   select *, now() from metrics_daily;
+delete from pg.analytics.satisfaction_daily where day = current_date;
+insert into pg.analytics.satisfaction_daily (day, answers_28d, yes_28d, rate_28d, unsafe_28d, computed_at)
+  select *, now() from satisfaction_daily;
 delete from pg.analytics.retention_weekly;
 insert into pg.analytics.retention_weekly (cohort_week, week_n, cohort_size, active, rate, computed_at)
   select *, now() from retention_weekly;
@@ -184,7 +202,7 @@ def run(dsn: str, snapshot: str, dry_run: bool) -> None:
     con.execute("begin")
     con.execute(EXTRACT)
     con.execute("commit")
-    for sql in (TRUST, FUNNEL, RETENTION):
+    for sql in (TRUST, FUNNEL, RETENTION, SATISFACTION):
         con.execute(sql)
 
     counts = {t: con.execute(f"select count(*) from {t}").fetchall()[0][0] for t in ("events", "invites", "profiles")}
@@ -193,6 +211,8 @@ def run(dsn: str, snapshot: str, dry_run: bool) -> None:
     con.sql("select * from trust_scores order by score, kept desc limit 15").show()
     print("pre-date conversion by day")
     con.sql("select * from metrics_daily order by day desc limit 14").show()
+    print("satisfaction, last 28 days")
+    con.sql("select * from satisfaction_daily").show()
     print("weekly retention")
     con.sql("select * from retention_weekly order by cohort_week desc, week_n limit 20").show()
 

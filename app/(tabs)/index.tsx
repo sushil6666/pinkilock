@@ -19,6 +19,7 @@ import { isLive, otherId } from '@/domain/invites';
 import { quiet } from '@/lib/log';
 import { useStore } from '@/state/store';
 import { color, radius, space } from '@/theme/tokens';
+import { answersIn } from '@/domain/answers';
 
 export default function Discover() {
   const me = useStore((s) => s.me);
@@ -80,6 +81,12 @@ export default function Discover() {
               <Feather name="map-pin" size={14} color={color.textDim} />
               <T v="caption" c={color.textDim}>{person.area}{person.distanceKm > 0 ? `  /  ${person.distanceKm} km` : ''}{person.pronouns ? `  /  ${person.pronouns}` : ''}</T>
             </View>
+            {answersIn(person.answerMinutes) ? (
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                <Feather name="clock" size={14} color={color.textDim} />
+                <T v="caption" c={color.textDim}>{answersIn(person.answerMinutes)}</T>
+              </View>
+            ) : null}
           </View>
         </Pressable>
 
