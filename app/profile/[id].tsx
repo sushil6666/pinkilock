@@ -5,6 +5,7 @@ import { useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { LockedReveal } from '@/components/LockedReveal';
 import { Portrait } from '@/components/Portrait';
+import { Spark } from '@/components/Spark';
 import { TrustBadge } from '@/components/TrustBadge';
 import { Button } from '@/components/ui/Button';
 import { Chip, Tag } from '@/components/ui/Chip';
@@ -75,6 +76,7 @@ export default function ProfileScreen() {
         <TrustBadge person={person} size="lg" />
 
         {person.tagline ? <T v="heading">{person.tagline}</T> : null}
+        {me && me.id !== person.id ? <Spark me={me} person={person} /> : null}
         {person.vibes.length > 0 && <View style={styles.wrap}>{person.vibes.map((v) => <Chip key={v} label={v} />)}</View>}
 
         <View style={{ gap: space.sm }}>

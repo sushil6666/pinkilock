@@ -54,8 +54,10 @@ src/
     PinkyLock.tsx            The gesture surface (DESIGN_SYSTEM.md section 6)
     PinkyFinger.tsx          The two SVG pinkies
     InviteCard, TrustBadge, Portrait, LockedReveal, Countdown, NoticeBanner
+    Spark.tsx                What lines up between two cards (domain/spark.ts), public data only
   domain/                    Rules, no IO: types, invites (state machine), trust, time, ideas
-                             (the catalogue, openers, dares, ask lines by tone, grouped profile tags),
+                             (the catalogue, openers, dares, ask lines by tone, grouped profile tags), spark (what two
+                             cards have in common),
                              safety (report reasons and limits), phone (E.164)
   services/
     backend.ts               The Backend interface (the repository layer)

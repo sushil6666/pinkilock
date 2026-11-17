@@ -32,7 +32,8 @@ With no keys set, the app runs on ten made-up people who answer by themselves. A
    seconds later.
 3. **Plans**: the plan with Ira starts in four minutes, so check-in is already open. Check in,
    Ira follows, and the reveal opens.
-4. **Discover**: send someone a vibe check. The one line has ready-made options in six tones
+4. **Discover**: a card with something in common shows a spark (shared tags, shared ideas,
+   opposites that attract). Send someone a vibe check. The one line has ready-made options in six tones
    (Chill, Bold, Flirty, Wild, Naughty, Old school). They answer in about seven seconds; then you seal.
    Nikhil always passes, so you can see that too.
 5. On any locked plan: a first line and an optional dare (tap **Another** for a new one).

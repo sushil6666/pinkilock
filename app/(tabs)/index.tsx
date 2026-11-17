@@ -7,6 +7,7 @@ import { Redirect, router } from 'expo-router';
 import { Pressable, StyleSheet, View } from 'react-native';
 import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
 import { Portrait } from '@/components/Portrait';
+import { Spark } from '@/components/Spark';
 import { TrustBadge } from '@/components/TrustBadge';
 import { Button } from '@/components/ui/Button';
 import { Tag } from '@/components/ui/Chip';
@@ -68,6 +69,8 @@ export default function Discover() {
         </Pressable>
 
         {person.tagline ? <T v="heading">{person.tagline}</T> : null}
+
+        <Spark me={me} person={person} />
 
         {person.vibes.length > 0 && (
           <View style={styles.vibes}>
