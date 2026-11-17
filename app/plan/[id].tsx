@@ -12,11 +12,12 @@ import { LockedReveal } from '@/components/LockedReveal';
 import { Portrait } from '@/components/Portrait';
 import { TrustBadge } from '@/components/TrustBadge';
 import { Button } from '@/components/ui/Button';
+import { Tag } from '@/components/ui/Chip';
 import { HoldButton } from '@/components/ui/HoldButton';
 import { Screen } from '@/components/ui/Screen';
 import { Sheet } from '@/components/ui/Sheet';
 import { T } from '@/components/ui/T';
-import { ideaOf, openerOf } from '@/domain/ideas';
+import { daresFor, ideaOf, openerOf } from '@/domain/ideas';
 import { CHECK_IN_CLOSES_AFTER, CHECK_IN_OPENS_BEFORE, checkInPhase, otherId } from '@/domain/invites';
 import { shortCountdown, timeLabel, whenLabel } from '@/domain/time';
 import { trustOf, trustScore } from '@/domain/trust';
@@ -40,6 +41,7 @@ export default function PlanScreen() {
   const [sheet, setSheet] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+  const [dare, setDare] = useState(0);
 
   if (!invite || !me || !other) {
     return (
@@ -53,6 +55,7 @@ export default function PlanScreen() {
   }
 
   const idea = ideaOf(invite.ideaId);
+  const dares = daresFor(idea.kind);
   const name = other.name;
   const phase = checkInPhase(invite, now);
   const iAmIn = invite.checkIns.includes(me.id);
@@ -133,6 +136,17 @@ export default function PlanScreen() {
             <T v="label" c={color.textDim}>Break the ice</T>
             <T v="heading">{openerOf(idea.id)}</T>
             <T v="caption" c={color.textDim}>No chat before the date, so here is your first line.</T>
+          </View>
+        )}
+
+        {locked && (
+          <View style={{ gap: space.sm }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+              <T v="label" c={color.pink}>Dare, if you are brave</T>
+              <Tag label="Another" tone={color.textDim} onPress={() => setDare((n) => n + 1)} />
+            </View>
+            <T v="heading">{dares[dare % dares.length]}</T>
+            <T v="caption" c={color.textDim}>Optional. Only you see this one, and either of you can say no.</T>
           </View>
         )}
 

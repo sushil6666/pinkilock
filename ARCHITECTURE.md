@@ -43,7 +43,7 @@ app/                         Routes only. A route file wires state to components
   report/[id].tsx            Report someone (always blocks too)
   account/sign-in.tsx        Add an email or a phone number (link), or sign back in with one
   account/blocked.tsx        People I blocked, with unblock
-  invite/new.tsx             Vibe check composer
+  invite/new.tsx             Vibe check composer (idea, time, place, one line in a chosen tone)
   invite/[id].tsx            One invitation: lock, seal, pass, take back
   lock/[id].tsx              The Pinkilock gesture
   plan/[id].tsx              Countdown, check in, bail, reveal
@@ -54,7 +54,10 @@ src/
     PinkyLock.tsx            The gesture surface (DESIGN_SYSTEM.md section 6)
     PinkyFinger.tsx          The two SVG pinkies
     InviteCard, TrustBadge, Portrait, LockedReveal, Countdown, NoticeBanner
-  domain/                    Rules, no IO: types, invites (state machine), trust, time, ideas,
+    Spark.tsx                What lines up between two cards (domain/spark.ts), public data only
+  domain/                    Rules, no IO: types, invites (state machine), trust, time, ideas
+                             (the catalogue, openers, dares, ask lines by tone, grouped profile tags), spark (what two
+                             cards have in common),
                              safety (report reasons and limits), phone (E.164)
   services/
     backend.ts               The Backend interface (the repository layer)

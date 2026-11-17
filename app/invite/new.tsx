@@ -8,12 +8,12 @@ import { useMemo, useState, type ReactNode } from 'react';
 import { StyleSheet, TextInput, View } from 'react-native';
 import { Portrait } from '@/components/Portrait';
 import { TrustBadge } from '@/components/TrustBadge';
-import { Chip } from '@/components/ui/Chip';
+import { Chip, Tag } from '@/components/ui/Chip';
 import { HoldButton } from '@/components/ui/HoldButton';
 import { inputStyle } from '@/components/ui/input';
 import { Screen } from '@/components/ui/Screen';
 import { T } from '@/components/ui/T';
-import { ideaOf, noteStarters } from '@/domain/ideas';
+import { NOTE_TONES, ideaOf, noteStarters, type NoteTone } from '@/domain/ideas';
 import { MAX_OPEN_ASKS, NOTE_MAX, isOpen } from '@/domain/invites';
 import { dayOptions, slotOptions, timeLabel } from '@/domain/time';
 import { haptic } from '@/lib/haptics';
@@ -36,6 +36,7 @@ export default function NewInvite() {
   const [startsAt, setStartsAt] = useState<number | null>(null);
   const [place, setPlace] = useState('');
   const [note, setNote] = useState('');
+  const [tone, setTone] = useState<NoteTone>('chill');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
 
@@ -126,7 +127,10 @@ export default function NewInvite() {
 
       <Section n="04" label={`One line (optional)  ${note.length}/${NOTE_MAX}`}>
         <View style={styles.wrap}>
-          {noteStarters(idea.kind).map((line) => (
+          {NOTE_TONES.map((t) => <Tag key={t.id} label={t.label} tone={tone === t.id ? color.volt : color.textDim} selected={tone === t.id} onPress={() => setTone(t.id)} />)}
+        </View>
+        <View style={styles.wrap}>
+          {noteStarters(idea.kind, tone).map((line) => (
             <Chip key={line} label={line} selected={note === line} onPress={() => setNote(note === line ? '' : line)} />
           ))}
         </View>
