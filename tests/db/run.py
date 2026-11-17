@@ -31,6 +31,14 @@ def main() -> int:
         try:
             uri = srv.get_uri()
             migrations = sorted((ROOT / "supabase" / "migrations").glob("*.sql"))
+            # Supabase records a migration by the number before the first underscore, and refuses
+            # two files with the same one. Two branches can each pick the next free number.
+            versions = [f.name.split("_", 1)[0] for f in migrations]
+            clashes = sorted({v for v in versions if versions.count(v) > 1})
+            if clashes:
+                names = ", ".join(f.name for f in migrations if f.name.split("_", 1)[0] in clashes)
+                print(f"Two migrations share a version number; rename the newer one: {names}", file=sys.stderr)
+                return 1
             for f in (HERE / "supabase_shim.sql", *migrations, HERE / "scenario.sql"):
                 print(f"== {f.relative_to(ROOT)}")
                 out = subprocess.run(["psql", uri, "-v", "ON_ERROR_STOP=1", "-q", "-f", str(f)], capture_output=True, text=True)
