@@ -1,10 +1,16 @@
-# On every push: TypeScript strict, the database tests on a throwaway Postgres, and the two-user,
+# On every pull request and every push to main: TypeScript strict, the database tests on a throwaway Postgres, and the two-user,
 # push and two-phone tests against a local Supabase stack. No project keys are used here.
+#
+# To save Actions minutes: a branch runs CI once it has a pull request, not on every push before
+# that, and a change that touches only Markdown runs nothing.
 name: CI
 
 on:
   push:
+    branches: [main]
+    paths-ignore: ['**/*.md']
   pull_request:
+    paths-ignore: ['**/*.md']
 
 concurrency:
   group: ci-${{ github.ref }}
@@ -15,8 +21,6 @@ permissions:
 
 jobs:
   typecheck:
-    # A push to a branch with an open pull request would otherwise run everything twice.
-    if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name != github.repository
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -29,7 +33,6 @@ jobs:
       - run: npm run typecheck
 
   database:
-    if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name != github.repository
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -43,7 +46,6 @@ jobs:
         run: python tests/db/run.py
 
   local-stack:
-    if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name != github.repository
     runs-on: ubuntu-latest
     timeout-minutes: 25
     steps:

@@ -11,9 +11,9 @@ it is healthy, and what to do when something breaks. `README.md` covers first-ti
 | Database: schema, RLS, promise functions | Supabase project (`SUPABASE_PROJECT_REF`) | `supabase/migrations`, via **Supabase deploy** |
 | The clock: `sweep_invites` every minute | `pg_cron` job `pinkilock-sweep` in that project | Migration `..._sweep_cron.sql` |
 | Push: outbox, trigger, sender | `notifications` table and the `push` Edge Function | `..._push.sql`, `supabase/functions/push`, via **Supabase deploy** |
-| Trust scores, funnel, retention | **Analytics worker** workflow, every 5 minutes | `analytics/duckdb_pipeline.py` |
+| Trust scores, funnel, retention | **Analytics worker** workflow, once an hour | `analytics/duckdb_pipeline.py` |
 | The app | EAS builds (project `pinkilock/pinkilock`, package `com.pinkilock.app`) | **EAS build** workflow |
-| Checks | **CI** on every push and PR | `tests/` |
+| Checks | **CI** on every PR and every push to `main` | `tests/` |
 
 **The golden rule:** everything reaches the cloud through GitHub Actions from `main`. Nothing is
 changed by hand in the Supabase dashboard, and nothing is deployed from a branch.
@@ -69,15 +69,30 @@ Kept outside GitHub, and managed by the deploy:
 
 | Workflow | Runs when | What it does |
 | --- | --- | --- |
-| **CI** | Every push and PR | Typecheck, `tests/db`, and the live (two users, then block, report, export, phone, delete), push and two-browser tests on a local Supabase stack. Uses no project keys |
+| **CI** | Every PR and every push to `main`, unless only Markdown changed | Typecheck, `tests/db`, and the live (two users, then block, report, export, phone, delete), push and two-browser tests on a local Supabase stack. Uses no project keys |
 | **Supabase deploy** | A push to `main` that touches `supabase/` or the workflow (target `preview`); or by hand, choosing `preview` or `production` | Turns on anonymous sign-ins, applies migrations, sets the analytics password, prints the pooler host, deploys `push`, rotates the push secret, turns on Twilio Verify if its secrets exist, then (staging only) runs the live tests |
 | **Live two-user test** | After each staging deploy; or by hand | Two anonymous users go through the whole flow, then three more through block, report, export and delete, on staging; all are deleted after. Never run on production |
-| **Analytics worker** | Every 5 minutes; or by hand | Recomputes trust scores and metrics, once per project that is set up. If a run fails it opens an `analytics-worker` issue (`analytics-worker-production` for production), and the next good run closes it |
+| **Analytics worker** | Once an hour; or by hand | Recomputes trust scores and metrics, once per project that is set up. If a run fails it opens an `analytics-worker` issue (`analytics-worker-production` for production), and the next good run closes it |
 | **EAS build** | By hand (pick a profile and platform) | Copies the backend values into the EAS environment, builds, and puts the install link in the run summary |
 | **EAS init** | Once, by hand | Created the EAS project (id is already in `app.json`) |
 
 GitHub can pause scheduled workflows in a repo with no activity for 60 days. If trust scores
 stop moving, check that **Analytics worker** is still enabled.
+
+### Staying inside the Actions minutes
+
+GitHub gives a private repo a monthly allowance of Actions minutes and bills every job as at
+least one minute. What uses them here, and how to use fewer:
+
+- **Analytics worker:** one run an hour is about 720 minutes a month. It ran every 5 minutes at
+  first, which would have been about 8,600. Change the `cron` line in `analytics.yml` to run it
+  less often, and run it by hand when you want a fresh score at once.
+- **CI:** about 15 to 20 minutes a run, mostly the local Supabase stack. It runs for a pull
+  request and for a push to `main`, so every merged PR costs two runs. Push to a PR in a few
+  larger commits, not many small ones.
+- **Supabase deploy:** one run per merge that touches `supabase/`, followed by the live test.
+  Merging two such PRs back to back runs it twice. Merge them together where you can.
+- Check the total under Settings, Billing and plans. A public repo has no limit on minutes.
 
 ## 5. Everyday changes
 
@@ -130,7 +145,7 @@ from public.notifications where sent_at is null group by kind;
 -- Postgres reaching the push function: recent responses should be 200.
 select status_code, error_msg, created from net._http_response order by created desc limit 10;
 
--- Trust scores are fresh: should be within the last 10 minutes or so.
+-- Trust scores are fresh: should be within the last hour or so.
 select max(computed_at) as last_scored from public.trust_scores;
 
 -- Reports nobody has looked at yet.

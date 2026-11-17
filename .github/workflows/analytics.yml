@@ -1,6 +1,7 @@
 # The analytics worker in the cloud: DuckDB reads the event log from Supabase, computes Trust
-# Scores, the funnel and retention, and writes them back. Every 5 minutes (the shortest schedule
-# GitHub offers; under load GitHub may start a run late).
+# Scores, the funnel and retention, and writes them back. Once an hour, at 17 minutes past (under load
+# GitHub may start a run late). Hourly on purpose: GitHub bills every run as at least one minute,
+# so every 5 minutes would cost about 8,600 minutes a month. Run it by hand for a fresh score now.
 #
 # It connects as pinkilock_analytics, a role that can read events, invites and profiles and write
 # only trust_scores and analytics.* (see the first migration). It holds no other credential.
@@ -18,7 +19,7 @@ name: Analytics worker
 
 on:
   schedule:
-    - cron: '*/5 * * * *'
+    - cron: '17 * * * *'
   workflow_dispatch:
 
 # One at a time. A run that is still going makes the next one wait rather than overlap.
