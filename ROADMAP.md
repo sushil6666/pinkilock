@@ -24,8 +24,8 @@ Built and verified against the real Supabase project on 2026-11-16:
 - Deploys from GitHub Actions only (`supabase-deploy.yml`), followed by the live two-user test,
   which passed 6 of 6 against the real project.
 - Push notifications sent only by the server: a database outbox and the `push` Edge Function.
-- The analytics worker on a 5-minute GitHub Actions schedule; a failed run opens an issue.
-- EAS profiles (development, preview, production), CI on every push, an installable Android
+- The analytics worker on a 6-hourly GitHub Actions schedule; a failed run opens an issue.
+- EAS profiles (development, preview, production), CI on every pull request and push to `main`, an installable Android
   preview APK, placeholder icon and splash.
 
 **Done when** every box in [docs/phase-2-checklist.md](docs/phase-2-checklist.md) is ticked: the

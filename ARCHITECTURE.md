@@ -254,7 +254,7 @@ promise function / sweep -> invites row changes -> trigger invites_notify -> not
 
 ## 7. Analytics and the trust engine (DuckDB)
 
-`analytics/duckdb_pipeline.py` runs every 5 minutes in GitHub Actions
+`analytics/duckdb_pipeline.py` runs every 6 hours in GitHub Actions
 (`.github/workflows/analytics.yml`), as the `pinkilock_analytics` role. That role can read
 `events`, `invites` and `profiles` and write `trust_scores` and `analytics.*`, and nothing else; a
 database test pins that list. Its password is the workflow's only secret. A failed run opens an
@@ -353,8 +353,8 @@ as due times, so a restart loses nothing.
   Twilio Verify phone sign-in if its secrets exist, and, for
   preview only, runs the live tests against what it just deployed. The live tests are not run on
   production, where their test people would show up in real Discover.
-- **Analytics**: the worker runs once per project that has a ref and a pooler host, every 5
-  minutes; a project that is not set up is skipped.
+- **Analytics**: the worker runs once per project that has a ref and a pooler host, every 6
+  hours; a project that is not set up is skipped.
 - **App**: `.github/workflows/eas-build.yml` copies the public Supabase URL and anon key for the
   chosen profile into the matching EAS environment and starts the build. Both values are public
   by design; the service role key is used by nothing in the app, the repo or these workflows (the
@@ -381,7 +381,7 @@ as due times, so a restart loses nothing.
 - `npm run test:push:local`: the whole push chain on the local stack, with a stand-in for Expo.
 - `npm run test:app:local`: the web build in two browser sessions, through the real screens,
   ending with a block from the profile screen, a data download and an account deletion from Me.
-- CI runs all of the above on every push. The live two-user test also runs against the real
+- CI runs all of the above on every pull request and every push to `main`. The live two-user test also runs against the real
   project after each deploy.
 
 ## 12. Not in the MVP, on purpose

@@ -137,7 +137,7 @@ section 6.
 
 ## Analytics worker (DuckDB)
 
-In the cloud it runs every 5 minutes as the **Analytics worker** workflow, with the restricted
+In the cloud it runs every 6 hours as the **Analytics worker** workflow, with the restricted
 `pinkilock_analytics` role. If a run fails, an issue labelled `analytics-worker` is opened and
 GitHub emails you; the next good run closes it. Trust badges in live mode read what it writes.
 
@@ -161,12 +161,12 @@ npm run test:app:local      # the real screens in two browser sessions (npx play
 npm run test:live           # the same live tests against EXPO_PUBLIC_SUPABASE_URL / _ANON_KEY
 ```
 
-CI runs all but the last on every push. The last runs against the real project after each deploy,
+CI runs all but the last on every pull request and every push to `main`. The last runs against the real project after each deploy,
 and on demand as the **Live two-user test** workflow.
 
 ## Status
 
-**Verified locally** (a full Supabase stack in Docker, and in CI on every push): the migrations
+**Verified locally** (a full Supabase stack in Docker, and in CI): the migrations
 apply cleanly and pg_cron runs the sweep; two separately signed-in users go through onboard, ask,
 both pinkies, lock, check-in, reveal, bail and expiry using the app's own backend code; each
 hears the other over Realtime; the reveal returns nothing before a kept invite; the same flow

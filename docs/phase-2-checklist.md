@@ -24,7 +24,7 @@ Never add the service role key anywhere.
 ## 2. Analytics worker
 
 - [ ] After `SUPABASE_POOLER_HOST` is set, run **Analytics worker** from the Actions tab and check
-      that it goes green. From then on it runs every 5 minutes on its own.
+      that it goes green. From then on it runs every 6 hours on its own.
 - [ ] If it fails, an issue labelled `analytics-worker` is opened. The next good run closes it.
 
 ## 3. Android push (Firebase)
