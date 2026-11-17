@@ -21,6 +21,7 @@ import { useStore } from '@/state/store';
 import { color, space, type } from '@/theme/tokens';
 import { ErrorText } from '@/components/ui/ErrorText';
 import { shown } from '@/lib/report';
+import { AREA_MAX, NAME_MAX, looksLikeContact, nameOk } from '@/domain/profile';
 
 const PRONOUNS = ['she/her', 'he/him', 'they/them'];
 const CONTACTS: ContactKind[] = ['Instagram', 'Snapchat', 'WhatsApp'];
@@ -48,9 +49,9 @@ export default function Onboarding() {
   const under18 = age.length >= 2 && ageNum < 18;
   const canNext = [
     true,
-    name.trim().length >= 2 && ageNum >= 18 && ageNum <= 99 && area.trim().length >= 2,
+    nameOk(name) && ageNum >= 18 && ageNum <= 99 && area.trim().length >= 2 && !looksLikeContact(area),
     ideaIds.length >= 3,
-    handle.trim().length >= 2,
+    handle.trim().length >= 2 && !looksLikeContact(tagline),
     true,
   ][step];
 
@@ -90,7 +91,8 @@ export default function Onboarding() {
             <T v="display">Who's{'\n'}showing up?</T>
             <View style={{ gap: space.sm }}>
               <T v="label" c={color.textDim}>First name</T>
-              <TextInput value={name} onChangeText={setName} placeholder="Riya" placeholderTextColor={color.textMute} maxLength={24} autoCapitalize="words" autoCorrect={false} style={inputStyle} accessibilityLabel="First name" returnKeyType="next" />
+              <TextInput value={name} onChangeText={setName} placeholder="Riya" placeholderTextColor={color.textMute} maxLength={NAME_MAX} autoCapitalize="words" autoCorrect={false} style={inputStyle} accessibilityLabel="First name" returnKeyType="next" />
+              {name.trim().length >= 2 && !nameOk(name) && <T v="caption" c={color.flare}>Just your first name: letters only, no numbers, spaces or symbols.</T>}
             </View>
             <View style={{ flexDirection: 'row', gap: space.md }}>
               <View style={{ gap: space.sm, width: 104 }}>
@@ -99,9 +101,10 @@ export default function Onboarding() {
               </View>
               <View style={{ gap: space.sm, flex: 1 }}>
                 <T v="label" c={color.textDim}>Your area</T>
-                <TextInput value={area} onChangeText={setArea} placeholder="Bandra West" placeholderTextColor={color.textMute} maxLength={28} autoCapitalize="words" style={inputStyle} accessibilityLabel="Your area" />
+                <TextInput value={area} onChangeText={setArea} placeholder="Bandra West" placeholderTextColor={color.textMute} maxLength={AREA_MAX} autoCapitalize="words" style={inputStyle} accessibilityLabel="Your area" />
               </View>
             </View>
+            {looksLikeContact(area) && <T v="caption" c={color.flare}>Contacts unlock after a kept promise. Take that out.</T>}
             {under18 && <T v="caption" c={color.flare}>Pinkilock is for adults only. You need to be 18 or older.</T>}
             <View style={{ gap: space.sm }}>
               <T v="label" c={color.textDim}>Pronouns (optional)</T>
@@ -148,6 +151,7 @@ export default function Onboarding() {
                 {TAGLINE_PROMPTS.map((p) => <Tag key={p} label={p.trim()} tone={tagline.startsWith(p) ? color.volt : color.textDim} selected={tagline.startsWith(p)} onPress={() => setTagline(p)} />)}
               </View>
               <TextInput value={tagline} onChangeText={setTagline} placeholder="Will judge your chai order." placeholderTextColor={color.textMute} maxLength={80} style={[inputStyle, type.body]} accessibilityLabel="One line about you" />
+              {looksLikeContact(tagline) && <T v="caption" c={color.flare}>Contacts unlock after a kept promise. Take that out.</T>}
             </View>
             <View style={{ gap: space.sm }}>
               <T v="label" c={color.pink}>What unlocks when you both show</T>

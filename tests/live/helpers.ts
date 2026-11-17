@@ -67,8 +67,8 @@ export function person(name: string): Person {
 }
 
 export const profile = (name: string, handle: string): OnboardingInput => ({
-  name, age: 24, area: 'Bandra', pronouns: '', tagline: 'automated test, please ignore', vibes: ['tests'],
-  ideaIds: ['boba_run', 'video_coffee'], contactKind: 'Instagram', contactHandle: handle,
+  name, age: 24, area: 'Bandra', pronouns: '', tagline: 'automated test, please ignore', vibes: ['foodie'],
+  ideaIds: ['boba_run', 'video_coffee', 'chai_walk'], contactKind: 'Instagram', contactHandle: handle,
 });
 
 export const inviteIs = (id: string, status: Invite['status']) => (e: BackendEvent) =>

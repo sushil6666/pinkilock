@@ -18,8 +18,8 @@ import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import { AppError } from '../../src/domain/errors';
 import { KEY, MIN, URL, person, profile, type Person } from './helpers';
 
-const x = person('E2E Xavier');
-const y = person('E2E Yami');
+const x = person('TestXavier');
+const y = person('TestYami');
 let raw: SupabaseClient;
 /** The anon key and nothing else: a script with no session. */
 const signedOut = createClient(URL!, KEY!, { auth: { persistSession: false, autoRefreshToken: false } });
@@ -129,14 +129,19 @@ test('errors carry a code and a trace id, and the phone error log cannot be read
   }
 });
 
-gap('G1', 'a handle goes out on a profile line, written straight to the table', async () => {
-  const res = await raw.from('profiles').update({ tagline: 'dm me on insta @xavier.real' }).eq('id', x.id).select('tagline');
-  assert.ok(res.error || res.data?.length === 0, 'the write went through');
-});
-
-gap('G3', 'server-owned columns are client-writable', async () => {
-  const res = await raw.from('profiles').update({ photo_count: 99 }).eq('id', x.id).select('photo_count');
-  assert.ok(res.error || res.data?.length === 0, 'the write went through');
+test('G1, G3 closed: profiles are written only through save_profile, which refuses a contact', async () => {
+  assert.ok((await raw.from('profiles').update({ tagline: 'dm me on insta @xavier.real' }).eq('id', x.id).select('tagline')).error, 'a direct write to the profile');
+  assert.ok((await raw.from('profiles').update({ photo_count: 99 }).eq('id', x.id).select('photo_count')).error, 'a direct write to a server-owned column');
+  assert.ok((await raw.from('profile_private').update({ photos: [{ caption: 'x' }] }).eq('profile_id', x.id).select('profile_id')).error, 'a direct write to the photos field');
+  const me = profile(x.name, '@e2e_xavier');
+  await assert.rejects(x.backend.updateMe({ tagline: 'dm me on insta @xavier.real' }), (e: unknown) => e instanceof AppError && e.code === 'PL065', 'a handle in the profile line');
+  await assert.rejects(x.backend.updateMe({ name: 'xavier.real' }), (e: unknown) => e instanceof AppError && e.code === 'PL060', 'a handle as the name');
+  await assert.rejects(x.backend.updateMe({ vibes: ['any text at all'] }), (e: unknown) => e instanceof AppError && e.code === 'PL062', 'a tag that is not in the catalogue');
+  await assert.rejects(x.backend.sendInvite({ toId: y.id, ideaId: 'boba_run', startsAt: Date.now() + 60 * MIN, place: 'Linking Road', note: 'call me 98765 43210' }),
+    (e: unknown) => e instanceof AppError && e.code === 'PL065', 'a number in an ask');
+  const after = await x.backend.updateMe({ tagline: 'still here' });
+  assert.equal(after.me?.tagline, 'still here', 'an ordinary edit still saves');
+  assert.equal(after.me?.name, me.name, 'and nothing refused got through');
 });
 
 gap('G4', 'an anonymous account can send an ask', async () => {
