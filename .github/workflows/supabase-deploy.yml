@@ -226,6 +226,19 @@ jobs:
             --data @"$RUNNER_TEMP/email.json" -o /dev/null
           rm -f "$RUNNER_TEMP/email.json"
           echo "- Email sign-in: $summary" >> "$GITHUB_STEP_SUMMARY"
+      - name: The link gate, on once a sign-in code can be sent
+        # Asks and pinkies need a linked email or phone (docs/build-plan.md, WP2). With no mail
+        # sender and no SMS provider nobody could link, so the gate stays off until one exists.
+        env:
+          SMTP_HOST: ${{ vars.SMTP_HOST }}
+          SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
+          TWILIO_SID: ${{ secrets.TWILIO_VERIFY_ACCOUNT_SID }}
+          TWILIO_SERVICE: ${{ secrets.TWILIO_VERIFY_SERVICE_SID }}
+        run: |
+          gate=off
+          if { [ -n "$SMTP_HOST" ] && [ -n "$SMTP_PASSWORD" ]; } || { [ -n "$TWILIO_SID" ] && [ -n "$TWILIO_SERVICE" ]; }; then gate=on; fi
+          scripts/gate-config.sh "$(scripts/supabase-db-url.sh postgres "$SUPABASE_DB_PASSWORD")" "$gate"
+          echo "- Link gate (asks need an email or phone): $gate" >> "$GITHUB_STEP_SUMMARY"
 
   live-test:
     # Preview only: on production it would put test people in front of real ones.

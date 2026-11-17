@@ -14,6 +14,13 @@ export const CHECK_IN_OPENS_BEFORE = 10 * MIN;
 export const CHECK_IN_CLOSES_AFTER = 30 * MIN;
 export const MAX_OPEN_ASKS = 3;
 export const NOTE_MAX = 80;
+/**
+ * Daily limits, the same as send_invite and the passes trigger in supabase/migrations
+ * (20261117000011_limits_and_gate.sql). The server is the authority; these let the mock agree.
+ */
+export const ASKS_PER_DAY = 10;
+export const REASK_AFTER = 7 * DAY;
+export const PASSES_PER_DAY = 200;
 
 export const isOpen = (i: Invite) => i.status === 'sent' || i.status === 'half_locked';
 export const isLive = (i: Invite) => isOpen(i) || i.status === 'locked';

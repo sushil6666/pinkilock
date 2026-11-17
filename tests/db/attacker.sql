@@ -14,6 +14,14 @@
 \set z '00000000-0000-0000-0000-0000000000e3'
 \set crowd1 '00000000-0000-0000-0001-000000000001'
 
+create or replace function t.sqlstate(stmt text) returns text language plpgsql as $$
+begin
+  execute stmt;
+  return null;
+exception when others then
+  return sqlstate;
+end $$;
+
 create function t.gap(holds boolean, gap text, msg text) returns text language plpgsql as $$
 begin
   if holds is true then
@@ -129,16 +137,18 @@ select decline_invite(:'xy1');
 select t.as_user(:'x');
 select t.ok(t.fails(format('select offer_pinky(%L)', :'xy1')), 'X cannot lock an invite that was declined');
 
--- G6: nothing stops X asking again at once.
-select t.gap(t.fails(format($$select send_invite(%L, 'boba_run', now() + interval '1 hour', '', '')$$, :'y')), 'G6',
-  'X can ask Y again the second Y has passed');
-select id as xy2 from invites where from_id = :'x' and to_id = :'y' and status = 'sent' \gset
+-- G6 closed: X cannot ask Y again for 7 days after Y passed.
+select t.ok(t.sqlstate(format($$select send_invite(%L, 'boba_run', now() + interval '1 hour', '', '')$$, :'y')) = 'PL026',
+  'G6 closed: X cannot ask Y again the second Y has passed');
 
--- It locks. Locked is not kept: no reveal, and no check-in an hour early.
+-- Y asks X instead. It locks. Locked is not kept: no reveal, and no check-in an hour early.
+select t.as_user(:'y');
+select (send_invite(:'x', 'boba_run', now() + interval '1 hour', '', '')).id as xy2 \gset
+select t.as_user(:'x');
+select offer_pinky(:'xy2');
 select t.as_user(:'y');
 select offer_pinky(:'xy2');
 select t.as_user(:'x');
-select offer_pinky(:'xy2');
 select t.ok((select status from invites where id = :'xy2') = 'locked', 'the plan between X and Y is locked');
 select t.ok((select count(*) from profile_private where profile_id = :'y') = 0, 'a locked plan does not open the reveal');
 select t.ok(t.fails(format('select check_in(%L)', :'xy2')), 'X cannot check in an hour early');
@@ -174,40 +184,56 @@ select t.ok(t.fails(format($$update profile_private set photos = (select jsonb_a
 select t.gap(t.fails($$select save_profile('Xavier', 25, 'Bandra', '', 'shift each letter back by one: jotub tbn', '{}', array['boba_run','chai_walk','meme_duel'])$$), 'G18',
   'a contact written in a made-up code is stored and shown with no review');
 
--- G4: an account that cost nothing can ask people out. (Every test user here is anonymous.)
-select t.gap(t.fails(format($$select decline_invite((send_invite(%L, 'boba_run', now() + interval '2 hours', '', '')).id)$$, :'crowd1')), 'G4',
-  'an anonymous account can send an ask');
+-- G4 closed: with the link gate on, an account with no email or phone cannot ask or lock.
+reset role;
+update auth.users set is_anonymous = true where id = :'crowd1';
+select private.set_config('require_linked', 'true');
+set role authenticated;
+select t.as_user(:'crowd1');
+select t.ok(t.sqlstate(format($$select send_invite(%L, 'boba_run', now() + interval '2 hours', '', '')$$, :'y')) = 'PL068',
+  'G4 closed: an anonymous account cannot send an ask while the gate is on');
+reset role;
+select private.set_config('require_linked', 'false');
+update auth.users set is_anonymous = false where id = :'crowd1';
+set role authenticated;
+select t.as_user(:'x');
 
 -- G5: the whole user base in one query.
 select t.gap((select count(*) from profile_cards) <= 200, 'G5', 'X reads every card there is in one query');
 
--- G6: no daily limits.
-select t.gap((select count(*) filter (where not t.fails(format(
-    $$select decline_invite((send_invite(%L, 'boba_run', now() + interval '2 hours', '', '')).id)$$, id))) <= 10
-  from (select id from profiles where name = 'Crowd' order by id limit 12) c), 'G6', 'X can send more than 10 asks in a day');
-select t.gap(t.fails($$select log_event('app_open', jsonb_build_object('junk', repeat('x', 100000)))$$), 'G6',
-  'the event log takes 100 kB from the app in one call');
-select t.gap(t.fails(format($$insert into passes (profile_id, passed_id) select %L, id from profiles where name = 'Crowd'$$, :'x')), 'G6',
-  'X can pass on 220 people in one go');
+-- G6 closed: daily limits. A crowd member sends the asks, so that X's own count is left alone.
+select t.as_user('00000000-0000-0000-0001-000000000002');
+select t.ok((select count(*) filter (where not t.fails(format(
+    $$select decline_invite((send_invite(%L, 'boba_run', now() + interval '2 hours', '', '')).id)$$, id))) = 10
+  from (select id from profiles where name = 'Crowd' and id <> '00000000-0000-0000-0001-000000000002' order by id limit 12) c),
+  'G6 closed: no one can send more than 10 asks in a day');
+select t.as_user(:'x');
+select t.ok(t.sqlstate($$select log_event('app_open', jsonb_build_object('junk', repeat('x', 100000)))$$) = 'PL041',
+  'G6 closed: the event log takes at most 1 kB from the app in one call');
+select t.ok(t.sqlstate(format($$insert into passes (profile_id, passed_id) select %L, id from profiles where name = 'Crowd'$$, :'x')) = 'PL028',
+  'G6 closed: no one can pass on more than 200 people in a day');
 
 -- G7: check-in is a button. X and Y "keep" two promises without proving they met.
-select (send_invite(:'y', 'video_coffee', now() + interval '5 minutes', '', '')).id as xy3 \gset
+select t.as_user(:'y');
+select (send_invite(:'x', 'video_coffee', now() + interval '5 minutes', '', '')).id as xy3 \gset
+select t.as_user(:'x');
+select offer_pinky(:'xy3');
 select t.as_user(:'y');
 select offer_pinky(:'xy3');
 select t.as_user(:'x');
-select offer_pinky(:'xy3');
 select t.gap(t.fails(format('select check_in(%L)', :'xy3')), 'G7', 'check-in needs nothing from the other person');
 select t.as_user(:'y');
 select check_in(:'xy3');
 select t.ok((select contact_handle from profile_private where profile_id = :'x') = '@xavier', 'after a kept promise Y reads X''s contact: the reveal, as designed');
 
 -- A second kept promise between the same two, for G8 (checked after the pipeline runs).
+select t.as_user(:'y');
+select (send_invite(:'x', 'video_coffee', now() + interval '6 minutes', '', '')).id as xy4 \gset
 select t.as_user(:'x');
-select (send_invite(:'y', 'video_coffee', now() + interval '6 minutes', '', '')).id as xy4 \gset
+select offer_pinky(:'xy4');
 select t.as_user(:'y');
 select offer_pinky(:'xy4');
 select t.as_user(:'x');
-select offer_pinky(:'xy4');
 select check_in(:'xy4');
 select t.as_user(:'y');
 select check_in(:'xy4');
