@@ -27,6 +27,33 @@ select t.ok(t.sqlstate($$select save_profile('Pari', 25, 'Khar', '', '', '{}', a
 select t.headers('');
 select t.ok((select (city, country) = ('Mumbai', 'IN') from profiles where id = :'p2'), 'the profile carries its city and country');
 
+-- The live test's one-run token (D063): only the current, long token skips the network check, and
+-- never the city check. Only the database owner can set it.
+select t.ok(t.fails($$select private.set_config('network_check_token', repeat('a', 64))$$), 'a user cannot set the network-check token');
+reset role;
+\set p3 '00000000-0000-0000-0000-0000000000e9'
+insert into auth.users (id) values (:'p3');
+select private.set_config('network_check_token', 'short');
+set role authenticated;
+select t.as_user(:'p3');
+select give_consents(array['adult', 'terms', 'privacy', 'sensitive']);
+select t.headers('{"cf-ipcountry": "US", "x-pinkilock-test-token": "short"}');
+select t.ok(t.sqlstate($$select save_profile('Tara', 25, 'Bandra', '', '', '{}', array['boba_run','chai_walk','meme_duel'], 'Instagram', '@tara')$$) = 'PL078', 'a short token is no pass (PL078)');
+reset role;
+select private.set_config('network_check_token', repeat('b', 64));
+set role authenticated;
+select t.as_user(:'p3');
+select t.headers(json_build_object('cf-ipcountry', 'US', 'x-pinkilock-test-token', repeat('c', 64))::text);
+select t.ok(t.sqlstate($$select save_profile('Tara', 25, 'Bandra', '', '', '{}', array['boba_run','chai_walk','meme_duel'], 'Instagram', '@tara')$$) = 'PL078', 'a wrong token is no pass (PL078)');
+select t.headers(json_build_object('cf-ipcountry', 'US', 'x-pinkilock-test-token', repeat('b', 64))::text);
+select t.ok(t.sqlstate($$select save_profile('Tara', 25, 'Koregaon Park', '', '', '{}', array['boba_run','chai_walk','meme_duel'], 'Instagram', '@tara', 'Pune')$$) = 'PL076', 'with the token, a closed city is still refused (PL076)');
+select t.ok(t.sqlstate($$select save_profile('Tara', 25, 'Bandra', '', '', '{}', array['boba_run','chai_walk','meme_duel'], 'Instagram', '@tara')$$) is null, 'with the current token, a first profile from any network is let in');
+select t.headers('');
+reset role;
+select private.set_config('network_check_token', '');
+delete from auth.users where id = :'p3';
+set role authenticated;
+
 -- Requests and appeals.
 reset role;
 select private.moderate(null, :'p2', 'suspend', 'test suspension');

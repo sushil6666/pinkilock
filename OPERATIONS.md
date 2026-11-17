@@ -433,6 +433,13 @@ Only after its checklist and the lawyer's sign-off (WP8). Then a migration sets 
 `countries` and `cities`, and the same change goes into `src/domain/countries.ts`. Discover is per
 city; a city with no venue list falls back to typed places.
 
+A first profile also needs the request's network country (`cf-ipcountry`) to be open (PL078).
+GitHub's runners are in the US, so the live-test workflow stores a random one-run token in
+`private.config` `network_check_token`, the test sends it as the `x-pinkilock-test-token` header,
+and the workflow clears it at the end, pass or fail. If a cancelled run left one behind, clear it:
+`select private.set_config('network_check_token', '')`. Opening a country is only the migration
+above (D063).
+
 ### Retention
 
 `private.retention()` runs daily (pg_cron): finished plans lose their place and line after 90 days,

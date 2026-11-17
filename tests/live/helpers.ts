@@ -8,6 +8,21 @@ export const URL = process.env.EXPO_PUBLIC_SUPABASE_URL;
 export const KEY = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
 if (!URL || !KEY) throw new Error('Set EXPO_PUBLIC_SUPABASE_URL and EXPO_PUBLIC_SUPABASE_ANON_KEY (or use npm run test:live:local).');
 
+// GitHub's runners are outside the open countries, so the live-test workflow gives each run a
+// token that gets a first profile past the network-country check (PL078, decision D063). Every
+// request to the project carries it; nothing else changes. Unset locally, where there is no check.
+const NETWORK_TOKEN = process.env.E2E_NETWORK_TOKEN;
+if (NETWORK_TOKEN) {
+  const plainFetch = globalThis.fetch;
+  globalThis.fetch = (input, init) => {
+    const target = typeof input === 'string' ? input : input instanceof Request ? input.url : input.toString();
+    if (!target.startsWith(URL!)) return plainFetch(input, init);
+    const headers = new Headers(init?.headers ?? (input instanceof Request ? input.headers : undefined));
+    headers.set('x-pinkilock-test-token', NETWORK_TOKEN);
+    return plainFetch(input, { ...init, headers });
+  };
+}
+
 export const MIN = 60_000;
 /** pg_cron fires on the minute; allow one full cycle plus slack. */
 export const SWEEP_WAIT = 100_000;
