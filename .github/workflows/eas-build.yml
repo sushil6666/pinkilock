@@ -101,3 +101,29 @@ jobs:
             require("fs").appendFileSync(process.env.GITHUB_STEP_SUMMARY, `### EAS ${b.buildProfile} build (${b.platform})\n\n- Status: **${b.status}**\n- Install: ${url}\n- Build page: ${page}\n`);
             if (b.status !== "FINISHED") process.exit(1);
           '
+
+      - name: Show why the build failed
+        # EAS keeps its build log on expo.dev. Bring the error and the end of the log here, so a
+        # failure can be read from GitHub alone.
+        if: failure()
+        run: |
+          eas build:list --platform "$PLATFORM" --build-profile "$PROFILE" --limit 1 --json --non-interactive > last.json || exit 0
+          node -e '
+            const b = JSON.parse(require("fs").readFileSync("last.json", "utf8"))[0];
+            if (!b) process.exit(0);
+            const err = b.error ? `${b.error.errorCode}: ${b.error.message}` : "(no error message from EAS)";
+            console.log(`::error::EAS build ${b.id} ${b.status}: ${err}`);
+            require("fs").appendFileSync(process.env.GITHUB_STEP_SUMMARY, `### Why it failed\n\n${err}\n`);
+            require("fs").writeFileSync("logs.txt", (b.logFiles ?? []).join("\n"));
+          '
+          [ -s logs.txt ] || exit 0
+          while read -r url; do
+            # Each line is JSON with a "msg" field; keep the text only.
+            curl -fsSL "$url" | node -e '
+              let s = ""; process.stdin.on("data", (d) => (s += d)).on("end", () => {
+                const lines = s.split("\n").map((l) => { try { return JSON.parse(l).msg ?? ""; } catch { return l; } }).filter(Boolean);
+                const hits = lines.filter((l) => /error|FAILURE|What went wrong|failed/i.test(l));
+                console.log("::group::Error lines"); console.log(hits.slice(-60).join("\n")); console.log("::endgroup::");
+                console.log("::group::Last 80 lines"); console.log(lines.slice(-80).join("\n")); console.log("::endgroup::");
+              });'
+          done < logs.txt
