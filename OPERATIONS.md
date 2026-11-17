@@ -404,6 +404,9 @@ rows without the id.
 - **"No Supabase project is configured":** the profile's variables are empty.
 - **Otherwise:** the run's last step, "Show why the build failed", prints EAS's error message
   and the end of the native log; the full log is on the build page linked in the run.
+- **"Duplicate resources" in `mergeReleaseResources`:** two images in `assets/` share a name and
+  differ only in extension (`x.gif` and `x.png`); Android keeps one name per image. Rename one.
+  `npm run test:unit` checks for this.
 - **"No matching client found for package name":** the Android app registered in Firebase is not
   `com.pinkilock.app`. Download google-services.json again for that package and replace the
   `GOOGLE_SERVICES_JSON` secret.

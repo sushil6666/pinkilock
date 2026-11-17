@@ -11,8 +11,8 @@ import { useReducedMotion } from 'react-native-reanimated';
 import { webOnly } from '../lib/web';
 
 const LOOPS = {
-  pinkyLock: { moving: require('../../assets/loops/pinky-lock.gif'), still: require('../../assets/loops/pinky-lock.png'), w: 440, h: 330 },
-  padlock: { moving: require('../../assets/loops/padlock.gif'), still: require('../../assets/loops/padlock.png'), w: 320, h: 280 },
+  pinkyLock: { moving: require('../../assets/loops/pinky-lock.gif'), still: require('../../assets/loops/pinky-lock-still.png'), w: 440, h: 330 },
+  padlock: { moving: require('../../assets/loops/padlock.gif'), still: require('../../assets/loops/padlock-still.png'), w: 320, h: 280 },
 } as const;
 
 export type LoopName = keyof typeof LOOPS;
