@@ -204,6 +204,10 @@ on the next push to `main`; check it first by exporting on mock data and serving
   `docs/decisions.md`, because the page holds the sign-in session.
 - **Every path is the app.** Pages answers any path with `index.html` because the build has no
   `404.html`; the app's own not-found screen does the rest. Do not add a `404.html`.
+- **No `node_modules` on Pages.** Cloudflare Pages never uploads a folder named `node_modules`,
+  and Expo puts every font and icon under `assets/node_modules/`. `scripts/prepare-web-dist.mjs`
+  moves them to `assets/vendor/` and fails the deploy if the bundle names a file that is not there.
+  Serif type or empty boxes on the live site mean this step was skipped.
 - **Rolling back.** In the dashboard, `pinkilock`, Deployments: pick an earlier one, Rollback. Then
   fix `main`, because the next push publishes again.
 - **The site is down or old.** Look at the last **Web deploy** run. Its last step fetches `/`,
