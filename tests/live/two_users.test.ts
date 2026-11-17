@@ -21,7 +21,7 @@ import { after, before, test } from 'node:test';
 import { createClient } from '@supabase/supabase-js';
 import type { Invite } from '../../src/domain/types';
 import { createSupabaseBackend } from '../../src/services/supabase/supabaseBackend';
-import { KEY, MIN, SWEEP_WAIT, URL, checkInWith, inviteIs, one, person, profile, type Person } from './helpers';
+import { KEY, MIN, SWEEP_WAIT, TEST_EMAIL_DOMAIN, URL, checkInWith, inviteIs, one, person, profile, type Person } from './helpers';
 
 
 const a = person('TestAsha');
@@ -65,7 +65,7 @@ after(async () => {
   if (process.env.E2E_DB_URL && ids.length) {
     const list = ids.map((id) => `'${id}'`).join(', ');
     execFileSync('psql', [process.env.E2E_DB_URL, '-v', 'ON_ERROR_STOP=1', '-q', '-c',
-      `delete from public.events where actor_id in (${list}) or invite_id in (select id from public.invites where from_id in (${list}) or to_id in (${list})); delete from auth.users where id in (${list}) and is_anonymous;`]);
+      `delete from public.events where actor_id in (${list}) or invite_id in (select id from public.invites where from_id in (${list}) or to_id in (${list})); delete from auth.users where id in (${list}) and (is_anonymous or email like '%@${TEST_EMAIL_DOMAIN}');`]);
     console.log(`cleaned up ${ids.length} test users`);
   } else if (ids.length) {
     console.log(`left behind test users ${ids.join(', ')} (set E2E_DB_URL to delete them)`);

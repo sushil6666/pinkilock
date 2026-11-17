@@ -16,7 +16,8 @@ import { execFileSync } from 'node:child_process';
 import { after, before, test } from 'node:test';
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import { AppError } from '../../src/domain/errors';
-import { KEY, MIN, URL, person, profile, type Person } from './helpers';
+import { KEY, LINK_GATE, MIN, URL, memoryStorage, person, profile, type Person } from './helpers';
+import { createSupabaseBackend } from '../../src/services/supabase/supabaseBackend';
 
 const x = person('TestXavier');
 const y = person('TestYami');
@@ -156,10 +157,29 @@ test('G1, G3 closed: profiles are written only through save_profile, which refus
   assert.equal(after.me?.name, me.name, 'and nothing refused got through');
 });
 
-gap('G4', 'an anonymous account can send an ask', async () => {
-  const res = await raw.rpc('send_invite', { p_to: y.id, p_idea: 'boba_run', p_starts_at: new Date(Date.now() + 60 * MIN).toISOString(), p_place: '', p_note: '' });
-  assert.ok(res.error, 'the ask was sent');
-});
+// G4 is closed wherever the link gate is on (a project with a mail sender or SMS provider); on a
+// project without one, such as the local stack, it stays open. Test people are linked when the gate
+// is on (helpers.ts), so the check uses a fresh anonymous account of its own.
+if (LINK_GATE) {
+  test('G4 closed: an anonymous account cannot send an ask (PL068)', async () => {
+    const storage = memoryStorage();
+    const anon = createSupabaseBackend(URL!, KEY!, storage);
+    await anon.boot();
+    const anonId = (await anon.completeOnboarding(profile('TestAnon', '@e2e_anon'))).me!.id;
+    try {
+      const own = createClient(URL!, KEY!, { auth: { storage, persistSession: true, autoRefreshToken: false } });
+      const res = await own.rpc('send_invite', { p_to: y.id, p_idea: 'boba_run', p_starts_at: new Date(Date.now() + 60 * MIN).toISOString(), p_place: '', p_note: '' });
+      assert.equal((res.error as { code?: string } | null)?.code, 'PL068', `the ask was not refused for want of a link: ${JSON.stringify(res.error)}`);
+    } finally {
+      sql(`delete from auth.users where id = '${anonId}'`);
+    }
+  });
+} else {
+  gap('G4', 'an anonymous account can send an ask', async () => {
+    const res = await raw.rpc('send_invite', { p_to: y.id, p_idea: 'boba_run', p_starts_at: new Date(Date.now() + 60 * MIN).toISOString(), p_place: '', p_note: '' });
+    assert.ok(res.error, 'the ask was sent');
+  });
+}
 
 // Needs email sign-in switched on, which the local stack has and a project without a mail sender
 // does not; there the answer says nothing either way.
