@@ -13,7 +13,7 @@ import { inputStyle } from '@/components/ui/input';
 import { HoldButton } from '@/components/ui/HoldButton';
 import { Screen } from '@/components/ui/Screen';
 import { T } from '@/components/ui/T';
-import { IDEAS, VIBES } from '@/domain/ideas';
+import { IDEAS, KIND_LABEL, KIND_ORDER, VIBES } from '@/domain/ideas';
 import type { ContactKind } from '@/domain/types';
 import { haptic } from '@/lib/haptics';
 import { useStore } from '@/state/store';
@@ -126,14 +126,14 @@ export default function Onboarding() {
               <T v="display">What are{'\n'}you up for?</T>
               <T c={color.textDim}>Pick at least three. These replace the bio: people ask you out to one of them.</T>
             </View>
-            <View style={{ gap: space.sm }}>
-              {IDEAS.map((idea) => {
-                const on = ideaIds.includes(idea.id);
-                return (
-                  <Chip key={idea.id} label={`${idea.emoji}  ${idea.title}`} sub={`${idea.minutes} min  /  ${idea.blurb}`} selected={on} onPress={() => toggle(ideaIds, setIdeaIds, idea.id, 6)} />
-                );
-              })}
-            </View>
+            {KIND_ORDER.map((kind) => (
+              <View key={kind} style={{ gap: space.sm }}>
+                <T v="label" c={color.textDim}>{KIND_LABEL[kind]}</T>
+                {IDEAS.filter((idea) => idea.kind === kind).map((idea) => (
+                  <Chip key={idea.id} label={`${idea.emoji}  ${idea.title}`} sub={`${idea.minutes} min  /  ${idea.blurb}`} selected={ideaIds.includes(idea.id)} onPress={() => toggle(ideaIds, setIdeaIds, idea.id, 6)} />
+                ))}
+              </View>
+            ))}
             <T v="caption" c={ideaIds.length >= 3 ? color.volt : color.textDim}>{ideaIds.length} picked{ideaIds.length < 3 ? `, ${3 - ideaIds.length} to go` : ''} (6 max)</T>
           </>
         )}

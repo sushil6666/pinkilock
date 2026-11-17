@@ -13,7 +13,7 @@ import { HoldButton } from '@/components/ui/HoldButton';
 import { inputStyle } from '@/components/ui/input';
 import { Screen } from '@/components/ui/Screen';
 import { T } from '@/components/ui/T';
-import { ideaOf } from '@/domain/ideas';
+import { ideaOf, noteStarters } from '@/domain/ideas';
 import { MAX_OPEN_ASKS, NOTE_MAX, isOpen } from '@/domain/invites';
 import { dayOptions, slotOptions, timeLabel } from '@/domain/time';
 import { haptic } from '@/lib/haptics';
@@ -125,6 +125,11 @@ export default function NewInvite() {
       </Section>
 
       <Section n="04" label={`One line (optional)  ${note.length}/${NOTE_MAX}`}>
+        <View style={styles.wrap}>
+          {noteStarters(idea.kind).map((line) => (
+            <Chip key={line} label={line} selected={note === line} onPress={() => setNote(note === line ? '' : line)} />
+          ))}
+        </View>
         <TextInput value={note} onChangeText={setNote} placeholder="Brown sugar or taro. Choose wisely." placeholderTextColor={color.textMute} maxLength={NOTE_MAX} multiline style={[inputStyle, type.body, { paddingVertical: space.md, minHeight: 72, textAlignVertical: 'top' }]} accessibilityLabel="One line to go with the ask" />
       </Section>
     </Screen>

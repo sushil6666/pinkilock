@@ -69,6 +69,12 @@ export default function Discover() {
 
         {person.tagline ? <T v="heading">{person.tagline}</T> : null}
 
+        {person.vibes.length > 0 && (
+          <View style={styles.vibes}>
+            {person.vibes.map((v) => <Tag key={v} label={v} tone={me.vibes.includes(v) ? color.volt : color.textDim} />)}
+          </View>
+        )}
+
         <View style={{ gap: space.sm }}>
           <T v="label" c={color.textDim}>Up for  /  tap one to ask</T>
           {person.ideaIds.map((id, i) => {
@@ -106,5 +112,6 @@ const styles = StyleSheet.create({
   head: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: space.md },
   card: { height: 340, borderRadius: radius.card, overflow: 'hidden', borderWidth: 1, borderColor: color.line, justifyContent: 'flex-end' },
   cardBody: { padding: space.lg, gap: space.sm },
+  vibes: { flexDirection: 'row', flexWrap: 'wrap', gap: space.sm },
   idea: { flexDirection: 'row', alignItems: 'center', gap: space.md, borderWidth: 1, borderColor: color.line, borderRadius: radius.card, backgroundColor: color.surface, padding: space.md, minHeight: 64 },
 });
