@@ -53,6 +53,8 @@ All of these live in GitHub, under Settings, Secrets and variables, Actions. Non
 | Variable | `PROD_SUPABASE_PROJECT_REF`, `PROD_EXPO_PUBLIC_SUPABASE_ANON_KEY` | Deploy (target `production`), EAS `production`, analytics | Empty until there is a production project |
 | Secret | `PROD_SUPABASE_DB_PASSWORD`, `PROD_ANALYTICS_DB_PASSWORD` | Same as their staging twins, for production | As for staging |
 | Variable | `PROD_SUPABASE_POOLER_HOST` | Analytics worker (production) | Printed by a production deploy run |
+| Secret | `CLOUDFLARE_API_TOKEN` | Web deploy publishes the website with it | A custom token scoped to the account, Cloudflare Pages: Edit and nothing else. Make a new one in the Cloudflare dashboard (My Profile, API Tokens), update the secret, delete the old one |
+| Variable | `CLOUDFLARE_ACCOUNT_ID` | Web deploy | Not a secret |
 | Secret | `PROD_SUPABASE_ACCESS_TOKEN` | Optional: only if production is in another Supabase account | As for `SUPABASE_ACCESS_TOKEN` |
 
 Kept outside GitHub, and managed by the deploy:
@@ -74,6 +76,7 @@ Kept outside GitHub, and managed by the deploy:
 | **Live two-user test** | After each staging deploy; or by hand | Two anonymous users go through the whole flow, then three more through block, report, export and delete, on staging; all are deleted after. Never run on production |
 | **Analytics worker** | Every 6 hours; or by hand | Recomputes trust scores and metrics, once per project that is set up. If a run fails it opens an `analytics-worker` issue (`analytics-worker-production` for production), and the next good run closes it |
 | **EAS build** | By hand (pick a profile and platform) | Copies the backend values into the EAS environment, builds, and puts the install link in the run summary |
+| **Web deploy** | A push to `main` that can change the website (not Markdown, docs, `supabase/` or tests); or by hand | Builds the web app against the production project (the preview project, with a warning, until production exists), adds the security headers and the share tags, refuses to publish if anything secret is in the bundle, publishes to Cloudflare Pages (project `pinkilock`) and checks pinkilock.com |
 | **EAS init** | Once, by hand | Created the EAS project (id is already in `app.json`) |
 
 GitHub can pause scheduled workflows in a repo with no activity for 60 days. If trust scores
@@ -184,14 +187,27 @@ least one minute. What uses them here, and how to use fewer:
 
 There are no over-the-air updates. A JavaScript change reaches phones only through a new build.
 
-### A change to the web build
+### The website
 
-The web build is not hosted yet, and no workflow deploys it: the host, the domain and the account
-are the owner's to choose. Until then, check a change by exporting on mock data and serving it
-locally (`README.md`, "The web build"). When a host is chosen, the deploy must do three things the
-repo cannot: answer every path with `index.html`; add `og:image` (the absolute address of
-`/share.png`) and `og:url` to `index.html`, because link previews ignore relative addresses; and
-build only from `main`, with only the public anon key in the bundle.
+pinkilock.com is the app's own web build, published by **Web deploy** from `main` to Cloudflare
+Pages (project `pinkilock`). Nothing is uploaded by hand. A change to the screens reaches the site
+on the next push to `main`; check it first by exporting on mock data and serving it locally
+(`README.md`, "The web build").
+
+- **The domain.** The DNS for pinkilock.com is on Cloudflare in the same account. The site answers
+  on `pinkilock.com` and `www.pinkilock.com`, both attached once in the dashboard (Workers & Pages,
+  `pinkilock`, Custom domains). `mail.pinkilock.com` belongs to Resend for email: never change
+  its records.
+- **Headers.** `web/_headers` is the security policy: the page runs only its own scripts and talks
+  only to its own origin and the Supabase project. A new outside service (a font, analytics, an
+  error reporter) is blocked by it until the policy names it, and adding one is a decision for
+  `docs/decisions.md`, because the page holds the sign-in session.
+- **Every path is the app.** Pages answers any path with `index.html` because the build has no
+  `404.html`; the app's own not-found screen does the rest. Do not add a `404.html`.
+- **Rolling back.** In the dashboard, `pinkilock`, Deployments: pick an earlier one, Rollback. Then
+  fix `main`, because the next push publishes again.
+- **The site is down or old.** Look at the last **Web deploy** run. Its last step fetches `/`,
+  `/plans` and `/share.png` from pinkilock.com and warns if any of them is not a 200.
 
 ### A change to the push function
 

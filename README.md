@@ -189,8 +189,9 @@ node scripts/make-loops.mjs                                         # redraw the
 
 It is one page, so whatever serves it must fall back to `index.html` for every path (a reload on
 `/plans` must work). Each screen has its own page title, a visitor with no profile is led to
-onboarding from any link, and an unknown address shows a not-found screen. It is not hosted
-anywhere yet: the host, the domain and the account are still to be chosen (`OPERATIONS.md`).
+onboarding from any link, and an unknown address shows a not-found screen. It is the website:
+**Web deploy** publishes it from `main` to Cloudflare Pages at pinkilock.com (`OPERATIONS.md`,
+"The website"). `node scripts/check-web-bundle.mjs dist/web` checks a build for anything secret.
 
 ## Status
 
