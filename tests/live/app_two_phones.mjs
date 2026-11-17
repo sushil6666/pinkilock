@@ -47,7 +47,7 @@ const RUNS = [['phone', 'desktop'], ['desktop', 'phone']].slice(0, Number(proces
 let step = 0;
 let pass = '';
 const ok = (msg) => console.log(`ok  ${String(++step).padStart(2)}  ${pass}${msg}`);
-const shot = async (who, name) => SHOTS && who.page.screenshot({ path: path.join(SHOTS, `${String(step).padStart(2, '0')}-${who.size}-${who.name.split(' ')[1]}-${name}.png`) });
+const shot = async (who, name) => SHOTS && who.page.screenshot({ path: path.join(SHOTS, `${String(step).padStart(2, '0')}-${who.size}-${who.name}-${name}.png`) });
 /** Nothing on the screen may push the page wider than the window. */
 async function fits(who, where) {
   const [doc, win] = await who.page.evaluate(() => [document.documentElement.scrollWidth, window.innerWidth]);
@@ -104,8 +104,10 @@ let failed = false;
 for (const [aSize, bSize] of RUNS) {
   pass = `[A ${aSize}, B ${bSize}]  `;
   const stamp = Date.now().toString(36).slice(-4);
-  const A = { name: `E2E Asha ${stamp}`, handle: `@asha_${stamp}`, size: aSize };
-  const B = { name: `E2E Bela ${stamp}`, handle: `@bela_${stamp}`, size: bSize };
+  // Names are one word of letters (the server refuses anything else), so the stamp is spelled in letters.
+  const letters = [...stamp].map((c) => 'abcdefghijklmnopqrstuvwxyzabcdefghij'[parseInt(c, 36)]).join('');
+  const A = { name: `Asha${letters}`, handle: `@asha_${stamp}`, size: aSize };
+  const B = { name: `Bela${letters}`, handle: `@bela_${stamp}`, size: bSize };
   try {
     await flow(A, B);
   } catch (e) {

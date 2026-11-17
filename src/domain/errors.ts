@@ -35,6 +35,13 @@ export const ERRORS = {
   PL036: 'Only a locked plan can be bailed on.',
   PL040: 'Only app_open can be logged from the app.',
   PL050: 'That error report was not valid.',
+  PL060: 'Use your first name: letters only, 2 to 16.',
+  PL061: 'You need to be 18 or older.',
+  PL062: 'Pick up to three tags from the list.',
+  PL063: 'Pick three to six things you are up for.',
+  PL064: 'That is too long.',
+  PL065: 'Contacts unlock after a kept promise. Take that out.',
+  PL066: 'Add how people reach you after a kept promise.',
 
   PA001: 'Phone sign-in is not switched on yet.',
   PA002: 'Email sign-in is not switched on yet.',

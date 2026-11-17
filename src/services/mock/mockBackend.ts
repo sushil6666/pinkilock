@@ -14,6 +14,7 @@ import type { BlockedPerson, CodeKind, Invite, MyContact, NewInvite, OnboardingI
 import { quiet } from '../../lib/log';
 import type { Backend, BackendEvent, Changes, ClientErrorReport, Notice, Snapshot } from '../backend';
 import { ALWAYS_PASSES, ME_ID, SEED_ME_RECORD, seedInvites, seedProfiles, seedReveals } from './seed';
+import { checkAsk, checkContact, checkProfile } from '../../domain/profile';
 
 const KEY = 'pinkilock.mock.v1';
 const LATENCY = 280;
@@ -214,6 +215,8 @@ export function createMockBackend(): Backend {
     },
 
     async completeOnboarding(input) {
+      checkProfile(input);
+      checkContact(input.contactKind, input.contactHandle);
       const d = await load();
       await wait(LATENCY);
       d.me = seedFor(d, input);
@@ -228,7 +231,10 @@ export function createMockBackend(): Backend {
       mutate((d) => {
         if (!d.me) fail('PL002');
         const { contactKind, contactHandle, ...card } = patch;
-        d.me = { ...d.me, ...card };
+        const next = { ...d.me, ...card };
+        checkProfile(next);
+        if (contactKind && contactHandle) checkContact(contactKind, contactHandle);
+        d.me = next;
         if (contactKind && contactHandle) d.myContact = { kind: contactKind, handle: contactHandle };
         return { me: d.me, myContact: d.myContact ?? undefined };
       }),
@@ -252,6 +258,7 @@ export function createMockBackend(): Backend {
         if (d.invites.some((i) => rules.isLive(i) && rules.otherId(i, ME_ID) === input.toId)) fail('PL024');
         if (isBlocked(d, input.toId)) fail('PL004');
         if (input.startsAt <= now) fail('PL021');
+        checkAsk(input.note, input.place);
         const invite: Invite = {
           id: uid(), fromId: ME_ID, toId: input.toId, ideaId: input.ideaId, minutes: ideaOf(input.ideaId).minutes,
           startsAt: input.startsAt, place: input.place.trim(), note: input.note.trim().slice(0, rules.NOTE_MAX),
