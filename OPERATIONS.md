@@ -182,6 +182,15 @@ least one minute. What uses them here, and how to use fewer:
 
 There are no over-the-air updates. A JavaScript change reaches phones only through a new build.
 
+### A change to the web build
+
+The web build is not hosted yet, and no workflow deploys it: the host, the domain and the account
+are the owner's to choose. Until then, check a change by exporting on mock data and serving it
+locally (`README.md`, "The web build"). When a host is chosen, the deploy must do three things the
+repo cannot: answer every path with `index.html`; add `og:image` (the absolute address of
+`/share.png`) and `og:url` to `index.html`, because link previews ignore relative addresses; and
+build only from `main`, with only the public anon key in the bundle.
+
 ### A change to the push function
 
 Edit `supabase/functions/push`, then run `npm run test:push:local`. Merging deploys it.

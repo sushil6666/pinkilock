@@ -23,6 +23,7 @@
   },
   "dependencies": {
     "@expo-google-fonts/archivo-black": "^0.2.3",
+    "@expo-google-fonts/caveat-brush": "0.4.1",
     "@expo-google-fonts/space-grotesk": "^0.2.3",
     "@expo/metro-runtime": "~4.0.1",
     "@expo/vector-icons": "~14.0.4",
@@ -67,6 +68,7 @@
     "@types/react": "~18.3.12",
     "playwright": "^1.63.0",
     "supabase": "^3.2.0",
+    "three": "0.170.0",
     "tsx": "^4.23.15",
     "typescript": "~5.3.3"
   },
