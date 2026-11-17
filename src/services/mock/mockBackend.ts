@@ -189,7 +189,7 @@ export function createMockBackend(): Backend {
   function seedFor(d: Db, input: OnboardingInput): Profile {
     return {
       id: ME_ID, name: input.name, age: input.age, city: 'Mumbai', area: input.area, pronouns: input.pronouns,
-      tagline: input.tagline, vibes: input.vibes, ideaIds: input.ideaIds, palette: ['#F6F6F1', '#3A3A44'], glyph: '🤙',
+      tagline: input.tagline, vibes: input.vibes, ideaIds: input.ideaIds, palette: ['#A9D8F7', '#4169E1'], glyph: '🤙',
       distanceKm: 0, photoCount: 0, ...SEED_ME_RECORD,
     };
   }
