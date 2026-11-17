@@ -18,6 +18,7 @@ import { usePerson, useStore } from '@/state/store';
 import { color, radius, space } from '@/theme/tokens';
 import { ErrorText } from '@/components/ui/ErrorText';
 import { shown } from '@/lib/report';
+import { aria } from '@/lib/web';
 
 export default function Report() {
   const { id, invite } = useLocalSearchParams<{ id: string; invite?: string }>();
@@ -79,6 +80,7 @@ export default function Report() {
                 key={r.id}
                 accessibilityRole="radio"
                 accessibilityState={{ checked: on }}
+                {...aria({ checked: on })}
                 accessibilityLabel={`${r.label}. ${r.hint}`}
                 onPress={() => setReason(r.id)}
                 style={[styles.reason, on && { borderColor: color.flare, backgroundColor: color.flareWash }]}

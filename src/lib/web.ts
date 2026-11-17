@@ -13,6 +13,35 @@ export const isWeb = Platform.OS === 'web';
  */
 export const focusRing: object = isWeb ? { outlineColor: color.textDim } : {};
 
+/**
+ * One rule for every control, present and future: whatever the keyboard lands on gets the same
+ * sky-blue ring, clear of its own edge so that it reads around a pink button too. Added through
+ * the style sheet's own interface, so it needs no inline style. Runs once, when this file loads.
+ */
+function startFocusRing(): void {
+  if (!isWeb || typeof document === 'undefined' || document.getElementById('focus-ring')) return;
+  const el = document.createElement('style');
+  el.id = 'focus-ring';
+  document.head.appendChild(el);
+  el.sheet?.insertRule(`:focus-visible { outline: 2px solid ${color.textDim}; outline-offset: 2px; }`);
+}
+startFocusRing();
+
+/**
+ * What a control is right now, said the way a browser hears it. `accessibilityState` tells
+ * VoiceOver and TalkBack, but the web renderer drops it, so a screen reader in a browser could
+ * not tell the chosen chip, tab or reason from the rest. Spread next to `accessibilityState`:
+ * `pressed` for a toggle button, `selected` for a tab, `checked` for a radio.
+ */
+export function aria(state: { pressed?: boolean; selected?: boolean; checked?: boolean }): object {
+  if (!isWeb) return {};
+  const out: Record<string, boolean> = {};
+  if (state.pressed !== undefined) out['aria-pressed'] = state.pressed;
+  if (state.selected !== undefined) out['aria-selected'] = state.selected;
+  if (state.checked !== undefined) out['aria-checked'] = state.checked;
+  return out;
+}
+
 /** Props that only exist in a browser (tabIndex, onKeyDown). Empty on a phone. */
 export function webOnly<P extends object>(props: P): P | Record<string, never> {
   return isWeb ? props : {};
@@ -58,4 +87,9 @@ export function swallowReleaseClick(): void {
   document.addEventListener('keydown', stop, true);
   document.addEventListener('keyup', stop, true);
   timer = setTimeout(stop, 10_000);
+}
+
+/** The browser tab's title. A phone has none. */
+export function setPageTitle(title: string): void {
+  if (isWeb && typeof document !== 'undefined' && document.title !== title) document.title = title;
 }
