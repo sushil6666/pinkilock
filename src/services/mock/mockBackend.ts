@@ -49,6 +49,7 @@ const uid = () => `inv_${Date.now().toString(36)}${Math.random().toString(36).sl
 
 export function createMockBackend(): Backend {
   const clientErrors: ClientErrorReport[] = [];
+  let passTimes: number[] = [];
   let db: Db | null = null;
   const reveals = seedReveals();
   const listeners = new Set<(e: BackendEvent) => void>();
@@ -241,7 +242,10 @@ export function createMockBackend(): Backend {
       }),
 
     pass: (profileId) =>
-      mutate((d) => {
+      mutate((d, now) => {
+        passTimes = passTimes.filter((t) => t > now - rules.DAY);
+        if (passTimes.length >= rules.PASSES_PER_DAY) fail('PL028');
+        passTimes.push(now);
         if (!d.passedIds.includes(profileId)) d.passedIds = [...d.passedIds, profileId];
         return { passedIds: d.passedIds };
       }),
@@ -255,7 +259,12 @@ export function createMockBackend(): Backend {
     sendInvite: (input: NewInvite) =>
       mutate((d, now) => {
         const open = d.invites.filter((i) => i.fromId === ME_ID && rules.isOpen(i));
+        // The link gate: off in the mock unless EXPO_PUBLIC_MOCK_REQUIRE_LINKED=1, as it is off on a server with no code sender.
+        if (process.env.EXPO_PUBLIC_MOCK_REQUIRE_LINKED === '1' && !d.phone && !d.email) fail('PL068');
         if (open.length >= rules.MAX_OPEN_ASKS) fail('PL023');
+        if (d.invites.filter((i) => i.fromId === ME_ID && i.createdAt > now - rules.DAY).length >= rules.ASKS_PER_DAY) fail('PL025');
+        if (d.invites.some((i) => i.fromId === ME_ID && i.toId === input.toId && (i.resolvedAt ?? i.createdAt) > now - rules.REASK_AFTER
+          && (i.status === 'expired' || (i.status === 'declined' && i.declinedBy === input.toId)))) fail('PL026');
         if (d.invites.some((i) => rules.isLive(i) && rules.otherId(i, ME_ID) === input.toId)) fail('PL024');
         if (isBlocked(d, input.toId)) fail('PL004');
         if (input.startsAt <= now) fail('PL021');

@@ -180,6 +180,13 @@ the app and the mock, and one table of lines is run through both copies. The che
 cases only: a made-up code still gets through until lines are reviewed before anyone sees them
 (`docs/build-plan.md`, WP1).
 
+**Limits and the link gate.** `send_invite` refuses an 11th ask in a day and a second ask to
+someone within 7 days of them passing; a trigger on `passes` counts passes (200 a day) in
+`private.actions`, a short-lived log that also counts profile saves (20 a day). `private.config`
+holds switches the server reads; `require_linked` makes asks and pinkies need a linked email or
+phone (`private.is_linked` reads `auth.users.is_anonymous`). It is off until sign-in codes can be
+sent; the deploy workflow decides.
+
 **A place can be picked instead of typed.** `send_invite` takes an optional venue id. With one,
 the server writes `place` from the catalogue (`name, area`) and ignores whatever the app sent as
 the typed place, records `venue_id` on the invite and the venue in the event log, and refuses a

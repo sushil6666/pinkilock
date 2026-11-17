@@ -5,7 +5,7 @@
 \set q '00000000-0000-0000-0000-0000000000f2'
 
 -- The SQLSTATE a statement fails with, or null if it does not fail. Runs with the caller's rights.
-create function t.sqlstate(stmt text) returns text language plpgsql as $$
+create or replace function t.sqlstate(stmt text) returns text language plpgsql as $$
 begin
   execute stmt;
   return null;

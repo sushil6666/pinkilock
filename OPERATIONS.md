@@ -98,6 +98,20 @@ local copy in `supabase/config.toml`), never in the dashboard.
 Not set yet, and on the build plan (`docs/build-plan.md`, WP2): captcha on anonymous sign-in and on
 code requests.
 
+### Limits and the link gate
+
+Set in SQL (`20261117000011_limits_and_gate.sql`), mirrored in `src/domain/invites.ts` and the mock:
+10 asks a day; one ask to the same person per 7 days after they passed or let it expire; 200 passes
+a day; 20 profile saves a day; 1 kB of props on an `app_open` event. A refusal carries its code
+(`PL025` to `PL028`, `PL041`).
+
+The **link gate** (`private.config`, key `require_linked`): when on, sending an ask and putting a
+pinky out need an email or phone linked to the account (`PL068`; the app shows an "Add your email"
+button). Passing on an ask never needs it. The deploy workflow turns it on when a mail sender
+(`SMTP_*`) or Twilio Verify is configured, and off otherwise, and says which in the run summary. To
+flip it by hand: `scripts/gate-config.sh "<db url>" on|off`. Locally it is off, so the live tests'
+anonymous people can play; `tests/db/limits.sql` covers it on and off.
+
 ### The security gates in CI
 
 - **Attacker suite.** `tests/db/attacker.sql` and `tests/live/attacker.test.ts` act as a signed-in

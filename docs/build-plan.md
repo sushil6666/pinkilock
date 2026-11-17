@@ -273,6 +273,14 @@ symbol must change it at its next profile save.
 **Done when:** the G4 and G6 checks pass, and the two-user live test still passes with linked
 accounts.
 
+**Status, 2026-11-17: built, without captcha.** Done: the daily limits (G6) and the link gate
+(G4), switchable and set by the deploy workflow from whether codes can be sent; attacker checks for
+both. Two choices made: passing on an ask needs no link (saying no should cost nothing), and taking
+back your own ask does not start the 7-day wait. **Captcha is not built and not recommended for
+now**: on a phone it needs a web view in the middle of sign-in, the link gate already makes bulk
+accounts useless for asking, and app attestation (WP6) is the right defence for the app; revisit
+for the website once it is public (O08 stays open for that).
+
 ### WP3. Discover through a function (G5)
 
 - `discover(p_limit int default 20)` returns at most 20 cards a call: same city, not blocked, not
