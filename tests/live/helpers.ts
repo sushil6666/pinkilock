@@ -78,3 +78,9 @@ export const one = (c: { invites?: Invite[] }): Invite => {
   assert.equal(c.invites?.length, 1, 'the backend returns exactly the invite it changed');
   return c.invites![0];
 };
+
+/** Check in the way two people at the same table do: `who` enters the code `other` shows them (WP4). */
+export async function checkInWith(who: Person, other: Person, inviteId: string) {
+  const code = await other.backend.myCheckInCode(inviteId);
+  return who.backend.checkIn(inviteId, code);
+}

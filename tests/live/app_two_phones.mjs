@@ -187,11 +187,13 @@ async function flow(A, B) {
 
   // The one thing a phone cannot do: jump to ten minutes before the start.
   sql(`update public.invites set starts_at = now() + interval '5 minutes' where from_id = '${aId}' and to_id = '${bId}'`);
-  await btn(A.page, "I'm here. Check in").click({ timeout: 15000 });
+  // Check-in swaps codes (WP4): each screen shows its own; each person types the other's.
+  await btn(A.page, 'Check in').waitFor({ timeout: 15000 });
+  await enterCode(A, B);
   await B.page.getByLabel(`${A.name}: checked in`).waitFor({ timeout: 15000 });
   ok("B saw A's check-in live");
   if (await B.page.getByText(A.handle).count()) throw new Error("A's handle is on B's screen after one check-in");
-  await btn(B.page, "I'm here. Check in").click();
+  await enterCode(B, A);
   await A.page.getByLabel(`Instagram: ${B.handle}`).waitFor({ timeout: 15000 });
   await B.page.getByLabel(`Instagram: ${A.handle}`).waitFor({ timeout: 15000 });
   await shot(A, 'reveal');
@@ -235,6 +237,15 @@ async function flow(A, B) {
   await hold(A.page, 'Hold to delete everything');
   await btn(A.page, 'Start').waitFor({ timeout: 15000 });
   sqlIs(`select count(*) from public.profiles where id = '${aId}'`, '0', 'A deleted the account and is back at onboarding');
+}
+
+/** `who` types the code shown on `other`'s screen, as if read across the table, and checks in. */
+async function enterCode(who, other) {
+  const shownCode = other.page.getByLabel(/^Your check-in code: \d \d \d \d$/);
+  await shownCode.waitFor({ timeout: 15000 });
+  const code = (await shownCode.getAttribute('aria-label')).replace(/\D/g, '');
+  await who.page.getByLabel(`${other.name}'s check-in code`).fill(code);
+  await btn(who.page, 'Check in').click();
 }
 
 function sqlIs(q, want, msg) {

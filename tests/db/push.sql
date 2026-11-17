@@ -68,7 +68,7 @@ select public.sweep_invites() is not null;
 select t.ok((select count(*) from public.notifications where invite_id = :'ba' and kind = 'checkin_open') = 0, 'no check-in push an hour early');
 update public.invites set starts_at = now() + interval '9 minutes' where id = :'ba';
 set role authenticated;
-select check_in(:'ba') is not null;
+select t.check_in(:'ba') is not null;
 reset role;
 select public.sweep_invites() is not null;
 select public.sweep_invites() is not null;

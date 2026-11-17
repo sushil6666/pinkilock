@@ -41,7 +41,7 @@ select t.as_user(:'a');
 select t.ok((select count(*) from profile_cards where id = :'b') = 0, 'A no longer sees B in Discover');
 select t.ok((select count(*) from invites where :'b' in (from_id, to_id)) = 0, 'A loses access to every invite shared with B');
 select t.ok((select count(*) from profile_private where profile_id = :'b') = 0, 'THE REVEAL closes for A too');
-select t.ok(t.fails(format('select check_in(%L)', :'ba')), 'A cannot act on the plan with B any more');
+select t.ok(t.fails(format('select t.check_in(%L)', :'ba')), 'A cannot act on the plan with B any more');
 select t.ok(t.fails(format($$select send_invite(%L, 'boba_run', now() + interval '2 hours', '', '')$$, :'b')), 'A cannot ask B');
 select t.ok((select count(*) from my_blocks()) = 0, 'A cannot see that B blocked them');
 select unblock_user(:'b');

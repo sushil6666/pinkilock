@@ -5,6 +5,6 @@ select t.ok((select flaked from public.trust_scores where profile_id = '00000000
   'X''s bail is on X''s record');
 select t.ok((select flaked from public.trust_scores where profile_id = '00000000-0000-0000-0000-0000000000e2') = 0,
   'X''s bail is not on Y''s record');
--- G8: two accounts keeping promises with each other raise both scores without limit.
-select t.gap((select kept from public.trust_scores where profile_id = '00000000-0000-0000-0000-0000000000e1') <= 1, 'G8',
-  'every kept promise between the same two accounts counts toward a Trust Score');
+-- G8 closed: two promises kept between the same two accounts within 30 days count once.
+select t.ok((select kept from public.trust_scores where profile_id = '00000000-0000-0000-0000-0000000000e1') = 1,
+  'G8 closed: two kept promises with the same person in a month count as one');

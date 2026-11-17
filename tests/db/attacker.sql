@@ -53,7 +53,7 @@ select t.ok((select string_agg(n.nspname || '.' || p.proname, ' ' order by n.nsp
     from pg_proc p join pg_namespace n on n.oid = p.pronamespace
     where n.nspname in ('public', 'private', 'analytics') and has_function_privilege('authenticated', p.oid, 'execute'))
   = 'private.blocked_pair private.shares_invite public.bail public.block_user public.check_in public.decline_invite public.delete_my_account '
-    'public.discover public.export_my_data public.log_client_error public.log_event public.my_blocks public.offer_pinky public.register_push_token public.report_user '
+    'public.discover public.export_my_data public.log_client_error public.log_event public.my_blocks public.my_checkin_code public.offer_pinky public.register_push_token public.report_user '
     'public.save_profile public.send_invite public.unblock_user public.unregister_push_token',
   'a signed-in user can call exactly these functions and no others');
 select t.ok(not exists (select 1 from pg_proc p join pg_namespace n on n.oid = p.pronamespace
@@ -126,7 +126,7 @@ select (send_invite(:'z', 'boba_run', now() + interval '1 hour', '', '')).id as 
 select t.as_user(:'x');
 select t.ok((select count(*) from invites where id = :'yz') = 0, 'X cannot read an invite they are not on');
 select t.ok(t.fails(format('select offer_pinky(%L)', :'yz')) and t.fails(format('select decline_invite(%L)', :'yz'))
-  and t.fails(format('select check_in(%L)', :'yz')) and t.fails(format('select bail(%L)', :'yz')),
+  and t.fails(format('select t.check_in(%L)', :'yz')) and t.fails(format('select bail(%L)', :'yz')),
   'X cannot answer, decline, check in to or bail on an invite they are not on');
 
 -- X asks Y. Y passes.
@@ -151,7 +151,7 @@ select offer_pinky(:'xy2');
 select t.as_user(:'x');
 select t.ok((select status from invites where id = :'xy2') = 'locked', 'the plan between X and Y is locked');
 select t.ok((select count(*) from profile_private where profile_id = :'y') = 0, 'a locked plan does not open the reveal');
-select t.ok(t.fails(format('select check_in(%L)', :'xy2')), 'X cannot check in an hour early');
+select t.ok(t.fails(format('select t.check_in(%L)', :'xy2')), 'X cannot check in an hour early');
 select bail(:'xy2');
 select t.ok((select count(*) from profile_private where profile_id = :'y') = 0, 'a broken promise does not open the reveal');
 
@@ -233,7 +233,8 @@ select t.ok(t.sqlstate($$select log_event('app_open', jsonb_build_object('junk',
 select t.ok(t.sqlstate(format($$insert into passes (profile_id, passed_id) select %L, ('00000000-0000-0000-0001-' || lpad(n::text, 12, '0'))::uuid from generate_series(1, 220) n on conflict do nothing$$, :'x')) = 'PL028',
   'G6 closed: no one can pass on more than 200 people in a day');
 
--- G7: check-in is a button. X and Y "keep" two promises without proving they met.
+-- G7 closed: checking in needs the other person's code, which only passes between two people who
+-- are together. X tries without it.
 select t.as_user(:'y');
 select (send_invite(:'x', 'video_coffee', now() + interval '5 minutes', '', '')).id as xy3 \gset
 select t.as_user(:'x');
@@ -241,9 +242,31 @@ select offer_pinky(:'xy3');
 select t.as_user(:'y');
 select offer_pinky(:'xy3');
 select t.as_user(:'x');
-select t.gap(t.fails(format('select check_in(%L)', :'xy3')), 'G7', 'check-in needs nothing from the other person');
+select t.ok(t.sqlstate(format($$select check_in(%L, '0000')$$, :'xy3')) = 'PL038', 'G7 closed: X cannot check in before Y has even opened a code (PL038)');
+select t.ok(t.fails(format('select check_in(%L)', :'xy3')), 'G7 closed: the old one-argument check-in is gone');
 select t.as_user(:'y');
-select check_in(:'xy3');
+select t.ok(my_checkin_code(:'xy3') ~ '^[0-9]{4}$', 'Y opens their code');
+select t.ok(t.fails('select count(*) from private.checkin_codes'), 'no one can read the codes table');
+select t.as_user(:'x');
+-- Guessing: five wrong codes lock X out, and a wrong code changes nothing.
+reset role;
+select code as y_code from private.checkin_codes where invite_id = :'xy3' and user_id = :'y' \gset
+set role authenticated;
+select t.as_user(:'x');
+select t.ok(not (:'x' = any ((check_in(:'xy3', lpad(((:'y_code'::int + k) % 10000)::text, 4, '0'))).check_ins)), 'a wrong code does not check X in (try ' || k || ')')
+  from generate_series(1, 5) k;
+select t.ok(t.sqlstate(format($$select check_in(%L, %L)$$, :'xy3', :'y_code')) = 'PL037', 'G7 closed: after five wrong codes, even the right one waits five minutes (PL037)');
+reset role;
+update private.checkin_codes set locked_until = null where invite_id = :'xy3' and user_id = :'x';
+set role authenticated;
+select t.as_user(:'x');
+select t.ok(:'x' = any ((check_in(:'xy3', :'y_code')).check_ins), 'with Y''s code, X checks in');
+select t.as_user(:'y');
+select t.check_in(:'xy3');
+reset role;
+select t.ok(not exists (select 1 from private.checkin_codes where invite_id = :'xy3'), 'the codes are deleted once the promise is kept');
+set role authenticated;
+select t.as_user(:'y');
 select t.ok((select contact_handle from profile_private where profile_id = :'x') = '@xavier', 'after a kept promise Y reads X''s contact: the reveal, as designed');
 
 -- A second kept promise between the same two, for G8 (checked after the pipeline runs).
@@ -254,9 +277,9 @@ select offer_pinky(:'xy4');
 select t.as_user(:'y');
 select offer_pinky(:'xy4');
 select t.as_user(:'x');
-select check_in(:'xy4');
+select t.check_in(:'xy4');
 select t.as_user(:'y');
-select check_in(:'xy4');
+select t.check_in(:'xy4');
 
 -- ---------------------------------------------------------------------------------------------
 -- 6. A block still holds against all of the above.

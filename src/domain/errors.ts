@@ -37,6 +37,9 @@ export const ERRORS = {
   PL034: 'Nothing to check in to.',
   PL035: 'Check-in is not open.',
   PL036: 'Only a locked plan can be bailed on.',
+  PL037: 'Too many wrong codes. Wait five minutes, then try again.',
+  PL038: 'They have not opened their code yet. Ask them to open the plan.',
+  PL039: 'That code is not right. Check it with them and try again.',
   PL040: 'Only app_open can be logged from the app.',
   PL041: 'That event is too big.',
   PL050: 'That error report was not valid.',
@@ -68,6 +71,13 @@ export const ERRORS = {
 } as const;
 
 export type ErrorCode = keyof typeof ERRORS;
+
+/**
+ * PL codes the app raises itself, about a database answer that is not an error. PL039: a wrong
+ * check-in code comes back as the plan unchanged (an error would undo the server's count of wrong
+ * tries), and the app names it.
+ */
+export const APP_RAISED_PL: readonly ErrorCode[] = ['PL039'];
 
 /** Refusals that usually mean a block or an account deletion this phone has not heard about yet. */
 export const RESYNC_CODES: readonly ErrorCode[] = ['PL003', 'PL004', 'PL030', 'PL033', 'PL034'];

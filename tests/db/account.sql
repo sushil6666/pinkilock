@@ -21,9 +21,9 @@ select offer_pinky(:'fg') is not null;
 reset role;
 update public.invites set starts_at = now() + interval '5 minutes' where id = :'fg';
 set role authenticated;
-select check_in(:'fg') is not null;
+select t.check_in(:'fg') is not null;
 select t.as_user(:'g');
-select t.ok((check_in(:'fg')).status = 'kept', 'F and G keep a promise');
+select t.ok((t.check_in(:'fg')).status = 'kept', 'F and G keep a promise');
 select (send_invite(:'f', 'sunset_spot', now() + interval '3 hours', '', '')).id as gf \gset
 select t.as_user(:'f');
 select t.ok((offer_pinky(:'gf')).status = 'half_locked', 'and have another one open');

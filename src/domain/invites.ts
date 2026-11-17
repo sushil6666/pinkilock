@@ -21,6 +21,16 @@ export const NOTE_MAX = 80;
 export const ASKS_PER_DAY = 10;
 export const REASK_AFTER = 7 * DAY;
 export const PASSES_PER_DAY = 200;
+/** Wrong check-in codes before a five-minute wait (WP4). */
+export const CODE_TRIES = 5;
+export const CODE_LOCK = 5 * MIN;
+
+/** The mock's stand-in for a server-made check-in code: four digits, fixed per plan and person. */
+export function mockCheckInCode(inviteId: string, userId: string): string {
+  let h = 7;
+  for (const ch of `${inviteId}:${userId}`) h = (h * 31 + ch.charCodeAt(0)) % 1_000_003;
+  return String(h % 10_000).padStart(4, '0');
+}
 
 export const isOpen = (i: Invite) => i.status === 'sent' || i.status === 'half_locked';
 export const isLive = (i: Invite) => isOpen(i) || i.status === 'locked';

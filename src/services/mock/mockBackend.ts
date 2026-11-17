@@ -50,6 +50,7 @@ const uid = () => `inv_${Date.now().toString(36)}${Math.random().toString(36).sl
 export function createMockBackend(): Backend {
   const clientErrors: ClientErrorReport[] = [];
   let passTimes: number[] = [];
+  const codeTries = new Map<string, { fails: number; until: number }>();
   let db: Db | null = null;
   const reveals = seedReveals();
   const listeners = new Set<(e: BackendEvent) => void>();
@@ -303,9 +304,30 @@ export function createMockBackend(): Backend {
         return { invites: [put(d, rules.decline(find(d, inviteId), ME_ID, now))] };
       }),
 
-    checkIn: (inviteId) =>
+    async myCheckInCode(inviteId) {
+      const d = await load();
+      const i = find(d, inviteId);
+      if (i.status !== 'locked') fail('PL034');
+      if (rules.checkInPhase(i, Date.now()) !== 'open') fail('PL035');
+      return rules.mockCheckInCode(inviteId, ME_ID);
+    },
+
+    demoTheirCode: (inviteId) => rules.mockCheckInCode(inviteId, 'them'),
+
+    checkIn: (inviteId, theirCode) =>
       mutate((d, now) => {
-        const next = put(d, rules.checkIn(find(d, inviteId), ME_ID, now));
+        const i = find(d, inviteId);
+        if (i.status !== 'locked') fail('PL034');
+        if (rules.checkInPhase(i, now) !== 'open') fail('PL035');
+        const tries = codeTries.get(inviteId) ?? { fails: 0, until: 0 };
+        if (tries.until > now) fail('PL037');
+        if (theirCode.trim() !== rules.mockCheckInCode(inviteId, 'them')) {
+          tries.fails += 1;
+          if (tries.fails >= rules.CODE_TRIES) Object.assign(tries, { fails: 0, until: now + rules.CODE_LOCK });
+          codeTries.set(inviteId, tries);
+          fail('PL039');
+        }
+        const next = put(d, rules.checkIn(i, ME_ID, now));
         if (next.status === 'kept') return settle(d, next);
         d.due[inviteId] = now + THEY_CHECK_IN_AFTER;
         return { invites: [next] };
