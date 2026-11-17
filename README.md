@@ -165,7 +165,7 @@ pip install pgserver duckdb && python tests/db/run.py   # migrations, RLS, funct
 npm run test:live:local     # two users, then block, report, export, phone and delete, then the attacker suite, against `supabase start`
 npm run audit:check         # no new high or critical advisory in what ships (security/audit-baseline.json)
 npm run test:push:local     # the push chain with a stand-in for Expo (setup: top of tests/live/local_push.sh)
-npm run test:app:local      # the real screens in two browser sessions (npx playwright install chromium)
+npm run test:app:local      # the real screens in two browser sessions, phone and desktop width, both ways round (npx playwright install chromium)
 npm run test:live           # the same live tests against EXPO_PUBLIC_SUPABASE_URL / _ANON_KEY
 ```
 

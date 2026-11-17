@@ -470,6 +470,8 @@ what the server did (`OPERATIONS.md`, "Trace a bug").
 - `npm run test:push:local`: the whole push chain on the local stack, with a stand-in for Expo.
 - `npm run test:app:local`: the web build in two browser sessions, through the real screens,
   ending with a block from the profile screen, a data download and an account deletion from Me.
+  It runs twice, one person in a phone-sized window and the other in a desktop-sized one, then
+  swapped, and fails if any screen it passes through scrolls sideways.
 - CI runs all of the above on every pull request and every push to `main`. The live two-user test also runs against the real
   project after each deploy.
 
