@@ -110,13 +110,22 @@ export interface NewReport {
   inviteId?: string;
 }
 
-/** How this person signs in. Anonymous until a phone number is linked; the id never changes. */
+/**
+ * How this person signs in. Anonymous until a phone number or an email address is linked; the id
+ * never changes. Either one is enough to get back in on a new phone.
+ */
 export interface Account {
   phone: string | null;
-  /** Whether the backend can send sign-in codes at all (an SMS provider is configured). */
+  email: string | null;
+  /** Whether the backend can text sign-in codes (an SMS provider is configured). */
   phoneAvailable: boolean;
+  /** Whether the backend can email sign-in codes (a mail sender is configured). */
+  emailAvailable: boolean;
   /** Mock only: the one code it accepts, so the screen can say so. */
   mockCode?: string;
 }
 
-export type PhoneMode = 'link' | 'sign_in';
+/** Where a sign-in code goes. */
+export type CodeKind = 'phone' | 'email';
+/** `link` adds the address to the person signed in; `sign_in` gets back into an existing account. */
+export type CodeMode = 'link' | 'sign_in';

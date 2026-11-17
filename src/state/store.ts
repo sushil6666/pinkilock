@@ -4,7 +4,7 @@
  * section 3). Nothing here knows whether the backend is the mock or Supabase.
  */
 import { create } from 'zustand';
-import type { Account, Invite, MyContact, NewInvite, NewReport, OnboardingInput, PhoneMode, Profile } from '../domain/types';
+import type { Account, Invite, MyContact, NewInvite, NewReport, OnboardingInput, CodeKind, CodeMode, Profile } from '../domain/types';
 import { stopPush } from '../lib/push';
 import { backend, type Changes, type Notice, type Snapshot } from '../services';
 
@@ -35,8 +35,8 @@ interface State {
   report(input: NewReport): Promise<void>;
   deleteAccount(): Promise<void>;
   loadAccount(): Promise<Account>;
-  sendPhoneCode(phone: string, mode: PhoneMode): Promise<void>;
-  verifyPhoneCode(phone: string, code: string, mode: PhoneMode): Promise<void>;
+  sendCode(kind: CodeKind, address: string, mode: CodeMode): Promise<void>;
+  verifyCode(kind: CodeKind, address: string, code: string, mode: CodeMode): Promise<void>;
   signOut(): Promise<void>;
   demoReset(): Promise<void>;
   demoBringForward(inviteId: string): Promise<void>;
@@ -149,15 +149,16 @@ export const useStore = create<State>((set, get) => {
       set({ account });
       return account;
     },
-    async sendPhoneCode(phone, mode) {
-      await backend.sendPhoneCode(phone, mode);
+    async sendCode(kind, address, mode) {
+      await backend.sendCode(kind, address, mode);
     },
-    async verifyPhoneCode(phone, code, mode) {
-      const snap = await backend.verifyPhoneCode(phone, code, mode);
+    async verifyCode(kind, address, code, mode) {
+      const snap = await backend.verifyCode(kind, address, code, mode);
       set({ ...fromSnapshot(snap), notice: null, account: await backend.account() });
     },
     async signOut() {
-      if (!(await backend.account()).phone) throw new Error('Add a phone number first, or you could not get back in.');
+      const acct = await backend.account();
+      if (!acct.phone && !acct.email) throw new Error('Add a phone number or an email first, or you could not get back in.');
       await stopPush();
       const snap = await backend.signOut();
       set({ ...fromSnapshot(snap), notice: null, account: null });

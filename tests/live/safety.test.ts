@@ -5,9 +5,10 @@
  * modified app could try. Nothing uses the service role.
  *
  *   npm run test:live:local     against `supabase start`, with E2E_PHONE_TEST=1: phone sign-in
- *                               uses the test numbers in supabase/config.toml, so no SMS is sent
- *   npm run test:live           against EXPO_PUBLIC_SUPABASE_URL / _ANON_KEY; the phone part is
- *                               skipped there (it would text a made-up number)
+ *                               uses the test numbers in supabase/config.toml, so no SMS is sent;
+ *                               and E2E_MAILBOX: email codes are read back from the local Mailpit
+ *   npm run test:live           against EXPO_PUBLIC_SUPABASE_URL / _ANON_KEY; the phone and email
+ *                               parts are skipped there (they would text or mail made-up people)
  *
  * With E2E_DB_URL (a Postgres URL with rights on auth.users) it also checks the rows behind the
  * API and deletes its test users afterwards.
@@ -130,6 +131,52 @@ test('export: my data, and nobody else\'s contact', async () => {
   assert.ok(!text.includes('@e2e_bhavin') && !text.includes('e2e report'), "no one else's contact, no report about me");
 });
 
+/** The newest code Mailpit holds for an address, waiting until one newer than `after` arrives. */
+async function codeFor(address: string, after: string | null): Promise<{ code: string; id: string }> {
+  const box = process.env.E2E_MAILBOX!.replace(/\/$/, '');
+  for (let i = 0; i < 40; i++) {
+    const list = (await (await fetch(`${box}/api/v1/search?query=${encodeURIComponent(`to:"${address}"`)}&limit=1`)).json()) as { messages?: { ID: string }[] };
+    const id = list.messages?.[0]?.ID;
+    if (id && id !== after) {
+      const msg = (await (await fetch(`${box}/api/v1/message/${id}`)).json()) as { Text?: string; HTML?: string };
+      const code = `${msg.Text ?? ''} ${msg.HTML ?? ''}`.match(/\b(\d{6})\b/)?.[1];
+      if (code) return { code, id };
+    }
+    await new Promise((r) => setTimeout(r, 250));
+  }
+  throw new Error(`no email code reached ${address}`);
+}
+
+test('email: link keeps the id and history; sign in on a new phone gets them back', async (t) => {
+  // Only where the mail goes to a local Mailpit: anywhere else it would mail a made-up address.
+  if (!process.env.E2E_MAILBOX) return t.skip('set E2E_MAILBOX to the local Mailpit URL');
+  const acct = await b.backend.account();
+  assert.ok(acct.emailAvailable, 'email sign-in is on');
+  assert.equal(acct.email, null, 'anonymous to start with');
+  const email = `e2e-bhavin-${Date.now()}@example.com`;
+
+  await b.backend.sendCode('email', email, 'link');
+  const first = await codeFor(email, null);
+  const wrong = first.code === '000000' ? '111111' : '000000';
+  await assert.rejects(b.backend.verifyCode('email', email, wrong, 'link'), /did not match/, 'a wrong code is refused');
+  const linked = await b.backend.verifyCode('email', email, first.code, 'link');
+  assert.equal(linked.me?.id, b.id, 'the same person after linking');
+  assert.equal((await b.backend.account()).email, email);
+  const before = linked.invites.map((i) => i.id).sort();
+
+  await assert.rejects(c.backend.sendCode('email', email, 'link'), /another account/, 'someone else cannot take the address');
+  await assert.rejects(c.backend.sendCode('email', `e2e-nobody-${Date.now()}@example.com`, 'sign_in'), /No account/, 'sign-in never makes a new account');
+
+  const fresh = createSupabaseBackend(URL!, KEY!, memoryStorage());
+  assert.equal((await fresh.boot()).me, null, 'a new phone starts as nobody');
+  await fresh.sendCode('email', email, 'sign_in');
+  const second = await codeFor(email, first.id);
+  const back = await fresh.verifyCode('email', email, second.code, 'sign_in');
+  assert.equal(back.me?.id, b.id, 'signing in on a new phone is the same person');
+  assert.deepEqual(back.invites.map((i) => i.id).sort(), before, 'with the same history');
+  assert.equal((await fresh.signOut()).me, null, 'an email is enough to be allowed to sign out');
+});
+
 test('phone: link keeps the id and history; sign in on a new phone gets them back', async (t) => {
   // Only where the test numbers in supabase/config.toml exist (the local stack): anywhere else a
   // real SMS would go to a made-up number.
@@ -139,25 +186,25 @@ test('phone: link keeps the id and history; sign in on a new phone gets them bac
   const phone = '+919000000101';
   assert.equal(acct.phone, null, 'anonymous to start with');
 
-  await a.backend.sendPhoneCode(phone, 'link');
-  await assert.rejects(a.backend.verifyPhoneCode(phone, '000000', 'link'), /did not match/, 'a wrong code is refused');
-  const linked = await a.backend.verifyPhoneCode(phone, '123456', 'link');
+  await a.backend.sendCode('phone', phone, 'link');
+  await assert.rejects(a.backend.verifyCode('phone', phone, '000000', 'link'), /did not match/, 'a wrong code is refused');
+  const linked = await a.backend.verifyCode('phone', phone, '123456', 'link');
   assert.equal(linked.me?.id, a.id, 'the same person after linking');
   assert.equal((await a.backend.account()).phone, phone);
   const before = linked.invites.map((i) => i.id).sort();
 
   // Someone else cannot take the number.
-  await assert.rejects(b.backend.sendPhoneCode(phone, 'link').then(() => b.backend.verifyPhoneCode(phone, '123456', 'link')), /another account/);
-  await assert.rejects(c.backend.sendPhoneCode('+919000000103', 'sign_in'), /No account/, 'sign-in never makes a new account');
+  await assert.rejects(b.backend.sendCode('phone', phone, 'link').then(() => b.backend.verifyCode('phone', phone, '123456', 'link')), /another account/);
+  await assert.rejects(c.backend.sendCode('phone', '+919000000103', 'sign_in'), /No account/, 'sign-in never makes a new account');
 
   // A new phone: empty storage, sign in with the number.
   const fresh = createSupabaseBackend(URL!, KEY!, memoryStorage());
   assert.equal((await fresh.boot()).me, null, 'a new phone starts as nobody');
-  await fresh.sendPhoneCode(phone, 'sign_in');
-  const back = await fresh.verifyPhoneCode(phone, '123456', 'sign_in');
+  await fresh.sendCode('phone', phone, 'sign_in');
+  const back = await fresh.verifyCode('phone', phone, '123456', 'sign_in');
   assert.equal(back.me?.id, a.id, 'signing in on a new phone is the same person');
   assert.deepEqual(back.invites.map((i) => i.id).sort(), before, 'with the same history');
-  await assert.rejects(createSupabaseBackend(URL!, KEY!, memoryStorage()).signOut(), /phone number first/, 'an anonymous person cannot sign out');
+  await assert.rejects(createSupabaseBackend(URL!, KEY!, memoryStorage()).signOut(), /phone number or an email first/, 'an anonymous person cannot sign out');
   assert.equal((await fresh.signOut()).me, null, 'signing out leaves nobody on that phone');
 });
 

@@ -9,7 +9,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as rules from '../../domain/invites';
 import { ideaOf } from '../../domain/ideas';
 import { REPORT_DETAIL_MAX, REPORT_REASONS, REPORTS_PER_DAY } from '../../domain/safety';
-import type { BlockedPerson, Invite, MyContact, NewInvite, OnboardingInput, Profile, ReportReason, Reveal } from '../../domain/types';
+import type { BlockedPerson, CodeKind, Invite, MyContact, NewInvite, OnboardingInput, Profile, ReportReason, Reveal } from '../../domain/types';
 import type { Backend, BackendEvent, Changes, Notice, Snapshot } from '../backend';
 import { ALWAYS_PASSES, ME_ID, SEED_ME_RECORD, seedInvites, seedProfiles, seedReveals } from './seed';
 
@@ -20,8 +20,8 @@ const THEY_SEAL_AFTER = 2400;
 const THEY_CHECK_IN_AFTER = 1800;
 /** The mock "sends" every sign-in code as this. The phone screen says so in mock mode. */
 export const MOCK_CODE = '123456';
-/** A signed-out account waits here, under its phone number, until someone signs back in. */
-const parked = (phone: string) => `${KEY}.phone.${phone}`;
+/** A signed-out account waits here, under its phone number and its email, until someone signs back in. */
+const parked = (kind: CodeKind, address: string) => `${KEY}.${kind}.${address}`;
 
 interface Db {
   me: Profile | null;
@@ -37,6 +37,7 @@ interface Db {
   /** Kept only so the contract matches: nothing in the app can read them back. */
   reports?: { profileId: string; reason: ReportReason; detail: string; inviteId: string | null; at: number }[];
   phone?: string | null;
+  email?: string | null;
 }
 
 const wait = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
@@ -345,7 +346,7 @@ export function createMockBackend(): Backend {
       return JSON.stringify({
         format: 'pinkilock-export-1',
         exported_at: new Date().toISOString(),
-        account: { id: ME_ID, phone: d.phone ?? null, is_anonymous: !d.phone, backend: 'mock' },
+        account: { id: ME_ID, phone: d.phone ?? null, email: d.email ?? null, is_anonymous: !d.phone && !d.email, backend: 'mock' },
         profile: d.me,
         contact: d.myContact,
         invites: d.invites.map((i) => ({
@@ -370,34 +371,40 @@ export function createMockBackend(): Backend {
 
     async account() {
       const d = await load();
-      return { phone: d.phone ?? null, phoneAvailable: true, mockCode: MOCK_CODE };
+      return { phone: d.phone ?? null, email: d.email ?? null, phoneAvailable: true, emailAvailable: true, mockCode: MOCK_CODE };
     },
 
-    async sendPhoneCode(phone, mode) {
+    async sendCode(kind, address, mode) {
       const d = await load();
       await wait(LATENCY);
+      const what = kind === 'phone' ? 'number' : 'email address';
       if (mode === 'link') {
         if (!d.me) throw new Error('Finish setting up first.');
+        if (await AsyncStorage.getItem(parked(kind, address)).catch(() => null)) {
+          throw new Error(`That ${what} is already on another account. Sign in with it instead.`);
+        }
         return;
       }
-      if (!(await AsyncStorage.getItem(parked(phone)).catch(() => null))) {
-        throw new Error('No account uses that number yet. Set one up first, then add the number in Me.');
+      if (!(await AsyncStorage.getItem(parked(kind, address)).catch(() => null))) {
+        throw new Error(`No account uses that ${what} yet. Set one up first, then add it in Me.`);
       }
     },
 
-    async verifyPhoneCode(phone, code, mode) {
+    async verifyCode(kind, address, code, mode) {
       const d = await load();
       await wait(LATENCY);
       if (code !== MOCK_CODE) throw new Error('That code did not match or has expired. Check it, or send a new one.');
       if (mode === 'link') {
-        d.phone = phone;
+        if (kind === 'phone') d.phone = address;
+        else d.email = address;
         save();
         return snapshot(d);
       }
-      const raw = await AsyncStorage.getItem(parked(phone));
-      if (!raw) throw new Error('No account uses that number yet. Set one up first, then add the number in Me.');
-      await AsyncStorage.removeItem(parked(phone));
+      const raw = await AsyncStorage.getItem(parked(kind, address));
+      if (!raw) throw new Error(`No account uses that ${kind === 'phone' ? 'number' : 'email address'} yet. Set one up first, then add it in Me.`);
       db = JSON.parse(raw) as Db;
+      if (db.phone) await AsyncStorage.removeItem(parked('phone', db.phone));
+      if (db.email) await AsyncStorage.removeItem(parked('email', db.email));
       save();
       start();
       return snapshot(db);
@@ -405,8 +412,10 @@ export function createMockBackend(): Backend {
 
     async signOut() {
       const d = await load();
-      if (!d.phone) throw new Error('Add a phone number first, or you could not get back in.');
-      await AsyncStorage.setItem(parked(d.phone), JSON.stringify(d));
+      if (!d.phone && !d.email) throw new Error('Add a phone number or an email first, or you could not get back in.');
+      const json = JSON.stringify(d);
+      if (d.phone) await AsyncStorage.setItem(parked('phone', d.phone), json);
+      if (d.email) await AsyncStorage.setItem(parked('email', d.email), json);
       db = fresh();
       save();
       return snapshot(db);

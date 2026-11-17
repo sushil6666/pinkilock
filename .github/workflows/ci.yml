@@ -54,12 +54,12 @@ jobs:
           cache: npm
       - run: npm ci
       - name: Start Supabase locally
-        run: npx supabase start -x studio,imgproxy,vector,logflare,storage-api,postgres-meta,mailpit,supavisor
+        run: npx supabase start -x studio,imgproxy,vector,logflare,storage-api,postgres-meta,supavisor
       - name: Point the push function at the fake Expo
         run: |
           EXPO_PUSH_URL=http://host.docker.internal:54399 scripts/push-config.sh local
           npx supabase stop
-          npx supabase start -x studio,imgproxy,vector,logflare,storage-api,postgres-meta,mailpit,supavisor
+          npx supabase start -x studio,imgproxy,vector,logflare,storage-api,postgres-meta,supavisor
       - name: Two users through the live backend
         run: npm run test:live:local
       - name: Push, end to end
