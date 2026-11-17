@@ -66,7 +66,7 @@
     "@babel/core": "^7.25.2",
     "@types/aes-js": "^3.1.4",
     "@types/react": "~18.3.12",
-    "playwright": "^1.63.0",
+    "playwright": "^1.65.1",
     "supabase": "^3.2.0",
     "three": "0.187.0",
     "tsx": "^4.23.15",
