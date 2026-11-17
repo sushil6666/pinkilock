@@ -158,8 +158,9 @@ python analytics/duckdb_pipeline.py               # write trust_scores and analy
 
 ```bash
 npm run typecheck
-pip install pgserver duckdb && python tests/db/run.py   # migrations, RLS, functions, push outbox, pipeline (Python 3.12)
-npm run test:live:local     # two users, then block, report, export, phone and delete, against `supabase start`
+pip install pgserver duckdb && python tests/db/run.py   # migrations, RLS, functions, push outbox, pipeline, attacker suite (Python 3.12)
+npm run test:live:local     # two users, then block, report, export, phone and delete, then the attacker suite, against `supabase start`
+npm run audit:check         # no new high or critical advisory in what ships (security/audit-baseline.json)
 npm run test:push:local     # the push chain with a stand-in for Expo (setup: top of tests/live/local_push.sh)
 npm run test:app:local      # the real screens in two browser sessions (npx playwright install chromium)
 npm run test:live           # the same live tests against EXPO_PUBLIC_SUPABASE_URL / _ANON_KEY

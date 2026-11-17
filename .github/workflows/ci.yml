@@ -1,5 +1,6 @@
-# On every pull request and every push to main: TypeScript strict, the database tests on a throwaway Postgres, and the two-user,
-# push and two-phone tests against a local Supabase stack. No project keys are used here.
+# On every pull request and every push to main: TypeScript strict, the database tests on a throwaway Postgres (the attacker
+# suite included), a secret scan and a dependency audit, and the two-user, attacker, push and two-phone tests against a local
+# Supabase stack. No project keys are used here.
 #
 # To save Actions minutes: a branch runs CI once it has a pull request, not on every push before
 # that, and a change that touches only Markdown runs nothing.
@@ -32,6 +33,25 @@ jobs:
       - run: npm ci
       - run: npm run typecheck
 
+  security:
+    # Nothing secret may be committed, and no new high or critical advisory may ship.
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # The whole history: a secret removed in a later commit is still leaked.
+          fetch-depth: 0
+      - name: Secret scan (gitleaks)
+        run: docker run --rm -v "$PWD:/repo" zricethezav/gitleaks:v8.18.4 detect --source /repo --redact --no-banner
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Dependency audit against the baseline
+        run: npm run audit:check
+
   database:
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -42,7 +62,7 @@ jobs:
           # pgserver publishes no wheels for 3.13 yet.
           python-version: '3.12'
       - run: pip install pgserver -r analytics/requirements.txt
-      - name: Migrations, RLS, promise functions, push outbox, DuckDB pipeline
+      - name: Migrations, RLS, promise functions, push outbox, DuckDB pipeline, attacker suite
         run: python tests/db/run.py
 
   local-stack:
@@ -62,7 +82,10 @@ jobs:
           EXPO_PUSH_URL=http://host.docker.internal:54399 scripts/push-config.sh local
           npx supabase stop
           npx supabase start -x studio,imgproxy,vector,logflare,storage-api,postgres-meta,supavisor
-      - name: Two users through the live backend
+      - name: Lint the database functions
+        # Report only for now: it has not had a first clean run. Once it has, change none to error.
+        run: npx supabase db lint --schema public,private --level warning --fail-on none || echo "::warning::The database lint could not run."
+      - name: Two users, Phase 3 and the attacker suite through the live API
         run: npm run test:live:local
       - name: Push, end to end
         run: npm run test:push:local

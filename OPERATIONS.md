@@ -69,8 +69,8 @@ Kept outside GitHub, and managed by the deploy:
 
 | Workflow | Runs when | What it does |
 | --- | --- | --- |
-| **CI** | Every PR and every push to `main`, unless only Markdown changed | Typecheck, `tests/db`, and the live (two users, then block, report, export, phone, delete), push and two-browser tests on a local Supabase stack. Uses no project keys |
-| **Supabase deploy** | A push to `main` that touches `supabase/` or the workflow (target `preview`); or by hand, choosing `preview` or `production` | Turns on anonymous sign-ins, applies migrations, sets the analytics password, prints the pooler host, deploys `push`, rotates the push secret, turns on Twilio Verify if its secrets exist, then (staging only) runs the live tests |
+| **CI** | Every PR and every push to `main`, unless only Markdown changed | Typecheck; a secret scan over the whole history and a dependency audit; `tests/db` (the attacker suite included); and the live (two users, then block, report, export, phone, delete, then the attacker suite), push and two-browser tests on a local Supabase stack. Uses no project keys |
+| **Supabase deploy** | A push to `main` that touches `supabase/` or the workflow (target `preview`); or by hand, choosing `preview` or `production` | Sets the auth settings below and prints them back, applies migrations, reports what Supabase's security advisor says, sets the analytics password, prints the pooler host, deploys `push`, rotates the push secret, turns on Twilio Verify if its secrets exist, then (staging only) runs the live tests |
 | **Live two-user test** | After each staging deploy; or by hand | Two anonymous users go through the whole flow, then three more through block, report, export and delete, on staging; all are deleted after. Never run on production |
 | **Analytics worker** | Every 6 hours; or by hand | Recomputes trust scores and metrics, once per project that is set up. If a run fails it opens an `analytics-worker` issue (`analytics-worker-production` for production), and the next good run closes it |
 | **EAS build** | By hand (pick a profile and platform) | Copies the backend values into the EAS environment, builds, and puts the install link in the run summary |
@@ -78,6 +78,38 @@ Kept outside GitHub, and managed by the deploy:
 
 GitHub can pause scheduled workflows in a repo with no activity for 60 days. If trust scores
 stop moving, check that **Analytics worker** is still enabled.
+
+### Auth settings
+
+The deploy workflow sets these on the hosted project on every run and prints what is in force in
+the run summary, so the dashboard is never the only record. Change them in the workflow (and the
+local copy in `supabase/config.toml`), never in the dashboard.
+
+| Setting | Value | Why |
+| --- | --- | --- |
+| Anonymous sign-ins | on | The app starts anonymous, so RLS works from the first screen |
+| Anonymous sign-ins per hour, per address | 30 (300 locally, where every test person shares one address) | The cost of making accounts in bulk |
+| Code requests and code checks per 5 minutes, per address | 30 each | Guessing or spamming sign-in codes |
+| Session refreshes per 5 minutes, per address | 150 | Supabase's default, pinned |
+| Access token life | 1 hour | A stolen token stops working within the hour |
+| Refresh token rotation | on, 10 second reuse window | A copied refresh token is noticed when both copies are used |
+| Email code life | 10 minutes | A code read later from a mailbox is useless |
+
+Not set yet, and on the build plan (`docs/build-plan.md`, WP2): captcha on anonymous sign-in and on
+code requests.
+
+### The security gates in CI
+
+- **Attacker suite.** `tests/db/attacker.sql` and `tests/live/attacker.test.ts` act as a signed-in
+  user with a modified app. Lines that start `ok` are defences that hold. Lines that start `gap`
+  are known holes from the build plan, written as the defence that should hold; they do not fail
+  the run while the hole is open, and they **do** fail it the day the hole is closed, so that the
+  marker is turned into a plain check in the same change. The run ends with how many are open.
+- **Secret scan.** gitleaks over the whole history. If it fires, the secret is already leaked:
+  rotate it first ("A secret leaks", below), then remove it.
+- **Dependency audit.** `npm run audit:check` fails on any high or critical advisory in what ships
+  that is not listed in `security/audit-baseline.json`. The baseline is what was already there on
+  2026-11-17; it is debt to clear by upgrading, and the check says when a name can come off it.
 
 ### Staying inside the Actions minutes
 

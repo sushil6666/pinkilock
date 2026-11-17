@@ -1,0 +1,21 @@
+{
+  "_about": "High and critical npm advisories that were already present when the CI gate was added. Debt to clear by upgrading, not a list of things that are fine. See scripts/audit-check.mjs.",
+  "accepted": {
+    "@expo/cli": "high; present on 2026-11-17 when the gate was added, not yet triaged (build plan G23)",
+    "@react-navigation/bottom-tabs": "high; present on 2026-11-17 when the gate was added, not yet triaged (build plan G23)",
+    "@react-navigation/core": "high; present on 2026-11-17 when the gate was added, not yet triaged (build plan G23)",
+    "@react-navigation/elements": "high; present on 2026-11-17 when the gate was added, not yet triaged (build plan G23)",
+    "@react-navigation/native": "high; present on 2026-11-17 when the gate was added, not yet triaged (build plan G23)",
+    "@react-navigation/native-stack": "high; present on 2026-11-17 when the gate was added, not yet triaged (build plan G23)",
+    "@react-navigation/routers": "high; present on 2026-11-17 when the gate was added, not yet triaged (build plan G23)",
+    "@xmldom/xmldom": "high; present on 2026-11-17 when the gate was added, not yet triaged (build plan G23)",
+    "cacache": "high; present on 2026-11-17 when the gate was added, not yet triaged (build plan G23)",
+    "decode-uri-component": "high; present on 2026-11-17 when the gate was added, not yet triaged (build plan G23)",
+    "expo-router": "high; present on 2026-11-17 when the gate was added, not yet triaged (build plan G23)",
+    "image-size": "high; present on 2026-11-17 when the gate was added, not yet triaged (build plan G23)",
+    "nanoid": "high; present on 2026-11-17 when the gate was added, not yet triaged (build plan G23)",
+    "postcss": "high; present on 2026-11-17 when the gate was added, not yet triaged (build plan G23)",
+    "query-string": "high; present on 2026-11-17 when the gate was added, not yet triaged (build plan G23)",
+    "tar": "critical; present on 2026-11-17 when the gate was added, not yet triaged (build plan G23)"
+  }
+}
