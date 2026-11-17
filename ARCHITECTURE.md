@@ -337,6 +337,10 @@ as due times, so a restart loses nothing.
   conveyed by a haptic alone.
 - **Back**: Android hardware back works on every stack screen; the lock ignores it only during the
   one second of sealing.
+- **Wide screens**: nothing is drawn wider than `columnMax` (480, `src/theme/tokens.ts`). `Screen`
+  centres its header, content and footer in that column and draws a hairline down each side; the
+  tab bar, sheets and the notice banner use `column` from `Screen.tsx`. A phone is narrower than
+  the column, so nothing changes there. No screen sets its own width.
 - **Browser**: the web build (`npx expo export -p web`) is the same screens. Anything a browser
   needs differently lives in `src/lib/web.ts` or in the shared component, never in a copied
   screen. So far: a hold that completes under a finger eats the click the browser makes when the

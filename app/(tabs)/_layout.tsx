@@ -4,6 +4,7 @@ import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import { Tabs } from 'expo-router';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { column } from '@/components/ui/Screen';
 import { T } from '@/components/ui/T';
 import { lockRole } from '@/domain/invites';
 import { haptic } from '@/lib/haptics';
@@ -28,6 +29,7 @@ function TabBar({ state, navigation }: BottomTabBarProps) {
 
   return (
     <View style={[styles.bar, { paddingBottom: Math.max(insets.bottom, space.sm), paddingLeft: insets.left, paddingRight: insets.right }]}>
+      <View style={styles.row}>
       {state.routes.map((route, index) => {
         const tab = TABS[route.name];
         if (!tab) return null;
@@ -58,6 +60,7 @@ function TabBar({ state, navigation }: BottomTabBarProps) {
           </Pressable>
         );
       })}
+      </View>
     </View>
   );
 }
@@ -74,7 +77,8 @@ export default function TabsLayout() {
 }
 
 const styles = StyleSheet.create({
-  bar: { flexDirection: 'row', backgroundColor: color.bg, borderTopWidth: 1, borderTopColor: color.line },
+  bar: { backgroundColor: color.bg, borderTopWidth: 1, borderTopColor: color.line },
+  row: { ...column, flexDirection: 'row' },
   tab: { flex: 1, alignItems: 'center', gap: 4, paddingBottom: 6, minHeight: 56 },
   marker: { width: 28, height: 3, borderBottomLeftRadius: 2, borderBottomRightRadius: 2, marginBottom: 7 },
   count: { position: 'absolute', top: -6, right: -12, minWidth: 16, height: 16, borderRadius: 8, paddingHorizontal: 4, backgroundColor: color.pink, alignItems: 'center', justifyContent: 'center' },

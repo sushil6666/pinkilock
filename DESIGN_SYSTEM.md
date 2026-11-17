@@ -47,7 +47,9 @@ Font scaling is allowed up to 1.3x (`maxFontSizeMultiplier`) so layouts hold on 
 
 ## 3. Space, shape, elevation
 
-- Spacing scale: 4, 8, 12, 16, 20, 24, 32, 40, 56. Screen gutter is 20.
+- Spacing scale: 4, 8, 12, 16, 20, 24, 32, 40, 56. Screen gutter is 20. The app is never drawn
+  wider than 480: on a tablet or in a wide browser window it is a centred column on obsidian,
+  with a 1px `line` down each side.
 - Radius: 6 (chips), 14 (cards, buttons), 28 (sheets), 999 (pills, badges). Cards are squared
   off, never bubbly.
 - Borders do most of the separation work (1px `line`). Shadows are used for two things only:
