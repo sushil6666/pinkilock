@@ -60,7 +60,7 @@ function codeError(message: string, kind: CodeKind): AppError {
   if (m.includes('already') && (m.includes('registered') || m.includes('exists')))
     return new AppError('PA004', `That ${what} is already on another account. Sign in with it instead.`);
   if (m.includes('signups not allowed') || m.includes('user not found'))
-    return new AppError('PA005', `No account uses that ${what} yet. Set one up first, then add it in Me.`);
+    return new AppError('PA005', `We could not find an account with that ${what}. Create one first, then add it from the Me tab.`);
   if (m.includes('expired') || (m.includes('invalid') && (m.includes('otp') || m.includes('token'))))
     return new AppError('PA006');
   if (m.includes('rate') || m.includes('seconds')) return new AppError('PA007');

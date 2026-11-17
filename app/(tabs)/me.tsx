@@ -204,13 +204,13 @@ export default function Me() {
       <View style={styles.panel}>
         <Feather name={account?.email && !account.phone ? 'mail' : 'phone'} size={18} color={keeps ? color.gold : color.textDim} />
         <View style={{ flex: 1 }}>
-          <T v="bodyBold">{keeps ? [account?.email && maskEmail(account.email), account?.phone && maskPhone(account.phone)].filter(Boolean).join(' · ') : 'No email or phone number yet'}</T>
-          <T v="caption" c={color.textDim}>{keeps ? 'You can sign in with it on any phone.' : 'Add one to keep this account if you change phones. Without it, losing this phone loses your record.'}</T>
+          <T v="bodyBold">{keeps ? [account?.email && maskEmail(account.email), account?.phone && maskPhone(account.phone)].filter(Boolean).join(' · ') : 'No email or phone number added'}</T>
+          <T v="caption" c={color.textDim}>{keeps ? 'Use it to sign in on any device.' : 'Add one so you never lose your account. Without it, your promises and score live only on this device.'}</T>
         </View>
       </View>
       <View style={{ gap: space.sm, marginTop: space.sm }}>
-        {!account?.email ? <Button kind="ghost" icon="mail" label="Add your email" onPress={() => router.push({ pathname: '/account/sign-in', params: { mode: 'link', kind: 'email' } })} /> : null}
-        {!account?.phone ? <Button kind="ghost" icon="phone" label="Add your phone number" onPress={() => router.push({ pathname: '/account/sign-in', params: { mode: 'link', kind: 'phone' } })} /> : null}
+        {!account?.email ? <Button kind="ghost" icon="mail" label="Add email address" onPress={() => router.push({ pathname: '/account/sign-in', params: { mode: 'link', kind: 'email' } })} /> : null}
+        {!account?.phone ? <Button kind="ghost" icon="phone" label="Add phone number" onPress={() => router.push({ pathname: '/account/sign-in', params: { mode: 'link', kind: 'phone' } })} /> : null}
         {keeps ? <Button kind="ghost" icon="log-out" label="Sign out" onPress={() => setSheet('sign_out')} /> : null}
         <Button kind="ghost" icon="slash" label="Blocked people" onPress={() => router.push('/account/blocked')} />
         <Button kind="ghost" icon="download" label="Download my data" busy={busy === 'export'} onPress={exportData} />
@@ -222,8 +222,8 @@ export default function Me() {
       <View style={styles.panel}>
         <Feather name={live ? 'cloud' : 'smartphone'} size={18} color={live ? color.gold : color.textDim} />
         <View style={{ flex: 1 }}>
-          <T v="bodyBold">{live ? 'Live: Supabase' : 'Mock data on this phone'}</T>
-          <T v="caption" c={color.textDim}>{live ? 'Postgres with row-level security and realtime.' : 'Ten made-up people who answer by themselves. Add Supabase keys to go live.'}</T>
+          <T v="bodyBold">{live ? 'Connected' : 'Demo mode'}</T>
+          <T v="caption" c={color.textDim}>{live ? 'Your plans and promises stay in sync across your devices.' : 'You are exploring with ten sample people who reply on their own.'}</T>
         </View>
       </View>
 

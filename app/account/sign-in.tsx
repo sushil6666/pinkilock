@@ -82,13 +82,13 @@ export default function SignInCodeScreen() {
   const footer = sentTo
     ? <>
         {error ? <ErrorText text={error} /> : null}
-        <Button label={mode === 'link' ? (isPhone ? 'Add this number' : 'Add this email') : 'Sign in'} icon="check" busy={busy} disabled={code.length !== CODE_LENGTH} onPress={confirm} />
-        <Button kind="quiet" label={isPhone ? 'Use a different number' : 'Use a different email'} onPress={() => { setSentTo(null); setError(''); }} />
+        <Button label={mode === 'link' ? (isPhone ? 'Add number' : 'Add email') : 'Verify and sign in'} icon="check" busy={busy} disabled={code.length !== CODE_LENGTH} onPress={confirm} />
+        <Button kind="quiet" label={isPhone ? 'Change number' : 'Change email'} onPress={() => { setSentTo(null); setError(''); }} />
       </>
     : <>
         {error ? <ErrorText text={error} /> : null}
-        <Button label={isPhone ? 'Text me a code' : 'Email me a code'} icon={isPhone ? 'message-square' : 'mail'} busy={busy} disabled={!typed} onPress={send} />
-        <Button kind="quiet" label={isPhone ? 'Use email instead' : 'Use a phone number instead'} onPress={switchKind} />
+        <Button label="Send code" icon={isPhone ? 'message-square' : 'mail'} busy={busy} disabled={!typed} onPress={send} />
+        <Button kind="quiet" label={isPhone ? 'Sign in with email instead' : 'Sign in with phone instead'} onPress={switchKind} />
       </>;
 
   const title = mode === 'link' ? (isPhone ? 'Your number' : 'Your email') : 'Sign in';
@@ -97,12 +97,12 @@ export default function SignInCodeScreen() {
       <Animated.View key={sentTo ? 'code' : kind} entering={FadeInRight.duration(260)} style={{ gap: space.xl }}>
         {!sentTo ? (
           <>
-            {off ? <T v="caption" c={color.flare}>{isPhone ? 'Phone' : 'Email'} sign-in is not switched on for this server yet.</T> : null}
+            {off ? <T v="caption" c={color.flare}>{isPhone ? 'Phone' : 'Email'} sign-in isn't available yet. Please try again soon.</T> : null}
             <T v="display">{mode === 'link' ? 'Keep your\nrecord.' : 'Welcome\nback.'}</T>
             <T c={color.textDim}>
               {mode === 'link'
-                ? `Add your ${isPhone ? 'number' : 'email'} and you can get back into this account on any phone, with your promises and your score. Nobody else ever sees it.`
-                : `The ${isPhone ? 'number' : 'email'} you added to your Pinkilock account. We ${isPhone ? 'text' : 'email'} you a code.`}
+                ? `Add your ${isPhone ? 'phone number' : 'email address'} so you can sign in on any device and keep your promises and your score. Only you can see it.`
+                : `Enter the ${isPhone ? 'phone number' : 'email address'} linked to your Pinkilock account and we'll ${isPhone ? 'text' : 'email'} you a one-time code. No password needed.`}
             </T>
             {isPhone ? (
               <View style={{ gap: space.sm }}>
@@ -119,11 +119,11 @@ export default function SignInCodeScreen() {
                   style={inputStyle}
                   accessibilityLabel="Phone number"
                 />
-                <T v="caption" c={color.textMute}>Ten digits are taken as an Indian number. Anywhere else: start with + and the country code.</T>
+                <T v="caption" c={color.textMute}>Indian numbers can be entered as 10 digits. For other countries, start with + and the country code.</T>
               </View>
             ) : (
               <View style={{ gap: space.sm }}>
-                <T v="label" c={color.textDim}>Email</T>
+                <T v="label" c={color.textDim}>Email address</T>
                 <TextInput
                   value={raw}
                   onChangeText={setRaw}
@@ -144,9 +144,9 @@ export default function SignInCodeScreen() {
         ) : (
           <>
             <T v="display">Check{'\n'}your {isPhone ? 'texts' : 'inbox'}.</T>
-            <T c={color.textDim}>We sent a {CODE_LENGTH}-digit code to {isPhone ? maskPhone(sentTo) : maskEmail(sentTo)}.{isPhone ? '' : ' It can take a minute, and it may land in spam.'}</T>
+            <T c={color.textDim}>We've sent a {CODE_LENGTH}-digit code to {isPhone ? maskPhone(sentTo) : maskEmail(sentTo)}.{isPhone ? ' It usually arrives within a minute.' : ' It usually arrives within a minute. If you can\'t find it, check your spam folder.'}</T>
             <View style={{ gap: space.sm }}>
-              <T v="label" c={color.textDim}>Code</T>
+              <T v="label" c={color.textDim}>One-time code</T>
               <TextInput
                 value={code}
                 onChangeText={(t) => setCode(t.replace(/[^0-9]/g, ''))}
@@ -162,7 +162,7 @@ export default function SignInCodeScreen() {
               />
               {account?.mockCode ? <T v="caption" c={color.textMute}>Mock data: the code is always {account.mockCode}.</T> : null}
             </View>
-            <Button kind="quiet" label="Send it again" disabled={busy} onPress={send} />
+            <Button kind="quiet" label="Resend code" disabled={busy} onPress={send} />
           </>
         )}
       </Animated.View>
