@@ -231,6 +231,48 @@ Open the failing run.
 
 The app keeps showing the last good scores in the meantime, so nothing breaks for users.
 
+### Trace a bug
+
+Every error the app shows has a reference under it, for example `PL033 · 7F3K2M9Q`: an error
+code, then a trace id. Ask the person for that line, or for **Me, Help, Share diagnostics**, which
+holds their account id, the app build, and the references of recent errors (no names, messages,
+places or contacts). Then, in the SQL editor:
+
+```sql
+-- 1. What the code means: src/domain/errors.ts. PL = a database function refused (the same code
+--    is in the migrations), PA = sign-in, PC = the app itself (PC001 network, PC002 a server
+--    error that is not one of ours, PC009 a screen crashed).
+
+-- 2. From a trace id: what that one action did on the server, and what the phone reported.
+select at, type, actor_id, invite_id, props from public.events where props ->> 'trace' = '7F3K2M9Q';
+select created_at, kind, recipient_id, sent_at, attempts, last_error from public.notifications where trace = '7F3K2M9Q';
+select at, user_id, code, route, app_version, platform from public.client_errors where trace = '7F3K2M9Q';
+
+-- 3. The whole story of one invite, in time order: its events, its pushes and their delivery,
+--    and every phone error on the same traces.
+select * from private.invite_timeline('<invite id>');
+
+-- 4. From an account and a time: what that phone saw go wrong.
+select at, code, trace, route, app_version from public.client_errors
+where user_id = '<account id>' and at > now() - interval '1 day' order by at;
+
+-- 5. Is it one person or everyone? Errors by code and build over the last day.
+select code, app_version, count(*), count(distinct user_id) as people from public.client_errors
+where at > now() - interval '1 day' group by 1, 2 order by 3 desc;
+```
+
+The push function's log (Supabase dashboard, Edge Functions, `push`, Logs) has one JSON line per
+notification with the same trace id and what happened to it (`sent`, `no_device`, or the error).
+
+A refused action logs no event, because the database rolled it back; its trace id is then only
+in `client_errors`. A `PC002` has the real database error in the Postgres logs at that time.
+`client_errors` keeps 30 days, takes at most 30 reports an hour from one account, and goes with
+the account when it is deleted.
+
+Then fix it the same way every time: first a test that fails for this bug (`tests/db`,
+`tests/unit`, `tests/live` or the app tests), then the fix, and the pull request names the
+reference that found it.
+
 ### A report comes in
 
 Reports are readable only with the database role, in the SQL editor (query in section 6). The

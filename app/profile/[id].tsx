@@ -18,6 +18,8 @@ import { isLive, isOpen, otherId } from '@/domain/invites';
 import { useReveal } from '@/lib/useReveal';
 import { usePerson, useStore } from '@/state/store';
 import { color, radius, space } from '@/theme/tokens';
+import { ErrorText } from '@/components/ui/ErrorText';
+import { shown } from '@/lib/report';
 
 export default function ProfileScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -41,7 +43,7 @@ export default function ProfileScreen() {
       setSafety(false);
       backToDiscover();
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'That did not go through. Try again.');
+      setError(shown(e, '/profile/[id]'));
       setBusy(false);
     }
   };
@@ -124,7 +126,7 @@ export default function ProfileScreen() {
         title={`Block ${person.name}?`}
         body={`You stop seeing each other, here and in Discover, and any plan between you ends. Nobody's score changes. ${person.name} is not told.`}
       >
-        {error ? <T v="caption" c={color.flare}>{error}</T> : null}
+        {error ? <ErrorText text={error} /> : null}
         <HoldButton tone="flare" label={`Hold to block ${person.name}`} busy={busy} onComplete={doBlock} />
         <Button kind="ghost" icon="flag" label="Report instead" onPress={() => {
           setSafety(false);

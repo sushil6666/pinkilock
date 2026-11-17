@@ -13,6 +13,8 @@ import { shortCountdown } from '@/domain/time';
 import { useNow } from '@/lib/useNow';
 import { useInvite, usePerson, useStore } from '@/state/store';
 import { color, space } from '@/theme/tokens';
+import { ErrorText } from '@/components/ui/ErrorText';
+import { shown } from '@/lib/report';
 
 export default function InviteScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -50,7 +52,7 @@ export default function InviteScreen() {
     try {
       await decline(invite.id);
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'That did not go through.');
+      setError(shown(e, '/invite/[id]'));
     }
     setSheet(false);
     setBusy(false);
@@ -93,7 +95,7 @@ export default function InviteScreen() {
         <View style={{ gap: space.sm }}>
           <T v="title">{head[0]}</T>
           <T c={color.textDim}>{head[1]}</T>
-          {error ? <T v="caption" c={color.flare}>{error}</T> : null}
+          {error ? <ErrorText text={error} /> : null}
         </View>
       </Animated.View>
 

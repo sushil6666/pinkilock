@@ -4,9 +4,10 @@
  */
 import * as Haptics from 'expo-haptics';
 import { Platform } from 'react-native';
+import { quiet } from './log';
 
 const on = Platform.OS === 'ios' || Platform.OS === 'android';
-const safe = (p: Promise<void>) => p.catch(() => {});
+const safe = (p: Promise<void>) => p.catch(quiet('haptic'));
 
 export const haptic = {
   tick: () => on && safe(Haptics.selectionAsync()),

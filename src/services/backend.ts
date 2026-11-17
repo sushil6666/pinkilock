@@ -34,6 +34,15 @@ export type PushPlatform = 'ios' | 'android';
 export type Notice = { tone: 'pink' | 'volt' | 'flare'; title: string; body: string; inviteId?: string };
 
 /** Something the other person (or the clock) did. */
+/** One error a phone showed, as sent to the server (OPERATIONS.md, "Trace a bug"). */
+export interface ClientErrorReport {
+  code: string;
+  trace: string | null;
+  route: string;
+  appVersion: string;
+  platform: 'ios' | 'android' | 'web' | null;
+}
+
 export interface BackendEvent {
   changes: Changes;
   notice?: Notice;
@@ -68,6 +77,12 @@ export interface Backend {
   registerPushToken(token: string, platform: PushPlatform): Promise<void>;
   /** This device should stop getting pushes (signing out, permission withdrawn). */
   unregisterPushToken(token: string): Promise<void>;
+
+  /**
+   * Tell the server about an error this phone showed: its code, trace id, screen and build. No
+   * content ever goes with it. Over the limit (30 an hour) it is dropped, never refused.
+   */
+  logClientError(report: ClientErrorReport): Promise<void>;
 
   /**
    * Safety (ARCHITECTURE.md section 5). A block hides the two people from each other and ends

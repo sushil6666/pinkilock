@@ -6,7 +6,9 @@ Edge Function, DuckDB analytics worker, everything deployed by GitHub Actions.
 Read first: `README.md` (run and deploy), `ARCHITECTURE.md` (how it fits together),
 `DESIGN_SYSTEM.md` (look, motion, the lock gesture), `ROADMAP.md` (phases and what is next),
 `OPERATIONS.md` (secrets, workflows, shipping changes, health checks, fixing incidents),
-`docs/phase-3-checklist.md` (what Phase 3 still needs from accounts and phones).
+`docs/phase-3-checklist.md` (what Phase 3 still needs from accounts and phones),
+`docs/build-plan.md` (the hardening plan and its work packages), `docs/decisions.md` (what was
+decided, when and why).
 
 ## Commands
 
@@ -14,6 +16,7 @@ Read first: `README.md` (run and deploy), `ARCHITECTURE.md` (how it fits togethe
 npm install
 npx expo start --tunnel     # WSL: the phone cannot reach the dev server otherwise
 npm run typecheck
+npm run test:unit           # error catalogue, logger, no silent failures
 python tests/db/run.py      # migrations, RLS, functions, push outbox, pipeline on a throwaway Postgres
 npm run db:start            # local Supabase in Docker
 npm run test:live:local     # two users, then Phase 3 (block, report, export, phone, delete), locally
@@ -45,6 +48,13 @@ npm run test:app:local      # the real screens in two browser sessions
 - Check GitHub state (PRs, runs, branches) before acting on it; it changes outside the session.
 - A new server rule gets a check in the attacker suite (`tests/db/attacker.sql`, `tests/live/attacker.test.ts`).
   A `gap` line that starts failing means the gap is closed: make it a plain check, never delete it.
+- Errors have codes. A new `raise` in SQL uses `raise exception using errcode = 'PLnnn', message = '...'`
+  and the same code and words go in `src/domain/errors.ts`. In the app throw `AppError` (or `fail(code)`),
+  show errors with `shown(e, route)` and `ErrorText`, and never leave a catch empty: use `quiet(where)`.
+  Logs and error reports carry ids, codes and routes only, never content.
+- A bug fix starts with a test that fails for that bug, and its PR names the error reference that found it.
+- A decision that shapes the product or how it is built gets a row in `docs/decisions.md` in the same
+  change: what, why, who decided, where. Append; never rewrite an old row.
 - A change to how the app looks is not done until it has been looked at: export the web build on
   mock data, screenshot the screens it touches at phone width, and fix what looks wrong before
   committing. Colours come only from `src/theme/tokens.ts`; `DESIGN_SYSTEM.md` changes with them.

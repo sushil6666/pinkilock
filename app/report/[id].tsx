@@ -16,6 +16,8 @@ import type { ReportReason } from '@/domain/types';
 import { haptic } from '@/lib/haptics';
 import { usePerson, useStore } from '@/state/store';
 import { color, radius, space } from '@/theme/tokens';
+import { ErrorText } from '@/components/ui/ErrorText';
+import { shown } from '@/lib/report';
 
 export default function Report() {
   const { id, invite } = useLocalSearchParams<{ id: string; invite?: string }>();
@@ -37,7 +39,7 @@ export default function Report() {
       haptic.success();
       setDone(true);
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'That did not go through. Try again.');
+      setError(shown(e, '/report/[id]'));
     }
     setBusy(false);
   };
@@ -59,7 +61,7 @@ export default function Report() {
       back="close"
       title="Report"
       footer={<>
-        {error ? <T v="caption" c={color.flare}>{error}</T> : null}
+        {error ? <ErrorText text={error} /> : null}
         <HoldButton tone="flare" label="Hold to report and block" busy={busy} disabled={!reason} onComplete={send} />
       </>}
     >

@@ -41,6 +41,8 @@ With no keys set, the app runs on ten made-up people who answer by themselves. A
 6. Safety and accounts: on anyone's profile, **Block or report**. In **Me**, Account: add a phone
    number (the mock's code is always `123456`), see blocked people, download your data, or delete
    the account. After **Sign out**, "I already have an account" on the first screen gets you back.
+7. When something fails, the message has a reference under it (`PL033 · 7F3K2M9Q`). **Me**, Help,
+   **Share diagnostics** collects recent ones with the build, and nothing private.
 
 ## Run the backend locally (Docker)
 
@@ -158,6 +160,7 @@ python analytics/duckdb_pipeline.py               # write trust_scores and analy
 
 ```bash
 npm run typecheck
+npm run test:unit           # error catalogue matches the SQL, logger keeps no content, no silent failures
 pip install pgserver duckdb && python tests/db/run.py   # migrations, RLS, functions, push outbox, pipeline, attacker suite (Python 3.12)
 npm run test:live:local     # two users, then block, report, export, phone and delete, then the attacker suite, against `supabase start`
 npm run audit:check         # no new high or critical advisory in what ships (security/audit-baseline.json)

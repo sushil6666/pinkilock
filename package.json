@@ -9,6 +9,7 @@
     "ios": "expo start --ios",
     "web": "expo start --web",
     "typecheck": "tsc --noEmit",
+    "test:unit": "tsx --test tests/unit/*.test.ts",
     "test:db": "python tests/db/run.py",
     "db:start": "supabase start",
     "db:stop": "supabase stop",

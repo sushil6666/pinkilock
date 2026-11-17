@@ -177,6 +177,18 @@ shown on screen, finds every one of them with the queries in `OPERATIONS.md`; th
 shows that `client_errors` cannot be read or flooded by a client and that the trace header cannot
 be used to write anything but an id into the log; and no empty catch block is left.
 
+**Status, 2026-11-17: built, with three parts left.** Done: codes on every SQL error and the
+same catalogue in `src/domain/errors.ts` (a unit test checks both directions); a trace id per
+database call, stamped on events and pushes by triggers and logged by the push function; the
+reference under every error on screen; `client_errors` and `log_client_error`; one scrubbing
+logger with breadcrumbs; no empty catch (a unit test, in place of a lint rule, since the project
+has no linter); the build stamp; Share diagnostics; `private.invite_timeline`; the crash screen;
+"Trace a bug" in `OPERATIONS.md`. **Not done:** polling Expo push receipts (delivery after Expo
+accepts a push is still unseen); one trace id shared across the several calls of a single tap
+(today each database call has its own); and direct table writes (profile save, pass) carry no
+trace until WP1 moves them into functions. Source maps wait for the crash tool in WP7. For WP8:
+`client_errors` rows are personal data and are not yet in `export_my_data`.
+
 ### WP1. Nothing free-form reaches a stranger before the reveal (G1, G2, G3, G18)
 
 A filter can be beaten by anyone who invents a code, so the first defence is not a filter. It is
