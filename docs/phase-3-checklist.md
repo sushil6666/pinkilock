@@ -1,17 +1,28 @@
 # Phase 3 checklist: what is left
 
-Phase 3 is built (see `ROADMAP.md`): blocking, reporting, data export, account deletion, phone
-sign-in and a production target in the workflows. These steps need your accounts or your phones.
+Phase 3 is built (see `ROADMAP.md`): blocking, reporting, data export, account deletion, email
+and phone sign-in and a production target in the workflows. These steps need your accounts or your phones.
 
 ## 1. Merge and watch the deploy
 
 - [ ] Merge the Phase 3 pull request. The **Supabase deploy** run on `main` applies three new
       migrations to the preview project (`20261117000001` to `20261117000003`), then runs the
       live tests there: the two-user test and the new safety test (block, report, export,
-      delete; its phone part runs only on the local stack, which has test numbers).
+      delete; its email and phone parts run only on the local stack, which has a local mailbox
+      and test numbers).
 - [ ] Check that **CI** and **Supabase deploy** are green on `main`.
 
-## 2. Phone sign-in (Twilio Verify)
+## 2. Email sign-in (free; do this first)
+
+- [ ] resend.com: sign up, Domains, add your domain and set the DNS records it shows until it
+      says Verified. Then API Keys, create one with "Sending access".
+- [ ] Repository variables: `SMTP_HOST` = `smtp.resend.com`, `SMTP_USER` = `resend`,
+      `SMTP_SENDER_EMAIL` = e.g. `codes@yourdomain`. Secret: `SMTP_PASSWORD` = the API key.
+- [ ] Run **Supabase deploy** (target `preview`). Its summary should say "Email sign-in: on".
+- [ ] On a phone: Me, Account, Add your email. Then Sign out, and "I already have an account"
+      with the same email: the same profile and history come back.
+
+## 2b. Phone sign-in (Twilio Verify, optional)
 
 - [ ] Twilio console: create an account, then Verify, Services, create a service (name:
       Pinkilock, code length 6).

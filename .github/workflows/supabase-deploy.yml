@@ -20,6 +20,10 @@
 #                EXPO_ACCESS_TOKEN (Expo push with enhanced security)
 #                TWILIO_VERIFY_ACCOUNT_SID, TWILIO_VERIFY_AUTH_TOKEN, TWILIO_VERIFY_SERVICE_SID
 #                (phone sign-in; until all three exist the phone provider is left off)
+#                SMTP_PASSWORD secret, SMTP_HOST, SMTP_USER, SMTP_SENDER_EMAIL and optionally
+#                SMTP_PORT variables (email sign-in codes; until they exist email sign-in is off,
+#                because Supabase's own mailer only reaches the project's team). Set them as
+#                environment secrets and variables to give production a sender of its own.
 name: Supabase deploy
 
 on:
@@ -155,6 +159,36 @@ jobs:
             --data @"$RUNNER_TEMP/phone.json" -o /dev/null
           rm -f "$RUNNER_TEMP/phone.json"
           echo "- Phone sign-in: on (Twilio Verify)" >> "$GITHUB_STEP_SUMMARY"
+      - name: Email sign-in (your own mail sender), once its settings exist
+        # Codes, not links: the templates in supabase/templates are the same ones the local stack
+        # uses. Without a sender of our own it is switched off, since Supabase's built-in mailer
+        # only delivers to the project's team and a few emails an hour.
+        env:
+          SMTP_HOST: ${{ vars.SMTP_HOST }}
+          SMTP_PORT: ${{ vars.SMTP_PORT || '465' }}
+          SMTP_USER: ${{ vars.SMTP_USER }}
+          SMTP_SENDER_EMAIL: ${{ vars.SMTP_SENDER_EMAIL }}
+          SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
+        run: |
+          if [ -z "$SMTP_HOST" ] || [ -z "$SMTP_USER" ] || [ -z "$SMTP_SENDER_EMAIL" ] || [ -z "$SMTP_PASSWORD" ]; then
+            body='{"external_email_enabled": false}'
+            summary="off (no mail sender yet)"
+          else
+            body="$(python3 -c 'import json, os
+          t = lambda n: open(f"supabase/templates/{n}.html").read()
+          print(json.dumps({"external_email_enabled": True, "mailer_autoconfirm": False, "mailer_otp_length": 6,
+            "smtp_host": os.environ["SMTP_HOST"], "smtp_port": os.environ["SMTP_PORT"], "smtp_user": os.environ["SMTP_USER"],
+            "smtp_pass": os.environ["SMTP_PASSWORD"], "smtp_admin_email": os.environ["SMTP_SENDER_EMAIL"], "smtp_sender_name": "Pinkilock",
+            "mailer_subjects_magic_link": "Your Pinkilock code", "mailer_templates_magic_link_content": t("magic_link"),
+            "mailer_subjects_email_change": "Your Pinkilock code", "mailer_templates_email_change_content": t("email_change")}))')"
+            summary="on ($SMTP_HOST)"
+          fi
+          printf '%s' "$body" > "$RUNNER_TEMP/email.json"
+          curl -fsS -X PATCH "https://api.supabase.com/v1/projects/$SUPABASE_PROJECT_REF/config/auth" \
+            -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" -H "Content-Type: application/json" \
+            --data @"$RUNNER_TEMP/email.json" -o /dev/null
+          rm -f "$RUNNER_TEMP/email.json"
+          echo "- Email sign-in: $summary" >> "$GITHUB_STEP_SUMMARY"
 
   live-test:
     # Preview only: on production it would put test people in front of real ones.
