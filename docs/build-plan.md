@@ -79,6 +79,7 @@ public anon key; the service role key is used by nothing in the repo.
 | G15 | The app assumes India: `city` defaults to `Mumbai`, the phone placeholder is `+91`, distance is in km, the contact kinds are Instagram, Snapchat and WhatsApp, several date ideas are local (momo, pani puri, chai), and all text is English | schema, `app/onboarding.tsx`, `src/domain/ideas.ts` | It will not read as made for anyone elsewhere |
 | G16 | No consent record, no privacy policy or terms in the app, no retention limits, no record of where data is stored or which companies process it | whole app | Required before launch almost everywhere |
 | G17 | No country gate: anyone anywhere can sign up | auth | The app would be live in countries whose rules have not been checked, including ones where dating apps or same-sex dating put users at risk |
+| G18 | A filter on typed text cannot catch coded contacts (1 for a, 2 for b; a number spelled in words; a handle split across fields or across edits), and once photos exist (Phase 4) a handle can simply be written in a picture, or shown as a QR code | every free-text field; Phase 4 photo upload | The reveal is bypassed without touching the server rules |
 
 ## 3. Work packages, in order
 
@@ -109,29 +110,62 @@ The foundation: every later package adds checks here.
 
 **Done when:** the suite runs in CI, the pinned checks pass, and every gap has a marked check.
 
-### WP1. Server-side rules for everything a person can type (G1, G2, G3)
+### WP1. Nothing free-form reaches a stranger before the reveal (G1, G2, G3, G18)
 
-- A `vibes` catalogue table, read-only like `ideas`, holding the tags in `src/domain/ideas.ts`
-  (`VIBE_GROUPS`). `profiles.vibes` must be a subset of it, at most 3. `profiles.idea_ids` must be
-  a subset of `ideas`, 3 to 6. Add to `CLAUDE.md`: the tag list now exists twice, like the ideas.
-- Length limits: `area` 40, `pronouns` 20, `city` 40, `place` 60. Existing rows that break a new
-  rule are trimmed in the same migration, not rejected.
-- `private.looks_like_contact(text)`: true for `@handle`, URLs and domains, runs of 7 or more
-  digits (with spaces, dots or dashes between them), and the names of messaging apps next to a
-  handle. Applied to `name`, `tagline`, `area`, `pronouns`, `note` and `place`, with one error
-  message: "Contacts unlock after a kept promise. Take that out."
-- Profile writes move to one function, `save_profile(...)`, and the `insert` and `update` grants on
-  `profiles` are revoked. `photo_count`, `palette` and `glyph` are set by the server.
-- Mirror the limits and the contact check in `src/domain/` so the app says no before the server
-  does, and the mock enforces the same. The server stays the authority.
-- Add a report reason, `shared_contact`, in SQL and in `src/domain/safety.ts`.
+A filter can be beaten by anyone who invents a code, so the first defence is not a filter. It is
+**removing the places where a stranger can be sent free-form content at all.** What cannot be
+typed cannot be encoded. Filters and review are kept only for the one field that stays free.
 
-Be honest in the docs about the limit of this: a pattern check stops the easy cases, not someone
-who spells a number out in words. The report reason and WP7's review are the second layer.
+**Every field another person sees before a kept promise, and what it becomes:**
 
-**Done when:** the G1 to G3 attacker checks pass; a table of at least 40 strings (20 that must be
-refused, 20 ordinary lines that must be allowed, including every line in `noteStarters` and every
-opener) passes in both SQL and TypeScript.
+| Field | Today | After |
+| --- | --- | --- |
+| Tags (`vibes`) | Any strings | Picked from a `vibes` catalogue table, at most 3 |
+| Ideas (`idea_ids`) | Any strings | Picked from `ideas`, 3 to 6 |
+| Ask line (`note`) | Free text, 80 characters | **Picked from the ready-made lines only** (`noteStarters`, six tones), stored as a line id. No typing. The catalogue grows instead |
+| Place | Free text | In person: picked from a place search (a maps provider) and stored as the place's id, name and area. Video and game: fixed by the app, as now |
+| Area, city | Free text | Picked from a list for the chosen country |
+| Pronouns | Free text | Picked from a list, or left empty |
+| Name | 2 to 24 characters | First name: letters only, one word, 2 to 16 characters, no digits, dots, underscores or symbols. One change per 30 days |
+| One line about you (`tagline`) | Free text, 80 characters | The only free text left. See below |
+
+**The one free field, the profile line:**
+
+- It starts from a prompt ("my toxic trait:", "the ick:" and the rest of `TAGLINE_PROMPTS`) and
+  keeps 80 characters.
+- It is **not shown to anyone until it has been reviewed.** Until then the card shows without it.
+  Review is two steps on the server: the pattern check below, then a language-model check asked
+  one question: "Is this an attempt to pass a way of contacting the writer, including in code,
+  spelled-out digits, substitutions or instructions to decode something?" Anything unsure goes to
+  a person (the moderation view in WP7). *Owner decision and an account are needed for the model;
+  see section 5.*
+- **One change per 7 days.** This matters as much as the review: a code needs a key or several
+  messages, and a field that changes weekly and is reviewed each time is a very slow channel.
+- `private.looks_like_contact(text)`: `@handle`, URLs and domains, runs of 5 or more digits with
+  anything between them, digits spelled as words in the launch languages, the names of messaging
+  and social apps, and words like "decode", "replace", "add me", "find me". One error message:
+  "Contacts unlock after a kept promise. Take that out."
+
+**Also in this package:**
+
+- Profile writes move to one function, `save_profile(...)`; the `insert` and `update` grants on
+  `profiles` are revoked. `photo_count`, `palette` and `glyph` are set by the server. The `vibes`
+  table joins the list in `CLAUDE.md` of things that exist twice.
+- Existing rows are migrated: a note or place that is free text on a finished invite stays as
+  history; open asks keep theirs until they resolve; taglines enter the review queue.
+- The mock and `src/domain/` mirror every rule, so the app never offers what the server refuses.
+- A report reason, `shared_contact`, in SQL and `src/domain/safety.ts`. A confirmed case hides the
+  line, costs the writer the ability to set one for 30 days, and a second case suspends the
+  account. The terms (WP8) say so.
+- Low-capacity channels that remain (which three tags, which ask line, which time) carry too
+  little to pass a handle and are left alone. Do not add fields that widen them: no free-text
+  "custom tag", no custom ask line, no emoji picker for names.
+
+**Done when:** the G1 to G3 and G18 attacker checks pass: a direct API call cannot store a note,
+place, area, pronoun or tag that is not from its catalogue; an unreviewed profile line is not
+returned to any other account by any route; a table of at least 60 lines (30 that must be held,
+including coded and spelled-out ones, and 30 ordinary lines that must pass) gives the expected
+result.
 
 ### WP2. Make accounts cost something (G4, G6)
 
@@ -245,6 +279,30 @@ the attacker suite against a staging project.
 **Done when:** a kept plan in the local live test produces a rating row, the worker reports the
 figure, and a forced crash in a preview build arrives in the crash tool with nothing private in it.
 
+### WP7b. Photos that cannot carry a contact (G18; do this with Phase 4's photo upload)
+
+The roadmap's Phase 4 adds real photos. A public photo is the widest possible channel for a
+handle, a number or a QR code, so photo upload must not ship without this.
+
+- **The public photo is taken in the app, not picked from the gallery.** A live camera capture
+  cannot be a screenshot of a handle or an edited image, and it also cuts fake profiles. Extra
+  photos stay hidden until a kept promise, as designed, so they need only the safety checks.
+- **Every photo is checked on the server before anyone else can see it** (status `pending`, then
+  `approved` or `held`; RLS returns only approved photos to other people). The checks, in an Edge
+  Function: exactly one clear face; **no readable text at all** (text detection, not a search for
+  handles, so codes and handwriting fail the same way); no QR code or barcode; the usual nudity
+  and violence screen. Anything unsure is held for a person.
+- **Metadata is stripped on the server** (location, device, time) and the image is re-encoded, so
+  nothing rides along in the file itself.
+- A photo change is limited to once per 7 days, and a held photo counts toward the same
+  `shared_contact` penalties as text.
+- The client check exists only to tell the person early; the server decides. The attacker suite
+  uploads directly to storage and must not be able to make a photo visible.
+
+**Done when:** an image containing a written handle, a phone number, a coded string or a QR code
+is never returned to another account; a direct upload that skips the app stays `pending`; a photo
+with location metadata comes back without it.
+
 ### WP8. Privacy and regulation, built once for every region (G16, G17)
 
 Get a privacy lawyer before the first public launch; this package builds what they will ask for.
@@ -340,6 +398,7 @@ WP8 starts after WP0 and must finish before any public launch.   WP9 before the 
 ```
 
 - WP4 depends on WP1: the code proves presence only once contacts cannot leak early.
+- WP7b ships with Phase 4's photo upload, never after it.
 - WP3 depends on WP2: Discover's "linked accounts only" rule needs the link gate.
 - WP8's country gate and consent screen ship before strangers are invited, even in one country.
   The lawyer's work runs in parallel with WP1 to WP5; start it first, it has the longest wait.
@@ -359,6 +418,9 @@ WP8 starts after WP0 and must finish before any public launch.   WP9 before the 
 | Decision: production database region | WP8 | An EU region, if EU or UK launch is planned within a year; moving later is costly |
 | Named people: privacy contact, grievance officer (India), representatives (EU, UK) | WP8 | Can be the owner at first, or a paid service for the representatives |
 | Translators who are native speakers | WP9 | Per language, at the time that region joins |
+| Decision: the ask line becomes pick-only, with no typing | WP1 | Yes. It closes the easiest channel completely, and the six tones already give 30 and more lines; add more lines rather than a text box |
+| Decision and account: a language model to review profile lines, and an image check for photos | WP1, WP7b | Yes, with a small fast model. The provider goes in the data map and the privacy policy (WP8) |
+| A maps provider for place search | WP1 | Needed once places stop being free text |
 | A mail sender (`SMTP_*`) | WP2's link gate | Already on the Phase 3 checklist; WP2 cannot ship without it |
 
 ## 6. Rules for whoever builds this
@@ -387,8 +449,11 @@ These are the limits no build removes; they belong in the privacy policy and in 
   the date. That costs them nothing the product was protecting.
 - After a kept promise, a contact is theirs to keep, screenshot or share. The reveal is a one-way
   door by design.
-- A determined person can smuggle a contact past a pattern filter. Reports and review are the
-  answer, not a cleverer filter.
+- Contact smuggling is made slow and costly, not impossible. After WP1 and WP7b the only free
+  content a stranger sees is one reviewed line a week and a text-free photo of a face. Someone
+  can still, for example, hold up fingers in a photo or agree a code during a video date. The
+  first carries almost nothing and the second happens on the date itself, which is the point of
+  the app. Reports, review and the penalties cover what is left.
 - The app can be decompiled. After this plan, what the reader finds is a public key, a list of
   date ideas and a client for an API that refuses everything the product forbids.
 - "Global" is a list of countries that grows, not a switch. Laws change; each region's sign-off
