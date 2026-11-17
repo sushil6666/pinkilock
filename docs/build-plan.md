@@ -246,6 +246,17 @@ returned to any other account by any route; a table of at least 60 lines (30 tha
 including coded and spelled-out ones, and 30 ordinary lines that must pass) gives the expected
 result.
 
+**Status, 2026-11-17: first part built** (the part that needs no owner decision). Done:
+`save_profile` as the only way to write a profile, with the direct write rights revoked (G3, G21);
+the `vibes` catalogue and the idea, tag and length limits (G2); the name rule; and
+`private.looks_like_contact` on the profile line, area, pronouns, and an ask's note and place (the
+plain cases of G1). The attacker suite's G1, G2, G3 and G21 lines are now permanent checks.
+**Still open:** G18 (a made-up code passes any pattern) until the profile line is reviewed before
+it is shown; the pick-only ask line (O03), the review step (O04) and place search (O05), which
+wait for the owner; picked area, city and pronouns; and the change limits (name once in 30 days,
+line once in 7). One known rough edge: an existing account whose name has a space, digit or
+symbol must change it at its next profile save.
+
 ### WP2. Make accounts cost something (G4, G6)
 
 - Browsing stays open to anonymous accounts. **Sending an ask, answering one, and appearing in

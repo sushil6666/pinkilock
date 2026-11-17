@@ -57,8 +57,8 @@ function pushed(what: string, match: (p: Push) => boolean, timeout = 20_000): Pr
 }
 
 const stamp = Date.now().toString(36);
-const a = person('E2E Asha');
-const b = person('E2E Bela');
+const a = person('TestAsha');
+const b = person('TestBela');
 const tokenA = `ExponentPushToken[a-${stamp}]`;
 const tokenB = `ExponentPushToken[b-${stamp}]`;
 const deadB = `ExponentPushToken[dead-${stamp}]`;

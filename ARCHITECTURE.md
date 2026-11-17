@@ -147,9 +147,10 @@ Full DDL is `supabase/migrations`. Tables:
 
 | Table | What it holds | Who can touch it |
 | --- | --- | --- |
-| `profiles` | The public card: name, age (18+ check), area, tagline, vibes, `idea_ids` | Read: any signed-in user. Write: only your own row |
-| `profile_private` | Contact handle and extra photos | Read: you, and anyone with a `kept` invite with you. Write: you |
+| `profiles` | The public card: name, age (18+ check), area, tagline, vibes, `idea_ids` | Read: any signed-in user. **No direct writes**: only through `save_profile` |
+| `profile_private` | Contact handle and extra photos | Read: you, and anyone with a `kept` invite with you. **No direct writes**: the contact through `save_profile`, photos by the server only |
 | `ideas` | The micro-date catalogue | Read only |
+| `vibes` | The profile tag catalogue (the same list as `VIBE_GROUPS` in `src/domain/ideas.ts`) | Read only |
 | `invites` | The whole product: who, what, when, status, `first_pinky_by`, `check_ins`, `flaked_by` | Read: the two people on it. **No direct writes at all** |
 | `passes` | People I passed on in Discover | Only me |
 | `events` | Append-only behaviour log. Rows are never deleted; a deleted account's rows lose their actor | No client access. Written by the functions, read by analytics |
@@ -167,6 +168,16 @@ Full DDL is `supabase/migrations`. Tables:
 one transition and append to `events`. `sweep_invites` is the clock (expire asks, turn missed
 check-ins into flakes, announce that check-in opened); a migration schedules it every minute with
 pg_cron. `log_event` lets the app record `app_open` and nothing else.
+
+**What a profile and an ask may contain is decided on the server.** `save_profile` is the only
+way to write a profile: a name is one word of letters (2 to 16); tags come from `vibes` (three at
+most) and ideas from `ideas` (three to six); area, pronouns and the one line have length limits;
+portrait colours, photo count, city and join date are the server's. `private.looks_like_contact`
+refuses a handle, a link, a phone number, an app name or "add me" in the line, the area, the
+pronouns, and in an ask's note and place. `src/domain/profile.ts` has the same rules and codes for
+the app and the mock, and one table of lines is run through both copies. The check stops the plain
+cases only: a made-up code still gets through until lines are reviewed before anyone sees them
+(`docs/build-plan.md`, WP1).
 
 **Privileges are explicit.** Supabase grants every API role full rights on new tables in `public`
 by default. The first migration takes all of that back and grants exactly what the app uses, so

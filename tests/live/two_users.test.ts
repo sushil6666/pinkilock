@@ -12,7 +12,7 @@
  * person hears the other's actions over Realtime, and that the reveal returns nothing before a
  * kept invite. Expiry waits for the real pg_cron sweep, so the run takes about two minutes.
  *
- * Each run creates two anonymous users named "E2E ...". If E2E_DB_URL is set (a Postgres URL with
+ * Each run creates two anonymous users named "Test...". If E2E_DB_URL is set (a Postgres URL with
  * rights on auth.users) they are deleted afterwards; without it they are left behind.
  */
 import assert from 'node:assert/strict';
@@ -24,8 +24,8 @@ import { createSupabaseBackend } from '../../src/services/supabase/supabaseBacke
 import { KEY, MIN, SWEEP_WAIT, URL, inviteIs, one, person, profile, type Person } from './helpers';
 
 
-const a = person('E2E Asha');
-const b = person('E2E Bela');
+const a = person('TestAsha');
+const b = person('TestBela');
 
 async function locked(p: Person, inviteId: string, when: string) {
   await assert.rejects(p.backend.getReveal(inviteId), /Locked until you both check in/, `${p.name} must not get the reveal ${when}`);
