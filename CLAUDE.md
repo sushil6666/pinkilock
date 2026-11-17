@@ -31,6 +31,8 @@ npm run test:app:local      # the real screens in two browser sessions
   the client, and no optimistic UI for promise state.
 - The invite state machine exists twice and must match: `src/domain/invites.ts` and the SQL in
   `supabase/migrations`. Change both together and rerun `tests/db`.
+- The micro-date catalogue also exists twice: `src/domain/ideas.ts` and the `ideas` table. A new idea
+  is a row in both (a new migration), and gets an opener in `OPENERS`.
 - Schema changes are new migrations (`npx supabase migration new <name>`). Never edit a migration
   that has been applied.
 - Blocks are enforced by RLS (`private.blocked_pair`), not by the UI. Reports are readable by no

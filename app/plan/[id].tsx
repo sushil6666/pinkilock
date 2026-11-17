@@ -16,7 +16,7 @@ import { HoldButton } from '@/components/ui/HoldButton';
 import { Screen } from '@/components/ui/Screen';
 import { Sheet } from '@/components/ui/Sheet';
 import { T } from '@/components/ui/T';
-import { ideaOf } from '@/domain/ideas';
+import { ideaOf, openerOf } from '@/domain/ideas';
 import { CHECK_IN_CLOSES_AFTER, CHECK_IN_OPENS_BEFORE, checkInPhase, otherId } from '@/domain/invites';
 import { shortCountdown, timeLabel, whenLabel } from '@/domain/time';
 import { trustOf, trustScore } from '@/domain/trust';
@@ -125,6 +125,14 @@ export default function PlanScreen() {
                 : `Open for another ${shortCountdown(invite.startsAt + CHECK_IN_CLOSES_AFTER, now)}. Miss it and it counts as a flake.`}
             </T>
             {idea.kind === 'irl' && <Meta icon="shield" text="Meet somewhere public and tell a friend where you are." />}
+          </View>
+        )}
+
+        {locked && (
+          <View style={{ gap: space.sm }}>
+            <T v="label" c={color.textDim}>Break the ice</T>
+            <T v="heading">{openerOf(idea.id)}</T>
+            <T v="caption" c={color.textDim}>No chat before the date, so here is your first line.</T>
           </View>
         )}
 
