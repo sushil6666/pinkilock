@@ -2,13 +2,18 @@
  * Every screen sits in one of these. It owns the safe area (notch, Dynamic Island, home
  * indicator, Android gesture or 3-button bar), the gutter, the optional back header and a
  * footer that stays above the keyboard, so no screen handles insets itself.
+ *
+ * It also owns the width. Nothing is drawn wider than `columnMax`: in a wide browser window or
+ * on a tablet the screen is a centred column with the obsidian background around it and a
+ * hairline down each side. Things drawn outside a Screen (the tab bar, sheets, the notice
+ * banner) use `column` from here, so the rule lives in one place.
  */
 import { Feather } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import type { ReactNode } from 'react';
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { color, gutter, space } from '../../theme/tokens';
+import { color, columnMax, gutter, space } from '../../theme/tokens';
 import { T } from './T';
 
 interface Props {
@@ -38,6 +43,9 @@ export function goBack() {
   else router.replace('/(tabs)');
 }
 
+/** Centred, never wider than the column. For anything that is drawn outside a Screen. */
+export const column = { width: '100%', maxWidth: columnMax, alignSelf: 'center' } as const;
+
 export function Screen({ children, title, back = false, onBack, right, footer, scroll = true, inTabs }: Props) {
   const insets = useSafeAreaInsets();
   const bottom = inTabs ? space.xxl : Math.max(insets.bottom, space.lg) + space.sm;
@@ -45,6 +53,8 @@ export function Screen({ children, title, back = false, onBack, right, footer, s
 
   return (
     <KeyboardAvoidingView style={[styles.root, { paddingTop: insets.top, paddingLeft: insets.left, paddingRight: insets.right }]} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+      {/* The column's edges, only visible where the window is wider than it. */}
+      <View style={styles.rail} pointerEvents="none"><View style={styles.railLines} /></View>
       {hasHeader && (
         <View style={styles.header}>
           {back !== false ? (
@@ -59,14 +69,14 @@ export function Screen({ children, title, back = false, onBack, right, footer, s
       {scroll ? (
         <ScrollView
           style={styles.fill}
-          contentContainerStyle={{ paddingHorizontal: gutter, paddingTop: hasHeader ? space.sm : space.lg, paddingBottom: footer ? space.xxl : bottom }}
+          contentContainerStyle={{ ...column, paddingHorizontal: gutter, paddingTop: hasHeader ? space.sm : space.lg, paddingBottom: footer ? space.xxl : bottom }}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
           {children}
         </ScrollView>
       ) : (
-        <View style={[styles.fill, { paddingHorizontal: gutter, paddingBottom: footer ? 0 : bottom }]}>{children}</View>
+        <View style={[styles.fill, column, { paddingHorizontal: gutter, paddingBottom: footer ? 0 : bottom }]}>{children}</View>
       )}
       {footer && <View style={[styles.footer, { paddingBottom: bottom }]}>{footer}</View>}
     </KeyboardAvoidingView>
@@ -76,7 +86,9 @@ export function Screen({ children, title, back = false, onBack, right, footer, s
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: color.bg },
   fill: { flex: 1 },
-  header: { height: 52, flexDirection: 'row', alignItems: 'center', paddingHorizontal: gutter - 4 },
+  rail: { ...StyleSheet.absoluteFillObject, alignItems: 'center' },
+  railLines: { flex: 1, width: '100%', maxWidth: columnMax + 2, borderLeftWidth: StyleSheet.hairlineWidth, borderRightWidth: StyleSheet.hairlineWidth, borderColor: color.line },
+  header: { ...column, height: 52, flexDirection: 'row', alignItems: 'center', paddingHorizontal: gutter - 4 },
   headerBtn: { width: 48, height: 48, justifyContent: 'center' },
-  footer: { paddingHorizontal: gutter, paddingTop: space.md, gap: space.md, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: color.line, backgroundColor: color.bg },
+  footer: { ...column, paddingHorizontal: gutter, paddingTop: space.md, gap: space.md, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: color.line, backgroundColor: color.bg },
 });

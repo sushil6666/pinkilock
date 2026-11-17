@@ -26,6 +26,11 @@ export const color = {
 
 export const space = { xs: 4, sm: 8, md: 12, lg: 16, xl: 20, xxl: 24, x3: 32, x4: 40, x5: 56 } as const;
 export const gutter = space.xl;
+/**
+ * The widest the app ever draws. On a phone the screen is narrower and this does nothing; in a
+ * wide browser window or on a tablet every screen sits in a centred column of this width.
+ */
+export const columnMax = 480;
 
 export const radius = { chip: 6, card: 14, sheet: 28, pill: 999 } as const;
 
