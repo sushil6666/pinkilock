@@ -7,6 +7,7 @@ import { router } from 'expo-router';
 import { useState } from 'react';
 import { StyleSheet, TextInput, View, useWindowDimensions } from 'react-native';
 import Animated, { FadeInDown, FadeInRight } from 'react-native-reanimated';
+import { Landing } from '@/components/Landing';
 import { Welcome } from '@/components/Welcome';
 import { Button } from '@/components/ui/Button';
 import { Chip, Tag } from '@/components/ui/Chip';
@@ -44,7 +45,7 @@ export default function Onboarding() {
   // The last step's agreements (WP8). The dating-preferences one is separate, as the law asks.
   const [agreed, setAgreed] = useState<Record<'adult' | 'legal' | 'sensitive', boolean>>({ adult: false, legal: false, sensitive: false });
   const [error, setError] = useState('');
-  // The first screen spreads into two columns in a wide browser window; every other step stays a column.
+  // In a wide browser window the first step is the website's front page; every other step stays a column.
   const { width } = useWindowDimensions();
   const wide = step === 0 && width >= 960;
 
@@ -87,7 +88,7 @@ export default function Onboarding() {
       )}
 
       <Animated.View key={step} entering={step === 0 ? FadeInDown.duration(500) : FadeInRight.duration(260)} style={{ gap: space.xl }}>
-        {step === 0 && <Welcome wide={wide} onStart={() => setStep(1)} />}
+        {step === 0 && (wide ? <Landing onStart={() => setStep(1)} /> : <Welcome />)}
 
         {step === 1 && (
           <>

@@ -2,8 +2,8 @@
  * The first thing anyone sees, in the app and on the website: the clay pinkies hooking, the
  * promise in big type, and the three steps as notes stuck down by hand.
  *
- * On a phone it is one column. In a wide browser window it is the one screen drawn wider than the
- * column (`wideMax`): the pinkies on the left, the words and the Start button on the right.
+ * This is the phone and narrow-window version, one column. In a wide browser window onboarding shows
+ * `Landing` instead, the website's full front page, which reuses the scribble and the notes from here.
  */
 import { router } from 'expo-router';
 import { StyleSheet, View } from 'react-native';
@@ -20,7 +20,7 @@ const STEPS: [string, string, string][] = [
 ];
 
 /** A note scribbled beside the pinkies, with an arrow that is not quite straight. */
-function Scribble({ wide }: { wide: boolean }) {
+export function Scribble({ wide }: { wide: boolean }) {
   return (
     <View style={[styles.scribble, wide && styles.scribbleWide]} accessible={false} importantForAccessibility="no-hide-descendants">
       <Svg width={58} height={46} viewBox="0 0 58 46" style={{ marginRight: -6 }}>
@@ -32,7 +32,7 @@ function Scribble({ wide }: { wide: boolean }) {
   );
 }
 
-function Notes() {
+export function Notes() {
   return (
     <View style={{ gap: space.lg }}>
       {STEPS.map(([n, line, tilt]) => (
@@ -47,52 +47,24 @@ function Notes() {
   );
 }
 
-export function Welcome({ wide, onStart }: { wide: boolean; onStart: () => void }) {
-  const signIn = <Button kind="quiet" icon="log-in" label="I already have an account" onPress={() => router.push({ pathname: '/account/sign-in', params: { mode: 'sign_in' } })} />;
-  const words = (
-    <>
-      <T v="label" c={color.pink}>Pinkilock</T>
-      <T v="mega" style={wide ? styles.headlineWide : styles.headline}>No ghosting.{'\n'}No endless{'\n'}swiping.</T>
-      <T v="heading" c={color.textDim}>One person. One tiny plan. One pinky promise that you both show up.</T>
-    </>
-  );
-
-  if (!wide) {
-    return (
-      <View style={{ gap: space.xl }}>
-        <View>
-          <Loop name="pinkyLock" />
-          <Scribble wide={false} />
-        </View>
-        {words}
-        <View style={{ marginTop: space.md }}><Notes /></View>
-        {signIn}
-      </View>
-    );
-  }
-
+export function Welcome() {
   return (
-    <View style={styles.row}>
-      <View style={styles.art}>
+    <View style={{ gap: space.xl }}>
+      <View>
         <Loop name="pinkyLock" />
-        <Scribble wide />
+        <Scribble wide={false} />
       </View>
-      <View style={styles.words}>
-        {words}
-        <View style={{ marginVertical: space.md }}><Notes /></View>
-        <Button label="Start" icon="arrow-right" onPress={onStart} />
-        {signIn}
-      </View>
+      <T v="label" c={color.pink}>Pinkilock</T>
+      <T v="mega" style={styles.headline}>No ghosting.{'\n'}No endless{'\n'}swiping.</T>
+      <T v="heading" c={color.textDim}>One person. One tiny plan. One pinky promise that you both show up.</T>
+      <View style={{ marginTop: space.md }}><Notes /></View>
+      <Button kind="quiet" icon="log-in" label="I already have an account" onPress={() => router.push({ pathname: '/account/sign-in', params: { mode: 'sign_in' } })} />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   headline: { fontSize: 46, lineHeight: 48 },
-  headlineWide: { fontSize: 64, lineHeight: 64 },
-  row: { flexDirection: 'row', alignItems: 'center', gap: space.x5, paddingVertical: space.x4 },
-  art: { flex: 1.1 },
-  words: { flex: 1, gap: space.xl, maxWidth: 460 },
   scribble: { position: 'absolute', right: 0, bottom: -space.md, flexDirection: 'row', alignItems: 'flex-end', transform: [{ rotate: '-5deg' }] },
   // Beside the hooked fingers, which sit a little above the middle of the drawing.
   scribbleWide: { right: space.lg, bottom: '14%' },
