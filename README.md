@@ -172,6 +172,21 @@ npm run test:live           # the same live tests against EXPO_PUBLIC_SUPABASE_U
 CI runs all but the last on every pull request and every push to `main`. The last runs against the real project after each deploy,
 and on demand as the **Live two-user test** workflow.
 
+## The web build
+
+The same screens run in a browser; there is no second site.
+
+```bash
+EXPO_PUBLIC_BACKEND= npx expo export -p web --output-dir dist/web   # mock data, no keys
+npx serve dist/web --single                                         # any server that answers every path with index.html
+node scripts/make-icons.mjs                                         # redraw the icons and the share picture
+```
+
+It is one page, so whatever serves it must fall back to `index.html` for every path (a reload on
+`/plans` must work). Each screen has its own page title, a visitor with no profile is led to
+onboarding from any link, and an unknown address shows a not-found screen. It is not hosted
+anywhere yet: the host, the domain and the account are still to be chosen (`OPERATIONS.md`).
+
 ## Status
 
 **Verified locally** (a full Supabase stack in Docker, and in CI): the migrations

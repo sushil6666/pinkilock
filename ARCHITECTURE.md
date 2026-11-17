@@ -389,6 +389,16 @@ what the server did (`OPERATIONS.md`, "Trace a bug").
   full hold from a mouse, a finger or a held Space or Enter; the lock stage measures its own
   width, clips its drawing and takes the arrow keys. Haptics and push do nothing in a browser,
   and Me says so for push.
+- **Web addresses**: `src/lib/routes.ts` names every route once: its page title (`Plans · Pinkilock`;
+  a title never carries a person's name or an id, because titles end up in history and in shared
+  tabs) and whether it needs a profile. The root layout sets the title when the route changes and
+  sends a visitor with no profile who opens a personal screen directly to `/`, which leads to
+  onboarding; it covers the screen with `bg` until that has happened. This is a courtesy, not a
+  lock: what one person may see is still decided by RLS. An address that matches nothing shows
+  `app/+not-found.tsx`. `tests/unit/routes.test.ts` fails when a route file is added without an
+  entry. The build is one page (`web.output: single`), so the host must answer every path with
+  `index.html`. `public/manifest.json`, the home-screen icons and `public/share.png` are drawn by
+  `scripts/make-icons.mjs`; the manifest is a third place the blue is written by hand.
 
 ## 10. Environments and delivery
 

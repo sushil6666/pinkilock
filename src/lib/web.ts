@@ -59,3 +59,8 @@ export function swallowReleaseClick(): void {
   document.addEventListener('keyup', stop, true);
   timer = setTimeout(stop, 10_000);
 }
+
+/** The browser tab's title. A phone has none. */
+export function setPageTitle(title: string): void {
+  if (isWeb && typeof document !== 'undefined' && document.title !== title) document.title = title;
+}
