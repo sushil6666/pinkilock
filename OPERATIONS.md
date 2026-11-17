@@ -386,7 +386,11 @@ rows without the id.
 
 - **Missing `EXPO_TOKEN`, or no `projectId`:** see the error text in the run.
 - **"No Supabase project is configured":** the profile's variables are empty.
-- **Otherwise:** open the build page linked in the run for the native log.
+- **Otherwise:** the run's last step, "Show why the build failed", prints EAS's error message
+  and the end of the native log; the full log is on the build page linked in the run.
+- **"No matching client found for package name":** the Android app registered in Firebase is not
+  `com.pinkilock.app`. Download google-services.json again for that package and replace the
+  `GOOGLE_SERVICES_JSON` secret.
 
 ### A request or an appeal comes in
 
