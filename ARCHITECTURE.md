@@ -348,7 +348,7 @@ what the server did (`OPERATIONS.md`, "Trace a bug").
 - **Safe areas**: every screen is a `Screen` (`src/components/ui/Screen.tsx`) that pads with
   `useSafeAreaInsets`, so notches, the Dynamic Island, the home indicator and Android gesture or
   3-button navigation are handled in one place. The tab bar and sheets add the bottom inset themselves.
-- **System bars**: light status bar content; on Android the navigation bar is painted obsidian with
+- **System bars**: light status bar content; on Android the navigation bar is painted royal blue with
   light buttons (`expo-navigation-bar`), and the root background is set with `expo-system-ui` so
   there is no white flash behind the keyboard.
 - **Edge-swipe zones**: the lock's touch area is inset 32 px from both screen edges and only
@@ -362,6 +362,14 @@ what the server did (`OPERATIONS.md`, "Trace a bug").
   conveyed by a haptic alone.
 - **Back**: Android hardware back works on every stack screen; the lock ignores it only during the
   one second of sealing.
+- **Wide screens**: nothing is drawn wider than `columnMax` (480, `src/theme/tokens.ts`). `Screen`
+  centres its header, content and footer in that column and draws a hairline down each side; the
+  tab bar, sheets and the notice banner use `column` from `Screen.tsx`. A phone is narrower than
+  the column, so nothing changes there. No screen sets its own width.
+  `public/index.html` is the page the web build loads into: it paints `bg` before the app has
+  loaded, and `app.json` (`web.themeColor`) gives the browser bar the same blue. Those two files
+  are the only places a colour is written outside `src/theme/tokens.ts`, because neither can
+  import it.
 - **Browser**: the web build (`npx expo export -p web`) is the same screens. Anything a browser
   needs differently lives in `src/lib/web.ts` or in the shared component, never in a copied
   screen. So far: a hold that completes under a finger eats the click the browser makes when the

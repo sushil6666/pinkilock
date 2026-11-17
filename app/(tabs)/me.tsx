@@ -14,7 +14,7 @@ import { HoldButton } from '@/components/ui/HoldButton';
 import { Screen } from '@/components/ui/Screen';
 import { Sheet } from '@/components/ui/Sheet';
 import { T } from '@/components/ui/T';
-import { IDEAS, VIBE_GROUPS } from '@/domain/ideas';
+import { IDEAS, KIND_LABEL, KIND_ORDER, VIBE_GROUPS } from '@/domain/ideas';
 import { maskEmail } from '@/domain/email';
 import { maskPhone } from '@/domain/phone';
 import { trustScore } from '@/domain/trust';
@@ -157,9 +157,14 @@ export default function Me() {
       {editVibes && error ? <ErrorText text={error} style={{ marginTop: space.sm }} /> : null}
 
       <T v="label" c={color.textDim} style={styles.section}>I am up for  /  tap to change</T>
-      <View style={styles.wrap}>
-        {IDEAS.map((i) => <Chip key={i.id} label={`${i.emoji} ${i.title}`} selected={me.ideaIds.includes(i.id)} onPress={() => toggleIdea(i.id)} />)}
-      </View>
+      {KIND_ORDER.map((kind) => (
+        <View key={kind} style={{ gap: space.sm, marginBottom: space.lg }}>
+          <T v="label" c={color.textMute}>{KIND_LABEL[kind]}</T>
+          <View style={styles.wrap}>
+            {IDEAS.filter((i) => i.kind === kind).map((i) => <Chip key={i.id} label={`${i.emoji} ${i.title}`} selected={me.ideaIds.includes(i.id)} onPress={() => toggleIdea(i.id)} />)}
+          </View>
+        </View>
+      ))}
       {error ? <ErrorText text={error} style={{ marginTop: space.sm }} /> : null}
 
       <T v="label" c={color.textDim} style={styles.section}>Unlocks when a promise is kept</T>

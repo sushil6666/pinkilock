@@ -25,7 +25,10 @@ export function Button({ label, onPress, kind = 'primary', icon, disabled, busy,
   const scale = useSharedValue(1);
   const pressed = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
   const off = disabled || busy;
-  const fg = kind === 'primary' ? color.onPink : kind === 'danger' ? color.flare : color.text;
+  // A primary button that cannot be pressed yet is a quiet blue slab, not a faded pink one:
+  // pink at half strength over the blue ground turns to a muddy purple.
+  const waiting = kind === 'primary' && !!disabled && !busy;
+  const fg = waiting ? color.textMute : kind === 'primary' ? color.onPink : kind === 'danger' ? color.flare : color.text;
 
   return (
     <AnimatedPressable
@@ -42,7 +45,7 @@ export function Button({ label, onPress, kind = 'primary', icon, disabled, busy,
         scale.value = withSpring(1, motion.spring.snappy);
       }}
       onPress={onPress}
-      style={[styles.base, styles[kind], kind === 'primary' && !off && elevation('glow'), off && styles.off, pressed, style]}
+      style={[styles.base, styles[kind], kind === 'primary' && !off && elevation('glow'), waiting ? styles.waiting : off && styles.off, pressed, style]}
     >
       {busy ? <ActivityIndicator color={fg} /> : (
         <>
@@ -57,6 +60,7 @@ export function Button({ label, onPress, kind = 'primary', icon, disabled, busy,
 const styles = StyleSheet.create({
   base: { minHeight: 56, borderRadius: radius.card, paddingHorizontal: space.xl, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: space.sm },
   primary: { backgroundColor: color.pink },
+  waiting: { backgroundColor: color.surfaceHi, borderWidth: 1, borderColor: color.line },
   ghost: { borderWidth: 1, borderColor: color.line, backgroundColor: color.surface },
   danger: { borderWidth: 1, borderColor: color.flare, backgroundColor: color.flareWash },
   quiet: { minHeight: 48 },
