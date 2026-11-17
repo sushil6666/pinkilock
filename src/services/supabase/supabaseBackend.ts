@@ -36,6 +36,7 @@ function toProfile(r: Row): Profile {
     vibes: r.vibes ?? [], ideaIds: r.idea_ids ?? [], palette: [r.palette?.[0] ?? '#F6F6F1', r.palette?.[1] ?? '#3A3A44'],
     glyph: r.glyph, kept: r.kept ?? 0, flaked: r.flaked ?? 0, trustScore: r.trust_score ?? 100, distanceKm: 0,
     photoCount: r.photo_count ?? 0,
+    answerMinutes: r.median_answer_minutes == null ? null : Number(r.median_answer_minutes),
   };
 }
 
@@ -242,16 +243,8 @@ export function createSupabaseBackend(url: string, anonKey: string, storage: Ses
         const id = (payload.new as Row)?.profile_id;
         if (id) refreshCards([id]);
       })
-      // People joining (or editing their card) while I am looking at Discover.
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'profiles' }, (payload) => {
-        if (payload.eventType === 'DELETE') {
-          const gone = (payload.old as Row)?.id;
-          if (gone && names.has(gone)) forget([gone], []);
-          return;
-        }
-        const id = (payload.new as Row)?.id;
-        if (id) refreshCards([id]);
-      })
+      // No `profiles` feed: clients may read only the card's columns of that table, and new people
+      // are fetched through discover() rather than pushed. Cards are re-read on every resync.
       // Joining the channel and the database feed starting are two moments: Realtime says
       // SUBSCRIBED first and only later reports that postgres_changes is flowing. A change
       // committed in between is never delivered, so re-read at both.
@@ -377,6 +370,17 @@ export function createSupabaseBackend(url: string, anonKey: string, storage: Ses
       const id = await uid();
       check(await db.from('passes').delete().eq('profile_id', id).select('passed_id'));
       return { passedIds: [] };
+    },
+
+    async rateDate(inviteId, answer) {
+      await uid();
+      await rpc('rate_date', { p_invite: inviteId, p_worth: answer.worth, p_again: answer.again, p_unsafe: answer.unsafe });
+    },
+
+    async dateFeedback(inviteId) {
+      await uid();
+      const rows = await rpc<{ rated: boolean; round_two: boolean | null }[]>('date_feedback', { p_invite: inviteId });
+      return { rated: !!rows?.[0]?.rated, roundTwo: !!rows?.[0]?.round_two };
     },
 
     async myLineReview() {

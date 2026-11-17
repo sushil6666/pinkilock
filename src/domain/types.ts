@@ -32,6 +32,8 @@ export interface Profile {
   /** Set when the score came from the analytics worker; absent in the mock, which computes it. */
   trustScore?: number;
   distanceKm: number;
+  /** Median minutes this person takes to answer an ask (from the analytics worker); absent when unknown. */
+  answerMinutes?: number | null;
   /** How many extra photos exist. The photos themselves live behind the reveal. */
   photoCount: number;
 }

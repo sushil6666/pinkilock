@@ -44,7 +44,8 @@ select t.ok((select string_agg(table_schema || '.' || table_name || ':' || privs
     select table_schema, table_name, string_agg(privilege_type, ',' order by privilege_type) as privs
     from information_schema.role_table_grants where grantee = 'pinkilock_analytics' group by 1, 2) g)
   = 'analytics.accounts:SELECT analytics.metrics_daily:DELETE,INSERT,SELECT,UPDATE analytics.retention_weekly:DELETE,INSERT,SELECT,UPDATE '
-    'analytics.settings:SELECT public.events:SELECT public.invites:SELECT public.profiles:SELECT public.trust_scores:DELETE,INSERT,SELECT,UPDATE',
+    'analytics.satisfaction_daily:DELETE,INSERT,SELECT,UPDATE '
+    'analytics.settings:SELECT public.date_ratings:SELECT public.events:SELECT public.invites:SELECT public.profiles:SELECT public.trust_scores:DELETE,INSERT,SELECT,UPDATE',
   'the analytics role reads events, invites, profiles and writes only its own results');
 select t.ok(not has_table_privilege('pinkilock_analytics', 'public.profile_private', 'select'), 'the analytics role cannot read contact handles');
 

@@ -59,6 +59,8 @@ first table with its date.
 | D041 | 2026-11-17 | App version 0.2.0: new native modules mean a new binary; over-the-air updates do not reach 0.1.0 | `runtimeVersion` follows the app version, which keeps an update from loading code a binary cannot run | Claude | `app.json` | In force once merged |
 | D042 | 2026-11-17 | The update-signing key is made by the owner with a script and kept only as a GitHub secret | Whoever holds it can ship code to every phone; it must never pass through the repo or this session | Claude | `scripts/codesign-setup.sh` | Waiting for the owner to run it |
 | D043 | 2026-11-17 | The Expo SDK upgrade that would clear the 16 advisories is not done in this round | It touches every native module and needs device testing that cannot be done here | Claude | Build plan WP5 status | Open |
+| D044 | 2026-11-17 | Round two is revealed only when both said yes; a "no" is never shown, and the answers never affect a Trust Score | Honest answers need to be private; a visible "no" would make people answer politely instead | Claude | `date_feedback` | In force once merged |
+| D045 | 2026-11-17 | Saying "I felt unsafe" records the answer and opens the report screen; it does not file a report by itself | A report blocks the other person; that should be the person's own choice, made on the report screen | Claude | `src/components/DateFeedback.tsx` | In force once merged |
 
 ## Waiting for the owner
 

@@ -20,6 +20,7 @@ import { usePerson, useStore } from '@/state/store';
 import { color, radius, space } from '@/theme/tokens';
 import { ErrorText } from '@/components/ui/ErrorText';
 import { shown } from '@/lib/report';
+import { answersIn } from '@/domain/answers';
 
 export default function ProfileScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -76,6 +77,7 @@ export default function ProfileScreen() {
 
       <View style={{ gap: space.xl, marginTop: space.xl }}>
         <TrustBadge person={person} size="lg" />
+        {answersIn(person.answerMinutes) ? <T v="caption" c={color.textDim}>{answersIn(person.answerMinutes)}</T> : null}
 
         {person.tagline ? <T v="heading">{person.tagline}</T> : null}
         {me && me.id !== person.id ? <Spark me={me} person={person} /> : null}

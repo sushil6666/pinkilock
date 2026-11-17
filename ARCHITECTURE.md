@@ -166,7 +166,8 @@ Full DDL is `supabase/migrations`. Tables:
 | `blocks` | Who blocked whom | No client access, not even the service role. Written by `block_user`, `report_user`, `unblock_user`; my own list through `my_blocks()` |
 | `reports` | Reporter, reported person, reason, detail, the shared invite, review fields | No client access, not even the service role. Written only by `report_user`; read by a moderator with the database role |
 | `client_errors` | Errors phones showed: code, trace id, screen, build. No content. Kept 30 days | No client access, not even the service role. Written by `log_client_error`; read by an operator with the database role |
-| `analytics.metrics_daily`, `analytics.retention_weekly` | Worker output | Analytics role only |
+| `date_ratings` | After a kept promise: worth it, again, felt unsafe. Never shown to the other person | No client access. Written by `rate_date`; read by the analytics role |
+| `analytics.metrics_daily`, `analytics.retention_weekly`, `analytics.satisfaction_daily` | Worker output | Analytics role only |
 
 **Writes go through functions, not tables.** `send_invite`, `offer_pinky`, `decline_invite`,
 `check_in`, `bail` are `security definer` functions that check `auth.uid()`, lock the row, apply
@@ -183,6 +184,13 @@ pronouns, and in an ask's note and place. `src/domain/profile.ts` has the same r
 the app and the mock, and one table of lines is run through both copies. The check stops the plain
 cases only: a made-up code still gets through until lines are reviewed before anyone sees them
 (`docs/build-plan.md`, WP1).
+
+**After a kept promise.** Each person answers once, privately: worth showing up, see them again,
+felt unsafe (`rate_date`; `date_ratings` is readable by no client role). `date_feedback` says only
+whether I answered and whether both of us want round two. The worker writes the 28-day share of
+"worth it" to `analytics.satisfaction_daily`, with no rate under 50 answers. Cards carry the median
+answer time for a "usually answers in" line. Clients read only the card's columns of `profiles`;
+moderation columns stay server-side.
 
 **Lines are picked or reviewed.** An ask's line must be one of `ask_lines` (the app's ready-made
 lines) or none. The one free text, the profile line, can change once a week (the name once a
