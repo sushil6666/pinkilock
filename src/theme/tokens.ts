@@ -6,13 +6,13 @@ import { Easing } from 'react-native-reanimated';
 import type { TextStyle } from 'react-native';
 
 export const color = {
-  bg: '#0A0A0C',
-  surface: '#131316',
-  surfaceHi: '#1C1C21',
-  line: '#2B2B33',
+  bg: '#001C55',
+  surface: '#04225F',
+  surfaceHi: '#0B2F7C',
+  line: '#4169E1',
   text: '#F6F6F1',
-  textDim: '#A3A3AE',
-  textMute: '#6E6E7A',
+  textDim: '#A9D8F7',
+  textMute: '#7DB0E0',
   pink: '#FF2E93',
   pinkDeep: '#B3115F',
   pinkWash: 'rgba(255,46,147,0.14)',
@@ -20,8 +20,8 @@ export const color = {
   voltWash: 'rgba(215,255,62,0.12)',
   flare: '#FF5A36',
   flareWash: 'rgba(255,90,54,0.14)',
-  onPink: '#0A0A0C',
-  scrim: 'rgba(0,0,0,0.6)',
+  onPink: '#00123A',
+  scrim: 'rgba(0,10,40,0.7)',
 } as const;
 
 export const space = { xs: 4, sm: 8, md: 12, lg: 16, xl: 20, xxl: 24, x3: 32, x4: 40, x5: 56 } as const;

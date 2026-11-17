@@ -23,9 +23,9 @@ export function Portrait({ name, palette, glyph, size = 56, fill, style }: Props
     return (
       <View style={[styles.fill, style]} accessible accessibilityRole="image" accessibilityLabel={`${name}'s card`}>
         <LinearGradient colors={palette} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={StyleSheet.absoluteFill} />
-        <T style={styles.bigInitial} c="rgba(10,10,12,0.22)" maxFontSizeMultiplier={1}>{initial}</T>
+        <T style={styles.bigInitial} c="rgba(0,18,58,0.22)" maxFontSizeMultiplier={1}>{initial}</T>
         <T style={styles.bigGlyph} maxFontSizeMultiplier={1}>{glyph}</T>
-        <LinearGradient colors={['transparent', 'rgba(10,10,12,0.92)']} style={styles.fade} />
+        <LinearGradient colors={['transparent', 'rgba(0,18,58,0.92)']} style={styles.fade} />
       </View>
     );
   }

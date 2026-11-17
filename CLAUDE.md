@@ -60,6 +60,9 @@ npm run test:app:local      # the real screens in two browser sessions
 - A bug fix starts with a test that fails for that bug, and its PR names the error reference that found it.
 - A decision that shapes the product or how it is built gets a row in `docs/decisions.md` in the same
   change: what, why, who decided, where. Append; never rewrite an old row.
+- A change to how the app looks is not done until it has been looked at: export the web build on
+  mock data, screenshot the screens it touches at phone width, and fix what looks wrong before
+  committing. Colours come only from `src/theme/tokens.ts`; `DESIGN_SYSTEM.md` changes with them.
 - No secrets in the repo. The service role key is used by nothing in the app, repo or workflows.
 - When behaviour or setup changes, update `README.md`, `ARCHITECTURE.md`, `ROADMAP.md` and, for
   anything about running it live, `OPERATIONS.md`, in the same change.
