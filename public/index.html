@@ -4,6 +4,16 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
     <title>%WEB_TITLE%</title>
+    <link rel="manifest" href="/manifest.json" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <meta name="color-scheme" content="dark" />
+    <!-- What a shared link shows. Scrapers want an absolute address for the picture, so the
+         deploy adds og:image and og:url once the site has a domain (OPERATIONS.md). -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Pinkilock" />
+    <meta property="og:title" content="Pinkilock: no ghosting, no endless swiping" />
+    <meta property="og:description" content="One person. One tiny plan. One pinky promise that you both show up." />
+    <meta name="twitter:card" content="summary_large_image" />
     <!-- The `react-native-web` recommended style reset: https://necolas.github.io/react-native-web/docs/setup/#root-element -->
     <style id="expo-reset">
       /* These styles make the body full-height */
