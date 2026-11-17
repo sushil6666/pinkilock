@@ -557,7 +557,7 @@ These are the limits no build removes; they belong in the privacy policy and in 
 ## 8. Product features from the market review
 
 Added on 2026-11-17 after a review of 15 dating apps. The owner chose the large items first
-(`docs/decisions.md`, D028). These sit beside the hardening packages; each still follows section 6.
+(`docs/decisions.md`, D036). These sit beside the hardening packages; each still follows section 6.
 
 ### F1. Suggested venues: built
 

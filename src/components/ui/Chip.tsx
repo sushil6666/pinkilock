@@ -1,5 +1,6 @@
 import { Pressable, StyleSheet } from 'react-native';
 import { haptic } from '../../lib/haptics';
+import { aria } from '../../lib/web';
 import { color, radius, space } from '../../theme/tokens';
 import { T } from './T';
 
@@ -17,6 +18,7 @@ export function Chip({ label, selected, onPress, disabled, sub }: Props) {
     <Pressable
       accessibilityRole={onPress ? 'button' : 'text'}
       accessibilityState={{ selected: !!selected, disabled: !!disabled }}
+      {...(onPress ? aria({ pressed: !!selected }) : {})}
       accessibilityLabel={sub ? `${label}, ${sub}` : label}
       disabled={disabled || !onPress}
       hitSlop={4}
@@ -41,6 +43,7 @@ export function Tag({ label, tone = color.textDim, onPress, selected }: { label:
       accessibilityRole="button"
       accessibilityLabel={label}
       accessibilityState={{ selected: !!selected }}
+      {...aria({ pressed: !!selected })}
       hitSlop={10}
       onPress={() => {
         haptic.tick();
