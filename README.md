@@ -26,14 +26,17 @@ Push notifications do not work in Expo Go; they need a preview or development bu
 
 With no keys set, the app runs on ten made-up people who answer by themselves. A good first pass:
 
-1. Onboard (five short steps, ends with a hold to swear the promise).
+1. Onboard (five short steps, ends with a hold to swear the promise). The vibe step offers tags
+   in five groups (Energy, Into, Wild and bold, Flirt style, Old school); pick up to three.
 2. **Asks**: open Aanya's boba run, tap **Lock it**, slide your pinky in. She seals it about two
    seconds later.
 3. **Plans**: the plan with Ira starts in four minutes, so check-in is already open. Check in,
    Ira follows, and the reveal opens.
-4. **Discover**: send someone a vibe check. They answer in about seven seconds; then you seal.
+4. **Discover**: send someone a vibe check. The one line has ready-made options in six tones
+   (Chill, Bold, Flirty, Wild, Naughty, Old school). They answer in about seven seconds; then you seal.
    Nikhil always passes, so you can see that too.
-5. On any locked plan: **Can't make it** shows what a bail costs. **Me** has the reset.
+5. On any locked plan: a first line and an optional dare (tap **Another** for a new one).
+   **Can't make it** shows what a bail costs. **Me** has the reset, and **Change tags**.
 6. Safety and accounts: on anyone's profile, **Block or report**. In **Me**, Account: add a phone
    number (the mock's code is always `123456`), see blocked people, download your data, or delete
    the account. After **Sign out**, "I already have an account" on the first screen gets you back.

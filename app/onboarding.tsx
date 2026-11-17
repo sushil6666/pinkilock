@@ -8,12 +8,12 @@ import { useState } from 'react';
 import { StyleSheet, TextInput, View } from 'react-native';
 import Animated, { FadeInDown, FadeInRight } from 'react-native-reanimated';
 import { Button } from '@/components/ui/Button';
-import { Chip } from '@/components/ui/Chip';
+import { Chip, Tag } from '@/components/ui/Chip';
 import { inputStyle } from '@/components/ui/input';
 import { HoldButton } from '@/components/ui/HoldButton';
 import { Screen } from '@/components/ui/Screen';
 import { T } from '@/components/ui/T';
-import { IDEAS, KIND_LABEL, KIND_ORDER, VIBES } from '@/domain/ideas';
+import { IDEAS, KIND_LABEL, KIND_ORDER, TAGLINE_PROMPTS, VIBE_GROUPS } from '@/domain/ideas';
 import type { ContactKind } from '@/domain/types';
 import { haptic } from '@/lib/haptics';
 import { useStore } from '@/state/store';
@@ -142,14 +142,20 @@ export default function Onboarding() {
         {step === 3 && (
           <>
             <T v="display">Your vibe,{'\n'}briefly.</T>
-            <View style={{ gap: space.sm }}>
-              <T v="label" c={color.textDim}>Up to three tags</T>
-              <View style={styles.wrap}>
-                {VIBES.map((v) => <Chip key={v} label={v} selected={vibes.includes(v)} onPress={() => toggle(vibes, setVibes, v, 3)} />)}
+            <T v="caption" c={vibes.length > 0 ? color.volt : color.textDim}>{vibes.length} of 3 tags picked</T>
+            {VIBE_GROUPS.map((group) => (
+              <View key={group.label} style={{ gap: space.sm }}>
+                <T v="label" c={color.textDim}>{group.label}</T>
+                <View style={styles.wrap}>
+                  {group.vibes.map((v) => <Chip key={v} label={v} selected={vibes.includes(v)} onPress={() => toggle(vibes, setVibes, v, 3)} />)}
+                </View>
               </View>
-            </View>
+            ))}
             <View style={{ gap: space.sm }}>
               <T v="label" c={color.textDim}>One line about you (optional)</T>
+              <View style={styles.wrap}>
+                {TAGLINE_PROMPTS.map((p) => <Tag key={p} label={p.trim()} tone={tagline.startsWith(p) ? color.volt : color.textDim} selected={tagline.startsWith(p)} onPress={() => setTagline(p)} />)}
+              </View>
               <TextInput value={tagline} onChangeText={setTagline} placeholder="Will judge your chai order." placeholderTextColor={color.textMute} maxLength={80} style={[inputStyle, type.body]} accessibilityLabel="One line about you" />
             </View>
             <View style={{ gap: space.sm }}>

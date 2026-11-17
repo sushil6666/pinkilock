@@ -32,10 +32,23 @@ export function Chip({ label, selected, onPress, disabled, sub }: Props) {
   );
 }
 
-/** A tag that is not a control. */
-export function Tag({ label, tone = color.textDim }: { label: string; tone?: string }) {
+/** A tag. Not a control unless it is given `onPress`, when it works as a small toggle. */
+export function Tag({ label, tone = color.textDim, onPress, selected }: { label: string; tone?: string; onPress?: () => void; selected?: boolean }) {
+  const tag = <T v="label" c={tone} style={[styles.tag, { borderColor: tone }]}>{label}</T>;
+  if (!onPress) return tag;
   return (
-    <T v="label" c={tone} style={[styles.tag, { borderColor: tone }]}>{label}</T>
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      accessibilityState={{ selected: !!selected }}
+      hitSlop={10}
+      onPress={() => {
+        haptic.tick();
+        onPress();
+      }}
+    >
+      {tag}
+    </Pressable>
   );
 }
 

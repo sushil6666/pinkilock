@@ -9,12 +9,12 @@ import { Platform, Share, StyleSheet, View } from 'react-native';
 import { Portrait } from '@/components/Portrait';
 import { TrustBadge } from '@/components/TrustBadge';
 import { Button } from '@/components/ui/Button';
-import { Chip } from '@/components/ui/Chip';
+import { Chip, Tag } from '@/components/ui/Chip';
 import { HoldButton } from '@/components/ui/HoldButton';
 import { Screen } from '@/components/ui/Screen';
 import { Sheet } from '@/components/ui/Sheet';
 import { T } from '@/components/ui/T';
-import { IDEAS } from '@/domain/ideas';
+import { IDEAS, VIBE_GROUPS } from '@/domain/ideas';
 import { maskEmail } from '@/domain/email';
 import { maskPhone } from '@/domain/phone';
 import { trustScore } from '@/domain/trust';
@@ -38,6 +38,7 @@ export default function Me() {
   const deleteAccount = useStore((s) => s.deleteAccount);
   const signOut = useStore((s) => s.signOut);
   const [sheet, setSheet] = useState<'delete' | 'sign_out' | null>(null);
+  const [editVibes, setEditVibes] = useState(false);
   const [busy, setBusy] = useState('');
   const [accountError, setAccountError] = useState('');
   useEffect(() => watchPush(setPush), []);
@@ -87,6 +88,17 @@ export default function Me() {
     }
   };
 
+  const toggleVibe = async (v: string) => {
+    const has = me.vibes.includes(v);
+    if (!has && me.vibes.length >= 3) return setError('Three tags is the cap. Drop one first.');
+    setError('');
+    try {
+      await updateMe({ vibes: has ? me.vibes.filter((x) => x !== v) : [...me.vibes, v] });
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'That did not save.');
+    }
+  };
+
   const reset = async () => {
     setResetting(true);
     await demoReset();
@@ -113,9 +125,19 @@ export default function Me() {
       </T>
 
       {me.tagline ? <T v="heading" style={{ marginTop: space.xl }}>{me.tagline}</T> : null}
-      {me.vibes.length > 0 && (
-        <View style={[styles.wrap, { marginTop: space.md }]}>{me.vibes.map((v) => <Chip key={v} label={v} />)}</View>
-      )}
+      <View style={[styles.wrap, { marginTop: space.md, alignItems: 'center' }]}>
+        {me.vibes.map((v) => <Chip key={v} label={v} />)}
+        <Tag label={editVibes ? 'Done' : 'Change tags'} tone={editVibes ? color.volt : color.textDim} onPress={() => setEditVibes(!editVibes)} />
+      </View>
+      {editVibes && VIBE_GROUPS.map((group) => (
+        <View key={group.label} style={{ gap: space.sm, marginTop: space.lg }}>
+          <T v="label" c={color.textDim}>{group.label}</T>
+          <View style={styles.wrap}>
+            {group.vibes.map((v) => <Chip key={v} label={v} selected={me.vibes.includes(v)} onPress={() => toggleVibe(v)} />)}
+          </View>
+        </View>
+      ))}
+      {editVibes && error ? <T v="caption" c={color.flare} style={{ marginTop: space.sm }}>{error}</T> : null}
 
       <T v="label" c={color.textDim} style={styles.section}>I am up for  /  tap to change</T>
       <View style={styles.wrap}>
