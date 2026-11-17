@@ -6,7 +6,7 @@ import assert from 'node:assert/strict';
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { test } from 'node:test';
-import { AppError, ERRORS, asAppError, errorRef, newTrace, splitRef, withRef } from '../../src/domain/errors';
+import { APP_RAISED_PL, AppError, ERRORS, asAppError, errorRef, newTrace, splitRef, withRef } from '../../src/domain/errors';
 import { bail, checkIn } from '../../src/domain/invites';
 import type { Invite } from '../../src/domain/types';
 import { log, scrub } from '../../src/lib/log';
@@ -32,7 +32,7 @@ test('every code the database raises is in the catalogue, with the same words', 
 
 test('every PL code in the catalogue is raised by the database', () => {
   const sql = sqlErrors();
-  for (const code of Object.keys(ERRORS).filter((c) => c.startsWith('PL'))) assert.ok(sql.has(code), `${code} is in src/domain/errors.ts but no migration raises it`);
+  for (const code of Object.keys(ERRORS).filter((c) => c.startsWith('PL') && !APP_RAISED_PL.includes(c as never))) assert.ok(sql.has(code), `${code} is in src/domain/errors.ts but no migration raises it`);
 });
 
 test('the shared rules throw the same codes the database does', () => {
