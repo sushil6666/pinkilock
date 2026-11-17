@@ -80,6 +80,11 @@ jobs:
       - name: Build the web app
         run: npx expo export -p web --clear --output-dir dist/web
 
+      - name: Move package files out of node_modules
+        # Cloudflare Pages never uploads a folder named node_modules, which is where Expo puts the
+        # fonts and icons. Without this the site shows serif type and empty boxes.
+        run: node scripts/prepare-web-dist.mjs dist/web
+
       - name: Add the headers and the share tags
         run: |
           sed "s/SUPABASE_HOST/$SUPABASE_HOST/g" web/_headers > dist/web/_headers
