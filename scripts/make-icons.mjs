@@ -4,7 +4,7 @@
  *   node scripts/make-icons.mjs        (needs the playwright dev dependency and its Chromium)
  *
  * The mark is the app's own lock: two pinkies in their locked pose, the same geometry as
- * src/components/PinkyFinger.tsx, in the DESIGN_SYSTEM.md colours (pink and bone on obsidian,
+ * src/components/PinkyFinger.tsx, in the DESIGN_SYSTEM.md colours (pink and bone on royal blue,
  * hard edges, no gradients). These are placeholders until real artwork exists; the PNGs in
  * assets/ are committed, so nobody needs to run this to build.
  */
@@ -14,7 +14,7 @@ import { fileURLToPath } from 'node:url';
 import { chromium } from 'playwright';
 
 const OUT = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'assets');
-const C = { bg: '#0A0A0C', pink: '#FF2E93', pinkDeep: '#B3115F', text: '#F6F6F1', textDim: '#A3A3AE' };
+const C = { bg: '#001C55', pink: '#FF2E93', pinkDeep: '#B3115F', text: '#F6F6F1', textDim: '#A9D8F7' };
 
 // PinkyFinger.tsx, FINGER: stroke 36, curl 34, tip 46, offset 30. Drawn around (0, 0).
 const S = 36, CURL = 34, TIP = 46, OFF = 30, REACH = 150;
@@ -49,7 +49,7 @@ const FILES = [
   { name: 'adaptive-icon.png', size: 1024, scale: 1.75, bg: null },
   // Android 13 themed icon: one colour, the system tints it.
   { name: 'adaptive-icon-mono.png', size: 1024, scale: 1.75, bg: null, mono: true },
-  // Splash: the mark alone; app.json puts it on obsidian.
+  // Splash: the mark alone; app.json puts it on royal blue.
   { name: 'splash-icon.png', size: 1024, scale: 2.6, bg: null },
   // Android status bar: white on transparent only (the OS draws the alpha channel).
   { name: 'notification-icon.png', size: 96, scale: 0.26, bg: null, mono: true },

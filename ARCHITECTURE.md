@@ -322,7 +322,7 @@ as due times, so a restart loses nothing.
 - **Safe areas**: every screen is a `Screen` (`src/components/ui/Screen.tsx`) that pads with
   `useSafeAreaInsets`, so notches, the Dynamic Island, the home indicator and Android gesture or
   3-button navigation are handled in one place. The tab bar and sheets add the bottom inset themselves.
-- **System bars**: light status bar content; on Android the navigation bar is painted obsidian with
+- **System bars**: light status bar content; on Android the navigation bar is painted royal blue with
   light buttons (`expo-navigation-bar`), and the root background is set with `expo-system-ui` so
   there is no white flash behind the keyboard.
 - **Edge-swipe zones**: the lock's touch area is inset 32 px from both screen edges and only

@@ -54,7 +54,7 @@ export function LockedReveal({ person, reveal, hint }: Props) {
               <>
                 {/* Android's blur is costly and uneven across devices, so it gets a dense scrim instead. */}
                 {Platform.OS === 'ios' ? <BlurView intensity={70} tint="dark" style={StyleSheet.absoluteFill} /> : null}
-                <View style={[StyleSheet.absoluteFill, styles.scrim, Platform.OS !== 'ios' && { backgroundColor: 'rgba(10,10,12,0.78)' }]}>
+                <View style={[StyleSheet.absoluteFill, styles.scrim, Platform.OS !== 'ios' && { backgroundColor: 'rgba(0,18,58,0.78)' }]}>
                   <Feather name="lock" size={20} color={color.text} />
                 </View>
               </>
@@ -75,6 +75,6 @@ const styles = StyleSheet.create({
   grid: { flexDirection: 'row', gap: space.sm },
   tile: { flex: 1, aspectRatio: 3 / 4, borderRadius: radius.card, overflow: 'hidden', backgroundColor: color.surface },
   tileOpen: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: space.sm },
-  caption: { position: 'absolute', left: space.sm, right: space.sm, bottom: space.sm, backgroundColor: 'rgba(10,10,12,0.72)', borderRadius: radius.chip, paddingHorizontal: 6, paddingVertical: 3, overflow: 'hidden' },
-  scrim: { alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(10,10,12,0.35)' },
+  caption: { position: 'absolute', left: space.sm, right: space.sm, bottom: space.sm, backgroundColor: 'rgba(0,18,58,0.72)', borderRadius: radius.chip, paddingHorizontal: 6, paddingVertical: 3, overflow: 'hidden' },
+  scrim: { alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(0,18,58,0.35)' },
 });
