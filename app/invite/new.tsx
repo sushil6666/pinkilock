@@ -23,6 +23,7 @@ import { shown } from '@/lib/report';
 import { ErrorText } from '@/components/ui/ErrorText';
 import { PLACE_MAX, looksLikeContact } from '@/domain/profile';
 import { venueOf, venuePlace, venuesFor } from '@/domain/venues';
+import { suits, windowsLabel } from '@/domain/freeWindows';
 
 const REMOTE_PLACE = { video: 'Pinkilock video room', game: 'Voice chat in the app' } as const;
 
@@ -117,8 +118,12 @@ export default function NewInvite() {
             <Chip key={option.id} label={option.label} sub={option.sub} selected={option.id === dayId} onPress={() => { setDayId(option.id); setStartsAt(null); }} />
           ))}
         </View>
+        {person.freeWindows?.length ? <T v="caption" c={color.textDim}>{`${person.name} is usually free: ${windowsLabel(person.freeWindows)}.`}</T> : null}
         <View style={styles.wrap}>
-          {slots.map((t) => <Chip key={t} label={timeLabel(t)} selected={t === startsAt} onPress={() => setStartsAt(t)} />)}
+          {slots.map((t) => (
+            <Chip key={t} label={timeLabel(t)} sub={person.freeWindows?.length && suits(t, person.freeWindows) ? `${person.name} is usually free` : undefined}
+              selected={t === startsAt} onPress={() => setStartsAt(t)} />
+          ))}
         </View>
       </Section>
 

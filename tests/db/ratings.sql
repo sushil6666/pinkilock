@@ -43,3 +43,13 @@ select t.ok(t.fails(format('select suspended_at from profiles where id = %L', :'
 select t.ok((select name from profiles where id = :'v') = 'Ved', 'the card''s own columns still are');
 select t.ok((select count(*) from discover(20)) >= 1, 'discover still works on the rebuilt card');
 reset role;
+
+-- Free windows (market review), on the rebuilt card.
+set role authenticated;
+select t.as_user(:'u');
+select save_availability(array['wkd_evening', 'wke_afternoon', 'wkd_evening']);
+select t.ok((select free_windows from profile_cards where id = :'u') = array['wkd_evening', 'wke_afternoon'], 'my free windows are saved once each, in order');
+select t.as_user(:'v');
+select t.ok((select free_windows from profile_cards where id = :'u') = array['wkd_evening', 'wke_afternoon'], 'and show on my card');
+select t.ok(t.sqlstate($$select save_availability(array['3am on tuesdays'])$$) = 'PL083', 'only windows from the list (PL083)');
+reset role;

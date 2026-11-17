@@ -54,7 +54,7 @@ select t.ok((select string_agg(n.nspname || '.' || p.proname, ' ' order by n.nsp
     where n.nspname in ('public', 'private', 'analytics') and has_function_privilege('authenticated', p.oid, 'execute'))
   = 'private.blocked_pair private.shares_invite public.bail public.block_user public.check_in public.date_feedback public.decline_invite '
     'public.delete_my_account public.discover public.export_my_data public.file_privacy_request public.give_consents public.log_client_error public.log_event public.my_blocks public.my_checkin_code public.my_consents public.my_line_review public.my_moderation public.offer_pinky public.rate_date public.register_push_token public.report_user '
-    'public.save_profile public.send_invite public.unblock_user public.unregister_push_token',
+    'public.save_availability public.save_profile public.send_invite public.unblock_user public.unregister_push_token',
   'a signed-in user can call exactly these functions and no others');
 select t.ok(not exists (select 1 from pg_proc p join pg_namespace n on n.oid = p.pronamespace
     where n.nspname in ('public', 'private', 'analytics') and has_function_privilege('anon', p.oid, 'execute')),

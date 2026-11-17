@@ -73,6 +73,8 @@ export interface Backend {
   fileRequest(kind: PrivacyRequestKind, detail: string, actionId?: number): Promise<void>;
   /** What moderators did about my account, and why. */
   myModeration(): Promise<{ id: number; action: string; reason: string; at: number }[]>;
+  /** When I am usually free (market review). Any time when empty. */
+  saveAvailability(windows: string[]): Promise<Changes>;
   /** My own profile line, if a new one is waiting for review or was not accepted. Null when the card shows what I wrote. */
   myLineReview(): Promise<{ text: string; status: 'pending' | 'held' | 'rejected' } | null>;
   pass(profileId: string): Promise<Changes>;

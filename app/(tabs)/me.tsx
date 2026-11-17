@@ -27,11 +27,13 @@ import { shown } from '@/lib/report';
 import { quiet } from '@/lib/log';
 import { buildLabel } from '@/lib/build';
 import { diagnostics } from '@/lib/report';
+import { FREE_WINDOWS } from '@/domain/freeWindows';
 
 export default function Me() {
   const me = useStore((s) => s.me);
   const contact = useStore((s) => s.myContact);
   const updateMe = useStore((s) => s.updateMe);
+  const saveAvailability = useStore((s) => s.saveAvailability);
   const demoReset = useStore((s) => s.demoReset);
   const [error, setError] = useState('');
   const [resetting, setResetting] = useState(false);
@@ -179,6 +181,15 @@ export default function Me() {
         </View>
       ))}
       {error ? <ErrorText text={error} style={{ marginTop: space.sm }} /> : null}
+
+      <T v="label" c={color.textDim} style={styles.section}>When I am usually free  /  tap to change</T>
+      <View style={styles.wrap}>
+        {FREE_WINDOWS.map((w) => {
+          const on = (me.freeWindows ?? []).includes(w.id);
+          return <Chip key={w.id} label={w.label} selected={on} onPress={() => saveAvailability(on ? (me.freeWindows ?? []).filter((x) => x !== w.id) : [...(me.freeWindows ?? []), w.id]).catch((e) => setError(shown(e, '/(tabs)/me')))} />;
+        })}
+      </View>
+      <T v="caption" c={color.textDim} style={{ marginTop: space.sm }}>People asking you see these times first. None picked means any time.</T>
 
       <T v="label" c={color.textDim} style={styles.section}>Unlocks when a promise is kept</T>
       <View style={styles.panel}>

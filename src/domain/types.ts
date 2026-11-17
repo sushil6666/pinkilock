@@ -36,6 +36,8 @@ export interface Profile {
   distanceKm: number;
   /** Median minutes this person takes to answer an ask (from the analytics worker); absent when unknown. */
   answerMinutes?: number | null;
+  /** When this person is usually free (src/domain/freeWindows.ts); empty means any time. */
+  freeWindows?: string[];
   /** How many extra photos exist. The photos themselves live behind the reveal. */
   photoCount: number;
 }
