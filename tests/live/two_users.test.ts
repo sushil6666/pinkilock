@@ -81,12 +81,17 @@ test('onboard: two people sign in anonymously and see each other', async () => {
   assert.deepEqual(snapA.myContact, { kind: 'Instagram', handle: '@e2e_asha' });
   assert.equal(snapA.me!.trustScore, 100, 'a new person starts at 100');
 
-  // B onboards while A is already in the app: A must hear about B without a restart.
+  // B onboards while A is already in the app. New people are fetched, not pushed (no one can read
+  // the whole user base): A finds B the next time Discover asks the server, with no restart.
+  // (Assumes fewer than 20 other people in the test city, as on a local stack.)
   const snapB = await b.backend.completeOnboarding(profile(b.name, '@e2e_bela'));
   b.id = snapB.me!.id;
   assert.notEqual(a.id, b.id);
   assert.ok(snapB.profiles.some((p) => p.id === a.id), 'B sees A in Discover');
-  await a.hears('B joining', (e) => !!e.changes.profiles?.some((p) => p.id === b.id));
+  const more = await a.backend.moreProfiles();
+  assert.ok(more.profiles?.some((p) => p.id === b.id), 'A finds B on the next Discover page');
+  const raw0 = createClient(URL!, KEY!, { auth: { storage: a.storage, persistSession: true, autoRefreshToken: false } });
+  assert.equal((await raw0.from('profiles').select('id').eq('id', b.id)).data?.length ?? 0, 0, 'but A cannot read B from the table: they share no invite yet');
 
   // The session survives a restart: a fresh backend on the same storage is the same person.
   const again = createSupabaseBackend(URL!, KEY!, a.storage);

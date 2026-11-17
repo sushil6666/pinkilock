@@ -55,6 +55,11 @@ export interface Backend {
   completeOnboarding(input: OnboardingInput): Promise<Snapshot>;
   updateMe(patch: Partial<OnboardingInput>): Promise<Changes>;
 
+  /**
+   * More people for Discover. Live, they come from the server's discover() (20 at a time, 200
+   * different people a day), because no one can read the whole user base; the mock has them all.
+   */
+  moreProfiles(): Promise<Changes>;
   pass(profileId: string): Promise<Changes>;
   restorePasses(): Promise<Changes>;
 

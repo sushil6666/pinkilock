@@ -100,9 +100,12 @@ try {
   // A was already open when B joined: B has to appear without a reload.
   const ids = sql(`select string_agg(id::text, ',' order by name) from public.profiles where name in ('${A.name}', '${B.name}')`).split(',');
   const [aId, bId] = ids;
-  // No reload here: A's Discover was empty and must fill in by itself.
+  // No reload: A's Discover asks the server again when it is opened (and every minute). Switching
+  // tabs and back is opening it.
+  await A.page.getByLabel('Asks', { exact: false }).first().click();
+  await A.page.getByLabel('Discover', { exact: false }).first().click();
   await A.page.getByText(`${B.name}, 24`).waitFor({ timeout: 15000 });
-  ok('B appeared in A\'s Discover live, after A had booted');
+  ok('B appeared in A\'s Discover when A opened it again, with no reload');
   await shot(A, 'discover');
   await btn(A.page, 'Vibe check').click();
   await A.page.getByText('To what').waitFor();

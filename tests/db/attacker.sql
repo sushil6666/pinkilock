@@ -52,8 +52,8 @@ select t.ok(not exists (select 1 from information_schema.role_table_grants where
 select t.ok((select string_agg(n.nspname || '.' || p.proname, ' ' order by n.nspname, p.proname)
     from pg_proc p join pg_namespace n on n.oid = p.pronamespace
     where n.nspname in ('public', 'private', 'analytics') and has_function_privilege('authenticated', p.oid, 'execute'))
-  = 'private.blocked_pair public.bail public.block_user public.check_in public.decline_invite public.delete_my_account '
-    'public.export_my_data public.log_client_error public.log_event public.my_blocks public.offer_pinky public.register_push_token public.report_user '
+  = 'private.blocked_pair private.shares_invite public.bail public.block_user public.check_in public.decline_invite public.delete_my_account '
+    'public.discover public.export_my_data public.log_client_error public.log_event public.my_blocks public.offer_pinky public.register_push_token public.report_user '
     'public.save_profile public.send_invite public.unblock_user public.unregister_push_token',
   'a signed-in user can call exactly these functions and no others');
 select t.ok(not exists (select 1 from pg_proc p join pg_namespace n on n.oid = p.pronamespace
@@ -198,19 +198,39 @@ update auth.users set is_anonymous = false where id = :'crowd1';
 set role authenticated;
 select t.as_user(:'x');
 
--- G5: the whole user base in one query.
-select t.gap((select count(*) from profile_cards) <= 200, 'G5', 'X reads every card there is in one query');
+-- G5 closed: no account reads the whole user base. The tables return only people X shares an
+-- invite with; discover() gives 20 a call and 200 different cards a day. X tries to page through
+-- the 220-person crowd by passing on every card it is shown.
+select t.ok((select count(*) from profiles) <= 3 and (select count(*) from trust_scores) <= 3,
+  'G5 closed: X reads only people X shares an invite with, by any table');
+create temp table x_seen (id uuid primary key);
+grant all on x_seen to authenticated;
+do $$
+declare
+  n int;
+begin
+  for round in 1..15 loop
+    insert into x_seen select id from discover(50) on conflict do nothing;
+    get diagnostics n = row_count;
+    begin
+      insert into passes (profile_id, passed_id) select auth.uid(), id from x_seen on conflict do nothing;
+    exception when others then null; -- the pass limit stops this first; that is fine too
+    end;
+  end loop;
+end $$;
+select t.ok((select count(*) from x_seen) between 20 and 200, 'G5 closed: paging through discover() reaches at most 200 people a day (got ' || (select count(*) from x_seen) || ')');
+select t.ok((select count(*) from discover(50)) <= 20, 'discover() returns at most 20 cards a call');
 
 -- G6 closed: daily limits. A crowd member sends the asks, so that X's own count is left alone.
 select t.as_user('00000000-0000-0000-0001-000000000002');
 select t.ok((select count(*) filter (where not t.fails(format(
     $$select decline_invite((send_invite(%L, 'boba_run', now() + interval '2 hours', '', '')).id)$$, id))) = 10
-  from (select id from profiles where name = 'Crowd' and id <> '00000000-0000-0000-0001-000000000002' order by id limit 12) c),
+  from (select ('00000000-0000-0000-0001-' || lpad(n::text, 12, '0'))::uuid as id from generate_series(3, 14) n) c),
   'G6 closed: no one can send more than 10 asks in a day');
 select t.as_user(:'x');
 select t.ok(t.sqlstate($$select log_event('app_open', jsonb_build_object('junk', repeat('x', 100000)))$$) = 'PL041',
   'G6 closed: the event log takes at most 1 kB from the app in one call');
-select t.ok(t.sqlstate(format($$insert into passes (profile_id, passed_id) select %L, id from profiles where name = 'Crowd'$$, :'x')) = 'PL028',
+select t.ok(t.sqlstate(format($$insert into passes (profile_id, passed_id) select %L, ('00000000-0000-0000-0001-' || lpad(n::text, 12, '0'))::uuid from generate_series(1, 220) n on conflict do nothing$$, :'x')) = 'PL028',
   'G6 closed: no one can pass on more than 200 people in a day');
 
 -- G7: check-in is a button. X and Y "keep" two promises without proving they met.

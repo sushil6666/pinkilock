@@ -41,14 +41,14 @@ select t.ok((select count(*) from ideas) = 38 and exists (select 1 from ideas wh
 
 -- A: sees every card, only their own private row, cannot write invites or read events directly.
 select t.as_user(:'a');
-select t.ok((select count(*) from profile_cards) = 3, 'A reads all three cards');
+select t.ok((select count(*) from profile_cards) = 1, 'A reads only their own card: nobody shares an invite with A yet');
+select t.ok((select count(*) from discover()) = 2, 'A finds the other two through discover()');
 select t.ok((select count(*) from profile_private) = 1, 'A reads only their own private row');
 select t.ok(t.fails($$insert into invites (from_id, to_id, idea_id, starts_at, minutes, expires_at)
   values ('00000000-0000-0000-0000-00000000000a', '00000000-0000-0000-0000-00000000000b', 'boba_run', now() + interval '1 hour', 25, now() + interval '1 hour')$$),
   'A cannot insert an invite directly');
 select t.ok(t.fails('select count(*) from events'), 'A cannot read the event log');
-select t.ok(t.fails($$update profiles set name = 'Hacked' where id = '00000000-0000-0000-0000-00000000000b' returning 1/0$$) is not null
-  and (select name from profiles where id = :'b') = 'Bela', 'A cannot edit B''s profile');
+select t.ok(t.fails($$update profiles set name = 'Hacked' where id = '00000000-0000-0000-0000-00000000000b'$$), 'A cannot edit B''s profile');
 select t.ok(t.fails('select sweep_invites()'), 'A cannot run the sweep');
 select log_event('app_open');
 

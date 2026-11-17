@@ -3,7 +3,8 @@
  * specific they said they are up for.
  */
 import { Feather } from '@expo/vector-icons';
-import { Redirect, router } from 'expo-router';
+import { Redirect, router, useFocusEffect } from 'expo-router';
+import { useCallback, useEffect } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
 import { Portrait } from '@/components/Portrait';
@@ -15,6 +16,7 @@ import { Screen } from '@/components/ui/Screen';
 import { T } from '@/components/ui/T';
 import { ideaOf } from '@/domain/ideas';
 import { isLive, otherId } from '@/domain/invites';
+import { quiet } from '@/lib/log';
 import { useStore } from '@/state/store';
 import { color, radius, space } from '@/theme/tokens';
 
@@ -25,11 +27,24 @@ export default function Discover() {
   const passedIds = useStore((s) => s.passedIds);
   const pass = useStore((s) => s.pass);
   const restore = useStore((s) => s.restorePasses);
+  const refill = useStore((s) => s.refill);
+
+  // New people are fetched, not pushed: on opening Discover, then every minute while it is open.
+  useFocusEffect(useCallback(() => {
+    refill().catch(quiet('discover.refill'));
+    const timer = setInterval(() => refill().catch(quiet('discover.refill')), 60_000);
+    return () => clearInterval(timer);
+  }, [refill]));
+
+  const busyWith = new Set(me ? invites.filter(isLive).map((i) => otherId(i, me.id)) : []);
+  const queue = profiles.filter((p) => !passedIds.includes(p.id) && !busyWith.has(p.id));
+  // Running low: ask for the next page before the last card.
+  const low = queue.length < 3;
+  useEffect(() => {
+    if (low && me) refill().catch(quiet('discover.refill'));
+  }, [low, me, refill]);
 
   if (!me) return <Redirect href="/onboarding" />;
-
-  const busyWith = new Set(invites.filter(isLive).map((i) => otherId(i, me.id)));
-  const queue = profiles.filter((p) => !passedIds.includes(p.id) && !busyWith.has(p.id));
   const person = queue[0];
 
   if (!person) {

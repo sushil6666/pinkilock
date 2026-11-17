@@ -299,6 +299,11 @@ starting, and run `npm run test:app:local` at the end.
 **Done when:** the G5 check passes (one account cannot read more than 200 cards in a day by any
 route), and the app tests pass.
 
+**Status, 2026-11-17: built.** G5 is closed and a permanent attacker check pages through
+`discover()` by passing on every card (it reaches at most 200). The live test that waited for a new
+person to arrive over Realtime now fetches the next page instead. Known limit: the live tests
+assume fewer than 20 other people in the test city.
+
 ### WP4. Check-in that proves two people met (G7, G8)
 
 - When the check-in window opens, each person's phone can fetch **their own** 4-digit code for that

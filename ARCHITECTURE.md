@@ -147,7 +147,7 @@ Full DDL is `supabase/migrations`. Tables:
 
 | Table | What it holds | Who can touch it |
 | --- | --- | --- |
-| `profiles` | The public card: name, age (18+ check), area, tagline, vibes, `idea_ids` | Read: any signed-in user. **No direct writes**: only through `save_profile` |
+| `profiles` | The public card: name, age (18+ check), area, tagline, vibes, `idea_ids` | Read: me, and people I share an invite with (any status, never across a block); everyone else only through `discover()`. **No direct writes**: only through `save_profile` |
 | `profile_private` | Contact handle and extra photos | Read: you, and anyone with a `kept` invite with you. **No direct writes**: the contact through `save_profile`, photos by the server only |
 | `ideas` | The micro-date catalogue | Read only |
 | `vibes` | The profile tag catalogue (the same list as `VIBE_GROUPS` in `src/domain/ideas.ts`) | Read only |
@@ -179,6 +179,14 @@ pronouns, and in an ask's note and place. `src/domain/profile.ts` has the same r
 the app and the mock, and one table of lines is run through both copies. The check stops the plain
 cases only: a made-up code still gets through until lines are reviewed before anyone sees them
 (`docs/build-plan.md`, WP1).
+
+**Discover is a function, not a table read.** `profiles` and `trust_scores` return only my own row
+and people I share an invite with (`private.shares_invite`). Everyone else comes from
+`discover(limit)`: at most 20 a call, same city, not passed, blocked or live with me, linked while
+the gate is on, in an order that is fixed for the day and different for every person. An account
+reaches at most 200 different people a day (`private.discover_seen`). New people are therefore
+fetched, not pushed: the app asks again when Discover opens, every minute while it is open, and
+when fewer than three cards are left (`backend.moreProfiles`).
 
 **Limits and the link gate.** `send_invite` refuses an 11th ask in a day and a second ask to
 someone within 7 days of them passing; a trigger on `passes` counts passes (200 a day) in
