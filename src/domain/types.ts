@@ -45,7 +45,8 @@ export interface Reveal {
   photos: { caption: string; palette: [string, string]; glyph: string }[];
 }
 
-export type InviteStatus = 'sent' | 'half_locked' | 'locked' | 'kept' | 'flaked' | 'declined' | 'expired';
+/** `ended`: closed by a block or an account deletion. Nobody's flake. */
+export type InviteStatus = 'sent' | 'half_locked' | 'locked' | 'kept' | 'flaked' | 'declined' | 'expired' | 'ended';
 
 export interface Invite {
   id: string;
@@ -91,3 +92,31 @@ export interface MyContact {
   kind: ContactKind;
   handle: string;
 }
+
+/** Someone I blocked, for the unblock list. Who blocked me is never known to the app. */
+export interface BlockedPerson {
+  profileId: string;
+  name: string;
+  blockedAt: number;
+}
+
+export type ReportReason = 'fake' | 'harassment' | 'inappropriate' | 'underage' | 'unsafe' | 'other';
+
+export interface NewReport {
+  profileId: string;
+  reason: ReportReason;
+  detail: string;
+  /** The invite it is about, if any. The server drops it unless the two of you share it. */
+  inviteId?: string;
+}
+
+/** How this person signs in. Anonymous until a phone number is linked; the id never changes. */
+export interface Account {
+  phone: string | null;
+  /** Whether the backend can send sign-in codes at all (an SMS provider is configured). */
+  phoneAvailable: boolean;
+  /** Mock only: the one code it accepts, so the screen can say so. */
+  mockCode?: string;
+}
+
+export type PhoneMode = 'link' | 'sign_in';

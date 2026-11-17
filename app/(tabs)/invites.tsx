@@ -25,7 +25,7 @@ export default function Invites() {
 
   const mine = (i: Invite) => (side === 'in' ? i.toId === meId : i.fromId === meId);
   const open = invites.filter((i) => mine(i) && isOpen(i)).sort((a, b) => a.expiresAt - b.expiresAt);
-  const closed = invites.filter((i) => mine(i) && (i.status === 'declined' || i.status === 'expired')).sort((a, b) => (b.resolvedAt ?? 0) - (a.resolvedAt ?? 0));
+  const closed = invites.filter((i) => mine(i) && (i.status === 'declined' || i.status === 'expired' || i.status === 'ended')).sort((a, b) => (b.resolvedAt ?? 0) - (a.resolvedAt ?? 0));
   const counts = { in: invites.filter((i) => i.toId === meId && isOpen(i)).length, out: invites.filter((i) => i.fromId === meId && isOpen(i)).length };
 
   const row = (i: Invite, k: number) => (

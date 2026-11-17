@@ -71,7 +71,7 @@ export default function LockScreen() {
   const name = other.name;
   const mode = entry.role === 'seal' ? 'seal' : 'first';
   const locked = invite.status === 'locked';
-  const closed = invite.status === 'declined' || invite.status === 'expired';
+  const closed = invite.status === 'declined' || invite.status === 'expired' || invite.status === 'ended';
   const sealed = phase === 'sealed';
 
   const prompt =

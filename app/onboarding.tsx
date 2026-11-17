@@ -90,6 +90,7 @@ export default function Onboarding() {
                 </View>
               ))}
             </View>
+            <Button kind="quiet" icon="phone" label="I already have an account" onPress={() => router.push({ pathname: '/account/phone', params: { mode: 'sign_in' } })} />
           </View>
         )}
 

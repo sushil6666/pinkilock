@@ -1,15 +1,21 @@
-/** Me: my card as others see it, my trust score and how it is worked out, and the prototype tools. */
+/**
+ * Me: my card as others see it, my trust score and how it is worked out, my account (phone,
+ * blocked people, export, delete) and the prototype tools.
+ */
 import { Feather } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { Platform, Share, StyleSheet, View } from 'react-native';
 import { Portrait } from '@/components/Portrait';
 import { TrustBadge } from '@/components/TrustBadge';
+import { Button } from '@/components/ui/Button';
 import { Chip } from '@/components/ui/Chip';
 import { HoldButton } from '@/components/ui/HoldButton';
 import { Screen } from '@/components/ui/Screen';
+import { Sheet } from '@/components/ui/Sheet';
 import { T } from '@/components/ui/T';
 import { IDEAS } from '@/domain/ideas';
+import { maskPhone } from '@/domain/phone';
 import { trustScore } from '@/domain/trust';
 import { pushStatus, watchPush } from '@/lib/push';
 import { backend } from '@/services';
@@ -24,8 +30,47 @@ export default function Me() {
   const [error, setError] = useState('');
   const [resetting, setResetting] = useState(false);
   const [push, setPush] = useState(pushStatus);
+  const account = useStore((s) => s.account);
+  const loadAccount = useStore((s) => s.loadAccount);
+  const deleteAccount = useStore((s) => s.deleteAccount);
+  const signOut = useStore((s) => s.signOut);
+  const [sheet, setSheet] = useState<'delete' | 'sign_out' | null>(null);
+  const [busy, setBusy] = useState('');
+  const [accountError, setAccountError] = useState('');
   useEffect(() => watchPush(setPush), []);
+  useEffect(() => {
+    if (me) loadAccount().catch(() => {});
+  }, [me?.id, loadAccount]);
   if (!me) return null;
+
+  const run = async (what: string, work: () => Promise<void>) => {
+    setBusy(what);
+    setAccountError('');
+    try {
+      await work();
+    } catch (e) {
+      setAccountError(e instanceof Error ? e.message : 'That did not go through. Try again.');
+    }
+    setBusy('');
+  };
+
+  const exportData = () => run('export', async () => {
+    const json = await backend.exportMyData();
+    if (Platform.OS === 'web') {
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(new Blob([json], { type: 'application/json' }));
+      a.download = 'pinkilock-my-data.json';
+      a.click();
+    } else {
+      await Share.share({ title: 'My Pinkilock data', message: json });
+    }
+  });
+
+  const leave = (what: 'delete' | 'sign_out') => run(what, async () => {
+    await (what === 'delete' ? deleteAccount() : signOut());
+    setSheet(null);
+    router.replace('/onboarding');
+  });
 
   const toggleIdea = async (id: string) => {
     const has = me.ideaIds.includes(id);
@@ -84,6 +129,24 @@ export default function Me() {
         </View>
       </View>
 
+      <T v="label" c={color.textDim} style={styles.section}>Account</T>
+      <View style={styles.panel}>
+        <Feather name="phone" size={18} color={account?.phone ? color.volt : color.textDim} />
+        <View style={{ flex: 1 }}>
+          <T v="bodyBold">{account?.phone ? maskPhone(account.phone) : 'No phone number yet'}</T>
+          <T v="caption" c={color.textDim}>{account?.phone ? 'You can sign in with it on any phone.' : 'Add one to keep this account if you change phones. Without it, losing this phone loses your record.'}</T>
+        </View>
+      </View>
+      <View style={{ gap: space.sm, marginTop: space.sm }}>
+        {account?.phone
+          ? <Button kind="ghost" icon="log-out" label="Sign out" onPress={() => setSheet('sign_out')} />
+          : <Button kind="ghost" icon="phone" label="Add your phone number" onPress={() => router.push({ pathname: '/account/phone', params: { mode: 'link' } })} />}
+        <Button kind="ghost" icon="slash" label="Blocked people" onPress={() => router.push('/account/blocked')} />
+        <Button kind="ghost" icon="download" label="Download my data" busy={busy === 'export'} onPress={exportData} />
+        <Button kind="danger" icon="trash-2" label="Delete my account" onPress={() => setSheet('delete')} />
+      </View>
+      {accountError && !sheet ? <T v="caption" c={color.flare} style={{ marginTop: space.sm }}>{accountError}</T> : null}
+
       <T v="label" c={color.textDim} style={styles.section}>Data</T>
       <View style={styles.panel}>
         <Feather name={live ? 'cloud' : 'smartphone'} size={18} color={live ? color.volt : color.textDim} />
@@ -109,6 +172,30 @@ export default function Me() {
           <HoldButton tone="flare" label="Hold to reset the demo" onComplete={reset} busy={resetting} />
         </>
       )}
+
+      <Sheet
+        visible={sheet === 'delete'}
+        onClose={() => setSheet(null)}
+        eyebrow="Delete account"
+        title="Gone for good?"
+        body="Your card, contact, plans and record are deleted, and any plan you have open ends without counting against anyone. This cannot be undone. Download your data first if you want a copy."
+      >
+        {accountError ? <T v="caption" c={color.flare}>{accountError}</T> : null}
+        <HoldButton tone="flare" label="Hold to delete everything" busy={busy === 'delete'} onComplete={() => leave('delete')} />
+        <Button kind="ghost" label="Keep my account" onPress={() => setSheet(null)} />
+      </Sheet>
+
+      <Sheet
+        visible={sheet === 'sign_out'}
+        onClose={() => setSheet(null)}
+        eyebrow="Sign out"
+        title="Sign out of this phone?"
+        body={`Your account stays. Sign back in any time with ${account?.phone ? maskPhone(account.phone) : 'your number'}. This phone stops getting your notifications.`}
+      >
+        {accountError ? <T v="caption" c={color.flare}>{accountError}</T> : null}
+        <Button kind="danger" label="Sign out" busy={busy === 'sign_out'} onPress={() => leave('sign_out')} />
+        <Button kind="ghost" label="Stay signed in" onPress={() => setSheet(null)} />
+      </Sheet>
     </Screen>
   );
 }

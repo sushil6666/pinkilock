@@ -1,10 +1,10 @@
 /**
  * The live backend: Supabase Auth, Postgres behind RLS, and Realtime.
  *
- * Every promise write is one rpc() to a function in supabase/schema.sql; every read goes through
- * Row-Level Security, so this file contains no access rules of its own. Sign-in is anonymous for
- * the MVP (enable "Anonymous sign-ins" in Supabase Auth): a real auth.uid() with zero friction,
- * which can later be linked to a phone number without changing a row.
+ * Every promise write is one rpc() to a function in supabase/migrations; every read goes through
+ * Row-Level Security, so this file contains no access rules of its own: a block, for instance,
+ * simply makes rows stop coming back. Sign-in starts anonymous (a real auth.uid() with zero
+ * friction); linking a phone number later keeps the same user id, so no row changes.
  *
  * Nothing here imports React Native: the session store is passed in (src/services/index.ts gives
  * it AsyncStorage), so tests/live can drive this exact file from Node as two separate people.
@@ -12,7 +12,7 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import { ideaOf } from '../../domain/ideas';
 import { CHECK_IN_CLOSES_AFTER, otherId } from '../../domain/invites';
-import type { Invite, MyContact, Profile, Reveal } from '../../domain/types';
+import type { Account, BlockedPerson, Invite, MyContact, PhoneMode, Profile, Reveal } from '../../domain/types';
 import type { Backend, BackendEvent, Changes, Notice, Snapshot } from '../backend';
 
 type Row = Record<string, any>;
@@ -43,6 +43,23 @@ export interface SessionStorage {
   setItem(key: string, value: string): Promise<void>;
   removeItem(key: string): Promise<void>;
 }
+
+/** GoTrue's words for the phone cases, in the app's voice. */
+function phoneError(message: string): Error {
+  const m = message.toLowerCase();
+  if (m.includes('provider') || ((m.includes('sms') || m.includes('phone')) && m.includes('disabled')))
+    return new Error('Phone sign-in is not switched on yet.');
+  if (m.includes('already') && (m.includes('registered') || m.includes('exists')))
+    return new Error('That number is already on another account. Sign in with it instead.');
+  if (m.includes('signups not allowed') || m.includes('user not found'))
+    return new Error('No account uses that number yet. Set one up first, then add the number in Me.');
+  if (m.includes('expired') || (m.includes('invalid') && (m.includes('otp') || m.includes('token'))))
+    return new Error('That code did not match or has expired. Check it, or send a new one.');
+  if (m.includes('rate') || m.includes('seconds')) return new Error('Wait a moment before asking for another code.');
+  return new Error(message);
+}
+
+const emptySnapshot = (): Snapshot => ({ me: null, myContact: null, profiles: [], invites: [], passedIds: [] });
 
 export function createSupabaseBackend(url: string, anonKey: string, storage: SessionStorage): Backend {
   const db: SupabaseClient = createClient(url, anonKey, {
@@ -116,6 +133,58 @@ export function createSupabaseBackend(url: string, anonKey: string, storage: Ses
     ]);
     if (cards.data) announceCards(cards.data.map(toProfile));
     for (const row of invites.data ?? []) await takeInvite(toInvite(row));
+    // What RLS no longer returns is gone for me: a block either way, or a deleted account.
+    if (invites.data) {
+      const seen = new Set(invites.data.map((r: Row) => r.id as string));
+      const goneInvites = [...known.keys()].filter((id) => !seen.has(id));
+      let goneProfiles: string[] = [];
+      if (cards.data) {
+        const listed = new Set(cards.data.map((r: Row) => r.id as string));
+        const missing = [...names.keys()].filter((id) => id !== meId && !listed.has(id));
+        // The card list is capped, so ask about the missing ones before calling them gone.
+        if (missing.length) {
+          const still = await db.from('profile_cards').select('id').in('id', missing);
+          if (still.data) {
+            const there = new Set(still.data.map((r: Row) => r.id as string));
+            goneProfiles = missing.filter((id) => !there.has(id));
+          }
+        }
+      }
+      if (goneInvites.length || goneProfiles.length) forget(goneProfiles, goneInvites);
+    }
+  }
+
+  /** Drop people and invites I can no longer see, and tell the store. */
+  function forget(profiles: string[], invites: string[]): Changes {
+    const dropInvites = new Set(invites);
+    for (const [id, inv] of known) if (profiles.includes(otherId(inv, meId))) dropInvites.add(id);
+    dropInvites.forEach((id) => known.delete(id));
+    profiles.forEach((id) => names.delete(id));
+    const changes: Changes = { removed: { profiles, invites: [...dropInvites] } };
+    listeners.forEach((l) => l({ changes }));
+    return changes;
+  }
+
+  /** Back to a device with nobody signed in (after deleting the account or signing out). */
+  async function reset() {
+    await db.removeAllChannels();
+    live = false;
+    known.clear();
+    names.clear();
+    meId = '';
+  }
+
+  let phoneAvailable: boolean | null = null;
+  async function phoneSignInAvailable(): Promise<boolean> {
+    if (phoneAvailable !== null) return phoneAvailable;
+    try {
+      const res = await fetch(`${url.replace(/\/$/, '')}/auth/v1/settings`, { headers: { apikey: anonKey } });
+      const body = (await res.json()) as { external?: { phone?: boolean } };
+      phoneAvailable = !!body.external?.phone;
+    } catch {
+      return false;
+    }
+    return phoneAvailable;
   }
 
   function listen() {
@@ -125,6 +194,8 @@ export function createSupabaseBackend(url: string, anonKey: string, storage: Ses
     db.channel('pinkilock')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'invites' }, (payload) => {
         if (payload.eventType !== 'DELETE') takeInvite(toInvite(payload.new)).catch(() => {});
+        // Deletes carry only the id (and reach every subscriber): an account that went away.
+        else if ((payload.old as Row)?.id && known.has((payload.old as Row).id)) forget([], [(payload.old as Row).id]);
       })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'trust_scores' }, (payload) => {
         const id = (payload.new as Row)?.profile_id;
@@ -132,6 +203,11 @@ export function createSupabaseBackend(url: string, anonKey: string, storage: Ses
       })
       // People joining (or editing their card) while I am looking at Discover.
       .on('postgres_changes', { event: '*', schema: 'public', table: 'profiles' }, (payload) => {
+        if (payload.eventType === 'DELETE') {
+          const gone = (payload.old as Row)?.id;
+          if (gone && names.has(gone)) forget([gone], []);
+          return;
+        }
         const id = (payload.new as Row)?.id;
         if (id) refreshCards([id]);
       })
@@ -186,7 +262,11 @@ export function createSupabaseBackend(url: string, anonKey: string, storage: Ses
 
   async function rpcInvite(fn: string, args: Row): Promise<Changes> {
     await uid();
-    const invite = toInvite(check(await db.rpc(fn, args)) as Row);
+    const res = await db.rpc(fn, args);
+    // Gone or unavailable usually means a block happened that this phone has not heard about
+    // (a block is never announced). Re-read, so the stale card and invite drop away.
+    if (res.error && /gone|not available|not open any more|Nothing to check in/.test(res.error.message)) resync().catch(() => {});
+    const invite = toInvite(check(res) as Row);
     known.set(invite.id, invite);
     return { invites: [invite] };
   }
@@ -268,6 +348,101 @@ export function createSupabaseBackend(url: string, anonKey: string, storage: Ses
     async unregisterPushToken(token) {
       await uid();
       check(await db.rpc('unregister_push_token', { p_token: token }));
+    },
+
+    async block(profileId) {
+      await uid();
+      check(await db.rpc('block_user', { p_profile: profileId }));
+      return forget([profileId], []);
+    },
+
+    async unblock(profileId) {
+      await uid();
+      check(await db.rpc('unblock_user', { p_profile: profileId }));
+      // Unless they blocked me too, they come back, with whatever we had before.
+      const [card, invites] = await Promise.all([
+        db.from('profile_cards').select('*').eq('id', profileId),
+        db.from('invites').select('*').or(`from_id.eq.${profileId},to_id.eq.${profileId}`),
+      ]);
+      const profiles = check(card).map(toProfile);
+      profiles.forEach((p) => names.set(p.id, p.name));
+      const list = check(invites).map(toInvite);
+      list.forEach((i) => known.set(i.id, i));
+      return { profiles, invites: list };
+    },
+
+    async blockedPeople(): Promise<BlockedPerson[]> {
+      await uid();
+      const rows = check(await db.rpc('my_blocks')) as Row[];
+      return rows.map((r) => ({ profileId: r.profile_id, name: r.name, blockedAt: ms(r.blocked_at)! }));
+    },
+
+    async report(input) {
+      await uid();
+      check(await db.rpc('report_user', { p_profile: input.profileId, p_reason: input.reason, p_detail: input.detail, p_invite: input.inviteId ?? null }));
+      return forget([input.profileId], []);
+    },
+
+    async exportMyData() {
+      await uid();
+      return JSON.stringify(check(await db.rpc('export_my_data')), null, 2);
+    },
+
+    async deleteAccount() {
+      await uid();
+      check(await db.rpc('delete_my_account'));
+      // The user no longer exists, so only this phone's copy of the session is left to drop.
+      await db.auth.signOut({ scope: 'local' }).catch(() => {});
+      await reset();
+      return emptySnapshot();
+    },
+
+    async account(): Promise<Account> {
+      const [{ data }, available] = await Promise.all([db.auth.getSession(), phoneSignInAvailable()]);
+      const phone = data.session?.user.phone;
+      return { phone: phone ? `+${phone.replace(/^\+/, '')}` : null, phoneAvailable: available };
+    },
+
+    async sendPhoneCode(phone, mode) {
+      if (mode === 'link') {
+        await uid();
+        // On an anonymous user this sends a code to the new number; verifying it turns the same
+        // user into a phone user (type phone_change), so the id and the whole history stay.
+        const { error } = await db.auth.updateUser({ phone });
+        if (error) throw phoneError(error.message);
+      } else {
+        // Getting back into an existing account. No new accounts are made this way: a new person
+        // onboards first and adds a number in Me.
+        const { error } = await db.auth.signInWithOtp({ phone, options: { shouldCreateUser: false } });
+        if (error) throw phoneError(error.message);
+      }
+    },
+
+    async verifyPhoneCode(phone, code, mode) {
+      if (mode === 'link') {
+        await uid();
+        // A project with phone confirmations off links the number at once, with no code to check.
+        const { data: now } = await db.auth.getUser();
+        if (now.user?.phone && `+${now.user.phone.replace(/^\+/, '')}` === phone) return snapshot();
+        const { error } = await db.auth.verifyOtp({ phone, token: code, type: 'phone_change' });
+        if (error) throw phoneError(error.message);
+        return snapshot();
+      }
+      // Whoever was on this phone before (an anonymous user who never finished onboarding) is
+      // simply left; the account that owns the number takes over.
+      const { data, error } = await db.auth.verifyOtp({ phone, token: code, type: 'sms' });
+      if (error || !data.user) throw phoneError(error?.message ?? 'That code did not match.');
+      await reset();
+      meId = data.user.id;
+      return snapshot();
+    },
+
+    async signOut() {
+      const { data } = await db.auth.getSession();
+      if (!data.session?.user.phone) throw new Error('Add a phone number first, or you could not get back in.');
+      await db.auth.signOut({ scope: 'local' });
+      await reset();
+      return emptySnapshot();
     },
 
     async demoReset() {

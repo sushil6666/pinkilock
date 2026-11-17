@@ -24,6 +24,15 @@ interface Props {
   inTabs?: boolean;
 }
 
+/**
+ * Back to Discover with nothing stacked on top: after a block or a report the screens behind
+ * may be about the person who is now gone.
+ */
+export function backToDiscover() {
+  if (router.canDismiss()) router.dismissAll();
+  router.navigate('/(tabs)');
+}
+
 export function goBack() {
   if (router.canGoBack()) router.back();
   else router.replace('/(tabs)');
