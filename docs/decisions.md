@@ -61,6 +61,9 @@ first table with its date.
 | D043 | 2026-11-17 | The Expo SDK upgrade that would clear the 16 advisories is not done in this round | It touches every native module and needs device testing that cannot be done here | Claude | Build plan WP5 status | Open |
 | D044 | 2026-11-17 | Round two is revealed only when both said yes; a "no" is never shown, and the answers never affect a Trust Score | Honest answers need to be private; a visible "no" would make people answer politely instead | Claude | `date_feedback` | In force once merged |
 | D045 | 2026-11-17 | Saying "I felt unsafe" records the answer and opens the report screen; it does not file a report by itself | A report blocks the other person; that should be the person's own choice, made on the report screen | Claude | `src/components/DateFeedback.tsx` | In force once merged |
+| D046 | 2026-11-17 | India and Mumbai are the only open country and city; others are listed but closed | O06's recommendation, accepted under D032; Discover is per city and the venue list is Mumbai's | Owner (via D032) | `countries`, `cities` | In force once merged |
+| D047 | 2026-11-17 | The network's country is checked only for a first profile; a set-up account keeps working while travelling | Locking people out abroad would be worse than the risk it removes | Claude | `save_profile` | In force once merged |
+| D048 | 2026-11-17 | Draft terms and privacy text ship in the app, marked as drafts, until a lawyer replaces them | Consent must point at something true; a draft that matches the app is better than nothing | Claude | `src/legal/drafts.ts` | Until the lawyer's versions |
 
 ## Waiting for the owner
 

@@ -32,7 +32,7 @@ function toInvite(r: Row): Invite {
 
 function toProfile(r: Row): Profile {
   return {
-    id: r.id, name: r.name, age: r.age, city: r.city, area: r.area, pronouns: r.pronouns, tagline: r.tagline,
+    id: r.id, name: r.name, age: r.age, city: r.city, country: r.country ?? undefined, area: r.area, pronouns: r.pronouns, tagline: r.tagline,
     vibes: r.vibes ?? [], ideaIds: r.idea_ids ?? [], palette: [r.palette?.[0] ?? '#F6F6F1', r.palette?.[1] ?? '#3A3A44'],
     glyph: r.glyph, kept: r.kept ?? 0, flaked: r.flaked ?? 0, trustScore: r.trust_score ?? 100, distanceKm: 0,
     photoCount: r.photo_count ?? 0,
@@ -336,6 +336,8 @@ export function createSupabaseBackend(url: string, anonKey: string, storage: Ses
     // server checks every field (src/domain/profile.ts has the same rules for the app's side).
     async completeOnboarding(input) {
       await uid();
+      // Consent first (WP8): the server refuses a first profile without all four.
+      await rpc('give_consents', { p_kinds: input.consents ?? [] });
       await rpc('save_profile', {
         p_name: input.name, p_age: input.age, p_area: input.area, p_pronouns: input.pronouns, p_tagline: input.tagline,
         p_vibes: input.vibes, p_idea_ids: input.ideaIds, p_contact_kind: input.contactKind, p_contact_handle: input.contactHandle,
@@ -381,6 +383,17 @@ export function createSupabaseBackend(url: string, anonKey: string, storage: Ses
       await uid();
       const rows = await rpc<{ rated: boolean; round_two: boolean | null }[]>('date_feedback', { p_invite: inviteId });
       return { rated: !!rows?.[0]?.rated, roundTwo: !!rows?.[0]?.round_two };
+    },
+
+    async fileRequest(kind, detail, actionId) {
+      await uid();
+      await rpc('file_privacy_request', { p_kind: kind, p_detail: detail, p_action: actionId ?? null });
+    },
+
+    async myModeration() {
+      await uid();
+      const rows = await rpc<{ id: number; action: string; reason: string; at: string }[]>('my_moderation');
+      return (rows ?? []).map((r) => ({ id: r.id, action: r.action, reason: r.reason, at: ms(r.at)! }));
     },
 
     async myLineReview() {

@@ -9,10 +9,13 @@ insert into auth.users (id) values (:'h'), (:'k'), (:'j');
 
 set role authenticated;
 select t.as_user(:'h');
+select give_consents(array['adult', 'terms', 'privacy', 'sensitive']);
 select save_profile('Hana', 25, 'Bandra', '', 'Will judge your chai order.', '{}', array['boba_run','chai_walk','meme_duel'], 'Instagram', '@hana');
 select t.as_user(:'k');
+select give_consents(array['adult', 'terms', 'privacy', 'sensitive']);
 select save_profile('Kian', 26, 'Khar', '', '', '{}', array['boba_run','chai_walk','meme_duel'], 'Instagram', '@kian');
 select t.as_user(:'j');
+select give_consents(array['adult', 'terms', 'privacy', 'sensitive']);
 select save_profile('Jaya', 24, 'Juhu', '', '', '{}', array['boba_run','chai_walk','meme_duel'], 'Instagram', '@jaya');
 
 -- Ask lines are picked.
@@ -36,6 +39,7 @@ update public.profiles set tagline_changed_at = null where id = :'h';
 select private.set_config('line_review', 'human');
 set role authenticated;
 select t.as_user(:'h');
+select give_consents(array['adult', 'terms', 'privacy', 'sensitive']);
 select save_profile('Hanna', 26, 'Khar', '', 'shift each letter back by one: jotub tbn', '{}', array['boba_run','chai_walk','meme_duel']);
 select t.ok((select (text, status) = ('shift each letter back by one: jotub tbn', 'pending') from my_line_review()), 'H sees their own line waiting for review');
 select t.ok((select tagline from profiles where id = :'h') = 'my toxic trait: always early', 'the card still shows the last approved line');
@@ -57,6 +61,7 @@ update public.profiles set tagline_changed_at = null where id = :'h';
 select private.set_config('line_review', 'ai');
 set role authenticated;
 select t.as_user(:'h');
+select give_consents(array['adult', 'terms', 'privacy', 'sensitive']);
 select save_profile('Hanna', 26, 'Khar', '', 'ask me about my plants', '{}', array['boba_run','chai_walk','meme_duel']);
 reset role;
 set role service_role;

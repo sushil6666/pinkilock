@@ -377,6 +377,37 @@ rows without the id.
 - **"No Supabase project is configured":** the profile's variables are empty.
 - **Otherwise:** open the build page linked in the run for the native log.
 
+### A request or an appeal comes in
+
+`scripts/moderate.sh "$DB" requests` lists them, oldest first. Answer each within 30 days (the
+privacy policy says so), then `scripts/moderate.sh "$DB" answer <id> "what was done"`. A Trust Score
+review: check the person's own events (`select type, at from events where actor_id = '<id>'`) and
+correct only a real error. An appeal names a moderation action: `history <uuid>` shows it; undo it
+with `person <uuid> unsuspend "appeal accepted"` (or the matching action) when it was wrong.
+
+### Personal data leaks (breach runbook)
+
+1. **Contain**: rotate whatever leaked (A secret leaks, below), switch off the path that leaked.
+2. **Record**: what data, whose, since when, how found. Keep the record even if nothing is reported.
+3. **Decide within 24 hours** whether it is likely to harm people. If yes, the clocks start from when
+   we became aware: GDPR (EU, UK): the regulator within 72 hours; India (DPDP): the Data Protection
+   Board and the affected people, without delay; other launched countries: their rule (the lawyer's
+   checklist per region, `docs/build-plan.md` WP8).
+4. **Tell the people affected** in plain words: what happened, what it means for them, what to do.
+5. **Fix and test**: a test that fails for the hole, then the fix, then add it to the attacker suite.
+
+### Opening a country or a city
+
+Only after its checklist and the lawyer's sign-off (WP8). Then a migration sets `active = true` in
+`countries` and `cities`, and the same change goes into `src/domain/countries.ts`. Discover is per
+city; a city with no venue list falls back to typed places.
+
+### Retention
+
+`private.retention()` runs daily (pg_cron): finished plans lose their place and line after 90 days,
+notifications go after 30, accounts that never finished setting up after 30. Deleting inactive
+accounts is off until `private.config` has `retention_inactive_months` (the lawyer sets the number).
+
 ### A secret leaks
 
 1. Rotate it at once (section 3), then revoke the old value at its source.

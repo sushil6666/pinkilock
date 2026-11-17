@@ -55,6 +55,7 @@ select t.ok(t.sqlstate(format($$select send_invite(%L, 'momo_stop', now() + inte
 
 -- Twenty profile saves a day.
 select t.as_user(:'m');
+select give_consents(array['adult', 'terms', 'privacy', 'sensitive']);
 select save_profile('Mira', 24, 'Juhu', '', '', '{}', array['boba_run','chai_walk','meme_duel'], 'Instagram', '@mira') from generate_series(1, 20);
 select t.ok(t.sqlstate($$select save_profile('Mira', 24, 'Juhu', '', '', '{}', array['boba_run','chai_walk','meme_duel'])$$) = 'PL027', 'the 21st profile save in a day is refused (PL027)');
 

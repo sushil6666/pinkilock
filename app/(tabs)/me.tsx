@@ -225,6 +225,16 @@ export default function Me() {
         </View>
       </View>
 
+      <T v="label" c={color.textDim} style={styles.section}>Safety and privacy</T>
+      <View style={{ gap: space.sm }}>
+        <Button kind="ghost" icon="shield" label="Safety and emergency numbers" onPress={() => router.push('/safety')} />
+        <Button kind="ghost" icon="message-square" label="Ask us: your data, your score, an appeal" onPress={() => router.push('/account/requests')} />
+        <View style={{ flexDirection: 'row', gap: space.md }}>
+          <Tag label="Terms" onPress={() => router.push('/legal/terms')} />
+          <Tag label="Privacy" onPress={() => router.push('/legal/privacy')} />
+        </View>
+      </View>
+
       <T v="label" c={color.textDim} style={styles.section}>Help</T>
       <T v="caption" c={color.textDim} style={{ marginBottom: space.md }}>If something went wrong, send us this. It holds the app version, your account id, and the codes of recent errors. No names, messages, places or contacts.</T>
       <Button kind="ghost" icon="life-buoy" label="Share diagnostics" busy={busy === 'diagnostics'} onPress={shareDiagnostics} />

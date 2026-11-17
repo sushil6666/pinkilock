@@ -30,4 +30,4 @@ const sessionStore: SessionStorage = Platform.OS === 'web'
 
 export const backend: Backend = (production || wantsLive) && url && key ? createSupabaseBackend(url, key, sessionStore) : createMockBackend();
 
-export type { Backend, BackendEvent, Changes, Notice, PushPlatform, Snapshot } from './backend';
+export type { Backend, BackendEvent, Changes, Notice, PrivacyRequestKind, PushPlatform, Snapshot } from './backend';

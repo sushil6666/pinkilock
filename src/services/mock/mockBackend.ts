@@ -16,6 +16,7 @@ import type { Backend, BackendEvent, Changes, ClientErrorReport, Notice, Snapsho
 import { ALWAYS_PASSES, ME_ID, SEED_ME_RECORD, seedInvites, seedProfiles, seedReveals } from './seed';
 import { checkAsk, checkContact, checkProfile } from '../../domain/profile';
 import { venueOf, venuePlace } from '../../domain/venues';
+import { ALL_CONSENTS } from '../../domain/countries';
 
 const KEY = 'pinkilock.mock.v1';
 const LATENCY = 280;
@@ -221,6 +222,7 @@ export function createMockBackend(): Backend {
     },
 
     async completeOnboarding(input) {
+      if (!ALL_CONSENTS.every((k) => input.consents?.includes(k))) fail('PL077');
       checkProfile(input);
       checkContact(input.contactKind, input.contactHandle);
       const d = await load();
@@ -249,6 +251,14 @@ export function createMockBackend(): Backend {
         if (contactKind && contactHandle) d.myContact = { kind: contactKind, handle: contactHandle };
         return { me: d.me, myContact: d.myContact ?? undefined };
       }),
+
+    // Requests go nowhere in the mock; there is no moderator.
+    async fileRequest(_kind, detail) {
+      if (!detail.trim() || detail.length > 500) fail('PL013');
+    },
+    async myModeration() {
+      return [];
+    },
 
     // The made-up other person always wants round two, so the whole flow can be seen.
     async rateDate(inviteId, answer) {

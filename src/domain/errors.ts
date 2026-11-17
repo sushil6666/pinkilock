@@ -59,6 +59,13 @@ export const ERRORS = {
   PL073: 'Your line was removed after a report. You can add one again later.',
   PL074: 'Only a kept promise can be rated.',
   PL075: 'Answer both questions.',
+  PL076: 'Pinkilock is not open in that city yet.',
+  PL077: 'Agree to the terms, the privacy policy and the use of your dating preferences first.',
+  PL078: 'Pinkilock is not open in your country yet.',
+  PL079: 'That is not something to agree to.',
+  PL080: 'Pick what the request is about.',
+  PL081: 'That decision is not about you.',
+  PL082: 'You have sent a lot of requests today. We will answer the ones we have.',
   PL090: 'That moderation step is not valid.',
 
   PA001: 'Phone sign-in is not switched on yet.',
