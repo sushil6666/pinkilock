@@ -8,6 +8,7 @@ import { column } from '@/components/ui/Screen';
 import { T } from '@/components/ui/T';
 import { lockRole } from '@/domain/invites';
 import { haptic } from '@/lib/haptics';
+import { aria } from '@/lib/web';
 import { useStore } from '@/state/store';
 import { color, space } from '@/theme/tokens';
 
@@ -41,6 +42,7 @@ function TabBar({ state, navigation }: BottomTabBarProps) {
             key={route.key}
             accessibilityRole="tab"
             accessibilityState={{ selected: focused }}
+            {...aria({ selected: focused })}
             accessibilityLabel={count ? `${tab.label}, ${count}` : tab.label}
             onPress={() => {
               haptic.tick();

@@ -167,12 +167,28 @@ pip install pgserver duckdb && python tests/db/run.py   # migrations, RLS, funct
 npm run test:live:local     # two users, then block, report, export, phone and delete, then the attacker suite, against `supabase start`
 npm run audit:check         # no new high or critical advisory in what ships (security/audit-baseline.json)
 npm run test:push:local     # the push chain with a stand-in for Expo (setup: top of tests/live/local_push.sh)
-npm run test:app:local      # the real screens in two browser sessions (npx playwright install chromium)
+npm run test:app:local      # the real screens in two browser sessions, phone and desktop width, both ways round (npx playwright install chromium)
 npm run test:live           # the same live tests against EXPO_PUBLIC_SUPABASE_URL / _ANON_KEY
 ```
 
 CI runs all but the last on every pull request and every push to `main`. The last runs against the real project after each deploy,
 and on demand as the **Live two-user test** workflow.
+
+## The web build
+
+The same screens run in a browser; there is no second site.
+
+```bash
+EXPO_PUBLIC_BACKEND= npx expo export -p web --output-dir dist/web   # mock data, no keys
+npx serve dist/web --single                                         # any server that answers every path with index.html
+node scripts/make-icons.mjs                                         # redraw the icons and the share picture
+node scripts/make-loops.mjs                                         # redraw the clay animations (needs ffmpeg)
+```
+
+It is one page, so whatever serves it must fall back to `index.html` for every path (a reload on
+`/plans` must work). Each screen has its own page title, a visitor with no profile is led to
+onboarding from any link, and an unknown address shows a not-found screen. It is not hosted
+anywhere yet: the host, the domain and the account are still to be chosen (`OPERATIONS.md`).
 
 ## Status
 

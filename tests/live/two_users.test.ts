@@ -140,15 +140,19 @@ test('expiry: an unanswered ask is expired by the scheduled sweep', async () => 
   a.quiet();
   b.quiet();
   // Expires at its start time. 20 seconds out leaves room for clock skew between here and the server.
-  const sent = one(await a.backend.sendInvite({ toId: b.id, ideaId: 'video_coffee', startsAt: Date.now() + 20_000, place: '', note: '' }));
-  await b.hears('the ask', inviteIs(sent.id, 'sent'));
+  // B asks A here: an expired ask holds back the same sender for 7 days (PL026), and the kept test
+  // below needs A to ask B again.
+  const sent = one(await b.backend.sendInvite({ toId: a.id, ideaId: 'video_coffee', startsAt: Date.now() + 20_000, place: '', note: '' }));
+  await a.hears('the ask', inviteIs(sent.id, 'sent'));
   // Nobody calls the sweep here: pg_cron does, and Realtime carries the result to both phones.
   await Promise.all([
     a.hears('the expiry', inviteIs(sent.id, 'expired'), SWEEP_WAIT),
     b.hears('the expiry', inviteIs(sent.id, 'expired'), SWEEP_WAIT),
   ]);
-  await assert.rejects(b.backend.offerPinky(sent.id), /not open any more/);
-  await locked(b, sent.id, 'after an expiry');
+  await assert.rejects(a.backend.offerPinky(sent.id), /not open any more/);
+  await locked(a, sent.id, 'after an expiry');
+  await assert.rejects(b.backend.sendInvite({ toId: a.id, ideaId: 'video_coffee', startsAt: Date.now() + 90 * MIN, place: '', note: '' }), /asked them recently/,
+    'an expired ask holds back the same sender (PL026)');
 });
 
 test('kept: lock, both check in, and only then does the reveal open', async () => {

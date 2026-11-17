@@ -10,6 +10,10 @@
  * 45 minutes out or more, so the script moves the plan into its check-in window with E2E_DB_URL
  * (the one step no phone could do).
  *
+ * It runs twice: first A on a phone-sized window and B on a desktop-sized one, then the other way
+ * round, so every screen in the flow is used at both widths. On each screen it checks that nothing
+ * scrolls sideways. APP_RUNS=1 runs only the first pass.
+ *
  * Needs: WEB_DIR (an `expo export -p web` folder built with the Supabase keys), E2E_DB_URL, psql,
  * and playwright.
  */
@@ -36,15 +40,19 @@ await new Promise((r) => server.listen(0, '127.0.0.1', r));
 const ORIGIN = `http://127.0.0.1:${server.address().port}`;
 
 const sql = (q) => execFileSync('psql', [DB, '-v', 'ON_ERROR_STOP=1', '-qAt', '-c', q], { encoding: 'utf8' }).trim();
-const stamp = Date.now().toString(36).slice(-4);
-// Names are one word of letters (the server refuses anything else), so the stamp is spelled in letters.
-const letters = [...stamp].map((c) => 'abcdefghijklmnopqrstuvwxyzabcdefghij'[parseInt(c, 36)]).join('');
-const A = { name: `Asha${letters}`, handle: `@asha_${stamp}` };
-const B = { name: `Bela${letters}`, handle: `@bela_${stamp}` };
+/** The two window sizes: a phone, and a laptop browser. */
+const SIZES = { phone: { width: 390, height: 844 }, desktop: { width: 1440, height: 900 } };
+const RUNS = [['phone', 'desktop'], ['desktop', 'phone']].slice(0, Number(process.env.APP_RUNS ?? 2));
 
 let step = 0;
-const ok = (msg) => console.log(`ok  ${String(++step).padStart(2)}  ${msg}`);
-const shot = async (who, name) => SHOTS && who.page.screenshot({ path: path.join(SHOTS, `${String(step).padStart(2, '0')}-${who.name}-${name}.png`) });
+let pass = '';
+const ok = (msg) => console.log(`ok  ${String(++step).padStart(2)}  ${pass}${msg}`);
+const shot = async (who, name) => SHOTS && who.page.screenshot({ path: path.join(SHOTS, `${String(step).padStart(2, '0')}-${who.size}-${who.name}-${name}.png`) });
+/** Nothing on the screen may push the page wider than the window. */
+async function fits(who, where) {
+  const [doc, win] = await who.page.evaluate(() => [document.documentElement.scrollWidth, window.innerWidth]);
+  if (doc > win) throw new Error(`${where} scrolls sideways at ${who.size} width (${doc} > ${win})`);
+}
 const btn = (page, name) => page.getByRole('button', { name }).last();
 const hold = async (page, name) => {
   const box = await btn(page, name).boundingBox();
@@ -55,11 +63,13 @@ const hold = async (page, name) => {
 };
 
 async function onboard(browser, who) {
-  const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, hasTouch: false });
+  const ctx = await browser.newContext({ viewport: SIZES[who.size], hasTouch: false });
   const page = await ctx.newPage();
   page.on('pageerror', (e) => console.log(`[${who.name}] page error: ${e.message}`));
   who.page = page;
   await page.goto(ORIGIN);
+  await btn(page, 'Start').waitFor();
+  await fits(who, 'the first screen');
   await btn(page, 'Start').click();
   await page.getByLabel('First name').fill(who.name);
   await page.getByLabel('Age').fill('24');
@@ -91,7 +101,31 @@ async function slidePinky(page) {
 
 const browser = await chromium.launch();
 let failed = false;
-try {
+for (const [aSize, bSize] of RUNS) {
+  pass = `[A ${aSize}, B ${bSize}]  `;
+  const stamp = Date.now().toString(36).slice(-4);
+  // Names are one word of letters (the server refuses anything else), so the stamp is spelled in letters.
+  const letters = [...stamp].map((c) => 'abcdefghijklmnopqrstuvwxyzabcdefghij'[parseInt(c, 36)]).join('');
+  const A = { name: `Asha${letters}`, handle: `@asha_${stamp}`, size: aSize };
+  const B = { name: `Bela${letters}`, handle: `@bela_${stamp}`, size: bSize };
+  try {
+    await flow(A, B);
+  } catch (e) {
+    failed = true;
+    console.error(`FAILED after step ${step} (${pass.trim()}): ${e.message}`);
+    for (const who of [A, B]) if (who.page) await shot(who, 'failure');
+  } finally {
+    for (const who of [A, B]) if (who.page) await who.page.context().close();
+    sql(`delete from public.events where actor_id in (select id from public.profiles where name in ('${A.name}', '${B.name}')); delete from auth.users where is_anonymous and id in (select id from public.profiles where name in ('${A.name}', '${B.name}')); delete from public.blocks where blocker_id in (select id from public.profiles where name in ('${A.name}', '${B.name}'))`);
+  }
+  if (failed) break;
+}
+await browser.close();
+server.close();
+console.log(failed ? '\nAPP FLOW FAILED' : '\nAPP FLOW PASSED');
+process.exit(failed ? 1 : 0);
+
+async function flow(A, B) {
   await onboard(browser, A);
   ok(`${A.name} onboarded on the live backend`);
   await onboard(browser, B);
@@ -107,6 +141,7 @@ try {
   await A.page.getByText(`${B.name}, 24`).waitFor({ timeout: 15000 });
   ok('B appeared in A\'s Discover when A opened it again, with no reload');
   await shot(A, 'discover');
+  await fits(A, 'Discover');
   await btn(A.page, 'Vibe check').click();
   await A.page.getByText('To what').waitFor();
   // First time slot offered.
@@ -114,6 +149,7 @@ try {
   // Where: both live in Bandra, so the nearest suggested venues come first. Pick one.
   await A.page.getByRole('button', { name: /^Carter Road Promenade/ }).click();
   await shot(A, 'composer');
+  await fits(A, 'the composer');
   await hold(A.page, `Hold to ask ${B.name}`);
   await A.page.getByText(`Waiting on ${B.name}.`).waitFor();
   ok('A sent the ask');
@@ -128,6 +164,7 @@ try {
   await slidePinky(B.page);
   await B.page.getByText(/pinky is out|Waiting|seal/i).first().waitFor({ timeout: 10000 });
   await shot(B, 'half-locked');
+  await fits(B, 'the lock');
   sqlIs(`select status from public.invites where from_id = '${aId}' and to_id = '${bId}'`, 'half_locked', "B's slide made it half_locked");
 
   await btn(A.page, 'Seal it').waitFor({ timeout: 15000 });
@@ -145,6 +182,8 @@ try {
   await A.page.getByLabel(/Contact locked/).waitFor();
   if (await A.page.getByText(B.handle).count()) throw new Error("B's handle is on A's screen before the promise is kept");
   ok('locked plan shows the contact as locked, and the handle is not on the page');
+  await fits(A, 'the plan');
+  await fits(B, 'the plan');
 
   // The one thing a phone cannot do: jump to ten minutes before the start.
   sql(`update public.invites set starts_at = now() + interval '5 minutes' where from_id = '${aId}' and to_id = '${bId}'`);
@@ -158,6 +197,7 @@ try {
   await shot(A, 'reveal');
   await shot(B, 'reveal');
   ok('both checked in: kept, and each screen now shows the other handle');
+  await fits(A, 'the reveal');
 
   // Phase 3: B blocks A from A's profile.
   await btn(B.page, `${A.name}'s profile`).click();
@@ -187,6 +227,7 @@ try {
   if (exported.account?.id !== aId || exported.contact?.handle !== A.handle) throw new Error('the export is not A\'s data');
   if (JSON.stringify(exported).includes(B.handle)) throw new Error("the export contains B's handle");
   ok('A downloaded their data from Me');
+  await fits(A, 'Me');
   await btn(A.page, 'Delete my account').click();
   await btn(A.page, 'Hold to delete everything').waitFor();
   await A.page.waitForTimeout(600);
@@ -194,17 +235,7 @@ try {
   await hold(A.page, 'Hold to delete everything');
   await btn(A.page, 'Start').waitFor({ timeout: 15000 });
   sqlIs(`select count(*) from public.profiles where id = '${aId}'`, '0', 'A deleted the account and is back at onboarding');
-} catch (e) {
-  failed = true;
-  console.error(`FAILED after step ${step}: ${e.message}`);
-  for (const who of [A, B]) if (who.page) await shot(who, 'failure');
-} finally {
-  await browser.close();
-  server.close();
-  sql(`delete from public.events where actor_id in (select id from public.profiles where name in ('${A.name}', '${B.name}')); delete from auth.users where is_anonymous and id in (select id from public.profiles where name in ('${A.name}', '${B.name}')); delete from public.blocks where blocker_id in (select id from public.profiles where name in ('${A.name}', '${B.name}'))`);
 }
-console.log(failed ? '\nAPP FLOW FAILED' : '\nAPP FLOW PASSED');
-process.exit(failed ? 1 : 0);
 
 function sqlIs(q, want, msg) {
   const deadline = Date.now() + 10000;
