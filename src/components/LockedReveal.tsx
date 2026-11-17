@@ -6,9 +6,12 @@
 import { Feather } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
+import * as ScreenCapture from 'expo-screen-capture';
+import { useEffect } from 'react';
 import { Platform, StyleSheet, View } from 'react-native';
 import Animated, { FadeIn } from 'react-native-reanimated';
 import type { Profile, Reveal } from '../domain/types';
+import { quiet } from '../lib/log';
 import { color, radius, space } from '../theme/tokens';
 import { T } from './ui/T';
 
@@ -20,6 +23,15 @@ interface Props {
 
 export function LockedReveal({ person, reveal, hint }: Props) {
   const open = !!reveal;
+  // While a contact is on screen, screenshots and screen recording are blocked on the phone (WP5).
+  // A second phone's camera still works; this only stops the easy copy.
+  useEffect(() => {
+    if (!open || Platform.OS === 'web') return;
+    ScreenCapture.preventScreenCaptureAsync('reveal').catch(quiet('reveal.capture'));
+    return () => {
+      ScreenCapture.allowScreenCaptureAsync('reveal').catch(quiet('reveal.capture'));
+    };
+  }, [open]);
   const tiles = open ? reveal.photos : Array.from({ length: Math.max(person.photoCount, 2) }, () => null);
 
   return (

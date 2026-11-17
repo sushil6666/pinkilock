@@ -112,6 +112,29 @@ button). Passing on an ask never needs it. The deploy workflow turns it on when 
 flip it by hand: `scripts/gate-config.sh "<db url>" on|off`. Locally it is off, so the live tests'
 anonymous people can play; `tests/db/limits.sql` covers it on and off.
 
+### Signed updates
+
+Builds refuse an over-the-air update that was not signed, once a certificate exists:
+
+1. Run `scripts/codesign-setup.sh` once. It writes `code-signing/certificate.pem` (commit it) and a
+   private key outside the repo.
+2. Put the private key in the GitHub secret `EXPO_UPDATES_PRIVATE_KEY`, then delete the file.
+3. Build new binaries (EAS build). From then on, publish updates with
+   `eas update --private-key-path <file holding the secret>`; an unsigned one is ignored by the app.
+
+To rotate: make a new pair, ship a build with the new certificate, and only then stop signing with
+the old key. Until step 1 is done, updates are not signed (`app.config.js` adds signing only when
+the certificate is present).
+
+### The app on the phone
+
+Version 0.2.0 adds native modules (encrypted session storage, screenshot blocking on the reveal),
+so it needs a new binary; an over-the-air update cannot reach 0.1.0 builds. A production build
+without the Supabase keys fails at build time and refuses to start (`EXPO_PUBLIC_APP_ENV`).
+Android release builds are shrunk and obfuscated (R8). Signing out revokes the session on the
+server, not only on the phone. GitHub Actions are pinned to commits; Dependabot opens monthly pull
+requests for actions and npm packages.
+
 ### The security gates in CI
 
 - **Attacker suite.** `tests/db/attacker.sql` and `tests/live/attacker.test.ts` act as a signed-in

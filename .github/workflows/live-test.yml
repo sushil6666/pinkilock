@@ -19,7 +19,7 @@ jobs:
       EXPO_PUBLIC_SUPABASE_URL: https://${{ vars.SUPABASE_PROJECT_REF }}.supabase.co
       EXPO_PUBLIC_SUPABASE_ANON_KEY: ${{ vars.EXPO_PUBLIC_SUPABASE_ANON_KEY }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
       - name: Check that the project values are set
         run: |
           missing=0
@@ -27,7 +27,7 @@ jobs:
             if [ -z "${!name}" ]; then echo "::error::$name is not set (Settings, Secrets and variables, Actions)"; missing=1; fi
           done
           exit $missing
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: 22
           cache: npm

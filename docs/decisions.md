@@ -56,6 +56,9 @@ first table with its date.
 | D038 | 2026-11-17 | Profile lines are reviewed by Claude (`claude-opus-5-5`, low effort) when an API key exists; a "contact" answer is rejected, "unsure" or a declined review waits for a person | The plan's model review (O04, accepted under D032); the model name follows the project's default rather than a cheaper one, and can be changed with `REVIEW_MODEL` | Claude | `supabase/functions/review-line` | In force once merged and a key is set |
 | D039 | 2026-11-17 | Moderation is a terminal script over the database role, not a web page | A web moderation page would need privileged credentials in a browser; the script needs none and keeps a reason for every action | Claude | `scripts/moderate.sh` | In force once merged |
 | D040 | 2026-11-17 | The first name change and the first line change after joining are free; after that 30 and 7 days | People fix typos right after signing up | Claude | `save_profile` | In force once merged |
+| D041 | 2026-11-17 | App version 0.2.0: new native modules mean a new binary; over-the-air updates do not reach 0.1.0 | `runtimeVersion` follows the app version, which keeps an update from loading code a binary cannot run | Claude | `app.json` | In force once merged |
+| D042 | 2026-11-17 | The update-signing key is made by the owner with a script and kept only as a GitHub secret | Whoever holds it can ship code to every phone; it must never pass through the repo or this session | Claude | `scripts/codesign-setup.sh` | Waiting for the owner to run it |
+| D043 | 2026-11-17 | The Expo SDK upgrade that would clear the 16 advisories is not done in this round | It touches every native module and needs device testing that cannot be done here | Claude | Build plan WP5 status | Open |
 
 ## Waiting for the owner
 

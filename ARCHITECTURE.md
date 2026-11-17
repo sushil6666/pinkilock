@@ -392,6 +392,14 @@ what the server did (`OPERATIONS.md`, "Trace a bug").
 - **Builds.** `src/lib/build.ts`: version, git commit (stamped by the EAS build workflow) and
   update id, shown at the bottom of Me and sent with every report.
 
+### On the phone
+
+The session is stored encrypted: a fresh key per item in the keystore (`expo-secure-store`), the
+item AES-encrypted in AsyncStorage (`src/lib/sessionCrypto.ts`); in a browser it stays in the
+page's storage. Screenshots and recording are blocked while a revealed contact is on screen.
+Production builds refuse to run on the mock, and route ids are checked before they are written into
+a query filter. None of this is a defence on its own: every rule that matters is on the server.
+
 ## 9. Cross-platform notes
 
 - **Safe areas**: every screen is a `Screen` (`src/components/ui/Screen.tsx`) that pads with

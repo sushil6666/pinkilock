@@ -12,15 +12,8 @@ export const MIN = 60_000;
 /** pg_cron fires on the minute; allow one full cycle plus slack. */
 export const SWEEP_WAIT = 100_000;
 
-export function memoryStorage(): SessionStorage & { dump(): Map<string, string> } {
-  const m = new Map<string, string>();
-  return {
-    getItem: async (k) => m.get(k) ?? null,
-    setItem: async (k, v) => void m.set(k, v),
-    removeItem: async (k) => void m.delete(k),
-    dump: () => m,
-  };
-}
+export { memoryStorage } from './helpers.memory';
+import { memoryStorage } from './helpers.memory';
 
 export interface Person {
   name: string;
