@@ -43,6 +43,10 @@ first table with its date.
 | D025 | 2026-11-17 | WP1 is built in two parts: the server rules that need no owner decision first (write profiles only through a function, catalogues, limits, the plain contact check), the rest after O03 to O05 are answered | The first part closes four gaps without changing what the product offers | Claude | `wp1a/profile-rules` branch, build plan WP1 status | In force once merged |
 | D026 | 2026-11-17 | A name is one word of letters, 2 to 16: no digits, spaces, dots, underscores, hyphens or apostrophes | A name was the easiest place to put a handle; the cost is that names like Anne-Marie or O'Neil must be written without the mark | Claude | `save_profile`, `src/domain/profile.ts` | In force once merged; revisit if real users hit it |
 | D027 | 2026-11-17 | The contact check is deliberately simple (five patterns, identical in SQL and the app) and is not presented as complete | It stops the plain cases cheaply; codes are answered by review and by removing free text (D007), not by a cleverer filter | Claude | `private.looks_like_contact`, `CONTACT_CASES` | In force once merged |
+| D028 | 2026-11-17 | After reviewing 15 apps in the market, the owner chose to build the large features first: suggested venues, selfie verification, double micro-dates, refundable stake | The owner's call after the market review | Owner | Build plan section 8 | In force |
+| D029 | 2026-11-17 | Suggested venues are a hand-kept list of well-known public places (landmarks, promenades, parks, markets, malls), not a maps search and not business listings; typing a place stays possible | Needs no account or fees, works with no keys, and names no business as endorsed; a maps provider (O05) can replace or extend it later | Claude | `feat/venues` branch, `src/domain/venues.ts` | In force once merged; the list needs a local's review |
+| D030 | 2026-11-17 | Selfie verification and the refundable stake are not started: the first needs real photos (Phase 4) and a provider, the second a payments account and a legal check on holding money | Building either without those would produce something that cannot ship | Claude | Build plan section 8 | Waiting on O11, O12 |
+| D031 | 2026-11-17 | The double micro-date is designed but built after check-in codes (WP4) | It rewrites the promise rules for four people; doing it before WP4 would mean building check-in twice | Claude (recommendation) | Build plan section 8 | Waiting on O13 |
 
 ## Waiting for the owner
 
@@ -60,3 +64,6 @@ Each has a recommendation in `docs/build-plan.md`, section 5.
 | O08 | Captcha provider and account | WP2 | Turnstile or hCaptcha; both have free tiers |
 | O09 | Crash reporting account | WP7 | Sentry's free tier |
 | O10 | A privacy lawyer, and named privacy contact, grievance officer and representatives | WP8 | Before any public launch |
+| O11 | A provider and account for selfie (liveness) verification | Selfie verification | After photo upload exists; pick the provider then |
+| O12 | A payments account, and a lawyer's view on holding a refundable stake | Refundable stake | Start the legal question now; it has the longest wait |
+| O13 | Build the double micro-date before or after check-in codes (WP4) | Double micro-date | After |

@@ -74,6 +74,8 @@ export interface NewInvite {
   startsAt: number;
   place: string;
   note: string;
+  /** A picked venue (src/domain/venues.ts). When set, the server writes the place from it. */
+  venueId?: string;
 }
 
 export interface OnboardingInput {

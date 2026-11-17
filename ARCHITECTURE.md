@@ -151,6 +151,7 @@ Full DDL is `supabase/migrations`. Tables:
 | `profile_private` | Contact handle and extra photos | Read: you, and anyone with a `kept` invite with you. **No direct writes**: the contact through `save_profile`, photos by the server only |
 | `ideas` | The micro-date catalogue | Read only |
 | `vibes` | The profile tag catalogue (the same list as `VIBE_GROUPS` in `src/domain/ideas.ts`) | Read only |
+| `venues` | Suggested public places to meet (the same list as `VENUES` in `src/domain/venues.ts`); a venue is switched off, never deleted | Read only |
 | `invites` | The whole product: who, what, when, status, `first_pinky_by`, `check_ins`, `flaked_by` | Read: the two people on it. **No direct writes at all** |
 | `passes` | People I passed on in Discover | Only me |
 | `events` | Append-only behaviour log. Rows are never deleted; a deleted account's rows lose their actor | No client access. Written by the functions, read by analytics |
@@ -178,6 +179,13 @@ pronouns, and in an ask's note and place. `src/domain/profile.ts` has the same r
 the app and the mock, and one table of lines is run through both copies. The check stops the plain
 cases only: a made-up code still gets through until lines are reviewed before anyone sees them
 (`docs/build-plan.md`, WP1).
+
+**A place can be picked instead of typed.** `send_invite` takes an optional venue id. With one,
+the server writes `place` from the catalogue (`name, area`) and ignores whatever the app sent as
+the typed place, records `venue_id` on the invite and the venue in the event log, and refuses a
+venue that does not exist, is switched off, or is on a video or game plan. Without one, the typed
+place still works and still goes through the contact check. The app offers venues nearest first:
+the other person's area, then mine, then the rest of the city (`venuesFor`).
 
 **Privileges are explicit.** Supabase grants every API role full rights on new tables in `public`
 by default. The first migration takes all of that back and grants exactly what the app uses, so

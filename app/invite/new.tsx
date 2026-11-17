@@ -22,6 +22,7 @@ import { color, space, type } from '@/theme/tokens';
 import { shown } from '@/lib/report';
 import { ErrorText } from '@/components/ui/ErrorText';
 import { PLACE_MAX, looksLikeContact } from '@/domain/profile';
+import { venueOf, venuePlace, venuesFor } from '@/domain/venues';
 
 const REMOTE_PLACE = { video: 'Pinkilock video room', game: 'Voice chat in the app' } as const;
 
@@ -38,6 +39,9 @@ export default function NewInvite() {
   const [dayId, setDayId] = useState(days[0]?.id ?? '');
   const [startsAt, setStartsAt] = useState<number | null>(null);
   const [place, setPlace] = useState('');
+  // A picked venue, or 'other' once the person chooses to type a place of their own.
+  const [venueId, setVenueId] = useState<string | 'other' | null>(null);
+  const [showAllVenues, setShowAllVenues] = useState(false);
   const [note, setNote] = useState('');
   const [tone, setTone] = useState<NoteTone>('chill');
   const [busy, setBusy] = useState(false);
@@ -56,8 +60,13 @@ export default function NewInvite() {
   const day = days.find((option) => option.id === dayId);
   const slots = day ? slotOptions(day.start, now) : [];
   const full = openAsks >= MAX_OPEN_ASKS;
-  const leaks = looksLikeContact(note) || (!remotePlace && looksLikeContact(place));
-  const missing = !startsAt ? 'Pick a time.' : !remotePlace && place.trim().length < 3 ? 'Say where: somewhere public.'
+  const venues = remotePlace ? [] : venuesFor(me.city, person.area, me.area);
+  // With no list for this city yet, the place is typed, as before.
+  const typing = !remotePlace && (venueId === 'other' || venues.length === 0);
+  const venue = !remotePlace && !typing ? venueOf(venueId) : undefined;
+  const leaks = looksLikeContact(note) || (typing && looksLikeContact(place));
+  const missing = !startsAt ? 'Pick a time.' : !remotePlace && !venue && !typing ? 'Pick where to meet.'
+    : typing && place.trim().length < 3 ? 'Say where: somewhere public.'
     : leaks ? 'Contacts unlock after a kept promise. Take that out.' : '';
 
   const submit = async () => {
@@ -65,7 +74,7 @@ export default function NewInvite() {
     setBusy(true);
     setError('');
     try {
-      const invite = await send({ toId: person.id, ideaId, startsAt, place: remotePlace ?? place, note });
+      const invite = await send({ toId: person.id, ideaId, startsAt, place: remotePlace ?? (venue ? venuePlace(venue) : place), note, venueId: venue?.id });
       haptic.success();
       router.replace(`/invite/${invite.id}`);
     } catch (e) {
@@ -121,7 +130,20 @@ export default function NewInvite() {
           </View>
         ) : (
           <>
-            <TextInput value={place} onChangeText={setPlace} placeholder="Boba counter, Linking Road" placeholderTextColor={color.textMute} maxLength={PLACE_MAX} style={[inputStyle, type.body]} accessibilityLabel="Where to meet" />
+            {venues.length > 0 && (
+              <View style={styles.wrap}>
+                {(showAllVenues ? venues : venues.slice(0, 6)).map((v) => (
+                  <Chip key={v.id} label={v.name} sub={v.area} selected={venueId === v.id} onPress={() => setVenueId(venueId === v.id ? null : v.id)} />
+                ))}
+              </View>
+            )}
+            {venues.length > 0 && (
+              <View style={styles.wrap}>
+                {!showAllVenues && venues.length > 6 && <Tag label={`${venues.length - 6} more places`} onPress={() => setShowAllVenues(true)} />}
+                <Tag label="Somewhere else" tone={venueId === 'other' ? color.volt : color.textDim} selected={venueId === 'other'} onPress={() => setVenueId(venueId === 'other' ? null : 'other')} />
+              </View>
+            )}
+            {typing && <TextInput value={place} onChangeText={setPlace} placeholder="Boba counter, Linking Road" placeholderTextColor={color.textMute} maxLength={PLACE_MAX} style={[inputStyle, type.body]} accessibilityLabel="Where to meet" />}
             <View style={{ flexDirection: 'row', gap: space.sm }}>
               <Feather name="shield" size={14} color={color.textDim} style={{ marginTop: 2 }} />
               <T v="caption" c={color.textDim} style={{ flex: 1 }}>Somewhere public and busy. Tell a friend where you will be.</T>

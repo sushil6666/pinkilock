@@ -36,6 +36,8 @@ With no keys set, the app runs on ten made-up people who answer by themselves. A
    opposites that attract). Send someone a vibe check. The one line has ready-made options in six tones
    (Chill, Bold, Flirty, Wild, Naughty, Old school). They answer in about seven seconds; then you seal.
    Nikhil always passes, so you can see that too.
+   For an in-person plan, pick where to meet from the suggested public places (nearest to them first),
+   or **Somewhere else** to type one.
 5. On any locked plan: a first line and an optional dare (tap **Another** for a new one).
    **Can't make it** shows what a bail costs. **Me** has the reset, and **Change tags**.
 6. Safety and accounts: on anyone's profile, **Block or report**. In **Me**, Account: add a phone

@@ -37,7 +37,7 @@ select t.ok((select string_agg(table_schema || '.' || table_name || ':' || privs
     select table_schema, table_name, string_agg(privilege_type, ',' order by privilege_type) as privs
     from information_schema.role_table_grants where grantee = 'authenticated' and table_schema <> 't' group by 1, 2) g)
   = 'public.ideas:SELECT public.invites:SELECT public.passes:DELETE,INSERT,SELECT public.profile_cards:SELECT '
-    'public.profile_private:SELECT public.profiles:SELECT public.trust_scores:SELECT public.vibes:SELECT',
+    'public.profile_private:SELECT public.profiles:SELECT public.trust_scores:SELECT public.venues:SELECT public.vibes:SELECT',
   'a signed-in user holds exactly these table rights and no others');
 select t.ok(not exists (select 1 from information_schema.role_table_grants where grantee = 'anon'),
   'signed out, there is no right on any table in any schema');

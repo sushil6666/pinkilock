@@ -42,6 +42,7 @@ export const ERRORS = {
   PL064: 'That is too long.',
   PL065: 'Contacts unlock after a kept promise. Take that out.',
   PL066: 'Add how people reach you after a kept promise.',
+  PL067: 'Pick a meeting place from the list.',
 
   PA001: 'Phone sign-in is not switched on yet.',
   PA002: 'Email sign-in is not switched on yet.',

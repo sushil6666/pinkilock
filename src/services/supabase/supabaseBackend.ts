@@ -352,7 +352,7 @@ export function createSupabaseBackend(url: string, anonKey: string, storage: Ses
     },
 
     sendInvite: (input) =>
-      rpcInvite('send_invite', { p_to: input.toId, p_idea: input.ideaId, p_starts_at: new Date(input.startsAt).toISOString(), p_place: input.place, p_note: input.note }),
+      rpcInvite('send_invite', { p_to: input.toId, p_idea: input.ideaId, p_starts_at: new Date(input.startsAt).toISOString(), p_place: input.venueId ? '' : input.place, p_note: input.note, p_venue: input.venueId ?? null }),
     offerPinky: (inviteId) => rpcInvite('offer_pinky', { p_invite: inviteId }),
     declineInvite: (inviteId) => rpcInvite('decline_invite', { p_invite: inviteId }),
     checkIn: (inviteId) => rpcInvite('check_in', { p_invite: inviteId }),
