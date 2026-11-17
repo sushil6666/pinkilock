@@ -183,6 +183,9 @@ test('email: link keeps the id and history; sign in on a new phone gets them bac
   assert.equal(back.me?.id, b.id, 'signing in on a new phone is the same person');
   assert.deepEqual(back.invites.map((i) => i.id).sort(), before, 'with the same history');
   assert.equal((await fresh.signOut()).me, null, 'an email is enough to be allowed to sign out');
+  // G19: signing out is global, so the session on B's first phone is ended on the server too.
+  const old = await raw(b).auth.getUser();
+  assert.ok(old.error, 'G19 closed: signing out on one phone ends the copy on another');
 });
 
 test('phone: link keeps the id and history; sign in on a new phone gets them back', async (t) => {
@@ -201,8 +204,8 @@ test('phone: link keeps the id and history; sign in on a new phone gets them bac
   assert.equal((await a.backend.account()).phone, phone);
   const before = linked.invites.map((i) => i.id).sort();
 
-  // Someone else cannot take the number.
-  await assert.rejects(b.backend.sendCode('phone', phone, 'link').then(() => b.backend.verifyCode('phone', phone, '123456', 'link')), /another account/);
+  // Someone else cannot take the number. C, not B: the email test signed B out everywhere (G19).
+  await assert.rejects(c.backend.sendCode('phone', phone, 'link').then(() => c.backend.verifyCode('phone', phone, '123456', 'link')), /another account/);
   await assert.rejects(c.backend.sendCode('phone', '+919000000103', 'sign_in'), /No account/, 'sign-in never makes a new account');
 
   // A new phone: empty storage, sign in with the number.

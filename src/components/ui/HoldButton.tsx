@@ -12,7 +12,7 @@ import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
 import Animated, { ReduceMotion, cancelAnimation, runOnJS, useAnimatedReaction, useAnimatedStyle, useSharedValue, withTiming, Easing } from 'react-native-reanimated';
 import { haptic } from '../../lib/haptics';
 import { isWeb, swallowReleaseClick } from '../../lib/web';
-import { color, radius, space } from '../../theme/tokens';
+import { color, radius, space, depth } from '../../theme/tokens';
 import { T } from './T';
 
 interface Props {
@@ -94,7 +94,8 @@ export function HoldButton({ label, onComplete, tone = 'pink', disabled, busy }:
 }
 
 const styles = StyleSheet.create({
-  base: { minHeight: 56, borderRadius: radius.card, borderWidth: 1.5, backgroundColor: color.surface, overflow: 'hidden', justifyContent: 'center' },
+  // The thick bottom edge is the same slab the other buttons stand on (`depth`).
+  base: { minHeight: 56, borderRadius: radius.card, borderWidth: 1.5, borderBottomWidth: depth, backgroundColor: color.surface, overflow: 'hidden', justifyContent: 'center' },
   fill: { position: 'absolute', left: 0, top: 0, bottom: 0, opacity: 0.55 },
   label: { alignItems: 'center', paddingHorizontal: space.xl },
 });

@@ -84,7 +84,8 @@ export function InviteCard({ invite, meId, other, now, onPress, compact }: Props
         </View>
       </View>
 
-      {!compact && invite.note ? <T style={styles.note}>"{invite.note}"</T> : null}
+      {/* Their own words, in a hand, not in the app's type. */}
+      {!compact && invite.note ? <T v="hand" style={styles.note}>{invite.note}</T> : null}
 
       <View style={styles.perforation}>
         {Array.from({ length: 28 }, (_, k) => <View key={k} style={styles.dash} />)}
