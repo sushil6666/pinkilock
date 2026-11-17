@@ -4,7 +4,7 @@
     "slug": "pinkilock",
     "owner": "pinkilock",
     "scheme": "pinkilock",
-    "version": "0.1.0",
+    "version": "0.2.0",
     "orientation": "portrait",
     "userInterfaceStyle": "dark",
     "backgroundColor": "#001C55",
@@ -56,6 +56,16 @@
           "icon": "./assets/notification-icon.png",
           "color": "#FF2E93",
           "defaultChannel": "promises"
+        }
+      ],
+      "expo-secure-store",
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "enableProguardInReleaseBuilds": true,
+            "enableShrinkResourcesInReleaseBuilds": true
+          }
         }
       ]
     ],

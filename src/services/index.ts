@@ -4,15 +4,30 @@
  * (see .env.example) and the same screens talk to the live database.
  */
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as Crypto from 'expo-crypto';
+import * as SecureStore from 'expo-secure-store';
+import { Platform } from 'react-native';
 import 'react-native-url-polyfill/auto';
 import type { Backend } from './backend';
 import { createMockBackend } from './mock/mockBackend';
-import { createSupabaseBackend } from './supabase/supabaseBackend';
+import { encryptedStorage } from '../lib/sessionCrypto';
+import { createSupabaseBackend, type SessionStorage } from './supabase/supabaseBackend';
 
 const url = process.env.EXPO_PUBLIC_SUPABASE_URL;
 const key = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
 const wantsLive = process.env.EXPO_PUBLIC_BACKEND !== 'mock';
+// Set by the production build profile (eas.json). A store build must never fall back to the mock.
+const production = process.env.EXPO_PUBLIC_APP_ENV === 'production';
+if (production && !(url && key)) {
+  throw new Error('This production build has no Supabase keys. It must not run on mock data.');
+}
 
-export const backend: Backend = wantsLive && url && key ? createSupabaseBackend(url, key, AsyncStorage) : createMockBackend();
+// On a phone the session is encrypted, its keys in the keystore (src/lib/sessionCrypto.ts). In a
+// browser there is no keystore, so it stays in the page's own storage.
+const sessionStore: SessionStorage = Platform.OS === 'web'
+  ? AsyncStorage
+  : encryptedStorage(AsyncStorage, SecureStore, (bytes) => Crypto.getRandomBytes(bytes));
+
+export const backend: Backend = (production || wantsLive) && url && key ? createSupabaseBackend(url, key, sessionStore) : createMockBackend();
 
 export type { Backend, BackendEvent, Changes, Notice, PushPlatform, Snapshot } from './backend';

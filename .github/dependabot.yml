@@ -1,0 +1,13 @@
+# Keeps the pinned GitHub Actions (pinned to commits, docs/build-plan.md G25) and npm packages
+# current: Dependabot opens a pull request when a new version exists. Nothing merges by itself.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: monthly
+    open-pull-requests-limit: 5

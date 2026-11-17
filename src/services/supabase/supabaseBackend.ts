@@ -79,6 +79,12 @@ function fromServer(err: { message: string; code?: string }, trace: string): App
   return new AppError('PC002', undefined, trace);
 }
 
+/** An id about to be written into a PostgREST filter string: only the characters ids use (route params come from outside). */
+function safeId(id: string): string {
+  if (!/^[A-Za-z0-9_-]{1,64}$/.test(id)) throw new AppError('PC004', 'That link is not valid.');
+  return id;
+}
+
 const emptySnapshot = (): Snapshot => ({ me: null, myContact: null, profiles: [], invites: [], passedIds: [] });
 
 export function createSupabaseBackend(url: string, anonKey: string, storage: SessionStorage): Backend {
@@ -449,7 +455,7 @@ export function createSupabaseBackend(url: string, anonKey: string, storage: Ses
       // Unless they blocked me too, they come back, with whatever we had before.
       const [card, invites] = await Promise.all([
         db.from('profile_cards').select('*').eq('id', profileId),
-        db.from('invites').select('*').or(`from_id.eq.${profileId},to_id.eq.${profileId}`),
+        db.from('invites').select('*').or(`from_id.eq.${safeId(profileId)},to_id.eq.${safeId(profileId)}`),
       ]);
       const profiles = check(card).map(toProfile);
       profiles.forEach((p) => names.set(p.id, p.name));
@@ -539,7 +545,8 @@ export function createSupabaseBackend(url: string, anonKey: string, storage: Ses
     async signOut() {
       const { data } = await db.auth.getSession();
       if (!data.session?.user.phone && !data.session?.user.email) throw new AppError('PA008');
-      await db.auth.signOut({ scope: 'local' });
+      // Global: the refresh token is revoked on the server, so a copied session stops working too (G19).
+      await db.auth.signOut({ scope: 'global' });
       await reset();
       return emptySnapshot();
     },

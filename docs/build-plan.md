@@ -367,6 +367,16 @@ server does not already protect. Revisit after WP6.
 **Done when:** a preview build installs and signs in on a real phone, an unsigned update is
 refused by that build, and the production profile fails without keys.
 
+**Status, 2026-11-17: built, except the steps that need the owner's hands.** Done: the encrypted
+session store (G9), with a one-time read of a session saved before it; signing out everywhere (G19);
+the production guards at build and run time (G11); R8 shrinking; screenshot blocking on the reveal;
+a safe-id check where an id is written into a filter; actions pinned to commits plus Dependabot
+(G25); update signing wired to switch on when the certificate exists. **Owner:** run
+`scripts/codesign-setup.sh` and add the secret (G10 closes then); build a new binary (0.2.0). **Not
+done:** stripping `console` calls with a Babel plugin (the app's own logger already prints nothing
+in production); the 16 audit advisories (G23), which need an Expo SDK upgrade; Realtime delete ids
+(G24), low risk.
+
 ### WP6. App attestation (later; needs store accounts)
 
 - Play Integrity on Android and App Attest on iOS, verified in an Edge Function, required once at
