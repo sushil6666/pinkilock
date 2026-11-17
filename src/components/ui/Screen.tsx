@@ -14,7 +14,7 @@ import type { ReactNode } from 'react';
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { webOnly } from '../../lib/web';
-import { color, columnMax, gutter, space } from '../../theme/tokens';
+import { color, columnMax, gutter, space, wideMax } from '../../theme/tokens';
 import { T } from './T';
 
 interface Props {
@@ -28,6 +28,8 @@ interface Props {
   scroll?: boolean;
   /** Tab screens: the tab bar already covers the bottom inset. */
   inTabs?: boolean;
+  /** The first screen only, in a wide window: drawn up to `wideMax` instead of the column. */
+  wide?: boolean;
 }
 
 /**
@@ -47,7 +49,8 @@ export function goBack() {
 /** Centred, never wider than the column. For anything that is drawn outside a Screen. */
 export const column = { width: '100%', maxWidth: columnMax, alignSelf: 'center' } as const;
 
-export function Screen({ children, title, back = false, onBack, right, footer, scroll = true, inTabs }: Props) {
+export function Screen({ children, title, back = false, onBack, right, footer, scroll = true, inTabs, wide }: Props) {
+  const width = wide ? { ...column, maxWidth: wideMax } : column;
   const insets = useSafeAreaInsets();
   const bottom = inTabs ? space.xxl : Math.max(insets.bottom, space.lg) + space.sm;
   const hasHeader = back !== false || !!title || !!right;
@@ -55,7 +58,7 @@ export function Screen({ children, title, back = false, onBack, right, footer, s
   return (
     <KeyboardAvoidingView {...webOnly({ role: 'main' as const })} style={[styles.root, { paddingTop: insets.top, paddingLeft: insets.left, paddingRight: insets.right }]} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       {/* The column's edges, only visible where the window is wider than it. */}
-      <View style={styles.rail} pointerEvents="none"><View style={styles.railLines} /></View>
+      <View style={styles.rail} pointerEvents="none"><View style={[styles.railLines, wide && { maxWidth: wideMax + 2 }]} /></View>
       {hasHeader && (
         <View style={styles.header}>
           {back !== false ? (
@@ -70,14 +73,14 @@ export function Screen({ children, title, back = false, onBack, right, footer, s
       {scroll ? (
         <ScrollView
           style={styles.fill}
-          contentContainerStyle={{ ...column, paddingHorizontal: gutter, paddingTop: hasHeader ? space.sm : space.lg, paddingBottom: footer ? space.xxl : bottom }}
+          contentContainerStyle={{ ...width, paddingHorizontal: gutter, paddingTop: hasHeader ? space.sm : space.lg, paddingBottom: footer ? space.xxl : bottom }}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
           {children}
         </ScrollView>
       ) : (
-        <View style={[styles.fill, column, { paddingHorizontal: gutter, paddingBottom: footer ? 0 : bottom }]}>{children}</View>
+        <View style={[styles.fill, width, { paddingHorizontal: gutter, paddingBottom: footer ? 0 : bottom }]}>{children}</View>
       )}
       {footer && <View style={[styles.footer, { paddingBottom: bottom }]}>{footer}</View>}
     </KeyboardAvoidingView>

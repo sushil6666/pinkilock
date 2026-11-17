@@ -365,7 +365,9 @@ what the server did (`OPERATIONS.md`, "Trace a bug").
 - **Wide screens**: nothing is drawn wider than `columnMax` (480, `src/theme/tokens.ts`). `Screen`
   centres its header, content and footer in that column and draws a hairline down each side; the
   tab bar, sheets and the notice banner use `column` from `Screen.tsx`. A phone is narrower than
-  the column, so nothing changes there. No screen sets its own width.
+  the column, so nothing changes there. No screen sets its own width. The one exception is the
+  first screen (`src/components/Welcome.tsx`), which in a window 960 or wider asks `Screen` for
+  `wide` and is drawn in two columns up to `wideMax` (1080).
   `public/index.html` is the page the web build loads into: it paints `bg` before the app has
   loaded, and `app.json` (`web.themeColor`) gives the browser bar the same blue. Those two files
   are the only places a colour is written outside `src/theme/tokens.ts`, because neither can
@@ -378,6 +380,11 @@ what the server did (`OPERATIONS.md`, "Trace a bug").
   full hold from a mouse, a finger or a held Space or Enter; the lock stage measures its own
   width, clips its drawing and takes the arrow keys. Haptics and push do nothing in a browser,
   and Me says so for push.
+- **Clay loops**: `assets/loops/*.gif` are drawn by `scripts/make-loops.mjs`, which renders the
+  scenes in `scripts/loops/scene.js` with three.js in Chromium and encodes them with ffmpeg. three.js
+  is a dev dependency only: nothing 3D runs in the app, which shows plain GIFs through
+  `src/components/Loop.tsx` (a still PNG with reduced motion). Android shows animated GIFs because
+  the Expo template turns that on.
 - **Screen readers in a browser**: the web renderer drops `accessibilityState`, so a control that
   can be on or off also spreads `aria({ pressed | selected | checked })` from `src/lib/web.ts`
   (chips and tags, tabs, the report reasons). The `display` type style is each screen's headline

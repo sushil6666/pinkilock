@@ -180,6 +180,7 @@ The same screens run in a browser; there is no second site.
 EXPO_PUBLIC_BACKEND= npx expo export -p web --output-dir dist/web   # mock data, no keys
 npx serve dist/web --single                                         # any server that answers every path with index.html
 node scripts/make-icons.mjs                                         # redraw the icons and the share picture
+node scripts/make-loops.mjs                                         # redraw the clay animations (needs ffmpeg)
 ```
 
 It is one page, so whatever serves it must fall back to `index.html` for every path (a reload on
