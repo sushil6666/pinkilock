@@ -11,6 +11,7 @@ import { MAX_OPEN_ASKS, isOpen, otherId } from '@/domain/invites';
 import type { Invite } from '@/domain/types';
 import { haptic } from '@/lib/haptics';
 import { useNow } from '@/lib/useNow';
+import { aria } from '@/lib/web';
 import { useStore } from '@/state/store';
 import { color, radius, space } from '@/theme/tokens';
 
@@ -40,7 +41,7 @@ export default function Invites() {
 
       <View style={styles.seg} accessibilityRole="tablist">
         {(['in', 'out'] as Side[]).map((s) => (
-          <Pressable key={s} accessibilityRole="tab" accessibilityState={{ selected: side === s }} onPress={() => { haptic.tick(); setSide(s); }} style={[styles.segBtn, side === s && styles.segOn]}>
+          <Pressable key={s} accessibilityRole="tab" accessibilityState={{ selected: side === s }} {...aria({ selected: side === s })} onPress={() => { haptic.tick(); setSide(s); }} style={[styles.segBtn, side === s && styles.segOn]}>
             <T v="label" c={side === s ? color.onPink : color.textDim}>{s === 'in' ? 'For you' : 'Sent'}  {counts[s]}</T>
           </Pressable>
         ))}

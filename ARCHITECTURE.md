@@ -444,7 +444,9 @@ a query filter. None of this is a defence on its own: every rule that matters is
 - **Wide screens**: nothing is drawn wider than `columnMax` (480, `src/theme/tokens.ts`). `Screen`
   centres its header, content and footer in that column and draws a hairline down each side; the
   tab bar, sheets and the notice banner use `column` from `Screen.tsx`. A phone is narrower than
-  the column, so nothing changes there. No screen sets its own width.
+  the column, so nothing changes there. No screen sets its own width. The one exception is the
+  first screen (`src/components/Welcome.tsx`), which in a window 960 or wider asks `Screen` for
+  `wide` and is drawn in two columns up to `wideMax` (1080).
   `public/index.html` is the page the web build loads into: it paints `bg` before the app has
   loaded, and `app.json` (`web.themeColor`) gives the browser bar the same blue. Those two files
   are the only places a colour is written outside `src/theme/tokens.ts`, because neither can
@@ -457,6 +459,28 @@ a query filter. None of this is a defence on its own: every rule that matters is
   full hold from a mouse, a finger or a held Space or Enter; the lock stage measures its own
   width, clips its drawing and takes the arrow keys. Haptics and push do nothing in a browser,
   and Me says so for push.
+- **Clay loops**: `assets/loops/*.gif` are drawn by `scripts/make-loops.mjs`, which renders the
+  scenes in `scripts/loops/scene.js` with three.js in Chromium and encodes them with ffmpeg. three.js
+  is a dev dependency only: nothing 3D runs in the app, which shows plain GIFs through
+  `src/components/Loop.tsx` (a still PNG with reduced motion). Android shows animated GIFs because
+  the Expo template turns that on.
+- **Screen readers in a browser**: the web renderer drops `accessibilityState`, so a control that
+  can be on or off also spreads `aria({ pressed | selected | checked })` from `src/lib/web.ts`
+  (chips and tags, tabs, the report reasons). The `display` type style is each screen's headline
+  and is announced as a heading on a phone and is an `h1` in a browser; `Screen` is the `main`
+  landmark. One rule in `src/lib/web.ts` gives whatever the keyboard lands on the same sky-blue
+  focus ring, so a new control needs nothing. Reduced motion needs no code outside the lock and
+  the hold button: Reanimated skips entering animations and springs when the system asks.
+- **Web addresses**: `src/lib/routes.ts` names every route once: its page title (`Plans · Pinkilock`;
+  a title never carries a person's name or an id, because titles end up in history and in shared
+  tabs) and whether it needs a profile. The root layout sets the title when the route changes and
+  sends a visitor with no profile who opens a personal screen directly to `/`, which leads to
+  onboarding; it covers the screen with `bg` until that has happened. This is a courtesy, not a
+  lock: what one person may see is still decided by RLS. An address that matches nothing shows
+  `app/+not-found.tsx`. `tests/unit/routes.test.ts` fails when a route file is added without an
+  entry. The build is one page (`web.output: single`), so the host must answer every path with
+  `index.html`. `public/manifest.json`, the home-screen icons and `public/share.png` are drawn by
+  `scripts/make-icons.mjs`; the manifest is a third place the blue is written by hand.
 
 ## 10. Environments and delivery
 
@@ -514,6 +538,8 @@ a query filter. None of this is a defence on its own: every rule that matters is
 - `npm run test:push:local`: the whole push chain on the local stack, with a stand-in for Expo.
 - `npm run test:app:local`: the web build in two browser sessions, through the real screens,
   ending with a block from the profile screen, a data download and an account deletion from Me.
+  It runs twice, one person in a phone-sized window and the other in a desktop-sized one, then
+  swapped, and fails if any screen it passes through scrolls sideways.
 - CI runs all of the above on every pull request and every push to `main`. The live two-user test also runs against the real
   project after each deploy.
 
