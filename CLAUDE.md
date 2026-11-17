@@ -40,6 +40,8 @@ npm run test:app:local      # the real screens in two browser sessions
   the profile and ask rules: `src/domain/profile.ts` and `save_profile` / `send_invite` /
   `private.looks_like_contact` in SQL. Change both together; `CONTACT_CASES` is the shared test table
   (`UPDATE_CASES=1 npm run test:unit` regenerates the SQL copy).
+- The venue catalogue also exists twice: `VENUES` in `src/domain/venues.ts` and the `venues` table. A new
+  venue is a row in both (a new migration); to retire one, set `active` to false, never delete it.
 - Profiles are written only through `save_profile`. No direct writes to `profiles` or `profile_private`.
 - Schema changes are new migrations (`npx supabase migration new <name>`). Never edit a migration
   that has been applied.

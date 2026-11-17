@@ -143,12 +143,14 @@ async function flow(A, B) {
   await A.page.getByText('To what').waitFor();
   // First time slot offered.
   await A.page.getByRole('button', { name: /^\d{1,2}:\d{2}/ }).first().click();
-  await A.page.getByPlaceholder('Boba counter, Linking Road').fill('Boba counter, Linking Road');
+  // Where: both live in Bandra, so the nearest suggested venues come first. Pick one.
+  await A.page.getByRole('button', { name: /^Carter Road Promenade/ }).click();
   await shot(A, 'composer');
   await fits(A, 'the composer');
   await hold(A.page, `Hold to ask ${B.name}`);
   await A.page.getByText(`Waiting on ${B.name}.`).waitFor();
   ok('A sent the ask');
+  sqlIs(`select place || ' / ' || venue_id from public.invites where from_id = '${aId}' and to_id = '${bId}'`, 'Carter Road Promenade, Bandra West / mum_carter_road', 'the ask carries the picked venue, written by the server');
 
   // B hears it live: the banner, with no reload.
   await btn(B.page, new RegExp(`${A.name} asked you`)).waitFor({ timeout: 15000 });

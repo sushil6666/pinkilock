@@ -15,6 +15,7 @@ import { quiet } from '../../lib/log';
 import type { Backend, BackendEvent, Changes, ClientErrorReport, Notice, Snapshot } from '../backend';
 import { ALWAYS_PASSES, ME_ID, SEED_ME_RECORD, seedInvites, seedProfiles, seedReveals } from './seed';
 import { checkAsk, checkContact, checkProfile } from '../../domain/profile';
+import { venueOf, venuePlace } from '../../domain/venues';
 
 const KEY = 'pinkilock.mock.v1';
 const LATENCY = 280;
@@ -258,10 +259,15 @@ export function createMockBackend(): Backend {
         if (d.invites.some((i) => rules.isLive(i) && rules.otherId(i, ME_ID) === input.toId)) fail('PL024');
         if (isBlocked(d, input.toId)) fail('PL004');
         if (input.startsAt <= now) fail('PL021');
-        checkAsk(input.note, input.place);
+        // A picked venue: the place comes from the catalogue, as on the server.
+        const idea = ideaOf(input.ideaId);
+        const venue = input.venueId ? venueOf(input.venueId) : undefined;
+        if (input.venueId && (!venue || idea.kind !== 'irl')) fail('PL067');
+        const place = venue ? venuePlace(venue) : input.place.trim();
+        checkAsk(input.note, venue ? '' : place);
         const invite: Invite = {
-          id: uid(), fromId: ME_ID, toId: input.toId, ideaId: input.ideaId, minutes: ideaOf(input.ideaId).minutes,
-          startsAt: input.startsAt, place: input.place.trim(), note: input.note.trim().slice(0, rules.NOTE_MAX),
+          id: uid(), fromId: ME_ID, toId: input.toId, ideaId: input.ideaId, minutes: idea.minutes,
+          startsAt: input.startsAt, place, note: input.note.trim().slice(0, rules.NOTE_MAX),
           status: 'sent', createdAt: now, expiresAt: rules.expiryFor(now, input.startsAt),
           firstPinkyBy: null, lockedAt: null, checkIns: [], flakedBy: null, declinedBy: null, resolvedAt: null,
         };

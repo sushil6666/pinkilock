@@ -553,3 +553,59 @@ These are the limits no build removes; they belong in the privacy policy and in 
 - The 96% figure depends on the people and the dates, not only on the build. The plan makes it
   visible, removes the known causes of bad experiences (spam, fakes, no-shows that look kept,
   crashes), and leaves the rest to be learned from real answers.
+
+## 8. Product features from the market review
+
+Added on 2026-11-17 after a review of 15 dating apps. The owner chose the large items first
+(`docs/decisions.md`, D036). These sit beside the hardening packages; each still follows section 6.
+
+### F1. Suggested venues: built
+
+A catalogue of well-known public places. An in-person ask picks one, and the server writes the
+place; typing "somewhere else" still works and is still checked for contacts. This is the first
+half of WP1's "place is picked, not typed": it removes typing for most asks without a maps
+provider. **Left:** a local's review of the list; lists for other cities (a city with none falls
+back to typing); partner venues; and dropping the typed fallback once coverage allows, which is
+what closes that channel completely.
+
+### F2. Selfie verification: not started, blocked
+
+A verified badge from a live selfie matched against the profile photo. **Blocked on:** real
+photos, which do not exist yet (Phase 4, with WP7b's in-app camera and server checks), and a
+liveness provider (O11). Build it as part of WP7b, not before: the same camera step can do both.
+Privacy: a face scan is biometric data, so it needs explicit consent, must not be kept after the
+check, and must be named in the data map (WP8).
+
+### F3. Double micro-date: designed, build after WP4
+
+Two friends ask two friends: four people, one plan. What it changes:
+
+- An invite gains a second person on each side. Each of the four puts a pinky out; it locks when
+  all four have. Any one declining ends it for all, with no flake.
+- Check-in: each person exchanges codes with someone from the other pair (WP4's codes), so the
+  rule "you met" still holds. This is why it comes after WP4.
+- A flake is on the person who did not show, never on their friend. The plan is `kept` for those
+  who checked in if at least one from each side did.
+- The reveal opens pair by pair, only between two people who both checked in, and only across the
+  two sides; friends already know each other.
+- Blocks: if anyone on the plan has blocked anyone else on it, the plan cannot be made, and the
+  refusal says nothing about who.
+- Both copies of the state machine, the push rules, the mock and every database test of the
+  invite change. Estimate it as the largest single package in this plan.
+
+### F4. Refundable stake: not started, blocked
+
+Each person puts down a small amount to lock a plan; showing up returns it, a no-show forfeits
+it. **Blocked on:** a payments account and a legal view (O12): holding and returning money is
+regulated differently by country (in India, by the payment rules that apply to holding customer
+funds), and both app stores have rules on what must go through their own payment systems. Design
+notes for when it unblocks: the stake is optional per plan and both must agree to it; a forfeited
+stake never goes to the other person (that would pay people to be stood up, and invite fraud); a
+plan `ended` by a block or deletion always refunds; and the Trust Score never depends on money.
+
+### Also from the review, not large
+
+Share my date with a trusted contact plus a safety check-in; "when I'm free" windows; an
+"usually answers in" badge (the worker already computes the figure); "round two" after a kept
+date; friend vouches. Recommended order when the owner wants them: share my date first.
+

@@ -129,6 +129,17 @@ test('errors carry a code and a trace id, and the phone error log cannot be read
   }
 });
 
+test('a picked venue: the server writes the place, whatever the app typed', async () => {
+  const sent = await raw.rpc('send_invite', { p_to: y.id, p_idea: 'boba_run', p_starts_at: new Date(Date.now() + 60 * MIN).toISOString(), p_place: 'my flat, call 98765 43210', p_note: '', p_venue: 'mum_carter_road' });
+  assert.equal(sent.error, null);
+  assert.equal(sent.data.place, 'Carter Road Promenade, Bandra West');
+  assert.equal(sent.data.venue_id, 'mum_carter_road');
+  await x.backend.declineInvite(sent.data.id);
+  const fake = await raw.rpc('send_invite', { p_to: y.id, p_idea: 'boba_run', p_starts_at: new Date(Date.now() + 60 * MIN).toISOString(), p_place: '', p_note: '', p_venue: 'my_flat' });
+  assert.equal(fake.error?.code, 'PL067', 'a venue that is not in the catalogue');
+  assert.ok((await raw.from('venues').insert({ id: 'x', city: 'Mumbai', area: 'Bandra', name: 'My flat', kind: 'landmark' })).error, 'adding a venue');
+});
+
 test('G1, G3 closed: profiles are written only through save_profile, which refuses a contact', async () => {
   assert.ok((await raw.from('profiles').update({ tagline: 'dm me on insta @xavier.real' }).eq('id', x.id).select('tagline')).error, 'a direct write to the profile');
   assert.ok((await raw.from('profiles').update({ photo_count: 99 }).eq('id', x.id).select('photo_count')).error, 'a direct write to a server-owned column');
