@@ -33,6 +33,8 @@ export function statusLine(i: Invite, meId: string, name: string, now: number): 
       return { text: i.declinedBy === meId ? (i.fromId === meId ? 'You took it back' : 'You passed') : `${upper} passed`, tone: color.textMute };
     case 'expired':
       return { text: 'Expired unanswered', tone: color.textMute };
+    case 'ended':
+      return { text: 'Ended  /  nobody flaked', tone: color.textMute };
   }
 }
 
@@ -49,7 +51,7 @@ export function InviteCard({ invite, meId, other, now, onPress, compact }: Props
   const idea = ideaOf(invite.ideaId);
   const name = other?.name ?? 'Someone';
   const status = statusLine(invite, meId, name, now);
-  const closed = invite.status === 'declined' || invite.status === 'expired';
+  const closed = invite.status === 'declined' || invite.status === 'expired' || invite.status === 'ended';
   const hot = status.tone === color.pink;
 
   return (

@@ -5,7 +5,8 @@
  *
  * tests/live/two_users.test.ts proves the backend; this proves that the screens on top of it
  * work when the other person is real: onboarding, Discover filling in when someone joins, the
- * ask, the lock gesture on both sides, check-in and the reveal. The UI only offers start times
+ * ask, the lock gesture on both sides, check-in and the reveal; then Phase 3 through the screens:
+ * B blocks A from A's profile, A loses B on reload, A downloads their data and deletes the account. The UI only offers start times
  * 45 minutes out or more, so the script moves the plan into its check-in window with E2E_DB_URL
  * (the one step no phone could do).
  *
@@ -150,6 +151,42 @@ try {
   await shot(A, 'reveal');
   await shot(B, 'reveal');
   ok('both checked in: kept, and each screen now shows the other handle');
+
+  // Phase 3: B blocks A from A's profile.
+  await btn(B.page, `${A.name}'s profile`).click();
+  await btn(B.page, 'Block or report').click();
+  await btn(B.page, `Hold to block ${A.name}`).waitFor();
+  await B.page.waitForTimeout(600); // the sheet slides up for 280 ms
+  await shot(B, 'block-sheet');
+  await hold(B.page, `Hold to block ${A.name}`);
+  await B.page.getByLabel('Me', { exact: true }).waitFor();
+  sqlIs(`select count(*) from public.blocks where blocker_id = '${bId}' and blocked_id = '${aId}'`, '1', 'B blocked A from the profile screen');
+  // A is not told; a fresh start shows what RLS returns now.
+  await A.page.goto(ORIGIN);
+  await A.page.getByLabel('Me', { exact: true }).waitFor();
+  await A.page.waitForTimeout(1500);
+  if (await A.page.getByText(B.name).count()) throw new Error("B is still on A's screen after the block");
+  await A.page.getByLabel('Plans', { exact: false }).first().click();
+  await A.page.waitForTimeout(800);
+  if (await A.page.getByText(B.name).count()) throw new Error("A still sees the plan with B after the block");
+  ok('after the block, A sees neither B nor their plan');
+
+  // A downloads their data, then deletes the account.
+  await A.page.getByLabel('Me', { exact: true }).click();
+  const [download] = await Promise.all([A.page.waitForEvent('download'), btn(A.page, 'Download my data').click()]);
+  const exported = JSON.parse(await new Promise((resolve, reject) => {
+    download.createReadStream().then((st) => { let t = ''; st.on('data', (c) => (t += c)); st.on('end', () => resolve(t)); st.on('error', reject); }, reject);
+  }));
+  if (exported.account?.id !== aId || exported.contact?.handle !== A.handle) throw new Error('the export is not A\'s data');
+  if (JSON.stringify(exported).includes(B.handle)) throw new Error("the export contains B's handle");
+  ok('A downloaded their data from Me');
+  await btn(A.page, 'Delete my account').click();
+  await btn(A.page, 'Hold to delete everything').waitFor();
+  await A.page.waitForTimeout(600);
+  await shot(A, 'delete-sheet');
+  await hold(A.page, 'Hold to delete everything');
+  await btn(A.page, 'Start').waitFor({ timeout: 15000 });
+  sqlIs(`select count(*) from public.profiles where id = '${aId}'`, '0', 'A deleted the account and is back at onboarding');
 } catch (e) {
   failed = true;
   console.error(`FAILED after step ${step}: ${e.message}`);
@@ -157,7 +194,7 @@ try {
 } finally {
   await browser.close();
   server.close();
-  sql(`delete from public.events where actor_id in (select id from public.profiles where name in ('${A.name}', '${B.name}')); delete from auth.users where is_anonymous and id in (select id from public.profiles where name in ('${A.name}', '${B.name}'))`);
+  sql(`delete from public.events where actor_id in (select id from public.profiles where name in ('${A.name}', '${B.name}')); delete from auth.users where is_anonymous and id in (select id from public.profiles where name in ('${A.name}', '${B.name}')); delete from public.blocks where blocker_id in (select id from public.profiles where name in ('${A.name}', '${B.name}'))`);
 }
 console.log(failed ? '\nAPP FLOW FAILED' : '\nAPP FLOW PASSED');
 process.exit(failed ? 1 : 0);

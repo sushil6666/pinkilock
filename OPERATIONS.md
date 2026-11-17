@@ -23,11 +23,14 @@ changed by hand in the Supabase dashboard, and nothing is deployed from a branch
 | Environment | Backend | App build | Status |
 | --- | --- | --- | --- |
 | Local | Mock (no keys) or `npm run db:start` (Docker) | Expo Go or a development build | In use |
-| Staging | Supabase `SUPABASE_PROJECT_REF` | EAS `preview` APK | Live since 2026-11-16 |
-| Production | Supabase `PROD_SUPABASE_PROJECT_REF` | EAS `production` | Not created yet (Phase 3) |
+| Staging | Supabase `SUPABASE_PROJECT_REF` (deploy target `preview`) | EAS `preview` APK | Live since 2026-11-16 |
+| Production | Supabase `PROD_SUPABASE_PROJECT_REF` (deploy target `production`) | EAS `production` | Prepared, not created yet (Phase 3) |
 
-The `production` EAS profile refuses to build until both `PROD_*` variables exist, so a store
-build can never quietly point at staging. Until then, the deploy workflow only targets staging.
+The `production` EAS profile refuses to build until both `PROD_*` variables exist, or if they
+point at staging, so a store build can never quietly point at staging. **Supabase deploy**
+targets staging on every push to `main`; it deploys production only when run by hand with target
+`production`, in the `production` GitHub environment, and refuses until `PROD_SUPABASE_PROJECT_REF`
+and `PROD_SUPABASE_DB_PASSWORD` exist. Production values never fall back to staging ones.
 
 ## 3. Secrets and variables
 
@@ -44,7 +47,11 @@ All of these live in GitHub, under Settings, Secrets and variables, Actions. Non
 | Variable | `SUPABASE_PROJECT_REF` | Everything that talks to the project | Not a secret |
 | Variable | `EXPO_PUBLIC_SUPABASE_ANON_KEY` | Live test, EAS build | Public by design, but rotating it needs a new app build |
 | Variable | `SUPABASE_POOLER_HOST` | Analytics worker | Printed in the summary of every **Supabase deploy** run |
-| Variable | `PROD_SUPABASE_PROJECT_REF`, `PROD_EXPO_PUBLIC_SUPABASE_ANON_KEY` | EAS `production` | Empty until Phase 3 |
+| Secret | `TWILIO_VERIFY_ACCOUNT_SID`, `TWILIO_VERIFY_AUTH_TOKEN`, `TWILIO_VERIFY_SERVICE_SID` | Deploy turns on phone sign-in with them (both projects) | Make a new auth token in Twilio, update the secret, run **Supabase deploy** |
+| Variable | `PROD_SUPABASE_PROJECT_REF`, `PROD_EXPO_PUBLIC_SUPABASE_ANON_KEY` | Deploy (target `production`), EAS `production`, analytics | Empty until there is a production project |
+| Secret | `PROD_SUPABASE_DB_PASSWORD`, `PROD_ANALYTICS_DB_PASSWORD` | Same as their staging twins, for production | As for staging |
+| Variable | `PROD_SUPABASE_POOLER_HOST` | Analytics worker (production) | Printed by a production deploy run |
+| Secret | `PROD_SUPABASE_ACCESS_TOKEN` | Optional: only if production is in another Supabase account | As for `SUPABASE_ACCESS_TOKEN` |
 
 Kept outside GitHub, and managed by the deploy:
 
@@ -60,10 +67,10 @@ Kept outside GitHub, and managed by the deploy:
 
 | Workflow | Runs when | What it does |
 | --- | --- | --- |
-| **CI** | Every push and PR | Typecheck, `tests/db`, and the two-user, push and two-browser tests on a local Supabase stack. Uses no project keys |
-| **Supabase deploy** | A push to `main` that touches `supabase/` or the workflow; or by hand | Turns on anonymous sign-ins, applies migrations, sets the analytics password, prints the pooler host, deploys `push`, rotates the push secret, then runs the live test |
-| **Live two-user test** | After each deploy; or by hand | Two anonymous users go through the whole flow on the real project, then are deleted |
-| **Analytics worker** | Every 5 minutes; or by hand | Recomputes trust scores and metrics. If a run fails it opens an `analytics-worker` issue, and the next good run closes it |
+| **CI** | Every push and PR | Typecheck, `tests/db`, and the live (two users, then block, report, export, phone, delete), push and two-browser tests on a local Supabase stack. Uses no project keys |
+| **Supabase deploy** | A push to `main` that touches `supabase/` or the workflow (target `preview`); or by hand, choosing `preview` or `production` | Turns on anonymous sign-ins, applies migrations, sets the analytics password, prints the pooler host, deploys `push`, rotates the push secret, turns on Twilio Verify if its secrets exist, then (staging only) runs the live tests |
+| **Live two-user test** | After each staging deploy; or by hand | Two anonymous users go through the whole flow, then three more through block, report, export and delete, on staging; all are deleted after. Never run on production |
+| **Analytics worker** | Every 5 minutes; or by hand | Recomputes trust scores and metrics, once per project that is set up. If a run fails it opens an `analytics-worker` issue (`analytics-worker-production` for production), and the next good run closes it |
 | **EAS build** | By hand (pick a profile and platform) | Copies the backend values into the EAS environment, builds, and puts the install link in the run summary |
 | **EAS init** | Once, by hand | Created the EAS project (id is already in `app.json`) |
 
@@ -123,6 +130,9 @@ select status_code, error_msg, created from net._http_response order by created 
 
 -- Trust scores are fresh: should be within the last 10 minutes or so.
 select max(computed_at) as last_scored from public.trust_scores;
+
+-- Reports nobody has looked at yet.
+select id, reason, detail, reported_id, created_at from public.reports where reviewed_at is null order by created_at;
 ```
 
 3. **Supabase dashboard**, Edge Functions, `push`, Logs: no repeated errors.
@@ -172,6 +182,28 @@ Open the failing run.
 
 The app keeps showing the last good scores in the meantime, so nothing breaks for users.
 
+### A report comes in
+
+Reports are readable only with the database role, in the SQL editor (query in section 6). The
+reporter has already blocked the person, so nothing is urgent for them. Look at the reported
+person's other reports (`where reported_id = ...`), and mark it looked at:
+`update public.reports set reviewed_at = now(), review_note = '...' where id = ...`. There is no
+ban tool yet; if one is needed, deleting that person's auth user (Authentication, Users) removes
+them the same way as an in-app deletion.
+
+### Someone asks for their data, or for their account to go
+
+Both are in the app: Me, Account, **Download my data** and **Delete my account**. Deletion is
+immediate and cannot be undone; the events log keeps anonymous rows, and reports keep their
+rows without the id.
+
+### Phone sign-in does not work
+
+- The app says "Phone sign-in is not switched on yet": the three `TWILIO_VERIFY_*` secrets are not
+  all set, or the deploy has not run since. Its run summary says whether phone sign-in is on.
+- Codes never arrive: check the Twilio console (Verify, Logs). Verify sends Indian OTPs from its
+  own registered templates; other countries may need to be allowed in the service's settings.
+
 ### The EAS build fails
 
 - **Missing `EXPO_TOKEN`, or no `projectId`:** see the error text in the run.
@@ -211,9 +243,10 @@ The app keeps showing the last good scores in the meantime, so nothing breaks fo
 
 From `ROADMAP.md`, Phase 3. All of these must be true first:
 
-- [ ] Reporting and blocking shipped, enforced by RLS
-- [ ] Phone sign-in, account deletion and data export
-- [ ] A production Supabase project, separate from staging, with backups (and ideally PITR)
+- [ ] Reporting and blocking shipped, enforced by RLS (built in PR #3; ships to staging on merge)
+- [ ] Phone sign-in, account deletion and data export (built in PR #3; phone needs Twilio)
+- [ ] A production Supabase project, separate from staging, with backups (and ideally PITR); the
+      workflows are ready for it (`docs/phase-3-checklist.md`, step 3)
 - [ ] `PROD_*` variables set, and a `production` build tested on Android and iOS
 - [ ] Push checked on real devices on both platforms
 - [ ] A privacy policy published, and store data-safety forms filled in

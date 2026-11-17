@@ -22,6 +22,9 @@ const CHANNEL = 'promises';
 
 let status: PushStatus = { state: 'unavailable', detail: 'Not set up yet.' };
 let started: Promise<PushStatus> | null = null;
+/** The token this device registered, so that signing out can hand it back. */
+let registered: string | null = null;
+let listening = false;
 const watchers = new Set<(s: PushStatus) => void>();
 const set = (s: PushStatus) => {
   status = s;
@@ -75,9 +78,12 @@ async function start(): Promise<PushStatus> {
       });
     }
 
-    Notifications.addNotificationResponseReceivedListener((r) => open(r.notification.request.content.data));
-    // The app was closed and a tap started it.
-    Notifications.getLastNotificationResponseAsync().then((r) => r && open(r.notification.request.content.data), () => {});
+    // Once per app run, even if a sign-out and a sign-in start push again.
+    if (!listening) {
+      Notifications.addNotificationResponseReceivedListener((r) => open(r.notification.request.content.data));
+      // The app was closed and a tap started it.
+      Notifications.getLastNotificationResponseAsync().then((r) => r && open(r.notification.request.content.data), () => {});
+    }
 
     let permission = await Notifications.getPermissionsAsync();
     if (!permission.granted && permission.canAskAgain) permission = await Notifications.requestPermissionsAsync();
@@ -87,11 +93,17 @@ async function start(): Promise<PushStatus> {
     if (!projectId) return set({ state: 'error', detail: 'This build has no EAS project id, so it cannot get a push token.' });
     const token = (await Notifications.getExpoPushTokenAsync({ projectId })).data;
     await backend.registerPushToken(token, Platform.OS === 'ios' ? 'ios' : 'android');
+    registered = token;
 
     // Tokens can rotate (restore from backup, reinstall of Google Play services).
-    Notifications.addPushTokenListener(() => {
-      Notifications.getExpoPushTokenAsync({ projectId }).then((t) => backend.registerPushToken(t.data, Platform.OS === 'ios' ? 'ios' : 'android'), () => {});
+    if (!listening) Notifications.addPushTokenListener(() => {
+      Notifications.getExpoPushTokenAsync({ projectId }).then(async (t) => {
+        if (!registered) return; // signed out since
+        await backend.registerPushToken(t.data, Platform.OS === 'ios' ? 'ios' : 'android');
+        registered = t.data;
+      }, () => {});
     });
+    listening = true;
     return set({ state: 'on', detail: 'You will hear about asks, locks, check-in and bails.' });
   } catch (e) {
     return set({ state: 'error', detail: e instanceof Error ? e.message : 'Could not set up notifications.' });
@@ -101,4 +113,16 @@ async function start(): Promise<PushStatus> {
 /** Ask for permission and register this device. Safe to call often: it only runs once. */
 export function startPush(): Promise<PushStatus> {
   return (started ??= start());
+}
+
+/**
+ * Signing out: this phone stops getting the person's pushes. The next sign-in registers again.
+ * (Deleting the account needs none of this: the server drops the person's tokens with them.)
+ */
+export async function stopPush(): Promise<void> {
+  const token = registered;
+  registered = null;
+  started = null;
+  if (token) await backend.unregisterPushToken(token).catch(() => {});
+  set({ state: 'unavailable', detail: 'Not set up yet.' });
 }

@@ -8,7 +8,8 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as rules from '../../domain/invites';
 import { ideaOf } from '../../domain/ideas';
-import type { Invite, MyContact, NewInvite, OnboardingInput, Profile, Reveal } from '../../domain/types';
+import { REPORT_DETAIL_MAX, REPORT_REASONS, REPORTS_PER_DAY } from '../../domain/safety';
+import type { BlockedPerson, Invite, MyContact, NewInvite, OnboardingInput, Profile, ReportReason, Reveal } from '../../domain/types';
 import type { Backend, BackendEvent, Changes, Notice, Snapshot } from '../backend';
 import { ALWAYS_PASSES, ME_ID, SEED_ME_RECORD, seedInvites, seedProfiles, seedReveals } from './seed';
 
@@ -17,6 +18,10 @@ const LATENCY = 280;
 const THEY_ANSWER_AFTER = 7000;
 const THEY_SEAL_AFTER = 2400;
 const THEY_CHECK_IN_AFTER = 1800;
+/** The mock "sends" every sign-in code as this. The phone screen says so in mock mode. */
+export const MOCK_CODE = '123456';
+/** A signed-out account waits here, under its phone number, until someone signs back in. */
+const parked = (phone: string) => `${KEY}.phone.${phone}`;
 
 interface Db {
   me: Profile | null;
@@ -27,6 +32,11 @@ interface Db {
   due: Record<string, number>;
   /** Kept so the mock honours the same contract; there is no server here to send anything. */
   pushTokens?: string[];
+  /** People I blocked. The made-up people never block back. */
+  blocked?: { id: string; at: number }[];
+  /** Kept only so the contract matches: nothing in the app can read them back. */
+  reports?: { profileId: string; reason: ReportReason; detail: string; inviteId: string | null; at: number }[];
+  phone?: string | null;
 }
 
 const wait = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
@@ -55,7 +65,13 @@ export function createMockBackend(): Backend {
     if (db) AsyncStorage.setItem(KEY, JSON.stringify(db)).catch(() => {});
   };
 
-  const snapshot = (d: Db): Snapshot => ({ me: d.me, myContact: d.myContact, profiles: d.profiles, invites: d.invites, passedIds: d.passedIds });
+  // What RLS would let me see: nobody I blocked, and no invite with them.
+  const isBlocked = (d: Db, id: string) => !!d.blocked?.some((b) => b.id === id);
+  const visible = (d: Db) => ({
+    profiles: d.profiles.filter((p) => !isBlocked(d, p.id)),
+    invites: d.invites.filter((i) => !isBlocked(d, rules.otherId(i, ME_ID))),
+  });
+  const snapshot = (d: Db): Snapshot => ({ me: d.me, myContact: d.myContact, ...visible(d), passedIds: d.passedIds });
   const emit = (changes: Changes, notice?: Notice) => listeners.forEach((l) => l({ changes, notice }));
   const nameOf = (d: Db, id: string) => d.profiles.find((p) => p.id === id)?.name ?? 'They';
 
@@ -65,7 +81,7 @@ export function createMockBackend(): Backend {
   }
 
   function find(d: Db, id: string): Invite {
-    const i = d.invites.find((x) => x.id === id);
+    const i = visible(d).invites.find((x) => x.id === id);
     if (!i) throw new Error('That invite is gone.');
     return i;
   }
@@ -149,6 +165,19 @@ export function createMockBackend(): Backend {
     if (dirty) save();
   }
 
+  /** Block: they vanish for me and every live invite between us ends, with no flake for anyone. */
+  function block(d: Db, profileId: string, now: number): Changes {
+    if (!d.me) throw new Error('Finish setting up first.');
+    if (profileId === ME_ID) throw new Error('You cannot block yourself.');
+    if (!isBlocked(d, profileId)) d.blocked = [...(d.blocked ?? []), { id: profileId, at: now }];
+    const theirs = d.invites.filter((i) => rules.otherId(i, ME_ID) === profileId);
+    for (const i of theirs) {
+      put(d, rules.endForBlock(i, now));
+      delete d.due[i.id];
+    }
+    return { removed: { profiles: [profileId], invites: theirs.map((i) => i.id) } };
+  }
+
   function start() {
     if (!timer) timer = setInterval(tick, 1000);
   }
@@ -217,6 +246,7 @@ export function createMockBackend(): Backend {
         const open = d.invites.filter((i) => i.fromId === ME_ID && rules.isOpen(i));
         if (open.length >= rules.MAX_OPEN_ASKS) throw new Error(`You have ${rules.MAX_OPEN_ASKS} asks open. Wait for an answer first.`);
         if (d.invites.some((i) => rules.isLive(i) && rules.otherId(i, ME_ID) === input.toId)) throw new Error('You two already have something open.');
+        if (isBlocked(d, input.toId)) throw new Error('That person is not available.');
         if (input.startsAt <= now) throw new Error('Pick a time that has not passed.');
         const invite: Invite = {
           id: uid(), fromId: ME_ID, toId: input.toId, ideaId: input.ideaId, minutes: ideaOf(input.ideaId).minutes,
@@ -281,6 +311,105 @@ export function createMockBackend(): Backend {
       const d = await load();
       d.pushTokens = (d.pushTokens ?? []).filter((t) => t !== token);
       save();
+    },
+
+    block: (profileId) => mutate((d, now) => block(d, profileId, now)),
+
+    unblock: (profileId) =>
+      mutate((d) => {
+        d.blocked = (d.blocked ?? []).filter((b) => b.id !== profileId);
+        return { profiles: d.profiles.filter((p) => p.id === profileId), invites: d.invites.filter((i) => rules.otherId(i, ME_ID) === profileId) };
+      }),
+
+    async blockedPeople(): Promise<BlockedPerson[]> {
+      const d = await load();
+      await wait(LATENCY);
+      return (d.blocked ?? []).map((b) => ({ profileId: b.id, name: nameOf(d, b.id), blockedAt: b.at })).sort((a, b) => b.blockedAt - a.blockedAt);
+    },
+
+    report: (input) =>
+      mutate((d, now) => {
+        if (!d.me) throw new Error('Finish setting up first.');
+        if (!REPORT_REASONS.some((r) => r.id === input.reason)) throw new Error('Pick a reason.');
+        if (input.detail.length > REPORT_DETAIL_MAX) throw new Error(`Keep it under ${REPORT_DETAIL_MAX} characters.`);
+        const today = (d.reports ?? []).filter((r) => r.at > now - rules.DAY);
+        if (today.length >= REPORTS_PER_DAY) throw new Error('You have sent a lot of reports today. We are looking at them.');
+        const shared = d.invites.find((i) => i.id === input.inviteId && rules.otherId(i, ME_ID) === input.profileId);
+        d.reports = [...(d.reports ?? []), { profileId: input.profileId, reason: input.reason, detail: input.detail.trim(), inviteId: shared?.id ?? null, at: now }];
+        return block(d, input.profileId, now);
+      }),
+
+    async exportMyData() {
+      const d = await load();
+      await wait(LATENCY);
+      return JSON.stringify({
+        format: 'pinkilock-export-1',
+        exported_at: new Date().toISOString(),
+        account: { id: ME_ID, phone: d.phone ?? null, is_anonymous: !d.phone, backend: 'mock' },
+        profile: d.me,
+        contact: d.myContact,
+        invites: d.invites.map((i) => ({
+          id: i.id, role: i.fromId === ME_ID ? 'asked' : 'was_asked', other_person: rules.otherId(i, ME_ID), idea: i.ideaId,
+          starts_at: new Date(i.startsAt).toISOString(), place: i.place, note: i.note, status: i.status,
+          my_check_in: i.checkIns.includes(ME_ID), flaked: i.flakedBy === ME_ID,
+        })),
+        passes: d.passedIds.map((profile) => ({ profile })),
+        blocks: (d.blocked ?? []).map((b) => ({ profile: b.id, at: new Date(b.at).toISOString() })),
+        reports_made: (d.reports ?? []).map((r) => ({ profile: r.profileId, reason: r.reason, detail: r.detail, at: new Date(r.at).toISOString() })),
+        devices: (d.pushTokens ?? []).map(() => ({ platform: 'this phone' })),
+      }, null, 2);
+    },
+
+    async deleteAccount() {
+      await load();
+      await wait(LATENCY);
+      await AsyncStorage.removeItem(KEY).catch(() => {});
+      db = fresh();
+      return snapshot(db);
+    },
+
+    async account() {
+      const d = await load();
+      return { phone: d.phone ?? null, phoneAvailable: true, mockCode: MOCK_CODE };
+    },
+
+    async sendPhoneCode(phone, mode) {
+      const d = await load();
+      await wait(LATENCY);
+      if (mode === 'link') {
+        if (!d.me) throw new Error('Finish setting up first.');
+        return;
+      }
+      if (!(await AsyncStorage.getItem(parked(phone)).catch(() => null))) {
+        throw new Error('No account uses that number yet. Set one up first, then add the number in Me.');
+      }
+    },
+
+    async verifyPhoneCode(phone, code, mode) {
+      const d = await load();
+      await wait(LATENCY);
+      if (code !== MOCK_CODE) throw new Error('That code did not match or has expired. Check it, or send a new one.');
+      if (mode === 'link') {
+        d.phone = phone;
+        save();
+        return snapshot(d);
+      }
+      const raw = await AsyncStorage.getItem(parked(phone));
+      if (!raw) throw new Error('No account uses that number yet. Set one up first, then add the number in Me.');
+      await AsyncStorage.removeItem(parked(phone));
+      db = JSON.parse(raw) as Db;
+      save();
+      start();
+      return snapshot(db);
+    },
+
+    async signOut() {
+      const d = await load();
+      if (!d.phone) throw new Error('Add a phone number first, or you could not get back in.');
+      await AsyncStorage.setItem(parked(d.phone), JSON.stringify(d));
+      db = fresh();
+      save();
+      return snapshot(db);
     },
 
     async demoReset() {

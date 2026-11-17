@@ -1,13 +1,25 @@
-# Sends supabase/ to the real project: auth settings, migrations (schema, RLS, cron, push), the
-# push Edge Function and its shared secret, and then proves it with the two-user test. Nothing is set up by hand in the Supabase dashboard.
+# Sends supabase/ to a Supabase project: auth settings, migrations (schema, RLS, cron, push), the
+# push Edge Function and its shared secret, and then proves it with the two-user test. Nothing is
+# set up by hand in the Supabase dashboard.
 #
-# Needs, in the repository's Actions settings:
-#   secrets    SUPABASE_ACCESS_TOKEN   personal access token (supabase.com/dashboard/account/tokens)
-#              SUPABASE_DB_PASSWORD    the project's database password
-#   variables  SUPABASE_PROJECT_REF    the project ref
-#              EXPO_PUBLIC_SUPABASE_ANON_KEY   the anon (publishable) key, for the test that follows
-#   optional   secret ANALYTICS_DB_PASSWORD (lets the analytics worker log in; see analytics.yml)
-#              secret EXPO_ACCESS_TOKEN (Expo push with enhanced security)
+# Two targets:
+#   preview      the project in SUPABASE_PROJECT_REF. Deployed on every push to main that touches
+#                supabase/, and by hand. The installable preview APK talks to it.
+#   production   the project in PROD_SUPABASE_PROJECT_REF. Only by hand (Run workflow, target
+#                production), and refused until that variable exists, so nothing can reach a
+#                production project before there is one. It runs in the `production` GitHub
+#                environment, where required reviewers can be added (Settings, Environments).
+#                The two-user test is not run there: it would put test people in real Discover.
+#
+# Needs, in the repository's Actions settings (secrets / variables):
+#   preview      secrets SUPABASE_ACCESS_TOKEN, SUPABASE_DB_PASSWORD
+#                variables SUPABASE_PROJECT_REF, EXPO_PUBLIC_SUPABASE_ANON_KEY (for the test)
+#   production   secret PROD_SUPABASE_DB_PASSWORD; variable PROD_SUPABASE_PROJECT_REF
+#                (SUPABASE_ACCESS_TOKEN is used unless PROD_SUPABASE_ACCESS_TOKEN is set)
+#   optional     ANALYTICS_DB_PASSWORD / PROD_ANALYTICS_DB_PASSWORD (the analytics worker's login)
+#                EXPO_ACCESS_TOKEN (Expo push with enhanced security)
+#                TWILIO_VERIFY_ACCOUNT_SID, TWILIO_VERIFY_AUTH_TOKEN, TWILIO_VERIFY_SERVICE_SID
+#                (phone sign-in; until all three exist the phone provider is left off)
 name: Supabase deploy
 
 on:
@@ -15,30 +27,65 @@ on:
     branches: [main]
     paths: ['supabase/**', '.github/workflows/supabase-deploy.yml']
   workflow_dispatch:
+    inputs:
+      target:
+        description: Which project
+        type: choice
+        options: [preview, production]
+        default: preview
 
 concurrency:
-  group: supabase-deploy
+  group: supabase-deploy-${{ inputs.target || 'preview' }}
   cancel-in-progress: false
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    environment: ${{ inputs.target == 'production' && 'production' || 'preview' }}
     env:
-      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
-      SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
-      SUPABASE_PROJECT_REF: ${{ vars.SUPABASE_PROJECT_REF }}
+      TARGET: ${{ inputs.target || 'preview' }}
       # This workflow is the confirmation: running it means "apply supabase/ to the project".
       SUPABASE_YES: '1'
     steps:
       - uses: actions/checkout@v4
-      - name: Check that the project values are set
+      - name: Pick the project
+        # Both targets' values come in; only the chosen one is passed on. Production is refused
+        # outright until PROD_SUPABASE_PROJECT_REF exists: there is no fallback to preview values.
+        env:
+          PREVIEW_REF: ${{ vars.SUPABASE_PROJECT_REF }}
+          PREVIEW_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          PREVIEW_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+          PREVIEW_ANALYTICS_PASSWORD: ${{ secrets.ANALYTICS_DB_PASSWORD }}
+          PROD_REF: ${{ vars.PROD_SUPABASE_PROJECT_REF }}
+          PROD_TOKEN: ${{ secrets.PROD_SUPABASE_ACCESS_TOKEN || secrets.SUPABASE_ACCESS_TOKEN }}
+          PROD_DB_PASSWORD: ${{ secrets.PROD_SUPABASE_DB_PASSWORD }}
+          PROD_ANALYTICS_PASSWORD: ${{ secrets.PROD_ANALYTICS_DB_PASSWORD }}
         run: |
+          case "$TARGET" in
+            preview)    p=PREVIEW; names="SUPABASE_PROJECT_REF SUPABASE_ACCESS_TOKEN SUPABASE_DB_PASSWORD" ;;
+            production) p=PROD; names="PROD_SUPABASE_PROJECT_REF SUPABASE_ACCESS_TOKEN PROD_SUPABASE_DB_PASSWORD" ;;
+            *) echo "::error::Unknown target $TARGET"; exit 1 ;;
+          esac
+          ref="${p}_REF" token="${p}_TOKEN" pw="${p}_DB_PASSWORD" apw="${p}_ANALYTICS_PASSWORD"
           missing=0
-          for name in SUPABASE_ACCESS_TOKEN SUPABASE_DB_PASSWORD SUPABASE_PROJECT_REF; do
-            if [ -z "${!name}" ]; then echo "::error::$name is not set (Settings, Secrets and variables, Actions)"; missing=1; fi
+          set -- $names
+          for v in "$ref" "$token" "$pw"; do
+            if [ -z "${!v}" ]; then echo "::error::$1 is not set (Settings, Secrets and variables, Actions), so nothing is deployed to $TARGET"; missing=1; fi
+            shift
           done
-          exit $missing
+          [ "$missing" = 0 ] || exit 1
+          if [ "$TARGET" = production ] && [ "${!ref}" = "$PREVIEW_REF" ]; then
+            echo "::error::PROD_SUPABASE_PROJECT_REF is the preview project. Production needs a project of its own."; exit 1
+          fi
+          {
+            echo "SUPABASE_PROJECT_REF=${!ref}"
+            echo "SUPABASE_ACCESS_TOKEN=${!token}"
+            echo "SUPABASE_DB_PASSWORD=${!pw}"
+            echo "ANALYTICS_DB_PASSWORD=${!apw}"
+          } >> "$GITHUB_ENV"
+          echo "Deploying to $TARGET: ${!ref}"
+          echo "### Supabase deploy: $TARGET (\`${!ref}\`)" >> "$GITHUB_STEP_SUMMARY"
       - uses: actions/setup-node@v4
         with:
           node-version: 22
@@ -60,20 +107,20 @@ jobs:
       - name: Let the analytics worker log in
         # Sets the pinkilock_analytics password from the same secret the worker uses. Its
         # rights come from the migrations and are not changed here.
-        env:
-          ANALYTICS_DB_PASSWORD: ${{ secrets.ANALYTICS_DB_PASSWORD }}
         run: |
           if [ -n "$ANALYTICS_DB_PASSWORD" ]; then
             scripts/analytics-role.sh "$(scripts/supabase-db-url.sh postgres "$SUPABASE_DB_PASSWORD")"
           else
-            echo "::warning::ANALYTICS_DB_PASSWORD is not set, so the analytics worker cannot log in yet"
+            name=ANALYTICS_DB_PASSWORD; [ "$TARGET" = production ] && name=PROD_ANALYTICS_DB_PASSWORD
+            echo "::warning::$name is not set (or is empty), so the analytics worker cannot log in to $TARGET yet"
           fi
       - name: Say where the session pooler is
-        # Not a secret. The analytics workflow needs it as the SUPABASE_POOLER_HOST variable.
+        # Not a secret. The analytics workflow needs it as a variable.
         run: |
           host="$(scripts/supabase-db-url.sh postgres x | python3 -c 'import sys, urllib.parse as u; print(u.urlsplit(sys.stdin.read().strip()).hostname)')"
+          name=SUPABASE_POOLER_HOST; [ "$TARGET" = production ] && name=PROD_SUPABASE_POOLER_HOST
           echo "Session pooler host: $host"
-          echo "Set the repository variable \`SUPABASE_POOLER_HOST\` to \`$host\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "Set the repository variable \`$name\` to \`$host\`" >> "$GITHUB_STEP_SUMMARY"
       - name: Deploy the push function
         run: npx supabase functions deploy push --use-api --no-verify-jwt
       - name: Connect Postgres to the push function
@@ -87,8 +134,31 @@ jobs:
           if [ -n "$EXPO_ACCESS_TOKEN" ]; then
             npx supabase secrets set "EXPO_ACCESS_TOKEN=$EXPO_ACCESS_TOKEN" >/dev/null
           fi
+      - name: Phone sign-in (Twilio Verify), once its keys exist
+        # Left off until all three secrets are set. Twilio Verify sends the codes from its own
+        # registered templates, which is what India's DLT rules need for OTP texts.
+        env:
+          SID: ${{ secrets.TWILIO_VERIFY_ACCOUNT_SID }}
+          TOKEN: ${{ secrets.TWILIO_VERIFY_AUTH_TOKEN }}
+          SERVICE: ${{ secrets.TWILIO_VERIFY_SERVICE_SID }}
+        run: |
+          if [ -z "$SID" ] || [ -z "$TOKEN" ] || [ -z "$SERVICE" ]; then
+            echo "Phone sign-in stays off: the TWILIO_VERIFY_* secrets are not all set."
+            echo "- Phone sign-in: off (no SMS provider yet)" >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          python3 -c 'import json, os; print(json.dumps({"external_phone_enabled": True, "sms_provider": "twilio_verify", "sms_autoconfirm": False,
+            "sms_twilio_verify_account_sid": os.environ["SID"], "sms_twilio_verify_auth_token": os.environ["TOKEN"],
+            "sms_twilio_verify_message_service_sid": os.environ["SERVICE"]}))' > "$RUNNER_TEMP/phone.json"
+          curl -fsS -X PATCH "https://api.supabase.com/v1/projects/$SUPABASE_PROJECT_REF/config/auth" \
+            -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" -H "Content-Type: application/json" \
+            --data @"$RUNNER_TEMP/phone.json" -o /dev/null
+          rm -f "$RUNNER_TEMP/phone.json"
+          echo "- Phone sign-in: on (Twilio Verify)" >> "$GITHUB_STEP_SUMMARY"
 
   live-test:
+    # Preview only: on production it would put test people in front of real ones.
     needs: deploy
+    if: ${{ (inputs.target || 'preview') == 'preview' }}
     uses: ./.github/workflows/live-test.yml
     secrets: inherit

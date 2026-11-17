@@ -4,7 +4,8 @@
  * section 3). Nothing here knows whether the backend is the mock or Supabase.
  */
 import { create } from 'zustand';
-import type { Invite, MyContact, NewInvite, OnboardingInput, Profile } from '../domain/types';
+import type { Account, Invite, MyContact, NewInvite, NewReport, OnboardingInput, PhoneMode, Profile } from '../domain/types';
+import { stopPush } from '../lib/push';
 import { backend, type Changes, type Notice, type Snapshot } from '../services';
 
 interface State {
@@ -16,6 +17,8 @@ interface State {
   invites: Invite[];
   passedIds: string[];
   notice: Notice | null;
+  /** How I sign in (anonymous until a phone is linked). Loaded by the Me tab. */
+  account: Account | null;
 
   boot(): Promise<void>;
   completeOnboarding(input: OnboardingInput): Promise<void>;
@@ -27,6 +30,14 @@ interface State {
   declineInvite(inviteId: string): Promise<void>;
   checkIn(inviteId: string): Promise<void>;
   bail(inviteId: string): Promise<void>;
+  block(profileId: string): Promise<void>;
+  unblock(profileId: string): Promise<void>;
+  report(input: NewReport): Promise<void>;
+  deleteAccount(): Promise<void>;
+  loadAccount(): Promise<Account>;
+  sendPhoneCode(phone: string, mode: PhoneMode): Promise<void>;
+  verifyPhoneCode(phone: string, code: string, mode: PhoneMode): Promise<void>;
+  signOut(): Promise<void>;
   demoReset(): Promise<void>;
   demoBringForward(inviteId: string): Promise<void>;
   dismissNotice(): void;
@@ -41,11 +52,16 @@ function mergeById<T extends { id: string }>(current: T[], incoming: T[] | undef
 }
 
 function merge(s: State, c: Changes): Partial<State> {
+  const goneProfiles = new Set(c.removed?.profiles ?? []);
+  const goneInvites = new Set(c.removed?.invites ?? []);
+  const profiles = mergeById(s.profiles, c.profiles).filter((p) => !goneProfiles.has(p.id));
+  const invites = mergeById(s.invites, c.invites)
+    .filter((i) => !goneInvites.has(i.id) && !goneProfiles.has(i.fromId) && !goneProfiles.has(i.toId));
   return {
     me: c.me ?? s.me,
     myContact: c.myContact ?? s.myContact,
-    profiles: mergeById(s.profiles, c.profiles),
-    invites: mergeById(s.invites, c.invites),
+    profiles,
+    invites,
     passedIds: c.passedIds ?? s.passedIds,
   };
 }
@@ -72,6 +88,7 @@ export const useStore = create<State>((set, get) => {
     invites: [],
     passedIds: [],
     notice: null,
+    account: null,
 
     async boot() {
       if (!subscribed) {
@@ -113,6 +130,37 @@ export const useStore = create<State>((set, get) => {
     },
     async bail(inviteId) {
       await apply(backend.bail(inviteId));
+    },
+    async block(profileId) {
+      await apply(backend.block(profileId));
+    },
+    async unblock(profileId) {
+      await apply(backend.unblock(profileId));
+    },
+    async report(input) {
+      await apply(backend.report(input));
+    },
+    async deleteAccount() {
+      const snap = await backend.deleteAccount();
+      set({ ...fromSnapshot(snap), notice: null, account: null });
+    },
+    async loadAccount() {
+      const account = await backend.account();
+      set({ account });
+      return account;
+    },
+    async sendPhoneCode(phone, mode) {
+      await backend.sendPhoneCode(phone, mode);
+    },
+    async verifyPhoneCode(phone, code, mode) {
+      const snap = await backend.verifyPhoneCode(phone, code, mode);
+      set({ ...fromSnapshot(snap), notice: null, account: await backend.account() });
+    },
+    async signOut() {
+      if (!(await backend.account()).phone) throw new Error('Add a phone number first, or you could not get back in.');
+      await stopPush();
+      const snap = await backend.signOut();
+      set({ ...fromSnapshot(snap), notice: null, account: null });
     },
     async demoReset() {
       set({ ...fromSnapshot(await backend.demoReset()), notice: null });

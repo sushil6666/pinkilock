@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Database checks on a throwaway Postgres: every file in supabase/migrations in order (the same
-SQL that `supabase db push` sends to the project), RLS, the promise functions, then the DuckDB
-pipeline end to end.
+SQL that `supabase db push` sends to the project), RLS, the promise functions, the DuckDB
+pipeline end to end, the push outbox, blocking and reporting, data export and account deletion.
 
     pip install pgserver duckdb
     python tests/db/run.py
@@ -38,13 +38,18 @@ def main() -> int:
                 if out.returncode != 0:
                     print(out.stderr, file=sys.stderr)
                     return 1
-            print("== analytics/duckdb_pipeline.py")
-            run = subprocess.run([args.duckdb_python, str(ROOT / "analytics" / "duckdb_pipeline.py"), "--dsn", uri])
-            if run.returncode != 0:
-                return 1
-            for f in (HERE / "check_scores.sql", HERE / "push.sql"):
-                print(f"== {f.relative_to(ROOT)}")
-                out = subprocess.run(["psql", uri, "-v", "ON_ERROR_STOP=1", "-q", "-f", str(f)], capture_output=True, text=True)
+            # The pipeline runs twice: once on the promise scenario, and again after blocks,
+            # reports and an account deletion, which must leave everyone else's score alone.
+            for step in ("pipeline", HERE / "check_scores.sql", HERE / "push.sql", HERE / "safety.sql", HERE / "account.sql",
+                         "pipeline", HERE / "check_after.sql"):
+                if step == "pipeline":
+                    print("== analytics/duckdb_pipeline.py")
+                    run = subprocess.run([args.duckdb_python, str(ROOT / "analytics" / "duckdb_pipeline.py"), "--dsn", uri])
+                    if run.returncode != 0:
+                        return 1
+                    continue
+                print(f"== {step.relative_to(ROOT)}")
+                out = subprocess.run(["psql", uri, "-v", "ON_ERROR_STOP=1", "-q", "-f", str(step)], capture_output=True, text=True)
                 print("\n".join(l for l in out.stdout.splitlines() if l.strip().startswith("ok")))
                 if out.returncode != 0:
                     print(out.stderr, file=sys.stderr)

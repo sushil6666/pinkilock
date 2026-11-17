@@ -1,6 +1,6 @@
 /**
  * The invite state machine (ARCHITECTURE.md section 4) as pure functions.
- * The mock backend calls these; the SQL functions in supabase/schema.sql follow the same rules.
+ * The mock backend calls these; the SQL functions in supabase/migrations follow the same rules.
  */
 import type { Invite } from './types';
 
@@ -83,4 +83,14 @@ export function sweep(i: Invite, now: number): Invite {
     return { ...i, status: 'flaked', flakedBy: missing[0] ?? null, resolvedAt: now };
   }
   return i;
+}
+
+/**
+ * A block (or an account deletion) ends every live invite between the two people at once.
+ * Nobody flaked: it is not a decline, a bail or a no-show, and it moves no one's record.
+ * SQL: private.end_live_invites in supabase/migrations/20261117000002_safety.sql.
+ */
+export function endForBlock(i: Invite, now: number): Invite {
+  if (!isLive(i)) return i;
+  return { ...i, status: 'ended', resolvedAt: now };
 }

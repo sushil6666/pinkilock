@@ -48,12 +48,13 @@ create or replace table profiles as
 
 TRUST = f"""
 create or replace table trust_scores as
+-- Kept promises come from the log, like flakes: when the other person deletes their account the
+-- invite goes, but your own `kept` row stays (supabase/migrations/20261117000003_account.sql).
 with kept as (
-  select person, count(*) as kept
-  from (select from_id as person from invites where status = 'kept'
-        union all
-        select to_id from invites where status = 'kept')
-  group by person
+  select actor_id as person, count(distinct invite_id) as kept
+  from events
+  where type = 'kept' and actor_id is not null
+  group by actor_id
 ),
 flakes as (
   select actor_id as person,

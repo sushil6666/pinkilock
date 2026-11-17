@@ -78,6 +78,9 @@ export default function InviteScreen() {
       ? ['You closed this one.', 'No promise was made, so nothing goes on anyone\'s record.']
       : [`${name} passed.`, 'No promise was made, so nothing goes on anyone\'s record. Your ask slot is free again.'];
     footer = toDiscover;
+  } else if (invite.status === 'ended') {
+    head = ['This one ended.', 'It closed without anyone flaking, so nothing goes on anyone\'s record.'];
+    footer = toDiscover;
   } else {
     head = ['This ask ran out.', `Nobody answered in time. ${iSent ? 'Your ask slot is free again.' : 'Nothing goes on your record.'}`];
     footer = toDiscover;

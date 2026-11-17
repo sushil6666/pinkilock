@@ -1,13 +1,16 @@
 /** Someone's profile: what they are up for, their record, and what stays locked until you both show. */
 import { Feather } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
+import { useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { LockedReveal } from '@/components/LockedReveal';
 import { Portrait } from '@/components/Portrait';
 import { TrustBadge } from '@/components/TrustBadge';
 import { Button } from '@/components/ui/Button';
 import { Chip, Tag } from '@/components/ui/Chip';
-import { Screen } from '@/components/ui/Screen';
+import { HoldButton } from '@/components/ui/HoldButton';
+import { Screen, backToDiscover } from '@/components/ui/Screen';
+import { Sheet } from '@/components/ui/Sheet';
 import { T } from '@/components/ui/T';
 import { ideaOf } from '@/domain/ideas';
 import { isLive, isOpen, otherId } from '@/domain/invites';
@@ -24,6 +27,23 @@ export default function ProfileScreen() {
   const live = between.find(isLive);
   const kept = between.find((i) => i.status === 'kept');
   const reveal = useReveal(kept?.id);
+  const block = useStore((s) => s.block);
+  const [safety, setSafety] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+
+  const doBlock = async () => {
+    setBusy(true);
+    setError('');
+    try {
+      await block(id);
+      setSafety(false);
+      backToDiscover();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'That did not go through. Try again.');
+      setBusy(false);
+    }
+  };
 
   if (!person || !me) {
     return (
@@ -91,7 +111,25 @@ export default function ProfileScreen() {
               : `Stays locked until you and ${person.name} lock a plan and both show up for it.`}
           />
         </View>
+
+        <Button kind="quiet" icon="shield" label="Block or report" onPress={() => setSafety(true)} />
       </View>
+
+      <Sheet
+        visible={safety}
+        onClose={() => setSafety(false)}
+        eyebrow="Safety"
+        title={`Block ${person.name}?`}
+        body={`You stop seeing each other, here and in Discover, and any plan between you ends. Nobody's score changes. ${person.name} is not told.`}
+      >
+        {error ? <T v="caption" c={color.flare}>{error}</T> : null}
+        <HoldButton tone="flare" label={`Hold to block ${person.name}`} busy={busy} onComplete={doBlock} />
+        <Button kind="ghost" icon="flag" label="Report instead" onPress={() => {
+          setSafety(false);
+          router.push({ pathname: '/report/[id]', params: { id: person.id, invite: (live ?? between[0])?.id ?? '' } });
+        }} />
+        <Button kind="quiet" label="Never mind" onPress={() => setSafety(false)} />
+      </Sheet>
     </Screen>
   );
 }

@@ -5,7 +5,7 @@
  * seeded data, latency and a simulated other person; a Supabase implementation maps each method
  * to one rpc() or select() (ARCHITECTURE.md section 8) and `subscribe` to a Realtime channel.
  */
-import type { Invite, MyContact, NewInvite, OnboardingInput, Profile, Reveal } from '../domain/types';
+import type { Account, BlockedPerson, Invite, MyContact, NewInvite, NewReport, OnboardingInput, PhoneMode, Profile, Reveal } from '../domain/types';
 
 export interface Snapshot {
   me: Profile | null;
@@ -22,6 +22,11 @@ export interface Changes {
   profiles?: Profile[];
   invites?: Invite[];
   passedIds?: string[];
+  /**
+   * Rows I can no longer see: someone blocked (either way), or someone who deleted their account.
+   * The store drops them. The app is never told which of those it was.
+   */
+  removed?: { profiles?: string[]; invites?: string[] };
 }
 
 export type PushPlatform = 'ios' | 'android';
@@ -63,6 +68,34 @@ export interface Backend {
   registerPushToken(token: string, platform: PushPlatform): Promise<void>;
   /** This device should stop getting pushes (signing out, permission withdrawn). */
   unregisterPushToken(token: string): Promise<void>;
+
+  /**
+   * Safety (ARCHITECTURE.md section 5). A block hides the two people from each other and ends
+   * every live invite between them, enforced by RLS. A report always blocks as well, and goes
+   * where no client can read it.
+   */
+  block(profileId: string): Promise<Changes>;
+  unblock(profileId: string): Promise<Changes>;
+  blockedPeople(): Promise<BlockedPerson[]>;
+  report(input: NewReport): Promise<Changes>;
+
+  /** Everything the backend holds about me, as a JSON document. */
+  exportMyData(): Promise<string>;
+  /**
+   * Deletes me for good: profile, contact, invites, device tokens. The behaviour log keeps its
+   * rows without my id. Afterwards the backend is signed out and `boot` starts a new person.
+   */
+  deleteAccount(): Promise<Snapshot>;
+
+  /**
+   * Phone sign-in. `link` adds a number to the person already signed in, so the id and history
+   * stay; `sign_in` gets back into an existing account on a new phone (no new accounts this way).
+   */
+  account(): Promise<Account>;
+  sendPhoneCode(phone: string, mode: PhoneMode): Promise<void>;
+  verifyPhoneCode(phone: string, code: string, mode: PhoneMode): Promise<Snapshot>;
+  /** Only once a phone is linked: otherwise signing out would lose the account. */
+  signOut(): Promise<Snapshot>;
 
   /** Prototype tools (Me tab), mock only. The live backend rejects them. */
   demoReset(): Promise<Snapshot>;
