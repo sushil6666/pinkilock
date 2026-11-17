@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="%LANG_ISO_CODE%">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+    <title>%WEB_TITLE%</title>
+    <!-- The `react-native-web` recommended style reset: https://necolas.github.io/react-native-web/docs/setup/#root-element -->
+    <style id="expo-reset">
+      /* These styles make the body full-height */
+      html,
+      body {
+        height: 100%;
+        /* The same blue as `bg` in src/theme/tokens.ts and `backgroundColor` in app.json, so the
+           page is never white before the app has loaded or behind it while it rubber-bands. */
+        background-color: #001C55;
+        color-scheme: dark;
+      }
+      /* These styles disable body scrolling if you are using <ScrollView> */
+      body {
+        overflow: hidden;
+      }
+      /* These styles make the root element full-height */
+      #root {
+        display: flex;
+        height: 100%;
+        flex: 1;
+      }
+      /* Only seen with JavaScript off. `text` from the tokens. */
+      .noscript {
+        color: #F6F6F1;
+        font-family: system-ui, sans-serif;
+        padding: 24px;
+      }
+    </style>
+  </head>
+
+  <body>
+    <!-- Use static rendering with Expo Router to support running without JavaScript. -->
+    <noscript>
+      <p class="noscript">Pinkilock needs JavaScript to run.</p>
+    </noscript>
+    <!-- The root element for your Expo app. -->
+    <div id="root"></div>
+  </body>
+</html>

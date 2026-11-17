@@ -5,6 +5,7 @@ import Animated, { FadeIn, SlideInDown } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { elevation } from '../../theme/elevation';
 import { color, gutter, motion, radius, space } from '../../theme/tokens';
+import { column } from './Screen';
 import { T } from './T';
 
 interface Props {
@@ -40,6 +41,6 @@ export function Sheet({ visible, onClose, eyebrow, title, body, children }: Prop
 
 const styles = StyleSheet.create({
   scrim: { flex: 1, backgroundColor: color.scrim, justifyContent: 'flex-end' },
-  sheet: { backgroundColor: color.surface, borderTopLeftRadius: radius.sheet, borderTopRightRadius: radius.sheet, borderWidth: 1, borderBottomWidth: 0, borderColor: color.line, paddingHorizontal: gutter, paddingTop: space.md, gap: space.sm },
+  sheet: { ...column, backgroundColor: color.surface, borderTopLeftRadius: radius.sheet, borderTopRightRadius: radius.sheet, borderWidth: 1, borderBottomWidth: 0, borderColor: color.line, paddingHorizontal: gutter, paddingTop: space.md, gap: space.sm },
   grip: { alignSelf: 'center', width: 40, height: 4, borderRadius: 2, backgroundColor: color.line, marginBottom: space.md },
 });
