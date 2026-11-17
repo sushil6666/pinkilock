@@ -4,7 +4,8 @@ A one-on-one pre-dating app built on a pinky promise: Expo app, Supabase backend
 Edge Function, DuckDB analytics worker, everything deployed by GitHub Actions.
 
 Read first: `README.md` (run and deploy), `ARCHITECTURE.md` (how it fits together),
-`DESIGN_SYSTEM.md` (look, motion, the lock gesture), `ROADMAP.md` (phases and what is next).
+`DESIGN_SYSTEM.md` (look, motion, the lock gesture), `ROADMAP.md` (phases and what is next),
+`OPERATIONS.md` (secrets, workflows, shipping changes, health checks, fixing incidents).
 
 ## Commands
 
@@ -33,7 +34,10 @@ npm run test:app:local      # the real screens in two browser sessions
   that has been applied.
 - The reveal is enforced by RLS, not by the UI. Never fetch, cache or push a contact handle or a
   private photo that RLS would hide. Pushes are sent only by the server.
-- Deploys happen through GitHub Actions, never by hand in the Supabase dashboard.
+- Deploys happen through GitHub Actions from `main`, never by hand in the Supabase dashboard and
+  never from a branch. Work on a branch and open a PR; do not add trigger files or branch triggers
+  to workflows.
+- Check GitHub state (PRs, runs, branches) before acting on it; it changes outside the session.
 - No secrets in the repo. The service role key is used by nothing in the app, repo or workflows.
-- When behaviour or setup changes, update `README.md`, `ARCHITECTURE.md` and `ROADMAP.md` in the
-  same change.
+- When behaviour or setup changes, update `README.md`, `ARCHITECTURE.md`, `ROADMAP.md` and, for
+  anything about running it live, `OPERATIONS.md`, in the same change.
