@@ -8,6 +8,8 @@ import type { BlockedPerson } from '@/domain/types';
 import { backend } from '@/services';
 import { useStore } from '@/state/store';
 import { color, radius, space } from '@/theme/tokens';
+import { ErrorText } from '@/components/ui/ErrorText';
+import { shown } from '@/lib/report';
 
 export default function Blocked() {
   const unblock = useStore((s) => s.unblock);
@@ -16,7 +18,7 @@ export default function Blocked() {
   const [error, setError] = useState('');
 
   const load = useCallback(() => {
-    backend.blockedPeople().then(setList, (e) => setError(e instanceof Error ? e.message : 'Could not load the list.'));
+    backend.blockedPeople().then(setList, (e) => setError(shown(e, '/account/blocked')));
   }, []);
   useEffect(load, [load]);
 
@@ -27,7 +29,7 @@ export default function Blocked() {
       await unblock(id);
       load();
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'That did not go through.');
+      setError(shown(e, '/account/blocked'));
     }
     setBusy('');
   };
@@ -37,7 +39,7 @@ export default function Blocked() {
       <View style={{ gap: space.lg }}>
         <T v="display">Blocked</T>
         <T c={color.textDim}>They cannot see you and you cannot see them. Unblocking brings their card back; plans that ended stay ended.</T>
-        {error ? <T v="caption" c={color.flare}>{error}</T> : null}
+        {error ? <ErrorText text={error} /> : null}
         {list?.length === 0 ? <T c={color.textMute}>Nobody. Good.</T> : null}
         {list?.map((p) => (
           <View key={p.profileId} style={{ flexDirection: 'row', alignItems: 'center', gap: space.md, borderWidth: 1, borderColor: color.line, borderRadius: radius.card, backgroundColor: color.surface, padding: space.md }}>

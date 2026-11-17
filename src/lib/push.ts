@@ -13,6 +13,8 @@ import { router } from 'expo-router';
 import { Platform } from 'react-native';
 import { backend } from '../services';
 import { color } from '../theme/tokens';
+import { quiet } from './log';
+import { shown } from './report';
 
 export type PushState = 'on' | 'denied' | 'unavailable' | 'error';
 export interface PushStatus { state: PushState; detail: string }
@@ -82,7 +84,7 @@ async function start(): Promise<PushStatus> {
     if (!listening) {
       Notifications.addNotificationResponseReceivedListener((r) => open(r.notification.request.content.data));
       // The app was closed and a tap started it.
-      Notifications.getLastNotificationResponseAsync().then((r) => r && open(r.notification.request.content.data), () => {});
+      Notifications.getLastNotificationResponseAsync().then((r) => r && open(r.notification.request.content.data), quiet('push.last_response'));
     }
 
     let permission = await Notifications.getPermissionsAsync();
@@ -101,12 +103,12 @@ async function start(): Promise<PushStatus> {
         if (!registered) return; // signed out since
         await backend.registerPushToken(t.data, Platform.OS === 'ios' ? 'ios' : 'android');
         registered = t.data;
-      }, () => {});
+      }, quiet('push.token_rotate'));
     });
     listening = true;
     return set({ state: 'on', detail: 'You will hear about asks, locks, check-in and bails.' });
   } catch (e) {
-    return set({ state: 'error', detail: e instanceof Error ? e.message : 'Could not set up notifications.' });
+    return set({ state: 'error', detail: shown(e, '/push') });
   }
 }
 
@@ -123,6 +125,6 @@ export async function stopPush(): Promise<void> {
   const token = registered;
   registered = null;
   started = null;
-  if (token) await backend.unregisterPushToken(token).catch(() => {});
+  if (token) await backend.unregisterPushToken(token).catch(quiet('push.unregister'));
   set({ state: 'unavailable', detail: 'Not set up yet.' });
 }

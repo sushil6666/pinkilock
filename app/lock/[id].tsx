@@ -18,6 +18,8 @@ import { haptic } from '@/lib/haptics';
 import { useNow } from '@/lib/useNow';
 import { useInvite, usePerson, useStore } from '@/state/store';
 import { color, gutter, motion, radius, space } from '@/theme/tokens';
+import { shown } from '@/lib/report';
+import { splitRef } from '@/domain/errors';
 
 export default function LockScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -49,7 +51,7 @@ export default function LockScreen() {
       await offerPinky(invite.id);
     } catch (e) {
       haptic.warning();
-      setError(e instanceof Error ? e.message : 'That did not go through. Try again.');
+      setError(shown(e, '/lock/[id]'));
       setResetKey((k) => k + 1);
     }
   }, [invite, offerPinky]);
@@ -74,6 +76,7 @@ export default function LockScreen() {
   const closed = invite.status === 'declined' || invite.status === 'expired' || invite.status === 'ended';
   const sealed = phase === 'sealed';
 
+  const errorRef = error ? splitRef(error).ref : null;
   const prompt =
     closed ? `${name.toUpperCase()} PULLED OUT` :
     error ? 'THAT DID NOT LAND' :
@@ -123,6 +126,7 @@ export default function LockScreen() {
       ) : (
         <View style={styles.bottom}>
           <T v="heading" center c={error || closed ? color.flare : color.text} accessibilityLiveRegion="polite">{prompt}</T>
+          {errorRef ? <T v="caption" center c={color.textMute} selectable accessibilityLabel={`Error reference ${errorRef}`}>{errorRef}</T> : null}
           <T v="caption" center c={color.textDim}>
             {closed ? 'Nothing was promised, so nothing goes on anyone\'s record.'
               : error ? error

@@ -27,7 +27,7 @@ const SERVICE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
 /** Expo accepts at most 100 messages per request. */
 const BATCH = 100;
 
-interface Row { id: number; recipient_id: string; invite_id: string; kind: string; title: string; body: string }
+interface Row { id: number; recipient_id: string; invite_id: string; kind: string; title: string; body: string; trace: string | null }
 interface Ticket { status: 'ok' | 'error'; message?: string; details?: { error?: string } }
 interface Totals { claimed: number; sent: number; no_device: number; failed: number; tokens_removed: number }
 
@@ -122,6 +122,13 @@ async function deliver(rows: Row[], totals: Totals): Promise<void> {
     else await rest('PATCH', `notifications?id=eq.${id}`, { last_error: why });
   }
   totals.sent += delivered.size;
+
+  // One line per notification in the function's log, with the trace id of the action that caused
+  // it (OPERATIONS.md, "Trace a bug"). Ids and outcomes only: never the title, the body or a token.
+  for (const row of rows) {
+    const outcome = delivered.has(row.id) ? 'sent' : done.get(row.id) ?? errors.get(row.id) ?? 'unknown';
+    console.log(JSON.stringify({ event: 'push', notification: row.id, invite: row.invite_id, kind: row.kind, trace: row.trace, outcome }));
+  }
 
   const now = new Date().toISOString();
   for (const outcome of new Set(done.values())) {

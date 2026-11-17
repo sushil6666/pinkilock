@@ -18,6 +18,9 @@ import type { CodeKind, CodeMode } from '@/domain/types';
 import { haptic } from '@/lib/haptics';
 import { useStore } from '@/state/store';
 import { color, space } from '@/theme/tokens';
+import { ErrorText } from '@/components/ui/ErrorText';
+import { shown } from '@/lib/report';
+import { quiet } from '@/lib/log';
 
 export default function SignInCodeScreen() {
   const params = useLocalSearchParams<{ mode?: string; kind?: string }>();
@@ -28,7 +31,7 @@ export default function SignInCodeScreen() {
   const account = useStore((s) => s.account);
   const loadAccount = useStore((s) => s.loadAccount);
   useEffect(() => {
-    loadAccount().catch(() => {});
+    loadAccount().catch(quiet('/account/sign-in'));
   }, [loadAccount]);
   const [raw, setRaw] = useState('');
   const [sentTo, setSentTo] = useState<string | null>(null);
@@ -55,7 +58,7 @@ export default function SignInCodeScreen() {
       setSentTo(typed);
       setCode('');
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Could not send a code.');
+      setError(shown(e, '/account/sign-in'));
     }
     setBusy(false);
   };
@@ -71,19 +74,19 @@ export default function SignInCodeScreen() {
       else goBack();
     } catch (e) {
       haptic.warning();
-      setError(e instanceof Error ? e.message : 'That code did not work.');
+      setError(shown(e, '/account/sign-in'));
       setBusy(false);
     }
   };
 
   const footer = sentTo
     ? <>
-        {error ? <T v="caption" c={color.flare}>{error}</T> : null}
+        {error ? <ErrorText text={error} /> : null}
         <Button label={mode === 'link' ? (isPhone ? 'Add this number' : 'Add this email') : 'Sign in'} icon="check" busy={busy} disabled={code.length !== CODE_LENGTH} onPress={confirm} />
         <Button kind="quiet" label={isPhone ? 'Use a different number' : 'Use a different email'} onPress={() => { setSentTo(null); setError(''); }} />
       </>
     : <>
-        {error ? <T v="caption" c={color.flare}>{error}</T> : null}
+        {error ? <ErrorText text={error} /> : null}
         <Button label={isPhone ? 'Text me a code' : 'Email me a code'} icon={isPhone ? 'message-square' : 'mail'} busy={busy} disabled={!typed} onPress={send} />
         <Button kind="quiet" label={isPhone ? 'Use email instead' : 'Use a phone number instead'} onPress={switchKind} />
       </>;

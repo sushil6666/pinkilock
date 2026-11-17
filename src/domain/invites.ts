@@ -2,6 +2,7 @@
  * The invite state machine (ARCHITECTURE.md section 4) as pure functions.
  * The mock backend calls these; the SQL functions in supabase/migrations follow the same rules.
  */
+import { fail } from './errors';
 import type { Invite } from './types';
 
 export const MIN = 60_000;
@@ -44,31 +45,31 @@ export function checkInPhase(i: Invite, now: number): CheckInPhase {
 /** One person puts their pinky out. First one makes it half_locked, second one locks it. */
 export function offerPinky(i: Invite, byId: string, now: number): Invite {
   if (i.status === 'sent') {
-    if (byId !== i.toId) throw new Error('The person you asked goes first.');
+    if (byId !== i.toId) fail('PL032');
     return { ...i, status: 'half_locked', firstPinkyBy: byId };
   }
   if (i.status === 'half_locked') {
     if (i.firstPinkyBy === byId) return i;
     return { ...i, status: 'locked', lockedAt: now };
   }
-  throw new Error('This one is not open any more.');
+  fail('PL033');
 }
 
 export function decline(i: Invite, byId: string, now: number): Invite {
-  if (!isOpen(i)) throw new Error('This one is not open any more.');
+  if (!isOpen(i)) fail('PL033');
   return { ...i, status: 'declined', declinedBy: byId, resolvedAt: now };
 }
 
 export function checkIn(i: Invite, byId: string, now: number): Invite {
-  if (i.status !== 'locked') throw new Error('Nothing to check in to.');
-  if (checkInPhase(i, now) !== 'open') throw new Error('Check-in is not open.');
+  if (i.status !== 'locked') fail('PL034');
+  if (checkInPhase(i, now) !== 'open') fail('PL035');
   const checkIns = i.checkIns.includes(byId) ? i.checkIns : [...i.checkIns, byId];
   if (checkIns.length >= 2) return { ...i, checkIns, status: 'kept', resolvedAt: now };
   return { ...i, checkIns };
 }
 
 export function bail(i: Invite, byId: string, now: number): Invite {
-  if (i.status !== 'locked') throw new Error('Only a locked plan can be bailed on.');
+  if (i.status !== 'locked') fail('PL036');
   return { ...i, status: 'flaked', flakedBy: byId, resolvedAt: now };
 }
 

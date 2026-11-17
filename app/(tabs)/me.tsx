@@ -22,6 +22,11 @@ import { pushStatus, watchPush } from '@/lib/push';
 import { backend } from '@/services';
 import { useStore } from '@/state/store';
 import { color, radius, space } from '@/theme/tokens';
+import { ErrorText } from '@/components/ui/ErrorText';
+import { shown } from '@/lib/report';
+import { quiet } from '@/lib/log';
+import { buildLabel } from '@/lib/build';
+import { diagnostics } from '@/lib/report';
 
 export default function Me() {
   const me = useStore((s) => s.me);
@@ -43,7 +48,7 @@ export default function Me() {
   const [accountError, setAccountError] = useState('');
   useEffect(() => watchPush(setPush), []);
   useEffect(() => {
-    if (me) loadAccount().catch(() => {});
+    if (me) loadAccount().catch(quiet('/me'));
   }, [me?.id, loadAccount]);
   if (!me) return null;
 
@@ -53,7 +58,7 @@ export default function Me() {
     try {
       await work();
     } catch (e) {
-      setAccountError(e instanceof Error ? e.message : 'That did not go through. Try again.');
+      setAccountError(shown(e, '/me'));
     }
     setBusy('');
   };
@@ -67,6 +72,18 @@ export default function Me() {
       a.click();
     } else {
       await Share.share({ title: 'My Pinkilock data', message: json });
+    }
+  });
+
+  const shareDiagnostics = () => run('diagnostics', async () => {
+    const text = diagnostics(me.id);
+    if (Platform.OS === 'web') {
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(new Blob([text], { type: 'text/plain' }));
+      a.download = 'pinkilock-diagnostics.txt';
+      a.click();
+    } else {
+      await Share.share({ title: 'Pinkilock diagnostics', message: text });
     }
   });
 
@@ -84,7 +101,7 @@ export default function Me() {
     try {
       await updateMe({ ideaIds: has ? me.ideaIds.filter((x) => x !== id) : [...me.ideaIds, id] });
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'That did not save.');
+      setError(shown(e, '/me'));
     }
   };
 
@@ -95,7 +112,7 @@ export default function Me() {
     try {
       await updateMe({ vibes: has ? me.vibes.filter((x) => x !== v) : [...me.vibes, v] });
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'That did not save.');
+      setError(shown(e, '/me'));
     }
   };
 
@@ -137,13 +154,13 @@ export default function Me() {
           </View>
         </View>
       ))}
-      {editVibes && error ? <T v="caption" c={color.flare} style={{ marginTop: space.sm }}>{error}</T> : null}
+      {editVibes && error ? <ErrorText text={error} style={{ marginTop: space.sm }} /> : null}
 
       <T v="label" c={color.textDim} style={styles.section}>I am up for  /  tap to change</T>
       <View style={styles.wrap}>
         {IDEAS.map((i) => <Chip key={i.id} label={`${i.emoji} ${i.title}`} selected={me.ideaIds.includes(i.id)} onPress={() => toggleIdea(i.id)} />)}
       </View>
-      {error ? <T v="caption" c={color.flare} style={{ marginTop: space.sm }}>{error}</T> : null}
+      {error ? <ErrorText text={error} style={{ marginTop: space.sm }} /> : null}
 
       <T v="label" c={color.textDim} style={styles.section}>Unlocks when a promise is kept</T>
       <View style={styles.panel}>
@@ -170,7 +187,7 @@ export default function Me() {
         <Button kind="ghost" icon="download" label="Download my data" busy={busy === 'export'} onPress={exportData} />
         <Button kind="danger" icon="trash-2" label="Delete my account" onPress={() => setSheet('delete')} />
       </View>
-      {accountError && !sheet ? <T v="caption" c={color.flare} style={{ marginTop: space.sm }}>{accountError}</T> : null}
+      {accountError && !sheet ? <ErrorText text={accountError} style={{ marginTop: space.sm }} /> : null}
 
       <T v="label" c={color.textDim} style={styles.section}>Data</T>
       <View style={styles.panel}>
@@ -190,6 +207,11 @@ export default function Me() {
         </View>
       </View>
 
+      <T v="label" c={color.textDim} style={styles.section}>Help</T>
+      <T v="caption" c={color.textDim} style={{ marginBottom: space.md }}>If something went wrong, send us this. It holds the app version, your account id, and the codes of recent errors. No names, messages, places or contacts.</T>
+      <Button kind="ghost" icon="life-buoy" label="Share diagnostics" busy={busy === 'diagnostics'} onPress={shareDiagnostics} />
+      <T v="caption" c={color.textMute} selectable style={{ marginTop: space.md }}>Pinkilock {buildLabel}</T>
+
       {!live && (
         <>
           <T v="label" c={color.textDim} style={styles.section}>Prototype tools</T>
@@ -205,7 +227,7 @@ export default function Me() {
         title="Gone for good?"
         body="Your card, contact, plans and record are deleted, and any plan you have open ends without counting against anyone. This cannot be undone. Download your data first if you want a copy."
       >
-        {accountError ? <T v="caption" c={color.flare}>{accountError}</T> : null}
+        {accountError ? <ErrorText text={accountError} /> : null}
         <HoldButton tone="flare" label="Hold to delete everything" busy={busy === 'delete'} onComplete={() => leave('delete')} />
         <Button kind="ghost" label="Keep my account" onPress={() => setSheet(null)} />
       </Sheet>
@@ -217,7 +239,7 @@ export default function Me() {
         title="Sign out of this phone?"
         body={`Your account stays. Sign back in any time with ${account?.email ? maskEmail(account.email) : account?.phone ? maskPhone(account.phone) : 'your email or number'}. This phone stops getting your notifications.`}
       >
-        {accountError ? <T v="caption" c={color.flare}>{accountError}</T> : null}
+        {accountError ? <ErrorText text={accountError} /> : null}
         <Button kind="danger" label="Sign out" busy={busy === 'sign_out'} onPress={() => leave('sign_out')} />
         <Button kind="ghost" label="Stay signed in" onPress={() => setSheet(null)} />
       </Sheet>

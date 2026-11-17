@@ -18,6 +18,8 @@ import type { ContactKind } from '@/domain/types';
 import { haptic } from '@/lib/haptics';
 import { useStore } from '@/state/store';
 import { color, space, type } from '@/theme/tokens';
+import { ErrorText } from '@/components/ui/ErrorText';
+import { shown } from '@/lib/report';
 
 const PRONOUNS = ['she/her', 'he/him', 'they/them'];
 const CONTACTS: ContactKind[] = ['Instagram', 'Snapchat', 'WhatsApp'];
@@ -59,13 +61,13 @@ export default function Onboarding() {
       haptic.success();
       router.replace('/(tabs)');
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'That did not save. Try again.');
+      setError(shown(e, '/onboarding'));
       setBusy(false);
     }
   };
 
   const footer = step === 4
-    ? <>{error ? <T v="caption" c={color.flare}>{error}</T> : null}<HoldButton label="Hold to swear" onComplete={swear} busy={busy} /></>
+    ? <>{error ? <ErrorText text={error} /> : null}<HoldButton label="Hold to swear" onComplete={swear} busy={busy} /></>
     : <Button label={step === 0 ? 'Start' : 'Next'} icon="arrow-right" onPress={() => setStep(step + 1)} disabled={!canNext} />;
 
   return (

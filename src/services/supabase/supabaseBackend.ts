@@ -10,9 +10,11 @@
  * it AsyncStorage), so tests/live can drive this exact file from Node as two separate people.
  */
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
+import { AppError, RESYNC_CODES, isErrorCode, newTrace } from '../../domain/errors';
 import { ideaOf } from '../../domain/ideas';
 import { CHECK_IN_CLOSES_AFTER, otherId } from '../../domain/invites';
 import type { Account, BlockedPerson, CodeKind, Invite, MyContact, Profile, Reveal } from '../../domain/types';
+import { log, quiet } from '../../lib/log';
 import type { Backend, BackendEvent, Changes, Notice, Snapshot } from '../backend';
 
 type Row = Record<string, any>;
@@ -44,23 +46,37 @@ export interface SessionStorage {
   removeItem(key: string): Promise<void>;
 }
 
-/** GoTrue's words for the sign-in code cases, in the app's voice. */
-function codeError(message: string, kind: CodeKind): Error {
+/** GoTrue's words for the sign-in code cases, in the app's voice, with a code each. */
+function codeError(message: string, kind: CodeKind): AppError {
   const m = message.toLowerCase();
   const what = kind === 'phone' ? 'number' : 'email address';
   if (kind === 'phone' && (m.includes('provider') || ((m.includes('sms') || m.includes('phone')) && m.includes('disabled'))))
-    return new Error('Phone sign-in is not switched on yet.');
+    return new AppError('PA001');
   if (kind === 'email' && (m.includes('email') && (m.includes('disabled') || m.includes('not enabled'))))
-    return new Error('Email sign-in is not switched on yet.');
-  if (m.includes('invalid') && m.includes('format')) return new Error(`That does not look like a ${kind === 'phone' ? 'phone number' : 'email address'}.`);
+    return new AppError('PA002');
+  if (m.includes('invalid') && m.includes('format')) return new AppError('PA003', `That does not look like a ${kind === 'phone' ? 'phone number' : 'email address'}.`);
   if (m.includes('already') && (m.includes('registered') || m.includes('exists')))
-    return new Error(`That ${what} is already on another account. Sign in with it instead.`);
+    return new AppError('PA004', `That ${what} is already on another account. Sign in with it instead.`);
   if (m.includes('signups not allowed') || m.includes('user not found'))
-    return new Error(`No account uses that ${what} yet. Set one up first, then add it in Me.`);
+    return new AppError('PA005', `No account uses that ${what} yet. Set one up first, then add it in Me.`);
   if (m.includes('expired') || (m.includes('invalid') && (m.includes('otp') || m.includes('token'))))
-    return new Error('That code did not match or has expired. Check it, or send a new one.');
-  if (m.includes('rate') || m.includes('seconds')) return new Error('Wait a moment before asking for another code.');
-  return new Error(message);
+    return new AppError('PA006');
+  if (m.includes('rate') || m.includes('seconds')) return new AppError('PA007');
+  if (m.includes('fetch') || m.includes('network')) return new AppError('PC001');
+  // GoTrue said something we have no words for. Its text is not shown or reported.
+  return new AppError('PA009');
+}
+
+/**
+ * A PostgREST error as an AppError. Our functions raise with a PLnnn SQLSTATE and that code is
+ * kept. No code at all means the request never reached the server. Anything else is a server
+ * error that is not ours: its text can quote row values, so it is neither shown nor reported.
+ */
+function fromServer(err: { message: string; code?: string }, trace: string): AppError {
+  if (isErrorCode(err.code) && err.code.startsWith('PL')) return new AppError(err.code, err.message, trace);
+  if (!err.code) return new AppError('PC001', undefined, trace);
+  log.warn('server.error', { sqlstate: err.code, trace });
+  return new AppError('PC002', undefined, trace);
 }
 
 const emptySnapshot = (): Snapshot => ({ me: null, myContact: null, profiles: [], invites: [], passedIds: [] });
@@ -75,9 +91,20 @@ export function createSupabaseBackend(url: string, anonKey: string, storage: Ses
   let meId = '';
   let live = false;
 
-  function check<T>(res: { data: T | null; error: { message: string } | null }): T {
-    if (res.error) throw new Error(res.error.message);
+  function check<T>(res: { data: T | null; error: { message: string; code?: string } | null }, trace: string = newTrace()): T {
+    if (res.error) throw fromServer(res.error, trace);
     return res.data as T;
+  }
+
+  /**
+   * One call to a database function, with a fresh trace id in the `x-trace-id` header. The server
+   * stamps it on every event and push the call causes; a failure carries the same id.
+   */
+  async function rpc<T = unknown>(fn: string, args?: Row): Promise<T> {
+    const trace = newTrace();
+    log.info('rpc', { fn, trace });
+    const res = await db.rpc(fn, args).setHeader('x-trace-id', trace);
+    return check(res as { data: T | null; error: { message: string; code?: string } | null }, trace);
   }
 
   async function uid(): Promise<string> {
@@ -85,7 +112,7 @@ export function createSupabaseBackend(url: string, anonKey: string, storage: Ses
     const { data } = await db.auth.getSession();
     if (data.session) return (meId = data.session.user.id);
     const res = await db.auth.signInAnonymously();
-    if (res.error || !res.data.user) throw new Error(res.error?.message ?? 'Could not sign in.');
+    if (res.error || !res.data.user) throw res.error ? codeError(res.error.message, 'email') : new AppError('PA009');
     return (meId = res.data.user.id);
   }
 
@@ -198,7 +225,7 @@ export function createSupabaseBackend(url: string, anonKey: string, storage: Ses
     // RLS filters the feed: only invites I am on ever arrive here.
     db.channel('pinkilock')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'invites' }, (payload) => {
-        if (payload.eventType !== 'DELETE') takeInvite(toInvite(payload.new)).catch(() => {});
+        if (payload.eventType !== 'DELETE') takeInvite(toInvite(payload.new)).catch(quiet('realtime.invite'));
         // Deletes carry only the id (and reach every subscriber): an account that went away.
         else if ((payload.old as Row)?.id && known.has((payload.old as Row).id)) forget([], [(payload.old as Row).id]);
       })
@@ -220,11 +247,11 @@ export function createSupabaseBackend(url: string, anonKey: string, storage: Ses
       // SUBSCRIBED first and only later reports that postgres_changes is flowing. A change
       // committed in between is never delivered, so re-read at both.
       .on('system', {}, (payload: Row) => {
-        if (payload.extension === 'postgres_changes' && payload.status === 'ok') resync().catch(() => {});
+        if (payload.extension === 'postgres_changes' && payload.status === 'ok') resync().catch(quiet('realtime.resync'));
       })
       .subscribe((status) => {
         // Every (re)connect: close the gap between the last thing I read and the live feed.
-        if (status === 'SUBSCRIBED') resync().catch(() => {});
+        if (status === 'SUBSCRIBED') resync().catch(quiet('realtime.resync'));
       });
   }
 
@@ -260,20 +287,23 @@ export function createSupabaseBackend(url: string, anonKey: string, storage: Ses
     const me = all.find((x) => x.id === id) ?? null;
     if (me) {
       listen();
-      db.rpc('log_event', { p_type: 'app_open' }).then(() => {}, () => {});
+      rpc('log_event', { p_type: 'app_open' }).catch(quiet('log_event'));
     }
     return { me, myContact, profiles: all.filter((x) => x.id !== id), invites: list, passedIds: check(passes).map((r: Row) => r.passed_id) };
   }
 
   async function rpcInvite(fn: string, args: Row): Promise<Changes> {
     await uid();
-    const res = await db.rpc(fn, args);
-    // Gone or unavailable usually means a block happened that this phone has not heard about
-    // (a block is never announced). Re-read, so the stale card and invite drop away.
-    if (res.error && /gone|not available|not open any more|Nothing to check in/.test(res.error.message)) resync().catch(() => {});
-    const invite = toInvite(check(res) as Row);
-    known.set(invite.id, invite);
-    return { invites: [invite] };
+    try {
+      const invite = toInvite(await rpc<Row>(fn, args));
+      known.set(invite.id, invite);
+      return { invites: [invite] };
+    } catch (e) {
+      // Gone or unavailable usually means a block happened that this phone has not heard about
+      // (a block is never announced). Re-read, so the stale card and invite drop away.
+      if (e instanceof AppError && RESYNC_CODES.includes(e.code)) resync().catch(quiet('resync.after_refusal'));
+      throw e;
+    }
   }
 
   return {
@@ -336,7 +366,7 @@ export function createSupabaseBackend(url: string, anonKey: string, storage: Ses
       const them = otherId(invite, id);
       // No status check here on purpose: the private_after_kept policy returns no row until it is kept.
       const row = check(await db.from('profile_private').select('*').eq('profile_id', them).maybeSingle()) as Row | null;
-      if (!row) throw new Error('Locked until you both check in.');
+      if (!row) throw new AppError('PC003');
       return { profileId: them, contactKind: row.contact_kind, contactHandle: row.contact_handle, photos: row.photos ?? [] };
     },
 
@@ -347,23 +377,33 @@ export function createSupabaseBackend(url: string, anonKey: string, storage: Ses
 
     async registerPushToken(token, platform) {
       await uid();
-      check(await db.rpc('register_push_token', { p_token: token, p_platform: platform }));
+      await rpc('register_push_token', { p_token: token, p_platform: platform });
     },
 
     async unregisterPushToken(token) {
       await uid();
-      check(await db.rpc('unregister_push_token', { p_token: token }));
+      await rpc('unregister_push_token', { p_token: token });
+    },
+
+    async logClientError(report) {
+      // Only an account can file one; a phone that never signed in has nothing to trace yet.
+      const { data } = await db.auth.getSession();
+      if (!data.session) return;
+      check(await db.rpc('log_client_error', {
+        p_code: report.code, p_trace: report.trace, p_route: report.route.slice(0, 80),
+        p_app_version: report.appVersion.slice(0, 40), p_platform: report.platform,
+      }));
     },
 
     async block(profileId) {
       await uid();
-      check(await db.rpc('block_user', { p_profile: profileId }));
+      await rpc('block_user', { p_profile: profileId });
       return forget([profileId], []);
     },
 
     async unblock(profileId) {
       await uid();
-      check(await db.rpc('unblock_user', { p_profile: profileId }));
+      await rpc('unblock_user', { p_profile: profileId });
       // Unless they blocked me too, they come back, with whatever we had before.
       const [card, invites] = await Promise.all([
         db.from('profile_cards').select('*').eq('id', profileId),
@@ -378,26 +418,26 @@ export function createSupabaseBackend(url: string, anonKey: string, storage: Ses
 
     async blockedPeople(): Promise<BlockedPerson[]> {
       await uid();
-      const rows = check(await db.rpc('my_blocks')) as Row[];
+      const rows = await rpc<Row[]>('my_blocks');
       return rows.map((r) => ({ profileId: r.profile_id, name: r.name, blockedAt: ms(r.blocked_at)! }));
     },
 
     async report(input) {
       await uid();
-      check(await db.rpc('report_user', { p_profile: input.profileId, p_reason: input.reason, p_detail: input.detail, p_invite: input.inviteId ?? null }));
+      await rpc('report_user', { p_profile: input.profileId, p_reason: input.reason, p_detail: input.detail, p_invite: input.inviteId ?? null });
       return forget([input.profileId], []);
     },
 
     async exportMyData() {
       await uid();
-      return JSON.stringify(check(await db.rpc('export_my_data')), null, 2);
+      return JSON.stringify(await rpc('export_my_data'), null, 2);
     },
 
     async deleteAccount() {
       await uid();
-      check(await db.rpc('delete_my_account'));
+      await rpc('delete_my_account');
       // The user no longer exists, so only this phone's copy of the session is left to drop.
-      await db.auth.signOut({ scope: 'local' }).catch(() => {});
+      await db.auth.signOut({ scope: 'local' }).catch(quiet('delete.sign_out'));
       await reset();
       return emptySnapshot();
     },
@@ -448,7 +488,7 @@ export function createSupabaseBackend(url: string, anonKey: string, storage: Ses
       const { data, error } = kind === 'phone'
         ? await db.auth.verifyOtp({ phone: address, token: code, type: 'sms' })
         : await db.auth.verifyOtp({ email: address, token: code, type: 'email' });
-      if (error || !data.user) throw codeError(error?.message ?? 'That code did not match.', kind);
+      if (error || !data.user) throw error ? codeError(error.message, kind) : new AppError('PA006');
       await reset();
       meId = data.user.id;
       return snapshot();
@@ -456,17 +496,17 @@ export function createSupabaseBackend(url: string, anonKey: string, storage: Ses
 
     async signOut() {
       const { data } = await db.auth.getSession();
-      if (!data.session?.user.phone && !data.session?.user.email) throw new Error('Add a phone number or an email first, or you could not get back in.');
+      if (!data.session?.user.phone && !data.session?.user.email) throw new AppError('PA008');
       await db.auth.signOut({ scope: 'local' });
       await reset();
       return emptySnapshot();
     },
 
     async demoReset() {
-      throw new Error('Prototype tools only work on mock data.');
+      throw new AppError('PC004', 'Prototype tools only work on mock data.');
     },
     async demoBringForward() {
-      throw new Error('Prototype tools only work on mock data.');
+      throw new AppError('PC004', 'Prototype tools only work on mock data.');
     },
   };
 }

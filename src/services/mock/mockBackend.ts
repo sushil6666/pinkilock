@@ -6,11 +6,13 @@
  * stored as a due time per invite (`db.due`), so a restart never loses a pending reaction.
  */
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { fail } from '../../domain/errors';
 import * as rules from '../../domain/invites';
 import { ideaOf } from '../../domain/ideas';
 import { REPORT_DETAIL_MAX, REPORT_REASONS, REPORTS_PER_DAY } from '../../domain/safety';
 import type { BlockedPerson, CodeKind, Invite, MyContact, NewInvite, OnboardingInput, Profile, ReportReason, Reveal } from '../../domain/types';
-import type { Backend, BackendEvent, Changes, Notice, Snapshot } from '../backend';
+import { quiet } from '../../lib/log';
+import type { Backend, BackendEvent, Changes, ClientErrorReport, Notice, Snapshot } from '../backend';
 import { ALWAYS_PASSES, ME_ID, SEED_ME_RECORD, seedInvites, seedProfiles, seedReveals } from './seed';
 
 const KEY = 'pinkilock.mock.v1';
@@ -44,6 +46,7 @@ const wait = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
 const uid = () => `inv_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
 
 export function createMockBackend(): Backend {
+  const clientErrors: ClientErrorReport[] = [];
   let db: Db | null = null;
   const reveals = seedReveals();
   const listeners = new Set<(e: BackendEvent) => void>();
@@ -63,7 +66,7 @@ export function createMockBackend(): Backend {
   }
 
   const save = () => {
-    if (db) AsyncStorage.setItem(KEY, JSON.stringify(db)).catch(() => {});
+    if (db) AsyncStorage.setItem(KEY, JSON.stringify(db)).catch(quiet('mock.save'));
   };
 
   // What RLS would let me see: nobody I blocked, and no invite with them.
@@ -83,7 +86,7 @@ export function createMockBackend(): Backend {
 
   function find(d: Db, id: string): Invite {
     const i = visible(d).invites.find((x) => x.id === id);
-    if (!i) throw new Error('That invite is gone.');
+    if (!i) fail('PL030');
     return i;
   }
 
@@ -168,8 +171,8 @@ export function createMockBackend(): Backend {
 
   /** Block: they vanish for me and every live invite between us ends, with no flake for anyone. */
   function block(d: Db, profileId: string, now: number): Changes {
-    if (!d.me) throw new Error('Finish setting up first.');
-    if (profileId === ME_ID) throw new Error('You cannot block yourself.');
+    if (!d.me) fail('PL002');
+    if (profileId === ME_ID) fail('PL010');
     if (!isBlocked(d, profileId)) d.blocked = [...(d.blocked ?? []), { id: profileId, at: now }];
     const theirs = d.invites.filter((i) => rules.otherId(i, ME_ID) === profileId);
     for (const i of theirs) {
@@ -223,7 +226,7 @@ export function createMockBackend(): Backend {
 
     updateMe: (patch) =>
       mutate((d) => {
-        if (!d.me) throw new Error('Finish setting up first.');
+        if (!d.me) fail('PL002');
         const { contactKind, contactHandle, ...card } = patch;
         d.me = { ...d.me, ...card };
         if (contactKind && contactHandle) d.myContact = { kind: contactKind, handle: contactHandle };
@@ -245,10 +248,10 @@ export function createMockBackend(): Backend {
     sendInvite: (input: NewInvite) =>
       mutate((d, now) => {
         const open = d.invites.filter((i) => i.fromId === ME_ID && rules.isOpen(i));
-        if (open.length >= rules.MAX_OPEN_ASKS) throw new Error(`You have ${rules.MAX_OPEN_ASKS} asks open. Wait for an answer first.`);
-        if (d.invites.some((i) => rules.isLive(i) && rules.otherId(i, ME_ID) === input.toId)) throw new Error('You two already have something open.');
-        if (isBlocked(d, input.toId)) throw new Error('That person is not available.');
-        if (input.startsAt <= now) throw new Error('Pick a time that has not passed.');
+        if (open.length >= rules.MAX_OPEN_ASKS) fail('PL023');
+        if (d.invites.some((i) => rules.isLive(i) && rules.otherId(i, ME_ID) === input.toId)) fail('PL024');
+        if (isBlocked(d, input.toId)) fail('PL004');
+        if (input.startsAt <= now) fail('PL021');
         const invite: Invite = {
           id: uid(), fromId: ME_ID, toId: input.toId, ideaId: input.ideaId, minutes: ideaOf(input.ideaId).minutes,
           startsAt: input.startsAt, place: input.place.trim(), note: input.note.trim().slice(0, rules.NOTE_MAX),
@@ -291,7 +294,7 @@ export function createMockBackend(): Backend {
       const d = await load();
       await wait(LATENCY);
       const i = find(d, inviteId);
-      if (i.status !== 'kept') throw new Error('Locked until you both check in.');
+      if (i.status !== 'kept') fail('PC003');
       return reveals[rules.otherId(i, ME_ID)];
     },
 
@@ -314,6 +317,12 @@ export function createMockBackend(): Backend {
       save();
     },
 
+    // Kept in memory, last 50, the way the server keeps them: nobody reads them back but a test.
+    async logClientError(report) {
+      clientErrors.push(report);
+      if (clientErrors.length > 50) clientErrors.shift();
+    },
+
     block: (profileId) => mutate((d, now) => block(d, profileId, now)),
 
     unblock: (profileId) =>
@@ -330,11 +339,11 @@ export function createMockBackend(): Backend {
 
     report: (input) =>
       mutate((d, now) => {
-        if (!d.me) throw new Error('Finish setting up first.');
-        if (!REPORT_REASONS.some((r) => r.id === input.reason)) throw new Error('Pick a reason.');
-        if (input.detail.length > REPORT_DETAIL_MAX) throw new Error(`Keep it under ${REPORT_DETAIL_MAX} characters.`);
+        if (!d.me) fail('PL002');
+        if (!REPORT_REASONS.some((r) => r.id === input.reason)) fail('PL012');
+        if (input.detail.length > REPORT_DETAIL_MAX) fail('PL013');
         const today = (d.reports ?? []).filter((r) => r.at > now - rules.DAY);
-        if (today.length >= REPORTS_PER_DAY) throw new Error('You have sent a lot of reports today. We are looking at them.');
+        if (today.length >= REPORTS_PER_DAY) fail('PL014');
         const shared = d.invites.find((i) => i.id === input.inviteId && rules.otherId(i, ME_ID) === input.profileId);
         d.reports = [...(d.reports ?? []), { profileId: input.profileId, reason: input.reason, detail: input.detail.trim(), inviteId: shared?.id ?? null, at: now }];
         return block(d, input.profileId, now);
@@ -364,7 +373,7 @@ export function createMockBackend(): Backend {
     async deleteAccount() {
       await load();
       await wait(LATENCY);
-      await AsyncStorage.removeItem(KEY).catch(() => {});
+      await AsyncStorage.removeItem(KEY).catch(quiet('mock.clear'));
       db = fresh();
       return snapshot(db);
     },
@@ -379,21 +388,21 @@ export function createMockBackend(): Backend {
       await wait(LATENCY);
       const what = kind === 'phone' ? 'number' : 'email address';
       if (mode === 'link') {
-        if (!d.me) throw new Error('Finish setting up first.');
+        if (!d.me) fail('PL002');
         if (await AsyncStorage.getItem(parked(kind, address)).catch(() => null)) {
-          throw new Error(`That ${what} is already on another account. Sign in with it instead.`);
+          fail('PA004', `That ${what} is already on another account. Sign in with it instead.`);
         }
         return;
       }
       if (!(await AsyncStorage.getItem(parked(kind, address)).catch(() => null))) {
-        throw new Error(`No account uses that ${what} yet. Set one up first, then add it in Me.`);
+        fail('PA005', `No account uses that ${what} yet. Set one up first, then add it in Me.`);
       }
     },
 
     async verifyCode(kind, address, code, mode) {
       const d = await load();
       await wait(LATENCY);
-      if (code !== MOCK_CODE) throw new Error('That code did not match or has expired. Check it, or send a new one.');
+      if (code !== MOCK_CODE) fail('PA006');
       if (mode === 'link') {
         if (kind === 'phone') d.phone = address;
         else d.email = address;
@@ -401,7 +410,7 @@ export function createMockBackend(): Backend {
         return snapshot(d);
       }
       const raw = await AsyncStorage.getItem(parked(kind, address));
-      if (!raw) throw new Error(`No account uses that ${kind === 'phone' ? 'number' : 'email address'} yet. Set one up first, then add it in Me.`);
+      if (!raw) fail('PA005', `No account uses that ${kind === 'phone' ? 'number' : 'email address'} yet. Set one up first, then add it in Me.`);
       db = JSON.parse(raw) as Db;
       if (db.phone) await AsyncStorage.removeItem(parked('phone', db.phone));
       if (db.email) await AsyncStorage.removeItem(parked('email', db.email));
@@ -412,7 +421,7 @@ export function createMockBackend(): Backend {
 
     async signOut() {
       const d = await load();
-      if (!d.phone && !d.email) throw new Error('Add a phone number or an email first, or you could not get back in.');
+      if (!d.phone && !d.email) fail('PA008');
       const json = JSON.stringify(d);
       if (d.phone) await AsyncStorage.setItem(parked('phone', d.phone), json);
       if (d.email) await AsyncStorage.setItem(parked('email', d.email), json);
@@ -422,7 +431,7 @@ export function createMockBackend(): Backend {
     },
 
     async demoReset() {
-      await AsyncStorage.removeItem(KEY).catch(() => {});
+      await AsyncStorage.removeItem(KEY).catch(quiet('mock.clear'));
       db = fresh();
       return snapshot(db);
     },
@@ -430,7 +439,7 @@ export function createMockBackend(): Backend {
     demoBringForward: (inviteId) =>
       mutate((d, now) => {
         const i = find(d, inviteId);
-        if (i.status !== 'locked') throw new Error('Only a locked plan can be brought forward.');
+        if (i.status !== 'locked') fail('PC004', 'Only a locked plan can be brought forward.');
         return { invites: [put(d, { ...i, startsAt: now + 3 * rules.MIN })] };
       }),
   };
