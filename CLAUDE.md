@@ -4,7 +4,8 @@ A one-on-one pre-dating app built on a pinky promise: Expo app, Supabase backend
 Edge Function, DuckDB analytics worker, everything deployed by GitHub Actions.
 
 Read first: `README.md` (run and deploy), `ARCHITECTURE.md` (how it fits together),
-`DESIGN_SYSTEM.md` (look, motion, the lock gesture), `ROADMAP.md` (phases and what is next).
+`DESIGN_SYSTEM.md` (look, motion, the lock gesture), `ROADMAP.md` (phases and what is next),
+`docs/phase-3-checklist.md` (what Phase 3 still needs from accounts and phones).
 
 ## Commands
 
@@ -14,7 +15,7 @@ npx expo start --tunnel     # WSL: the phone cannot reach the dev server otherwi
 npm run typecheck
 python tests/db/run.py      # migrations, RLS, functions, push outbox, pipeline on a throwaway Postgres
 npm run db:start            # local Supabase in Docker
-npm run test:live:local     # two users through the live backend, locally
+npm run test:live:local     # two users, then Phase 3 (block, report, export, phone, delete), locally
 npm run test:push:local     # the push chain with a stand-in for Expo
 npm run test:app:local      # the real screens in two browser sessions
 ```
@@ -31,6 +32,8 @@ npm run test:app:local      # the real screens in two browser sessions
   `supabase/migrations`. Change both together and rerun `tests/db`.
 - Schema changes are new migrations (`npx supabase migration new <name>`). Never edit a migration
   that has been applied.
+- Blocks are enforced by RLS (`private.blocked_pair`), not by the UI. Reports are readable by no
+  client role. Anything new that shows one person to another must respect both.
 - The reveal is enforced by RLS, not by the UI. Never fetch, cache or push a contact handle or a
   private photo that RLS would hide. Pushes are sent only by the server.
 - Deploys happen through GitHub Actions, never by hand in the Supabase dashboard.

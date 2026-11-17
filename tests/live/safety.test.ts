@@ -4,10 +4,10 @@
  * src/services/supabase/supabaseBackend.ts, plus a raw client on each person's session for what a
  * modified app could try. Nothing uses the service role.
  *
- *   npm run test:safety:local   against `supabase start` (phone sign-in uses the test numbers in
- *                               supabase/config.toml, so no SMS is sent)
- *   npm run test:safety         against EXPO_PUBLIC_SUPABASE_URL / _ANON_KEY; the phone part is
- *                               skipped while the project has no SMS provider
+ *   npm run test:live:local     against `supabase start`, with E2E_PHONE_TEST=1: phone sign-in
+ *                               uses the test numbers in supabase/config.toml, so no SMS is sent
+ *   npm run test:live           against EXPO_PUBLIC_SUPABASE_URL / _ANON_KEY; the phone part is
+ *                               skipped there (it would text a made-up number)
  *
  * With E2E_DB_URL (a Postgres URL with rights on auth.users) it also checks the rows behind the
  * API and deletes its test users afterwards.
@@ -131,8 +131,11 @@ test('export: my data, and nobody else\'s contact', async () => {
 });
 
 test('phone: link keeps the id and history; sign in on a new phone gets them back', async (t) => {
+  // Only where the test numbers in supabase/config.toml exist (the local stack): anywhere else a
+  // real SMS would go to a made-up number.
+  if (process.env.E2E_PHONE_TEST !== '1') return t.skip('set E2E_PHONE_TEST=1 on a stack with the test numbers');
   const acct = await a.backend.account();
-  if (!acct.phoneAvailable) return t.skip('this project has no SMS provider yet');
+  assert.ok(acct.phoneAvailable, 'phone sign-in is on');
   const phone = '+919000000101';
   assert.equal(acct.phone, null, 'anonymous to start with');
 

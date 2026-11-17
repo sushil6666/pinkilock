@@ -39,7 +39,10 @@ app/                         Routes only. A route file wires state to components
   index.tsx                  Gate: onboarding or tabs (and the cannot-connect screen)
   onboarding.tsx             5 steps: hello, you, ideas, vibe, the promise
   (tabs)/                    _layout (custom tab bar), index (Discover), invites, plans, me
-  profile/[id].tsx           Someone's profile, locked reveal
+  profile/[id].tsx           Someone's profile, locked reveal, block or report
+  report/[id].tsx            Report someone (always blocks too)
+  account/phone.tsx          Add a phone number (link) or sign back in with one
+  account/blocked.tsx        People I blocked, with unblock
   invite/new.tsx             Vibe check composer
   invite/[id].tsx            One invitation: lock, seal, pass, take back
   lock/[id].tsx              The Pinkilock gesture
@@ -51,7 +54,8 @@ src/
     PinkyLock.tsx            The gesture surface (DESIGN_SYSTEM.md section 6)
     PinkyFinger.tsx          The two SVG pinkies
     InviteCard, TrustBadge, Portrait, LockedReveal, Countdown, NoticeBanner
-  domain/                    Rules, no IO: types, invites (state machine), trust, time, ideas
+  domain/                    Rules, no IO: types, invites (state machine), trust, time, ideas,
+                             safety (report reasons and limits), phone (E.164)
   services/
     backend.ts               The Backend interface (the repository layer)
     index.ts                 Picks mock or Supabase from the environment
@@ -62,12 +66,14 @@ src/
 supabase/
   config.toml                Local stack and function settings (Supabase CLI)
   migrations/                The schema, and the only source of it: tables, RLS, promise
-                             functions, analytics role, the pg_cron schedule, push
+                             functions, analytics role, the pg_cron schedule, push, blocks and
+                             reports, data export and account deletion
   functions/push/            Edge Function: drains the notification outbox to Expo
 analytics/duckdb_pipeline.py DuckDB worker: Trust Scores, conversion funnel, retention
 scripts/                     push-config, analytics-role, supabase-db-url, make-icons
-tests/db/                    Throwaway-Postgres checks: migrations, RLS, functions, push outbox, pipeline
-tests/live/                  Two real users against a real Supabase: backend, push, and the screens
+tests/db/                    Throwaway-Postgres checks: migrations, RLS, functions, push outbox, pipeline,
+                             blocking, reporting, export, deletion
+tests/live/                  Real users against a real Supabase: backend, safety and accounts, push, the screens
 .github/workflows/           ci, supabase-deploy, live-test, analytics, eas-init, eas-build
 assets/                      Placeholder icon, adaptive icon, splash and notification icon
 app.json, app.config.js      App config; eas.json holds the three build profiles
@@ -110,6 +116,8 @@ lost. In the mock it carries the simulated other person.
               pass   |   \ 24h no answer           | pass                   | both check in      -> kept
                      v    v                        v                        | someone bails or
                  declined  expired             declined                     | misses the window  -> flaked
+
+  any of sent, half_locked, locked --- a block, or an account deletion ---> ended
 ```
 
 - **sent**: a vibe check is an ask, nothing is promised yet. It expires 24 hours after sending or
@@ -119,6 +127,9 @@ lost. In the mock it carries the simulated other person.
   applies and the countdown starts. This is one `update` in Postgres, pushed to both phones by Realtime.
 - **kept**: both checked in inside the window (10 minutes before the start to 30 minutes after).
 - **flaked**: someone bailed after locking, or did not check in. Only that person's record moves.
+- **ended**: one of the two blocked the other, or deleted their account, while it was live. It is
+  nobody's flake: no bail, no-show or decline is logged, and no one's score moves. Nothing is
+  pushed about it.
 
 The rules exist twice, on purpose, and must match: `src/domain/invites.ts` (used by the mock and
 for what the UI offers) and the SQL functions in `supabase/migrations` (the authority in live mode).
@@ -137,11 +148,13 @@ Full DDL is `supabase/migrations`. Tables:
 | `ideas` | The micro-date catalogue | Read only |
 | `invites` | The whole product: who, what, when, status, `first_pinky_by`, `check_ins`, `flaked_by` | Read: the two people on it. **No direct writes at all** |
 | `passes` | People I passed on in Discover | Only me |
-| `events` | Append-only behaviour log | No client access. Written by the functions, read by analytics |
+| `events` | Append-only behaviour log. Rows are never deleted; a deleted account's rows lose their actor | No client access. Written by the functions, read by analytics |
 | `trust_scores` | One row per person, written by the DuckDB worker | Read: any signed-in user |
 | `profile_cards` (view) | `profiles` joined to `trust_scores` | What the app selects for a card |
 | `push_tokens` | One row per device: Expo push token, owner, platform | No client access. Written through `register_push_token` |
 | `notifications` | The push outbox: recipient, invite, kind, title, body, delivery state | No client access. Written by a trigger and the sweep, read by the Edge Function |
+| `blocks` | Who blocked whom | No client access, not even the service role. Written by `block_user`, `report_user`, `unblock_user`; my own list through `my_blocks()` |
+| `reports` | Reporter, reported person, reason, detail, the shared invite, review fields | No client access, not even the service role. Written only by `report_user`; read by a moderator with the database role |
 | `analytics.metrics_daily`, `analytics.retention_weekly` | Worker output | Analytics role only |
 
 **Writes go through functions, not tables.** `send_invite`, `offer_pinky`, `decline_invite`,
@@ -159,8 +172,41 @@ returns a row only when a `kept` invite exists between the reader and the owner.
 holds a contact handle it is not yet allowed to show; `getReveal` simply selects and gets nothing
 back until both people have checked in.
 
-**Auth.** Anonymous sign-in for the MVP: a real `auth.uid()` with zero friction, so RLS works from
-the first screen. Linking a phone number later keeps the same user id.
+**Blocking is RLS too.** `private.blocked_pair(a, b)` is true when either person blocked the
+other. It is a `security definer` function in the `private` schema, which the API does not expose,
+so nobody can ask it about a pair they are not in. The policies on `profiles`, `trust_scores`,
+`invites` and `profile_private` all add it: a blocked pair vanish from each other's Discover, lose
+every invite between them (finished ones too) and the reveal. `block_user` also ends every live
+invite between them as `ended` and drops anything still unsent about it from the push outbox;
+`send_invite` refuses across a block with a message that does not say who blocked whom. The
+blocked person is never told. Their phone notices the next time it re-reads (any reconnect, or a
+failed action on a vanished invite), when the store drops whatever RLS no longer returns.
+Unblocking (only the blocker can) brings the cards and the old invites back; ended stays ended.
+
+**Reports.** `report_user(person, reason, detail, invite)` checks the reason (fake, harassment,
+inappropriate, underage, unsafe, other), caps the detail at 500 characters and a person at 10
+reports a day, attaches the invite only if the two of them share it, and always blocks as well.
+The rules are mirrored in `src/domain/safety.ts`. There is no moderation tool yet: reports are read
+in the SQL editor (`select * from reports where reviewed_at is null`).
+
+**Export and deletion.** `export_my_data()` returns one JSON document: account (id, phone),
+profile, contact, trust score, my invites (the other person by id only), passes, blocks, reports
+I made, devices, notifications sent to me, and my events. Reports about me are not in it, nor
+anyone else's contact. `delete_my_account()` ends my live invites, removes my id from every events
+row (and clears what the phone sent with `app_open`), then deletes the auth user; everything that
+references the profile cascades, and reports keep their row with my id set to null. The other
+person's record does not change, because Trust Scores count kept promises from the events log
+(section 7). `tests/db/account.sql` scans every uuid column afterwards for the deleted id.
+
+**Auth.** Sign-in starts anonymous: a real `auth.uid()` with zero friction, so RLS works from the
+first screen. Adding a phone number (Me, Account) calls `updateUser({ phone })` and then
+`verifyOtp({ type: 'phone_change' })`, which turns the same user into a phone user: the id, and so
+every row, stays. On a new phone, "I already have an account" signs in with the number
+(`signInWithOtp` with `shouldCreateUser: false`, so no account is ever made that way). Signing out
+is offered only once a number is linked, since an anonymous account could not be got back. The
+SMS provider is Twilio Verify, switched on by the deploy workflow once its three secrets exist;
+until then the app reads `/auth/v1/settings` and says phone sign-in is not on yet. Locally,
+`supabase/config.toml` turns phone sign-in on with test numbers that send no SMS.
 
 ## 6. Push notifications
 
@@ -216,7 +262,9 @@ Each run:
    and `profiles` into DuckDB in one read transaction.
 2. Compute, entirely inside DuckDB:
    - **Trust Scores** per person from kept promises, early bails, late bails and no-shows, plus the
-     median time someone takes to answer an ask.
+     median time someone takes to answer an ask. All four come from the events log (each person's
+     own `kept`, `bailed` and `no_show` rows), so another person deleting their account does not
+     change your record. An `ended` invite counts for no one.
    - **Pre-date conversion** per day: asks sent, first pinkies, locks, kept, flaked, declined,
      expired, ask-to-lock rate, lock-to-kept rate, median minutes to lock.
    - **Weekly retention** by signup cohort, from any activity in the log.
@@ -238,7 +286,11 @@ applies the same formula with every flake weighted 1.
 
 ## 8. Repository layer: mock and live
 
-`src/services/backend.ts` is the only thing screens and the store know. `src/services/index.ts`
+`src/services/backend.ts` is the only thing screens and the store know. Besides the promise
+methods it has `block`, `unblock`, `blockedPeople`, `report`, `exportMyData`, `deleteAccount`,
+`account`, `sendPhoneCode`, `verifyPhoneCode` and `signOut`. `Changes.removed` names people and
+invites the backend can no longer see, and the store drops them; the live backend works that out
+on every re-read and from Realtime deletes, and is never told why. `src/services/index.ts`
 returns the Supabase implementation when `EXPO_PUBLIC_SUPABASE_URL` and
 `EXPO_PUBLIC_SUPABASE_ANON_KEY` are set, otherwise the mock.
 
@@ -247,6 +299,11 @@ session. That is what lets `tests/live` run the very same file from Node as two 
 Whatever one backend can do, the other can too: `registerPushToken` exists on both, and on the
 mock it records the token and sends nothing, because its other person only moves while the app is
 open and the in-app banner already covers that.
+
+The mock mirrors the safety rules: it hides people I blocked and every invite with them, ends live
+ones with `endForBlock`, keeps reports where nothing can read them back, accepts `123456` as every
+phone code (the screen says so), and on sign-out parks the account under its number until someone
+signs back in with it.
 
 The mock keeps a small database in AsyncStorage, answers with about 280 ms of latency, and plays
 the other person: they answer an ask after 7 seconds, seal a lock after 2.4, check in after 1.8, and
@@ -280,12 +337,19 @@ as due times, so a restart loses nothing.
 | Local | `supabase start` (Docker), or the mock with no keys | `npm run db:start`, `.env` |
 | Development build | Whatever the developer's `.env` says: the dev client loads JS from the laptop | `eas.json` profile `development` |
 | Preview build | The Supabase project in `SUPABASE_PROJECT_REF` | profile `preview`, installable APK |
-| Production build | The project in `PROD_SUPABASE_PROJECT_REF` | profile `production`; refuses to build until that is set |
+| Production build | The project in `PROD_SUPABASE_PROJECT_REF` | profile `production`; refuses to build until that is set, or if it is the preview project |
 
-- **Database and function**: `.github/workflows/supabase-deploy.yml` runs on a push to `main` that
-  touches `supabase/`. It turns on anonymous sign-ins (the one Auth setting the app needs), runs
-  `supabase db push`, deploys the `push` function, rotates the shared secret, sets the analytics
-  role's password, and then runs the live two-user test against what it just deployed.
+- **Database and function**: `.github/workflows/supabase-deploy.yml` has two targets. `preview`
+  (`SUPABASE_PROJECT_REF`) deploys on every push to `main` that touches `supabase/`, and by hand.
+  `production` (`PROD_SUPABASE_PROJECT_REF`) deploys only by hand, in the `production` GitHub
+  environment (where required reviewers can be added), and is refused until its ref and database
+  password exist; its values never fall back to preview ones. Each run turns on anonymous sign-ins,
+  runs `supabase db push`, deploys the `push` function, rotates the shared secret, sets the
+  analytics role's password, turns on Twilio Verify phone sign-in if its secrets exist, and, for
+  preview only, runs the live tests against what it just deployed. The live tests are not run on
+  production, where their test people would show up in real Discover.
+- **Analytics**: the worker runs once per project that has a ref and a pooler host, every 5
+  minutes; a project that is not set up is skipped.
 - **App**: `.github/workflows/eas-build.yml` copies the public Supabase URL and anon key for the
   chosen profile into the matching EAS environment and starts the build. Both values are public
   by design; the service role key is used by nothing in the app, the repo or these workflows (the
@@ -304,17 +368,21 @@ as due times, so a restart loses nothing.
   private is in it, and that clients cannot touch it.
 - `npm run test:live:local` (or `test:live` with a project's URL and anon key): two anonymous
   users drive `supabaseBackend.ts` through onboard, ask, lock, check-in, reveal, bail and expiry
-  over GoTrue, PostgREST, RLS and Realtime. Expiry waits for the real pg_cron sweep.
+  over GoTrue, PostgREST, RLS and Realtime. Expiry waits for the real pg_cron sweep. Then three
+  more go through Phase 3 (`safety.test.ts`): a block (the blocked person's fresh boot and a raw
+  client both find no card, no shared invite and no reveal), a report (unreadable, blocks), export,
+  phone link and sign-in on a new phone (same id and history; local stack only, where the test
+  numbers send no SMS), and account deletion.
 - `npm run test:push:local`: the whole push chain on the local stack, with a stand-in for Expo.
-- `npm run test:app:local`: the web build in two browser sessions, through the real screens.
+- `npm run test:app:local`: the web build in two browser sessions, through the real screens,
+  ending with a block from the profile screen, a data download and an account deletion from Me.
 - CI runs all of the above on every push. The live two-user test also runs against the real
   project after each deploy.
 
 ## 12. Not in the MVP, on purpose
 
-Real photos and the video room itself, phone-number auth, distance (live mode shows area only),
-calendar export, separate app ids per build profile, push receipts, and reporting and blocking.
-Reporting and blocking must ship before real users do.
+Real photos and the video room itself, distance (live mode shows area only), calendar export,
+separate app ids per build profile, push receipts, a moderation tool for reports, and telling the
+blocked person's phone at once (it finds out on its next re-read).
 
-`ROADMAP.md` says which phase each of these lands in: reporting, blocking and phone sign-in in
-Phase 3, photos and the video room in Phase 4.
+`ROADMAP.md` says which phase each of these lands in: photos and the video room in Phase 4.

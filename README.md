@@ -8,6 +8,7 @@ one Expo codebase.
 - `DESIGN_SYSTEM.md`: colours, type, components and the exact spec of the lock gesture
 - `ROADMAP.md`: the phases, what each must prove, and what is next
 - `docs/phase-2-checklist.md`: the steps left to finish Phase 2 (accounts and real phones)
+- `docs/phase-3-checklist.md`: what Phase 3 needs from you (SMS provider, production project, phones)
 - `CLAUDE.md`: the project rules, for Claude Code sessions
 
 ## Run it on your phone (mock data, no accounts needed)
@@ -32,6 +33,9 @@ With no keys set, the app runs on ten made-up people who answer by themselves. A
 4. **Discover**: send someone a vibe check. They answer in about seven seconds; then you seal.
    Nikhil always passes, so you can see that too.
 5. On any locked plan: **Can't make it** shows what a bail costs. **Me** has the reset.
+6. Safety and accounts: on anyone's profile, **Block or report**. In **Me**, Account: add a phone
+   number (the mock's code is always `123456`), see blocked people, download your data, or delete
+   the account. After **Sign out**, "I already have an account" on the first screen gets you back.
 
 ## Run the backend locally (Docker)
 
@@ -62,9 +66,12 @@ under Settings, Secrets and variables, Actions:
 | Secret | `GOOGLE_SERVICES_JSON` | The contents of Firebase's `google-services.json` (Android push; see below) |
 | Variable | `SUPABASE_PROJECT_REF` | The project ref (the id in the project URL) |
 | Variable | `EXPO_PUBLIC_SUPABASE_ANON_KEY` | Project Settings, API: the anon / publishable key |
-| Variable | `SUPABASE_POOLER_HOST` | Printed by the first deploy run, e.g. `aws-0-ap-south-1.pooler.supabase.com` |
+| Variable | `SUPABASE_POOLER_HOST` | Printed by the first deploy run, e.g. `aws-1-ap-south-1.pooler.supabase.com` |
+| Secret | `TWILIO_VERIFY_ACCOUNT_SID`, `TWILIO_VERIFY_AUTH_TOKEN`, `TWILIO_VERIFY_SERVICE_SID` | Optional: phone sign-in (step 5). Until all three exist, phone sign-in stays off |
 
 The service role key is not needed anywhere and must not be added.
+
+For a production project later, the same values with a `PROD_` prefix (step 6).
 
 **2. Deploy the backend.** Run the **Supabase deploy** workflow (it also runs on every push to
 `main` that touches `supabase/`). It turns on anonymous sign-ins, applies the migrations (schema,
@@ -88,6 +95,20 @@ with package `com.pinkilock.app`, and download `google-services.json`: its conte
 `GOOGLE_SERVICES_JSON` secret. Then, in Firebase, Project settings, Service accounts, generate a
 private key and upload it on expo.dev under the project's Credentials, Android, FCM V1 service
 account key. Without these the app builds and runs, and the Me tab shows that push is off.
+
+**5. Phone sign-in (Twilio Verify).** In Twilio, create a Verify service, then add its Account
+SID, Auth Token and Service SID as the three `TWILIO_VERIFY_*` secrets and run **Supabase deploy**:
+it switches the project's phone provider on. Twilio Verify sends codes from its own pre-registered
+templates, which is what Indian DLT rules require for OTP texts, so there is no sender ID or
+template to register yourself.
+
+**6. Production (when you are ready).** Create a second Supabase project, then add
+`PROD_SUPABASE_PROJECT_REF`, `PROD_EXPO_PUBLIC_SUPABASE_ANON_KEY` (variables) and
+`PROD_SUPABASE_DB_PASSWORD`, optionally `PROD_ANALYTICS_DB_PASSWORD` (secrets). Run **Supabase
+deploy** with target `production` (only ever by hand; it refuses to run until those exist), set
+`PROD_SUPABASE_POOLER_HOST` from its summary, then **EAS build** with profile `production`. In
+Settings, Environments, `production`, you can require your own approval before each production
+deploy.
 
 The **Me** tab shows which backend is in use and whether push is on for this phone. A live
 project starts empty: people appear in Discover as they onboard, so try it with two phones.
@@ -119,10 +140,10 @@ python analytics/duckdb_pipeline.py               # write trust_scores and analy
 ```bash
 npm run typecheck
 pip install pgserver duckdb && python tests/db/run.py   # migrations, RLS, functions, push outbox, pipeline (Python 3.12)
-npm run test:live:local     # two users through the live backend, against `supabase start`
+npm run test:live:local     # two users, then block, report, export, phone and delete, against `supabase start`
 npm run test:push:local     # the push chain with a stand-in for Expo (setup: top of tests/live/local_push.sh)
 npm run test:app:local      # the real screens in two browser sessions (npx playwright install chromium)
-npm run test:live           # the two-user test against EXPO_PUBLIC_SUPABASE_URL / _ANON_KEY
+npm run test:live           # the same live tests against EXPO_PUBLIC_SUPABASE_URL / _ANON_KEY
 ```
 
 CI runs all but the last on every push. The last runs against the real project after each deploy,
@@ -143,6 +164,15 @@ workflow applied all four migrations, turned on anonymous sign-ins, deployed the
 and connected Postgres to it; the live two-user test then passed 6 of 6 there, including expiry
 by the real pg_cron sweep and Realtime delivery both ways. An Android preview APK pointed at this
 project was built on EAS and is installable.
+
+**Phase 3, verified locally and in CI only** (on the `claude/project-thread-cm3xba` branch until it
+merges): blocking hides two people from each other, every invite between them and the reveal,
+through RLS, and ends live plans with no flake; reports are stored where no client can read them
+and block too; data export; account deletion removes the person and keeps the log anonymised;
+a phone number links to the anonymous user with the same id and history, and signs back in on a
+new phone (with the local stack's test numbers). Through the real screens: block from a profile,
+download data and delete the account from Me. None of it has run against the real project yet:
+it deploys there when the branch merges, and phone sign-in needs the Twilio secrets.
 
 **Not verified:** a real push delivery (needs Firebase for Android, see Go live step 4), the
 analytics worker's first cloud run (needs `ANALYTICS_DB_PASSWORD` and `SUPABASE_POOLER_HOST`), and
