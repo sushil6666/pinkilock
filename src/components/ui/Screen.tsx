@@ -13,6 +13,7 @@ import { router } from 'expo-router';
 import type { ReactNode } from 'react';
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { webOnly } from '../../lib/web';
 import { color, columnMax, gutter, space } from '../../theme/tokens';
 import { T } from './T';
 
@@ -52,7 +53,7 @@ export function Screen({ children, title, back = false, onBack, right, footer, s
   const hasHeader = back !== false || !!title || !!right;
 
   return (
-    <KeyboardAvoidingView style={[styles.root, { paddingTop: insets.top, paddingLeft: insets.left, paddingRight: insets.right }]} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+    <KeyboardAvoidingView {...webOnly({ role: 'main' as const })} style={[styles.root, { paddingTop: insets.top, paddingLeft: insets.left, paddingRight: insets.right }]} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       {/* The column's edges, only visible where the window is wider than it. */}
       <View style={styles.rail} pointerEvents="none"><View style={styles.railLines} /></View>
       {hasHeader && (

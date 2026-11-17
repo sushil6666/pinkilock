@@ -378,6 +378,13 @@ what the server did (`OPERATIONS.md`, "Trace a bug").
   full hold from a mouse, a finger or a held Space or Enter; the lock stage measures its own
   width, clips its drawing and takes the arrow keys. Haptics and push do nothing in a browser,
   and Me says so for push.
+- **Screen readers in a browser**: the web renderer drops `accessibilityState`, so a control that
+  can be on or off also spreads `aria({ pressed | selected | checked })` from `src/lib/web.ts`
+  (chips and tags, tabs, the report reasons). The `display` type style is each screen's headline
+  and is announced as a heading on a phone and is an `h1` in a browser; `Screen` is the `main`
+  landmark. One rule in `src/lib/web.ts` gives whatever the keyboard lands on the same sky-blue
+  focus ring, so a new control needs nothing. Reduced motion needs no code outside the lock and
+  the hold button: Reanimated skips entering animations and springs when the system asks.
 - **Web addresses**: `src/lib/routes.ts` names every route once: its page title (`Plans · Pinkilock`;
   a title never carries a person's name or an id, because titles end up in history and in shared
   tabs) and whether it needs a profile. The root layout sets the title when the route changes and
