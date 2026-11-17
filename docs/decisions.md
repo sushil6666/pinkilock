@@ -75,6 +75,7 @@ first table with its date.
 | D057 | 2026-11-17 | Share my date uses the phone's share sheet and a local notification; no trusted contact is stored and nothing is sent automatically | An automatic alert needs a stored contact and an SMS or email sender; keeping it on the phone holds no one else's data | Claude | `src/components/ShareMyDate.tsx` | In force once merged |
 | D058 | 2026-11-17 | Free windows guide, they do not restrict: an ask outside them is still allowed, the matching times are just marked | A hard rule would refuse good asks from people who set windows once and forgot | Claude | `src/domain/freeWindows.ts` | In force once merged |
 | D059 | 2026-11-17 | Dependabot no longer bumps packages the Expo SDK pins; they move together in one Expo SDK upgrade | Single bumps (PRs #36 to #40) broke the match with SDK 52 and the native build | Owner | `.github/dependabot.yml` | In force once merged |
+| D060 | 2026-11-17 | The network-country check (PL078) can be switched off per project with `private.config` `allow_any_network_country`; the deploy switches it off on preview and on for production. Which countries are open stays the `countries` table | GitHub's runners are in the US, so every live test on preview was refused; the city and country rules and the consents still apply, and a missing key means strict | Claude (owner decides which countries open) | migration `20261117000018`, `supabase-deploy.yml` | In force once merged |
 
 ## Waiting for the owner
 

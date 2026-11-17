@@ -413,6 +413,11 @@ Only after its checklist and the lawyer's sign-off (WP8). Then a migration sets 
 `countries` and `cities`, and the same change goes into `src/domain/countries.ts`. Discover is per
 city; a city with no venue list falls back to typed places.
 
+A first profile also needs the request's network country (`cf-ipcountry`) to be open (PL078). On the
+preview project the deploy switches that one check off (`private.config` `allow_any_network_country`
+= `true`), because the live test runs from GitHub's US runners; production keeps it on. Opening a
+country is still only the migration above, never this switch (D060).
+
 ### Retention
 
 `private.retention()` runs daily (pg_cron): finished plans lose their place and line after 90 days,

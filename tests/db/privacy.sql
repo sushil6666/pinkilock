@@ -27,6 +27,25 @@ select t.ok(t.sqlstate($$select save_profile('Pari', 25, 'Khar', '', '', '{}', a
 select t.headers('');
 select t.ok((select (city, country) = ('Mumbai', 'IN') from profiles where id = :'p2'), 'the profile carries its city and country');
 
+-- The network check can be switched off per project (D060: the preview project, tested from US
+-- runners). Only the database owner can; the city must still be open.
+select t.ok(t.fails($$select private.set_config('allow_any_network_country', 'true')$$), 'a user cannot switch the network check off');
+reset role;
+\set p3 '00000000-0000-0000-0000-0000000000e9'
+insert into auth.users (id) values (:'p3');
+select private.set_config('allow_any_network_country', 'true');
+set role authenticated;
+select t.as_user(:'p3');
+select give_consents(array['adult', 'terms', 'privacy', 'sensitive']);
+select t.headers('{"cf-ipcountry": "US"}');
+select t.ok(t.sqlstate($$select save_profile('Tara', 25, 'Koregaon Park', '', '', '{}', array['boba_run','chai_walk','meme_duel'], 'Instagram', '@tara', 'Pune')$$) = 'PL076', 'with the switch off, a closed city is still refused (PL076)');
+select t.ok(t.sqlstate($$select save_profile('Tara', 25, 'Bandra', '', '', '{}', array['boba_run','chai_walk','meme_duel'], 'Instagram', '@tara')$$) is null, 'with the switch off, a first profile from any network is let in');
+select t.headers('');
+reset role;
+select private.set_config('allow_any_network_country', 'false');
+delete from auth.users where id = :'p3';
+set role authenticated;
+
 -- Requests and appeals.
 reset role;
 select private.moderate(null, :'p2', 'suspend', 'test suspension');

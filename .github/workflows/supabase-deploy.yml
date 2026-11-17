@@ -256,6 +256,18 @@ jobs:
           if { [ -n "$SMTP_HOST" ] && [ -n "$SMTP_PASSWORD" ]; } || { [ -n "$TWILIO_SID" ] && [ -n "$TWILIO_SERVICE" ]; }; then gate=on; fi
           scripts/gate-config.sh "$(scripts/supabase-db-url.sh postgres "$SUPABASE_DB_PASSWORD")" "$gate"
           echo "- Link gate (asks need an email or phone): $gate" >> "$GITHUB_STEP_SUMMARY"
+      - name: Network-country check, strict on production only
+        # A first profile must come from a network in an open country (PL078). The preview project
+        # is tested from GitHub's US runners, so there the check is off; the city and its country
+        # must still be open. Which countries are open is the `countries` table, never this step
+        # (docs/decisions.md D060, OPERATIONS.md "Opening a country or a city").
+        run: |
+          allow=false
+          [ "$TARGET" = preview ] && allow=true
+          echo "select private.set_config('allow_any_network_country', :'v')" \
+            | psql "$(scripts/supabase-db-url.sh postgres "$SUPABASE_DB_PASSWORD")" -v ON_ERROR_STOP=1 -qAt -v v="$allow" >/dev/null
+          if [ "$allow" = true ]; then summary="off (preview: any network may make a first profile)"; else summary="on"; fi
+          echo "- Network-country check: $summary" >> "$GITHUB_STEP_SUMMARY"
 
   live-test:
     # Preview only: on production it would put test people in front of real ones.

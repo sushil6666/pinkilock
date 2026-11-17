@@ -119,6 +119,7 @@ test('errors carry a code and a trace id, and the phone error log cannot be read
   assert.ok((await raw.from('client_errors').insert({ code: 'PC001' })).error, 'write client errors directly');
   assert.ok((await raw.rpc('log_client_error', { p_code: 'not a code', p_trace: null, p_route: '', p_app_version: '', p_platform: null })).error, 'a made-up code');
   assert.ok((await raw.schema('private' as never).rpc('invite_timeline', { p_invite: x.id })).error, 'the operator timeline');
+  assert.ok((await raw.schema('private' as never).rpc('set_config', { p_key: 'allow_any_network_country', p_value: 'true' })).error, 'switching off the network-country check');
   if (withDb) {
     assert.equal(sql(`select code || ' ' || route from public.client_errors where user_id = '${x.id}' and trace = 'TESTTRAC'`), 'PL020 /invite/new', 'the report landed');
     // The refused ask logged no event; an accepted call does, with the trace the phone sent.
