@@ -1,0 +1,116 @@
+# Builds the web app from main and publishes it on Cloudflare Pages, where pinkilock.com and
+# www.pinkilock.com point. The website is the app's own web build: there is no second site.
+#
+# Runs on every push to main that can change what the website shows, and by hand (Run workflow).
+# Never from a branch.
+#
+# Needs, in the repository's Actions settings:
+#   secret    CLOUDFLARE_API_TOKEN   a custom token with Account > Cloudflare Pages > Edit
+#   variable  CLOUDFLARE_ACCOUNT_ID  the Cloudflare account that holds pinkilock.com
+#   variables PROD_SUPABASE_PROJECT_REF and PROD_EXPO_PUBLIC_SUPABASE_ANON_KEY for the backend.
+#             Until those exist the website talks to the preview project (SUPABASE_PROJECT_REF,
+#             EXPO_PUBLIC_SUPABASE_ANON_KEY) and every run says so in a warning.
+#
+# The Pages project (pinkilock) is created on the first run. The custom domains are added once,
+# by hand, in the Cloudflare dashboard (OPERATIONS.md, "The website").
+name: Web deploy
+
+on:
+  push:
+    branches: [main]
+    paths-ignore: ['**.md', 'docs/**', 'supabase/**', 'tests/**', 'analytics/**', 'security/**']
+  workflow_dispatch:
+
+concurrency:
+  group: web-deploy
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+env:
+  SITE: https://pinkilock.com
+  PAGES_PROJECT: pinkilock
+  WRANGLER: wrangler@4.149.0
+
+jobs:
+  deploy:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment:
+      name: website
+      url: https://pinkilock.com
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+
+      - name: Pick the backend
+        env:
+          CF_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CF_ACCOUNT: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+          PREVIEW_REF: ${{ vars.SUPABASE_PROJECT_REF }}
+          PREVIEW_KEY: ${{ vars.EXPO_PUBLIC_SUPABASE_ANON_KEY }}
+          PROD_REF: ${{ vars.PROD_SUPABASE_PROJECT_REF }}
+          PROD_KEY: ${{ vars.PROD_EXPO_PUBLIC_SUPABASE_ANON_KEY }}
+        run: |
+          missing=""
+          [ -n "$CF_TOKEN" ] || missing="$missing secret:CLOUDFLARE_API_TOKEN"
+          [ -n "$CF_ACCOUNT" ] || missing="$missing variable:CLOUDFLARE_ACCOUNT_ID"
+          if [ -n "$missing" ]; then echo "::error::Not set in the repository's Actions settings:$missing (see the top of this workflow)"; exit 1; fi
+          if [ -n "$PROD_REF" ] && [ -n "$PROD_KEY" ]; then
+            ref="$PROD_REF"; key="$PROD_KEY"; echo "EXPO_PUBLIC_APP_ENV=production" >> "$GITHUB_ENV"
+          elif [ -n "$PREVIEW_REF" ] && [ -n "$PREVIEW_KEY" ]; then
+            ref="$PREVIEW_REF"; key="$PREVIEW_KEY"
+            echo "::warning::No production Supabase project is configured, so the website talks to the preview project ($PREVIEW_REF). People who sign up on it land in the preview database."
+          else
+            echo "::error::No Supabase project is configured (see the top of this workflow)"; exit 1
+          fi
+          {
+            echo "SUPABASE_HOST=$ref.supabase.co"
+            echo "EXPO_PUBLIC_SUPABASE_URL=https://$ref.supabase.co"
+            echo "EXPO_PUBLIC_SUPABASE_ANON_KEY=$key"
+            echo "EXPO_PUBLIC_GIT_SHA=${GITHUB_SHA::7}"
+          } >> "$GITHUB_ENV"
+
+      - name: Build the web app
+        run: npx expo export -p web --clear --output-dir dist/web
+
+      - name: Add the headers and the share tags
+        run: |
+          sed "s/SUPABASE_HOST/$SUPABASE_HOST/g" web/_headers > dist/web/_headers
+          # Link previews need absolute addresses, which only exist now that there is a domain.
+          tags="<link rel=\"canonical\" href=\"$SITE/\" /><meta property=\"og:url\" content=\"$SITE/\" /><meta property=\"og:image\" content=\"$SITE/share.png\" /><meta property=\"og:image:width\" content=\"1200\" /><meta property=\"og:image:height\" content=\"630\" />"
+          grep -q '<meta property="og:type"' dist/web/index.html
+          sed -i "s#<meta property=\"og:type\"#$tags<meta property=\"og:type\"#" dist/web/index.html
+          grep -q 'og:image' dist/web/index.html
+
+      - name: Nothing secret in what ships
+        # Only the public anon key may be in the bundle: any other Supabase key, any token that is
+        # not the anon role, or a private key stops the deploy.
+        run: node scripts/check-web-bundle.mjs dist/web
+
+      - name: Publish to Cloudflare Pages
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          if ! npx --yes "$WRANGLER" pages project list | grep -qw "$PAGES_PROJECT"; then
+            npx --yes "$WRANGLER" pages project create "$PAGES_PROJECT" --production-branch main
+          fi
+          npx --yes "$WRANGLER" pages deploy dist/web --project-name "$PAGES_PROJECT" --branch main --commit-hash "$GITHUB_SHA" --commit-dirty=true
+
+      - name: Check the live site
+        # Once the custom domain is attached. Until then this only warns.
+        run: |
+          sleep 20
+          for path in / /plans /share.png; do
+            code=$(curl -s -o /dev/null -w '%{http_code}' "$SITE$path" || true)
+            echo "$SITE$path -> $code"
+            if [ "$code" != 200 ]; then echo "::warning::$SITE$path answered $code. If the custom domain is not attached yet, see OPERATIONS.md, \"The website\"."; fi
+          done
+          curl -sI "$SITE/" | grep -i '^content-security-policy' || echo "::warning::No Content-Security-Policy header on $SITE/ yet"

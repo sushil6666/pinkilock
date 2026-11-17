@@ -34,8 +34,22 @@ jobs:
       - run: npm ci
       - name: Link the project (for the clean-up connection)
         run: npx supabase link --project-ref "$SUPABASE_PROJECT_REF"
+      - name: A one-run pass through the network-country check
+        # GitHub's runners are in the US, and only open countries may make a first profile (PL078).
+        # The test sends this random token instead; it is cleared in the last step (D063).
+        run: |
+          token="$(openssl rand -hex 32)"
+          echo "::add-mask::$token"
+          echo "E2E_NETWORK_TOKEN=$token" >> "$GITHUB_ENV"
+          echo "select private.set_config('network_check_token', :'t')" \
+            | psql "$(scripts/supabase-db-url.sh postgres "$SUPABASE_DB_PASSWORD")" -v ON_ERROR_STOP=1 -qAt -v t="$token" >/dev/null
       - name: Two users, the whole flow
         run: |
           E2E_DB_URL="$(scripts/supabase-db-url.sh postgres "$SUPABASE_DB_PASSWORD")"
           export E2E_DB_URL
           npm run test:live
+      - name: Clear the network-check token
+        if: always()
+        run: |
+          echo "select private.set_config('network_check_token', '')" \
+            | psql "$(scripts/supabase-db-url.sh postgres "$SUPABASE_DB_PASSWORD")" -v ON_ERROR_STOP=1 -qAt >/dev/null

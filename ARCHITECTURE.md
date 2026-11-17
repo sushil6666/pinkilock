@@ -187,7 +187,7 @@ cases only: a made-up code still gets through until lines are reviewed before an
 
 **Where, and with what consent.** `countries` and `cities` are an allow-list (India and Mumbai open);
 a profile's city must be open, and a first profile needs the request's country (`cf-ipcountry`, when
-present, and unless `private.config` `allow_any_network_country` is on, as on preview) to be open and four consents at the current `legal_version`: 18+, terms, privacy, and the
+present; the live test passes with a one-run token, D063) to be open and four consents at the current `legal_version`: 18+, terms, privacy, and the
 separate consent to use dating preferences. `privacy_requests` holds questions and appeals
 (`file_privacy_request`); `my_moderation` shows a person what was done to their account and why;
 `private.retention` clears and deletes on a schedule. `docs/data-map.md` lists what is held where.
@@ -484,8 +484,10 @@ a query filter. None of this is a defence on its own: every rule that matters is
   onboarding; it covers the screen with `bg` until that has happened. This is a courtesy, not a
   lock: what one person may see is still decided by RLS. An address that matches nothing shows
   `app/+not-found.tsx`. `tests/unit/routes.test.ts` fails when a route file is added without an
-  entry. The build is one page (`web.output: single`), so the host must answer every path with
-  `index.html`. `public/manifest.json`, the home-screen icons and `public/share.png` are drawn by
+  entry. The build is one page (`web.output: single`); Cloudflare Pages answers every path with
+  `index.html` (there is no `404.html`). The website is this build at pinkilock.com, published by
+  `.github/workflows/web-deploy.yml` with the headers in `web/_headers`: a content security policy
+  that allows only the page's own scripts and the Supabase project, no framing, HSTS. `public/manifest.json`, the home-screen icons and `public/share.png` are drawn by
   `scripts/make-icons.mjs`; the manifest is a third place the blue is written by hand.
 
 ## 10. Environments and delivery
