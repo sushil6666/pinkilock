@@ -134,10 +134,15 @@ works through the real screens in two browser sessions; a push travels from trig
 Edge Function to a stand-in for Expo with nothing private in it; the analytics worker runs as its
 restricted role.
 
-**Verified against the real project:** nothing yet. This section is updated when the deploy and
-the live two-user test have run against it.
+**Verified against the real project** (Supabase `rwdqzjwocdlbppotadec`, 2026-11-16): the deploy
+workflow applied all four migrations, turned on anonymous sign-ins, deployed the `push` function
+and connected Postgres to it; the live two-user test then passed 6 of 6 there, including expiry
+by the real pg_cron sweep and Realtime delivery both ways. An Android preview APK pointed at this
+project was built on EAS and is installable.
 
-**Not verified:** anything on a physical phone. That means a push actually arriving (the last
+**Not verified:** a real push delivery (needs Firebase for Android, see Go live step 4), the
+analytics worker's first cloud run (needs `ANALYTICS_DB_PASSWORD` and `SUPABASE_POOLER_HOST`), and
+anything on a physical phone. That means a push actually arriving (the last
 hop, Expo to APNs or FCM to the device), tapping one to open the right screen, the permission
 prompt, haptics, safe areas, and 60fps on the lock gesture. iOS builds have not been attempted.
 

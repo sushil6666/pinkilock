@@ -98,7 +98,8 @@ jobs:
           node -e '
             const b = JSON.parse(require("fs").readFileSync("build.json", "utf8"))[0];
             const url = b.artifacts?.applicationArchiveUrl ?? b.artifacts?.buildUrl ?? "(no artifact)";
-            const page = `https://expo.dev/accounts/${b.project?.ownerAccount?.name}/projects/${b.project?.slug}/builds/${b.id}`;
+            const app = require("./app.json").expo;
+            const page = `https://expo.dev/accounts/${app.owner}/projects/${app.slug}/builds/${b.id}`;
             console.log("status:", b.status, "\ninstall:", url, "\nbuild page:", page);
             require("fs").appendFileSync(process.env.GITHUB_STEP_SUMMARY, `### EAS ${b.buildProfile} build (${b.platform})\n\n- Status: **${b.status}**\n- Install: ${url}\n- Build page: ${page}\n`);
             if (b.status !== "FINISHED") process.exit(1);
