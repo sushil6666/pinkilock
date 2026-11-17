@@ -48,8 +48,11 @@ def main() -> int:
                     return 1
             # The pipeline runs twice: once on the promise scenario, and again after blocks,
             # reports and an account deletion, which must leave everyone else's score alone.
+            # Last, the attacker suite (docs/build-plan.md, WP0): a hostile signed-in client, then a
+            # third pipeline run over what it did.
+            gaps = 0
             for step in ("pipeline", HERE / "check_scores.sql", HERE / "push.sql", HERE / "safety.sql", HERE / "account.sql",
-                         "pipeline", HERE / "check_after.sql"):
+                         "pipeline", HERE / "check_after.sql", HERE / "attacker.sql", "pipeline", HERE / "attacker_after.sql"):
                 if step == "pipeline":
                     print("== analytics/duckdb_pipeline.py")
                     run = subprocess.run([args.duckdb_python, str(ROOT / "analytics" / "duckdb_pipeline.py"), "--dsn", uri])
@@ -58,11 +61,15 @@ def main() -> int:
                     continue
                 print(f"== {step.relative_to(ROOT)}")
                 out = subprocess.run(["psql", uri, "-v", "ON_ERROR_STOP=1", "-q", "-f", str(step)], capture_output=True, text=True)
-                print("\n".join(l for l in out.stdout.splitlines() if l.strip().startswith("ok")))
+                shown = [l for l in out.stdout.splitlines() if l.strip().startswith(("ok", "gap"))]
+                gaps += sum(l.strip().startswith("gap") for l in shown)
+                print("\n".join(shown))
                 if out.returncode != 0:
                     print(out.stderr, file=sys.stderr)
                     return 1
             print("\nALL DATABASE CHECKS PASSED")
+            if gaps:
+                print(f"{gaps} known gaps are still open (the lines that start with 'gap'; see docs/build-plan.md).")
             return 0
         finally:
             srv.cleanup()

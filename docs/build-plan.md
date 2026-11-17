@@ -80,6 +80,13 @@ public anon key; the service role key is used by nothing in the repo.
 | G16 | No consent record, no privacy policy or terms in the app, no retention limits, no record of where data is stored or which companies process it | whole app | Required before launch almost everywhere |
 | G17 | No country gate: anyone anywhere can sign up | auth | The app would be live in countries whose rules have not been checked, including ones where dating apps or same-sex dating put users at risk |
 | G18 | A filter on typed text cannot catch coded contacts (1 for a, 2 for b; a number spelled in words; a handle split across fields or across edits), and once photos exist (Phase 4) a handle can simply be written in a picture, or shown as a QR code | every free-text field; Phase 4 photo upload | The reveal is bypassed without touching the server rules |
+| G19 | Signing out clears only the phone's copy of the session; the session stays valid on the server | `supabaseBackend.ts` `signOut({ scope: 'local' })` | A copied or stolen token keeps working after the person signed out |
+| G20 | A bug is hard to trace: failures are swallowed silently in places (`.catch(() => {})`), server errors are recognised by matching their message text, nothing carries an error code or a trace id, and no error ever reaches us from a phone | `supabaseBackend.ts`, every `raise exception` in the migrations | A user's "it did not work" cannot be tied to a cause |
+| G21 | The `photos` field on the private row takes any JSON of any size | `profile_private.photos` | Storage abuse, and arbitrary content shown after a reveal |
+| G22 | Sign-in says whether an email address or phone number has an account ("already on another account", "No account uses that yet") | GoTrue's answers, passed on by `codeError` | On a dating app, "is this person on it?" is itself private |
+| G23 | 16 high or critical npm advisories in the dependencies that ship, most through the Expo SDK 52 toolchain; not yet triaged one by one | `npm audit --omit=dev` on 2026-11-17 | Known-vulnerable code in the build; some may be build-time only |
+| G24 | Realtime delete events carry the row id to every subscriber | `listen()` in `supabaseBackend.ts`, Supabase Realtime | Low: an id with no content, but it tells a listener that an account or invite went away |
+| G25 | GitHub Actions are used by tag (`@v4`), not by commit | every workflow | Low: a hijacked tag would run in CI with the deploy secrets |
 
 ## 3. Work packages, in order
 
@@ -109,6 +116,66 @@ The foundation: every later package adds checks here.
   offers them; check its documentation first.
 
 **Done when:** the suite runs in CI, the pinned checks pass, and every gap has a marked check.
+
+**Status, 2026-11-17: built.** `tests/db/attacker.sql` pins 47 defences and marks 17 open gap
+checks (G1 to G8, G18, G21); `tests/live/attacker.test.ts` adds the network side and G1, G3, G4,
+G22. The backend and workflow read added G19 to G25 above. The deploy workflow now sets and prints
+the auth settings (`OPERATIONS.md`, "Auth settings"). CI has the secret scan and a dependency
+audit against a baseline; the database lint and Supabase's security advisor are report-only until
+each has had a clean first run. Where the new gaps are closed: G21 in WP1; G22 in WP2; G24 in WP3;
+G19, G23 and G25 in WP5; G20 in WP0b.
+
+### WP0b. Every bug traceable (G20)
+
+Do this straight after WP0, so that every later package is built with it. The aim: **from a
+screenshot of an error, or a user saying when it happened, find the cause in minutes**, without
+asking them to reproduce it. Nothing here may log content: ids, codes and timings only.
+
+- **Error codes, one catalogue.** Every `raise exception` in the SQL functions gets a stable code
+  (a custom SQLSTATE such as `PL101`, with the message as now). `src/domain/errors.ts` holds the
+  same list: code, the words shown to the person, and whether the app should re-read. The live
+  backend maps on the code, never on message text (today `rpcInvite` matches
+  `/gone|not available|.../`). The mock throws the same codes. A database test fails if a function
+  raises without one.
+- **A trace id per action.** The app makes a short id for each thing a person does (send, lock,
+  check in, save) and sends it as a request header on every call that action causes. The SQL
+  functions read it from the request and store it in `events.props`; the push outbox carries it
+  to the Edge Function, which logs it. One id then links the tap, the database change, the
+  notification and the push.
+- **Every error on screen shows its code and trace id** in small type under the message (for
+  example `PL101 · 7F3K2M`), and can be copied. That line is all support needs from a user.
+- **Nothing fails silently.** Every `catch` either handles the error or reports it. The empty
+  `.catch(() => {})` calls in `supabaseBackend.ts` and the store go through one `report(error,
+  where)` function. A lint rule bans empty catch blocks.
+- **Errors reach us.** `log_client_error(p_code, p_trace, p_where, p_app_version)` writes to a
+  `client_errors` table no client can read, rate-limited per account, 1 kB at most, kept 30 days.
+  It works with no outside service; the crash tool in WP7 adds stack traces on top and uses the
+  same code and trace id.
+- **One logger in the app**, replacing ad hoc `console` calls: levels, structured fields, and a
+  scrubber that drops anything that is not an id, a code, a route or a number. It keeps the last
+  100 lines in memory as breadcrumbs (screen opened, action started, action finished, error).
+- **Every build says what it is.** Version, git commit and update id are stamped at build time,
+  shown at the bottom of Me, and attached to every error report. Source maps go to the crash tool
+  (WP7), never into the binary, so a stack trace reads as file and line.
+- **"Copy diagnostics" in Me:** app version and commit, backend kind, my user id, the breadcrumbs
+  and the last five error codes with trace ids. No names, notes, places or contacts.
+- **The server's side of a story, in one query.** `OPERATIONS.md` gains "Trace a bug": given a
+  trace id, an invite id or a user id and a time, the queries that return the events, the
+  notifications and their delivery state, and the client errors, in time order. Add
+  `private.invite_timeline(p_invite)` for it, callable only with the database role.
+- **Push delivery is traceable to the phone.** Poll Expo push receipts (the gap already named in
+  `ARCHITECTURE.md`, section 6) and record the result on the notification row.
+- **A root error boundary** in `app/_layout.tsx`: a crash in one screen shows the code and a
+  "Try again", and reports itself, instead of a white screen.
+- **Rule for every fix from now on:** a bug fix starts with a test that fails for that bug, in
+  `tests/db`, `tests/live` or the app tests, and the fix's pull request names the trace id or
+  error code that found it. Add this to `CLAUDE.md`.
+
+**Done when:** a test forces one failure in each layer (a refused SQL function, a network drop in
+the backend, a throw in a screen, a rejected push) and, starting only from the code and trace id
+shown on screen, finds every one of them with the queries in `OPERATIONS.md`; the attacker suite
+shows that `client_errors` cannot be read or flooded by a client and that the trace header cannot
+be used to write anything but an id into the log; and no empty catch block is left.
 
 ### WP1. Nothing free-form reaches a stranger before the reveal (G1, G2, G3, G18)
 
@@ -390,13 +457,15 @@ zone sees correct plan times in the live test, and no screen contains a hard-cod
 ## 4. Order and dependencies
 
 ```
-WP0 ──> WP1 ──> WP2 ──> WP3
-          │       └────> WP4
-          └────────────> WP7 (rating part can start after WP0)
+WP0 ──> WP0b ──> WP1 ──> WP2 ──> WP3
+                   │       └────> WP4
+                   └────────────> WP7 (rating part can start after WP0)
 WP5 can run alongside WP1 to WP4.   WP6 waits for the store accounts.
 WP8 starts after WP0 and must finish before any public launch.   WP9 before the second country.
 ```
 
+- WP0b comes before the feature packages on purpose: each of them adds server rules and error
+  cases, and they should be born with codes and trace ids rather than have them added later.
 - WP4 depends on WP1: the code proves presence only once contacts cannot leak early.
 - WP7b ships with Phase 4's photo upload, never after it.
 - WP3 depends on WP2: Discover's "linked accounts only" rule needs the link gate.

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Run the live tests (two users, and Phase 3 safety and accounts) against the local stack
+# Run the live tests (two users, Phase 3 safety and accounts, and the attacker suite) against the local stack
 # (`supabase start`), using its own URL and keys.
 set -euo pipefail
 cd "$(dirname "$0")/../.."
@@ -17,4 +17,4 @@ for _ in $(seq 1 60); do
   [ $(( $(date +%s) - $(date -d "$last" +%s) )) -ge 12 ] && break
   sleep 1
 done
-exec npx tsx --test tests/live/two_users.test.ts tests/live/safety.test.ts
+exec npx tsx --test tests/live/two_users.test.ts tests/live/safety.test.ts tests/live/attacker.test.ts

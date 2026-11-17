@@ -1,4 +1,4 @@
-# Sends supabase/ to a Supabase project: auth settings, migrations (schema, RLS, cron, push), the
+# Sends supabase/ to a Supabase project: auth settings (set and read back), migrations (schema, RLS, cron, push), the
 # push Edge Function and its shared secret, and then proves it with the two-user test. Nothing is
 # set up by hand in the Supabase dashboard.
 #
@@ -97,17 +97,54 @@ jobs:
       - run: npm ci
       - name: Link the project
         run: npx supabase link --project-ref "$SUPABASE_PROJECT_REF"
-      - name: Turn on anonymous sign-ins
-        # The one Auth setting the app depends on. Set through the Management API so that it is
-        # code, and so that nothing else in the project's Auth config is touched.
+      - name: Auth settings that the app's safety depends on
+        # Set through the Management API so that they are code, not dashboard state, and read
+        # back into the run summary. Only these keys are touched. The list and the reasons are in
+        # OPERATIONS.md ("Auth settings"); the local stack's copies are in supabase/config.toml.
         run: |
+          cat > "$RUNNER_TEMP/auth.json" <<'JSON'
+          {
+            "external_anonymous_users_enabled": true,
+            "disable_signup": false,
+            "rate_limit_anonymous_users": 30,
+            "rate_limit_otp": 30,
+            "rate_limit_verify": 30,
+            "rate_limit_token_refresh": 150,
+            "jwt_exp": 3600,
+            "refresh_token_rotation_enabled": true,
+            "security_refresh_token_reuse_interval": 10,
+            "mailer_otp_exp": 600
+          }
+          JSON
           curl -fsS -X PATCH "https://api.supabase.com/v1/projects/$SUPABASE_PROJECT_REF/config/auth" \
             -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" -H "Content-Type: application/json" \
-            -d '{"external_anonymous_users_enabled": true}' -o /dev/null
+            --data @"$RUNNER_TEMP/auth.json" -o /dev/null
+          {
+            echo "#### Auth settings now in force"
+            echo '```'
+            curl -fsS "https://api.supabase.com/v1/projects/$SUPABASE_PROJECT_REF/config/auth" -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" \
+              | jq '{external_anonymous_users_enabled, disable_signup, rate_limit_anonymous_users, rate_limit_otp, rate_limit_verify,
+                     rate_limit_token_refresh, jwt_exp, refresh_token_rotation_enabled, security_refresh_token_reuse_interval,
+                     mailer_otp_exp, security_captcha_enabled, external_email_enabled, external_phone_enabled}'
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
       - name: Apply migrations
         run: npx supabase db push --remote --include-all
       - name: Show what is applied
         run: npx supabase migration list --remote
+      - name: Supabase's own security checks
+        # Report only: what the project's security advisor says after the migrations. It does
+        # not fail the deploy yet; read the run summary, fix what it lists in a migration.
+        run: |
+          if out="$(curl -fsS "https://api.supabase.com/v1/projects/$SUPABASE_PROJECT_REF/advisors/security" -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN")"; then
+            {
+              echo "#### Security advisor"
+              echo "$out" | jq -r '(.lints // []) | if length == 0 then "Nothing flagged." else .[] | "- \(.level): \(.title) (\(.name))" end'
+            } >> "$GITHUB_STEP_SUMMARY"
+            echo "$out" | jq -r '(.lints // [])[] | select(.level == "ERROR") | "::warning::Security advisor: \(.title) (\(.name))"'
+          else
+            echo "::warning::The security advisor could not be read; nothing was checked."
+          fi
       - name: Let the analytics worker log in
         # Sets the pinkilock_analytics password from the same secret the worker uses. Its
         # rights come from the migrations and are not changed here.

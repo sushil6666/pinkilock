@@ -374,6 +374,9 @@ as due times, so a restart loses nothing.
   (RLS, the functions, the reveal, the cron schedule, the analytics role's rights), runs the DuckDB
   pipeline and checks what it wrote, then checks the push outbox: who is told what, that nothing
   private is in it, and that clients cannot touch it.
+  Last, the attacker suite (`attacker.sql`): one signed-in person with a modified app tries the
+  tables and functions directly. It pins exactly which tables and functions the API roles hold,
+  and marks each known gap from `docs/build-plan.md` as a `gap` line until it is closed.
 - `npm run test:live:local` (or `test:live` with a project's URL and anon key): two anonymous
   users drive `supabaseBackend.ts` through onboard, ask, lock, check-in, reveal, bail and expiry
   over GoTrue, PostgREST, RLS and Realtime. Expiry waits for the real pg_cron sweep. Then three
@@ -381,6 +384,8 @@ as due times, so a restart loses nothing.
   client both find no card, no shared invite and no reveal), a report (unreadable, blocks), export,
   phone link and sign-in on a new phone (same id and history; local stack only, where the test
   numbers send no SMS), and account deletion.
+  Then `attacker.test.ts`: the same hostile client over the network (the anon key alone, direct
+  table writes, server-only functions, the schemas the API serves, the push function).
 - `npm run test:push:local`: the whole push chain on the local stack, with a stand-in for Expo.
 - `npm run test:app:local`: the web build in two browser sessions, through the real screens,
   ending with a block from the profile screen, a data download and an account deletion from Me.
