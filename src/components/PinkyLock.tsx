@@ -22,7 +22,7 @@ import Animated, {
   withDelay, withRepeat, withSequence, withSpring, withTiming,
 } from 'react-native-reanimated';
 import { haptic } from '../lib/haptics';
-import { isWeb, webOnly } from '../lib/web';
+import { focusRing, isWeb, webOnly } from '../lib/web';
 import { color, motion } from '../theme/tokens';
 import { FINGER, MyPinky, TheirPinky, TheirTip } from './PinkyFinger';
 
@@ -235,7 +235,7 @@ export function PinkyLock({ mode, startCommitted, locked, resetKey, commitKey, o
 
   return (
     <View
-      style={[styles.stage, isWeb && styles.clip]}
+      style={[styles.stage, isWeb && styles.clip, focusRing]}
       onLayout={onLayout}
       accessible
       accessibilityRole="adjustable"
