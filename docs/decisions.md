@@ -34,6 +34,7 @@ first table with its date.
 | D016 | 2026-11-17 | Logs and error reports hold ids, codes, routes and times only, never content; a server error that is not one of ours is shown as `PC002` and its text is dropped | Tracing must not become a second copy of private data; database error text can quote row values | Claude | WP0b branch, `src/lib/log.ts` | In force once merged |
 | D017 | 2026-11-17 | Phone error reports are kept 30 days, capped at 30 an hour per account, and readable only with the database role | Enough to see a pattern; small enough to hold little | Claude | WP0b branch, tracing migration | In force once merged |
 | D018 | 2026-11-17 | Decisions are logged in this file | The owner asked for one place to see what was decided and when | Owner | `docs/decisions.md` | In force |
+| D019 | 2026-11-17 | The app's black is replaced by blue: deep royal blue `#001C55` ground, royal blue `#4169E1` borders, sky blue `#A9D8F7` secondary text; pink, volt and the off-white text stay | The owner asked for royal or sky blue wherever possible; a brighter blue ground would make pink labels unreadable | Owner (colour), Claude (shades) | `theme/royal-blue` branch, `DESIGN_SYSTEM.md` | In force once merged |
 
 ## Waiting for the owner
 
