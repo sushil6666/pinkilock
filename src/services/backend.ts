@@ -43,6 +43,8 @@ export interface ClientErrorReport {
   platform: 'ios' | 'android' | 'web' | null;
 }
 
+export type PrivacyRequestKind = 'score_review' | 'data_question' | 'correction' | 'appeal' | 'other';
+
 export interface BackendEvent {
   changes: Changes;
   notice?: Notice;
@@ -67,6 +69,10 @@ export interface Backend {
   rateDate(inviteId: string, answer: { worth: boolean; again: boolean; unsafe: boolean }): Promise<void>;
   /** Whether I answered, and whether we both want round two (never whether they said no). */
   dateFeedback(inviteId: string): Promise<{ rated: boolean; roundTwo: boolean }>;
+  /** Ask a person about my data, my Trust Score, a correction, or appeal a decision about my account (WP8). */
+  fileRequest(kind: PrivacyRequestKind, detail: string, actionId?: number): Promise<void>;
+  /** What moderators did about my account, and why. */
+  myModeration(): Promise<{ id: number; action: string; reason: string; at: number }[]>;
   /** My own profile line, if a new one is waiting for review or was not accepted. Null when the card shows what I wrote. */
   myLineReview(): Promise<{ text: string; status: 'pending' | 'held' | 'rejected' } | null>;
   pass(profileId: string): Promise<Changes>;

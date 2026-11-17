@@ -503,6 +503,15 @@ row exists for every account in the tests; the retention job is covered by a dat
 `docs/data-map.md` and the breach runbook exist; and for the first launch region the lawyer's
 sign-off is recorded in `docs/` with its date.
 
+**Status, 2026-11-17: the engineering is built; the legal work is not.** Done: the country and
+city allow-list with a server-side gate (G17); the four consents with versions, the separate
+sensitive-data consent, and a first profile refused without them (G16); requests, Trust Score
+reviews and appeals, with a person's own moderation history; retention jobs; a fuller export;
+`docs/data-map.md`; the breach runbook; the safety page with emergency numbers; draft terms and
+privacy policy marked as drafts. **Owner:** a privacy lawyer to review the drafts and each region
+(O10); the production region (O07); the named privacy contact and grievance officer. Inactive-account
+deletion waits for the lawyer's number.
+
 ### WP9. Make it read as local anywhere (G15)
 
 - All user-facing text moves into a strings file per language (start with English; the structure

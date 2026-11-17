@@ -185,6 +185,13 @@ the app and the mock, and one table of lines is run through both copies. The che
 cases only: a made-up code still gets through until lines are reviewed before anyone sees them
 (`docs/build-plan.md`, WP1).
 
+**Where, and with what consent.** `countries` and `cities` are an allow-list (India and Mumbai open);
+a profile's city must be open, and a first profile needs the request's country (`cf-ipcountry`, when
+present) to be open and four consents at the current `legal_version`: 18+, terms, privacy, and the
+separate consent to use dating preferences. `privacy_requests` holds questions and appeals
+(`file_privacy_request`); `my_moderation` shows a person what was done to their account and why;
+`private.retention` clears and deletes on a schedule. `docs/data-map.md` lists what is held where.
+
 **After a kept promise.** Each person answers once, privately: worth showing up, see them again,
 felt unsafe (`rate_date`; `date_ratings` is readable by no client role). `date_feedback` says only
 whether I answered and whether both of us want round two. The worker writes the 28-day share of

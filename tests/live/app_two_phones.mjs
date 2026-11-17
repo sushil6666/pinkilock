@@ -79,6 +79,8 @@ async function onboard(browser, who) {
   await btn(page, 'Next').click();
   await page.getByLabel('Instagram handle').fill(who.handle);
   await btn(page, 'Next').click();
+  // The three agreements before swearing (WP8).
+  for (const label of [/^I am 18 or older/, /^I agree to the terms/, /^Pinkilock may use my dating preferences/]) await page.getByRole('button', { name: label }).click();
   await hold(page, 'Hold to swear');
   await page.getByLabel('Me', { exact: true }).waitFor();
 }

@@ -20,7 +20,10 @@ set role authenticated;
 select t.as_user(:'r');
 select t.ok(t.fails($$insert into vibes values ('custom tag')$$) and t.fails($$delete from vibes$$), 'a user cannot change the tag catalogue');
 
--- Creating a profile: the contact is needed the first time.
+-- Creating a profile: consent first (WP8), then the contact is needed the first time.
+select t.ok(t.sqlstate($$select save_profile('Riya', 24, 'Bandra', '', '', '{}', array['boba_run','chai_walk','meme_duel'], 'Instagram', '@riya')$$) = 'PL077',
+  'a first profile without the four consents is refused (PL077)');
+select give_consents(array['adult', 'terms', 'privacy', 'sensitive']);
 select t.ok(t.sqlstate($$select save_profile('Riya', 24, 'Bandra', 'she/her', 'Will judge your chai order.', array['foodie'], array['boba_run','chai_walk','meme_duel'])$$) = 'PL066',
   'a first profile with no contact is refused (PL066)');
 select save_profile('Riya', 24, ' Bandra West ', 'she/her', 'Will judge your chai order.', array['foodie', 'slow burn'], array['boba_run','chai_walk','meme_duel'], 'Instagram', ' @riya ');
@@ -73,6 +76,7 @@ select t.ok((select count(*) from profile_private) = 1, 'a user still reads thei
 
 -- Asks: no contact in the note or the place, and a place of 60 characters at most.
 select t.as_user(:'s');
+select give_consents(array['adult', 'terms', 'privacy', 'sensitive']);
 select save_profile('Sana', 26, 'Juhu', '', '', '{}', array['boba_run','chai_walk','meme_duel'], 'Snapchat', 'sana');
 select t.ok(t.sqlstate(format($$select send_invite(%L, 'boba_run', now() + interval '1 hour', 'Linking Road', 'call me 98765 43210')$$, :'r')) = 'PL069', 'an ask with a typed note is refused before anything else: notes are picked (PL069)');
 select t.ok(t.sqlstate(format($$select send_invite(%L, 'boba_run', now() + interval '1 hour', 'wa.me/919876543210', '')$$, :'r')) = 'PL065', 'an ask with a link as its place is refused (PL065)');

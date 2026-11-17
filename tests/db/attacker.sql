@@ -44,7 +44,7 @@ insert into public.profile_private (profile_id, contact_kind, contact_handle) va
 select t.ok((select string_agg(table_schema || '.' || table_name || ':' || privs, ' ' order by table_schema, table_name) from (
     select table_schema, table_name, string_agg(privilege_type, ',' order by privilege_type) as privs
     from information_schema.role_table_grants where grantee = 'authenticated' and table_schema <> 't' group by 1, 2) g)
-  = 'public.ask_lines:SELECT public.ideas:SELECT public.invites:SELECT public.passes:DELETE,INSERT,SELECT public.profile_cards:SELECT '
+  = 'public.ask_lines:SELECT public.cities:SELECT public.countries:SELECT public.ideas:SELECT public.invites:SELECT public.passes:DELETE,INSERT,SELECT public.profile_cards:SELECT '
     'public.profile_private:SELECT public.trust_scores:SELECT public.venues:SELECT public.vibes:SELECT',
   'a signed-in user holds exactly these table rights and no others');
 select t.ok(not exists (select 1 from information_schema.role_table_grants where grantee = 'anon'),
@@ -53,7 +53,7 @@ select t.ok((select string_agg(n.nspname || '.' || p.proname, ' ' order by n.nsp
     from pg_proc p join pg_namespace n on n.oid = p.pronamespace
     where n.nspname in ('public', 'private', 'analytics') and has_function_privilege('authenticated', p.oid, 'execute'))
   = 'private.blocked_pair private.shares_invite public.bail public.block_user public.check_in public.date_feedback public.decline_invite '
-    'public.delete_my_account public.discover public.export_my_data public.log_client_error public.log_event public.my_blocks public.my_checkin_code public.my_line_review public.offer_pinky public.rate_date public.register_push_token public.report_user '
+    'public.delete_my_account public.discover public.export_my_data public.file_privacy_request public.give_consents public.log_client_error public.log_event public.my_blocks public.my_checkin_code public.my_consents public.my_line_review public.my_moderation public.offer_pinky public.rate_date public.register_push_token public.report_user '
     'public.save_profile public.send_invite public.unblock_user public.unregister_push_token',
   'a signed-in user can call exactly these functions and no others');
 select t.ok(not exists (select 1 from pg_proc p join pg_namespace n on n.oid = p.pronamespace

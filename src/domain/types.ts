@@ -19,6 +19,8 @@ export interface Profile {
   name: string;
   age: number;
   city: string;
+  /** ISO country code (src/domain/countries.ts). */
+  country?: string;
   area: string;
   pronouns: string;
   tagline: string;
@@ -90,6 +92,8 @@ export interface OnboardingInput {
   ideaIds: string[];
   contactKind: ContactKind;
   contactHandle: string;
+  /** What the person agreed to on the last onboarding step (WP8). All four are needed. */
+  consents?: ('adult' | 'terms' | 'privacy' | 'sensitive')[];
 }
 
 export interface MyContact {

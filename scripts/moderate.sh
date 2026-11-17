@@ -7,6 +7,8 @@
 #   scripts/moderate.sh <db-url> report <id> <action> "<reason>" act on a report
 #   scripts/moderate.sh <db-url> person <uuid> <action> "<reason>" act on a person directly
 #   scripts/moderate.sh <db-url> history <uuid>                 what was done to a person, and why
+#   scripts/moderate.sh <db-url> requests                       privacy requests and appeals waiting
+#   scripts/moderate.sh <db-url> answer <id> "<what was done>"   mark one answered
 #
 # Actions: dismiss, hide_line (removes the line, no new line for 30 days, one strike; two strikes
 # suspend), suspend, unsuspend, approve_line, reject_line.
@@ -36,12 +38,21 @@ case "$cmd" in
     who="${3:?person uuid}"; action="${4:?action}"; reason="${5:?reason}"
     echo "select private.moderate(null, :'who'::uuid, :'action', :'reason')" | q -qAt -v who="$who" -v action="$action" -v reason="$reason"
     ;;
+  requests)
+    echo "== Requests and appeals waiting for an answer (oldest first; answer within 30 days)"
+    q -c "select r.id, r.at::timestamp(0), r.kind, r.user_id, r.moderation_action_id as appeal_of, r.detail
+          from public.privacy_requests r where r.handled_at is null order by r.at"
+    ;;
+  answer)
+    id="${3:?request id}"; outcome="${4:?what was done}"
+    echo "update public.privacy_requests set handled_at = now(), outcome = left(:'outcome', 500) where id = :'id'::bigint returning id" | q -qAt -v id="$id" -v outcome="$outcome"
+    ;;
   history)
     who="${3:?person uuid}"
     echo "select at::timestamp(0), action, report_id, note from private.moderation_actions where profile_id = :'who'::uuid order by at" | q -v who="$who"
     ;;
   *)
-    echo "usage: moderate.sh <db-url> queue | report <id> <action> <reason> | person <uuid> <action> <reason> | history <uuid>" >&2
+    echo "usage: moderate.sh <db-url> queue | report <id> <action> <reason> | person <uuid> <action> <reason> | history <uuid> | requests | answer <id> <outcome>" >&2
     exit 2
     ;;
 esac

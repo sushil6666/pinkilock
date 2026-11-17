@@ -22,6 +22,7 @@ import { color, space, type } from '@/theme/tokens';
 import { ErrorText } from '@/components/ui/ErrorText';
 import { shown } from '@/lib/report';
 import { AREA_MAX, NAME_MAX, looksLikeContact, nameOk } from '@/domain/profile';
+import { ALL_CONSENTS } from '@/domain/countries';
 
 const PRONOUNS = ['she/her', 'he/him', 'they/them'];
 const CONTACTS: ContactKind[] = ['Instagram', 'Snapchat', 'WhatsApp'];
@@ -40,6 +41,8 @@ export default function Onboarding() {
   const [contactKind, setContactKind] = useState<ContactKind>('Instagram');
   const [handle, setHandle] = useState('');
   const [busy, setBusy] = useState(false);
+  // The last step's agreements (WP8). The dating-preferences one is separate, as the law asks.
+  const [agreed, setAgreed] = useState<Record<'adult' | 'legal' | 'sensitive', boolean>>({ adult: false, legal: false, sensitive: false });
   const [error, setError] = useState('');
   // The first screen spreads into two columns in a wide browser window; every other step stays a column.
   const { width } = useWindowDimensions();
@@ -62,7 +65,7 @@ export default function Onboarding() {
     setBusy(true);
     setError('');
     try {
-      await complete({ name: name.trim(), age: ageNum, area: area.trim(), pronouns, tagline: tagline.trim(), vibes, ideaIds, contactKind, contactHandle: handle.trim() });
+      await complete({ name: name.trim(), age: ageNum, area: area.trim(), pronouns, tagline: tagline.trim(), vibes, ideaIds, contactKind, contactHandle: handle.trim(), consents: [...ALL_CONSENTS] });
       haptic.success();
       router.replace('/(tabs)');
     } catch (e) {
@@ -72,7 +75,7 @@ export default function Onboarding() {
   };
 
   const footer = step === 4
-    ? <>{error ? <ErrorText text={error} /> : null}<HoldButton label="Hold to swear" onComplete={swear} busy={busy} /></>
+    ? <>{error ? <ErrorText text={error} /> : null}<HoldButton label="Hold to swear" onComplete={swear} busy={busy} disabled={!(agreed.adult && agreed.legal && agreed.sensitive)} /></>
     : <Button label={step === 0 ? 'Start' : 'Next'} icon="arrow-right" onPress={() => setStep(step + 1)} disabled={!canNext} />;
 
   return (
@@ -179,6 +182,17 @@ export default function Onboarding() {
                   <T c={color.textDim}>{sub}</T>
                 </View>
               ))}
+            </View>
+            <View style={{ gap: space.sm }}>
+              <T v="label" c={color.textDim}>Before you swear</T>
+              <Chip label="I am 18 or older" selected={agreed.adult} onPress={() => setAgreed({ ...agreed, adult: !agreed.adult })} />
+              <Chip label="I agree to the terms and the privacy policy" selected={agreed.legal} onPress={() => setAgreed({ ...agreed, legal: !agreed.legal })} />
+              <Chip label="Pinkilock may use my dating preferences" sub="Who you want to date can say something about your sexual orientation. It is used only to run Pinkilock."
+                selected={agreed.sensitive} onPress={() => setAgreed({ ...agreed, sensitive: !agreed.sensitive })} />
+              <View style={{ flexDirection: 'row', gap: space.md }}>
+                <Tag label="Read the terms" onPress={() => router.push('/legal/terms')} />
+                <Tag label="Read the privacy policy" onPress={() => router.push('/legal/privacy')} />
+              </View>
             </View>
           </>
         )}

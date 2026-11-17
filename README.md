@@ -43,6 +43,8 @@ With no keys set, the app runs on ten made-up people who answer by themselves. A
 6. Safety and accounts: on anyone's profile, **Block or report**. In **Me**, Account: add a phone
    number (the mock's code is always `123456`), see blocked people, download your data, or delete
    the account. After **Sign out**, "I already have an account" on the first screen gets you back.
+8. **Me** also has Safety (emergency numbers for your country), Ask us (your data, your score, an appeal),
+   and the draft Terms and Privacy policy you agreed to on the last onboarding step.
 7. When something fails, the message has a reference under it (`PL033 · 7F3K2M9Q`). **Me**, Help,
    **Share diagnostics** collects recent ones with the build, and nothing private.
 
