@@ -45,6 +45,9 @@ npm run test:app:local      # the real screens in two browser sessions
 - Check GitHub state (PRs, runs, branches) before acting on it; it changes outside the session.
 - A new server rule gets a check in the attacker suite (`tests/db/attacker.sql`, `tests/live/attacker.test.ts`).
   A `gap` line that starts failing means the gap is closed: make it a plain check, never delete it.
+- A change to how the app looks is not done until it has been looked at: export the web build on
+  mock data, screenshot the screens it touches at phone width, and fix what looks wrong before
+  committing. Colours come only from `src/theme/tokens.ts`; `DESIGN_SYSTEM.md` changes with them.
 - No secrets in the repo. The service role key is used by nothing in the app, repo or workflows.
 - When behaviour or setup changes, update `README.md`, `ARCHITECTURE.md`, `ROADMAP.md` and, for
   anything about running it live, `OPERATIONS.md`, in the same change.
