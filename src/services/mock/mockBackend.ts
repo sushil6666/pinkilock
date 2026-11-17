@@ -17,6 +17,7 @@ import { ALWAYS_PASSES, ME_ID, SEED_ME_RECORD, seedInvites, seedProfiles, seedRe
 import { checkAsk, checkContact, checkProfile } from '../../domain/profile';
 import { venueOf, venuePlace } from '../../domain/venues';
 import { ALL_CONSENTS } from '../../domain/countries';
+import { FREE_WINDOWS } from '../../domain/freeWindows';
 
 const KEY = 'pinkilock.mock.v1';
 const LATENCY = 280;
@@ -250,6 +251,14 @@ export function createMockBackend(): Backend {
         d.me = next;
         if (contactKind && contactHandle) d.myContact = { kind: contactKind, handle: contactHandle };
         return { me: d.me, myContact: d.myContact ?? undefined };
+      }),
+
+    saveAvailability: (windows) =>
+      mutate((d) => {
+        if (!d.me) fail('PL002');
+        if (windows.some((w) => !FREE_WINDOWS.some((x) => x.id === w))) fail('PL083');
+        d.me = { ...d.me, freeWindows: FREE_WINDOWS.map((x) => x.id).filter((id) => windows.includes(id)) };
+        return { me: d.me };
       }),
 
     // Requests go nowhere in the mock; there is no moderator.

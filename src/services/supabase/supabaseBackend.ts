@@ -37,6 +37,7 @@ function toProfile(r: Row): Profile {
     glyph: r.glyph, kept: r.kept ?? 0, flaked: r.flaked ?? 0, trustScore: r.trust_score ?? 100, distanceKm: 0,
     photoCount: r.photo_count ?? 0,
     answerMinutes: r.median_answer_minutes == null ? null : Number(r.median_answer_minutes),
+    freeWindows: r.free_windows ?? [],
   };
 }
 
@@ -394,6 +395,13 @@ export function createSupabaseBackend(url: string, anonKey: string, storage: Ses
       await uid();
       const rows = await rpc<{ id: number; action: string; reason: string; at: string }[]>('my_moderation');
       return (rows ?? []).map((r) => ({ id: r.id, action: r.action, reason: r.reason, at: ms(r.at)! }));
+    },
+
+    async saveAvailability(windows) {
+      const id = await uid();
+      await rpc('save_availability', { p_windows: windows });
+      const card = check(await db.from('profile_cards').select('*').eq('id', id).single());
+      return { me: toProfile(card as unknown as Row) };
     },
 
     async myLineReview() {

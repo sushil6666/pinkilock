@@ -407,6 +407,12 @@ what the server did (`OPERATIONS.md`, "Trace a bug").
 - **Builds.** `src/lib/build.ts`: version, git commit (stamped by the EAS build workflow) and
   update id, shown at the bottom of Me and sent with every report.
 
+### When I am free
+
+`profiles.free_windows` (set with `save_availability`, shown on the card) holds broad windows such as
+weekday evenings. Asks can still pick any time; the composer marks the times inside the other
+person's windows (`src/domain/freeWindows.ts`, in the phone's time zone).
+
 ### Share my date and the after-date check
 
 A locked plan offers "Share my date" (who, what, where, when, through the phone's share sheet; no

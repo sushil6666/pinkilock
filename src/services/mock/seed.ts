@@ -15,7 +15,7 @@ const people: Seed[] = [
     id: 'aanya', name: 'Aanya', age: 22, area: 'Bandra West', pronouns: 'she/her', distanceKm: 2,
     tagline: 'Will judge your boba order. Lovingly.',
     vibes: ['foodie', 'thrifter', 'shameless flirt'], ideaIds: ['boba_run', 'bookstore_lap', 'meme_duel', 'thrift_dare', 'rizz_off'],
-    palette: ['#FF2E93', '#5B0F3A'], glyph: '🧋', kept: 14, flaked: 0, photoCount: 3, answerMinutes: 12,
+    palette: ['#FF2E93', '#5B0F3A'], glyph: '🧋', kept: 14, flaked: 0, photoCount: 3, answerMinutes: 12, freeWindows: ['wkd_evening', 'wke_afternoon'],
     contact: ['Instagram', '@aanya.frames'], photos: [['Thrift haul, Hill Road', '🛍️'], ['Carter Road, 6pm', '🌊'], ['Film camera era', '📷']],
   },
   {
@@ -43,7 +43,7 @@ const people: Seed[] = [
     id: 'zoya', name: 'Zoya', age: 22, area: 'Colaba', pronouns: 'she/her', distanceKm: 14,
     tagline: 'Golden hour or nothing.',
     vibes: ['concert goer', 'foodie', 'dog person'], ideaIds: ['sunset_spot', 'ice_cream_lap', 'playlist_swap', 'photo_booth'],
-    palette: ['#FF8A2E', '#4A1B00'], glyph: '🌇', kept: 19, flaked: 1, photoCount: 3, answerMinutes: 25,
+    palette: ['#FF8A2E', '#4A1B00'], glyph: '🌇', kept: 19, flaked: 1, photoCount: 3, answerMinutes: 25, freeWindows: ['wkd_late', 'wke_evening'],
     contact: ['Instagram', '@zoya.afterfive'], photos: [['Marine Drive, obviously', '🌊'], ['Biscuit, my indie', '🐕'], ['Front row, last gig', '🎤']],
   },
   {
