@@ -137,7 +137,7 @@ section 6.
 
 ## Analytics worker (DuckDB)
 
-In the cloud it runs once an hour as the **Analytics worker** workflow, with the restricted
+In the cloud it runs every 6 hours as the **Analytics worker** workflow, with the restricted
 `pinkilock_analytics` role. If a run fails, an issue labelled `analytics-worker` is opened and
 GitHub emails you; the next good run closes it. Trust badges in live mode read what it writes.
 

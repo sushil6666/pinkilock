@@ -24,7 +24,7 @@ Built and verified against the real Supabase project on 2026-11-16:
 - Deploys from GitHub Actions only (`supabase-deploy.yml`), followed by the live two-user test,
   which passed 6 of 6 against the real project.
 - Push notifications sent only by the server: a database outbox and the `push` Edge Function.
-- The analytics worker on an hourly GitHub Actions schedule; a failed run opens an issue.
+- The analytics worker on a 6-hourly GitHub Actions schedule; a failed run opens an issue.
 - EAS profiles (development, preview, production), CI on every pull request and push to `main`, an installable Android
   preview APK, placeholder icon and splash.
 
