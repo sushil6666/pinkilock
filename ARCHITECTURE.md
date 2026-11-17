@@ -154,6 +154,7 @@ Full DDL is `supabase/migrations`. Tables:
 | `profile_private` | Contact handle and extra photos | Read: you, and anyone with a `kept` invite with you. **No direct writes**: the contact through `save_profile`, photos by the server only |
 | `ideas` | The micro-date catalogue | Read only |
 | `vibes` | The profile tag catalogue (the same list as `VIBE_GROUPS` in `src/domain/ideas.ts`) | Read only |
+| `ask_lines` | The lines an ask can carry (the same list as `ASK_LINES` in `src/domain/ideas.ts`) | Read only |
 | `venues` | Suggested public places to meet (the same list as `VENUES` in `src/domain/venues.ts`); a venue is switched off, never deleted | Read only |
 | `invites` | The whole product: who, what, when, status, `first_pinky_by`, `check_ins`, `flaked_by` | Read: the two people on it. **No direct writes at all** |
 | `passes` | People I passed on in Discover | Only me |
@@ -182,6 +183,13 @@ pronouns, and in an ask's note and place. `src/domain/profile.ts` has the same r
 the app and the mock, and one table of lines is run through both copies. The check stops the plain
 cases only: a made-up code still gets through until lines are reviewed before anyone sees them
 (`docs/build-plan.md`, WP1).
+
+**Lines are picked or reviewed.** An ask's line must be one of `ask_lines` (the app's ready-made
+lines) or none. The one free text, the profile line, can change once a week (the name once a
+month), and with review on it waits in `private.line_reviews` while the card keeps the last
+approved line: `review-line` (an Edge Function asking Claude, woken every minute by pg_cron like
+push) approves, rejects or holds it for a person. Reports can name `shared_contact`; moderators
+act through `private.moderate` (`scripts/moderate.sh`), and two strikes suspend an account.
 
 **Discover is a function, not a table read.** `profiles` and `trust_scores` return only my own row
 and people I share an invite with (`private.shares_invite`). Everyone else comes from

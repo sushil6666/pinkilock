@@ -257,6 +257,15 @@ wait for the owner; picked area, city and pronouns; and the change limits (name 
 line once in 7). One known rough edge: an existing account whose name has a space, digit or
 symbol must change it at its next profile save.
 
+**Status, 2026-11-17: second part built.** The ask line is pick-only (`ask_lines`, PL069). The
+name changes once in 30 days and the line once in 7. Line review exists in three modes (`off`,
+`human`, `ai`); `ai` uses the `review-line` Edge Function with Claude (`claude-opus-5-5` at low effort,
+structured yes/no/unsure output, server-side fallback on a refusal), switched on by the deploy
+workflow once `ANTHROPIC_API_KEY` exists. Reports gain `shared_contact`; `scripts/moderate.sh` is the
+moderation tool (also WP7's "moderation view"), with strikes and suspension. G18 closes whenever
+review is on; the attacker suite keeps it marked because the default is off. **Left:** picked area,
+city and pronouns (with WP9's city lists); a person's appeal (WP8).
+
 ### WP2. Make accounts cost something (G4, G6)
 
 - Browsing stays open to anonymous accounts. **Sending an ask, answering one, and appearing in

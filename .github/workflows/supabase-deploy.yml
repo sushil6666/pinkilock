@@ -164,6 +164,23 @@ jobs:
           echo "Set the repository variable \`$name\` to \`$host\`" >> "$GITHUB_STEP_SUMMARY"
       - name: Deploy the push function
         run: npx supabase functions deploy push --use-api --no-verify-jwt
+      - name: Deploy the line review function
+        run: npx supabase functions deploy review-line --use-api --no-verify-jwt
+      - name: Line review, by AI once a Claude API key exists
+        # 'ai' when ANTHROPIC_API_KEY is set (the review-line function asks Claude, a person decides
+        # anything unsure); otherwise 'off' (the pattern check only, as before). A moderator can set
+        # 'human' by hand: psql ... -c "select private.set_config('line_review', 'human')".
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          mode=off
+          if [ -n "$ANTHROPIC_API_KEY" ]; then
+            npx supabase secrets set "ANTHROPIC_API_KEY=$ANTHROPIC_API_KEY" >/dev/null
+            mode=ai
+          fi
+          echo "select private.set_config('line_review', :'m')" \
+            | psql "$(scripts/supabase-db-url.sh postgres "$SUPABASE_DB_PASSWORD")" -v ON_ERROR_STOP=1 -qAt -v m="$mode" >/dev/null
+          echo "- Profile line review: $mode" >> "$GITHUB_STEP_SUMMARY"
       - name: Connect Postgres to the push function
         # A fresh shared secret on every deploy, stored as a function secret and in Vault.
         run: scripts/push-config.sh remote "$(scripts/supabase-db-url.sh postgres "$SUPABASE_DB_PASSWORD")"

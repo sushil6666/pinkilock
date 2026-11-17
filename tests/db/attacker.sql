@@ -44,7 +44,7 @@ insert into public.profile_private (profile_id, contact_kind, contact_handle) va
 select t.ok((select string_agg(table_schema || '.' || table_name || ':' || privs, ' ' order by table_schema, table_name) from (
     select table_schema, table_name, string_agg(privilege_type, ',' order by privilege_type) as privs
     from information_schema.role_table_grants where grantee = 'authenticated' and table_schema <> 't' group by 1, 2) g)
-  = 'public.ideas:SELECT public.invites:SELECT public.passes:DELETE,INSERT,SELECT public.profile_cards:SELECT '
+  = 'public.ask_lines:SELECT public.ideas:SELECT public.invites:SELECT public.passes:DELETE,INSERT,SELECT public.profile_cards:SELECT '
     'public.profile_private:SELECT public.profiles:SELECT public.trust_scores:SELECT public.venues:SELECT public.vibes:SELECT',
   'a signed-in user holds exactly these table rights and no others');
 select t.ok(not exists (select 1 from information_schema.role_table_grants where grantee = 'anon'),
@@ -53,7 +53,7 @@ select t.ok((select string_agg(n.nspname || '.' || p.proname, ' ' order by n.nsp
     from pg_proc p join pg_namespace n on n.oid = p.pronamespace
     where n.nspname in ('public', 'private', 'analytics') and has_function_privilege('authenticated', p.oid, 'execute'))
   = 'private.blocked_pair private.shares_invite public.bail public.block_user public.check_in public.decline_invite public.delete_my_account '
-    'public.discover public.export_my_data public.log_client_error public.log_event public.my_blocks public.my_checkin_code public.offer_pinky public.register_push_token public.report_user '
+    'public.discover public.export_my_data public.log_client_error public.log_event public.my_blocks public.my_checkin_code public.my_line_review public.offer_pinky public.register_push_token public.report_user '
     'public.save_profile public.send_invite public.unblock_user public.unregister_push_token',
   'a signed-in user can call exactly these functions and no others');
 select t.ok(not exists (select 1 from pg_proc p join pg_namespace n on n.oid = p.pronamespace
@@ -179,10 +179,11 @@ select t.ok(t.fails(format($$update profiles set photo_count = 99, city = 'Anywh
 select t.ok(t.fails(format($$update profile_private set photos = (select jsonb_agg(repeat('x', 1000)) from generate_series(1, 1000)) where profile_id = %L$$, :'x')),
   'G21 closed: the photos field cannot be written by a client');
 
--- G18: a pattern cannot see an invented code. Until lines are reviewed before anyone sees them
--- (WP1, later part), this one is stored and shown.
+-- G18: a pattern cannot see an invented code. With line review on ('human' or 'ai'), no line
+-- reaches anyone before it is reviewed: tests/db/review.sql checks that. With review off (the
+-- default until a reviewer exists), this one is stored and shown, so the gap stays marked.
 select t.gap(t.fails($$select save_profile('Xavier', 25, 'Bandra', '', 'shift each letter back by one: jotub tbn', '{}', array['boba_run','chai_walk','meme_duel'])$$), 'G18',
-  'a contact written in a made-up code is stored and shown with no review');
+  'with line review off, a contact written in a made-up code is shown with no review');
 
 -- G4 closed: with the link gate on, an account with no email or phone cannot ask or lock.
 reset role;

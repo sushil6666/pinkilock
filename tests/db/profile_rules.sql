@@ -74,7 +74,7 @@ select t.ok((select count(*) from profile_private) = 1, 'a user still reads thei
 -- Asks: no contact in the note or the place, and a place of 60 characters at most.
 select t.as_user(:'s');
 select save_profile('Sana', 26, 'Juhu', '', '', '{}', array['boba_run','chai_walk','meme_duel'], 'Snapchat', 'sana');
-select t.ok(t.sqlstate(format($$select send_invite(%L, 'boba_run', now() + interval '1 hour', 'Linking Road', 'call me 98765 43210')$$, :'r')) = 'PL065', 'an ask with a number in its note is refused (PL065)');
+select t.ok(t.sqlstate(format($$select send_invite(%L, 'boba_run', now() + interval '1 hour', 'Linking Road', 'call me 98765 43210')$$, :'r')) = 'PL069', 'an ask with a typed note is refused before anything else: notes are picked (PL069)');
 select t.ok(t.sqlstate(format($$select send_invite(%L, 'boba_run', now() + interval '1 hour', 'wa.me/919876543210', '')$$, :'r')) = 'PL065', 'an ask with a link as its place is refused (PL065)');
 select t.ok(t.sqlstate(format($$select send_invite(%L, 'boba_run', now() + interval '1 hour', repeat('p', 61), '')$$, :'r')) = 'PL064', 'a place of 61 characters is refused (PL064)');
 select t.ok((send_invite(:'r', 'boba_run', now() + interval '1 hour', 'Boba counter, Linking Road', 'low stakes, high snacks.')).status = 'sent', 'an ordinary ask still goes through');

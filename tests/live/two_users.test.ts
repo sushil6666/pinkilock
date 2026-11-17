@@ -35,7 +35,7 @@ async function locked(p: Person, inviteId: string, when: string) {
 async function lock(startsIn: number, ideaId = 'boba_run'): Promise<Invite> {
   a.quiet();
   b.quiet();
-  const sent = one(await a.backend.sendInvite({ toId: b.id, ideaId, startsAt: Date.now() + startsIn, place: ' Linking Road ', note: 'taro or nothing' }));
+  const sent = one(await a.backend.sendInvite({ toId: b.id, ideaId, startsAt: Date.now() + startsIn, place: ' Linking Road ', note: 'loser pays. not nervous at all.' }));
   assert.equal(sent.status, 'sent');
   assert.equal(sent.place, 'Linking Road', 'the server trims the place');
   const heard = await b.hears('the new ask', inviteIs(sent.id, 'sent'));

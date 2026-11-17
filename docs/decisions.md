@@ -53,6 +53,9 @@ first table with its date.
 | D035 | 2026-11-17 | Discover order is random per person and day (fixed within the day), not ranked by the spark or by score | A ranking would be a second thing to explain and to game; the daily order keeps paging stable and fair | Claude | `discover()` | In force once merged |
 | D036 | 2026-11-17 | Check-in codes are kept readable (not hashed) in a table no client can read, and deleted when the plan resolves | Each person must see their own code; hashing a 4-digit code would protect nothing | Claude | `private.checkin_codes` | In force once merged |
 | D037 | 2026-11-17 | Farming rule: one kept promise per pair per 30-day period counts toward a Trust Score; none with an unlinked account while the gate is on | Two accounts could otherwise raise each other's score without limit | Claude | `analytics/duckdb_pipeline.py` | In force once merged |
+| D038 | 2026-11-17 | Profile lines are reviewed by Claude (`claude-opus-5-5`, low effort) when an API key exists; a "contact" answer is rejected, "unsure" or a declined review waits for a person | The plan's model review (O04, accepted under D032); the model name follows the project's default rather than a cheaper one, and can be changed with `REVIEW_MODEL` | Claude | `supabase/functions/review-line` | In force once merged and a key is set |
+| D039 | 2026-11-17 | Moderation is a terminal script over the database role, not a web page | A web moderation page would need privileged credentials in a browser; the script needs none and keeps a reason for every action | Claude | `scripts/moderate.sh` | In force once merged |
+| D040 | 2026-11-17 | The first name change and the first line change after joining are free; after that 30 and 7 days | People fix typos right after signing up | Claude | `save_profile` | In force once merged |
 
 ## Waiting for the owner
 

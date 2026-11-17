@@ -52,6 +52,12 @@ export const ERRORS = {
   PL066: 'Add how people reach you after a kept promise.',
   PL067: 'Pick a meeting place from the list.',
   PL068: 'Add your email or phone number first. It keeps your record yours.',
+  PL069: 'Pick a line from the list.',
+  PL070: 'You changed your name recently. You can change it again 30 days after.',
+  PL071: 'You changed your line this week. You can change it again 7 days after.',
+  PL072: 'This account is paused while we look at a report.',
+  PL073: 'Your line was removed after a report. You can add one again later.',
+  PL090: 'That moderation step is not valid.',
 
   PA001: 'Phone sign-in is not switched on yet.',
   PA002: 'Email sign-in is not switched on yet.',

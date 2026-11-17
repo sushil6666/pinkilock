@@ -8,7 +8,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { fail } from '../../domain/errors';
 import * as rules from '../../domain/invites';
-import { ideaOf } from '../../domain/ideas';
+import { ASK_LINES, ideaOf } from '../../domain/ideas';
 import { REPORT_DETAIL_MAX, REPORT_REASONS, REPORTS_PER_DAY } from '../../domain/safety';
 import type { BlockedPerson, CodeKind, Invite, MyContact, NewInvite, OnboardingInput, Profile, ReportReason, Reveal } from '../../domain/types';
 import { quiet } from '../../lib/log';
@@ -51,6 +51,8 @@ export function createMockBackend(): Backend {
   const clientErrors: ClientErrorReport[] = [];
   let passTimes: number[] = [];
   const codeTries = new Map<string, { fails: number; until: number }>();
+  /** When the name and the line last changed (the first ones after joining are free). */
+  const changed: { name?: number; tagline?: number } = {};
   let db: Db | null = null;
   const reveals = seedReveals();
   const listeners = new Set<(e: BackendEvent) => void>();
@@ -236,11 +238,21 @@ export function createMockBackend(): Backend {
         const { contactKind, contactHandle, ...card } = patch;
         const next = { ...d.me, ...card };
         checkProfile(next);
+        const now = Date.now();
+        if (next.name !== d.me.name && (changed.name ?? 0) > now - 30 * rules.DAY) fail('PL070');
+        if (next.tagline !== d.me.tagline && (changed.tagline ?? 0) > now - 7 * rules.DAY) fail('PL071');
+        if (next.name !== d.me.name) changed.name = now;
+        if (next.tagline !== d.me.tagline) changed.tagline = now;
         if (contactKind && contactHandle) checkContact(contactKind, contactHandle);
         d.me = next;
         if (contactKind && contactHandle) d.myContact = { kind: contactKind, handle: contactHandle };
         return { me: d.me, myContact: d.myContact ?? undefined };
       }),
+
+    // The mock has no review step: what I write is what the card shows.
+    async myLineReview() {
+      return null;
+    },
 
     // Every made-up person is already in the snapshot.
     async moreProfiles() {
@@ -279,6 +291,7 @@ export function createMockBackend(): Backend {
         const venue = input.venueId ? venueOf(input.venueId) : undefined;
         if (input.venueId && (!venue || idea.kind !== 'irl')) fail('PL067');
         const place = venue ? venuePlace(venue) : input.place.trim();
+        if (input.note.trim() && !ASK_LINES.includes(input.note.trim())) fail('PL069');
         checkAsk(input.note, venue ? '' : place);
         const invite: Invite = {
           id: uid(), fromId: ME_ID, toId: input.toId, ideaId: input.ideaId, minutes: idea.minutes,

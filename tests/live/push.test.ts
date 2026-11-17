@@ -90,7 +90,7 @@ test('devices register through the backend, and a new ask reaches only the perso
   await b.backend.registerPushToken(tokenB, 'ios');
   await b.backend.registerPushToken(deadB, 'android');
 
-  const inv = one(await a.backend.sendInvite({ toId: b.id, ideaId: 'boba_run', startsAt: Date.now() + 5 * MIN, place: 'Linking Road', note: 'a private note' }));
+  const inv = one(await a.backend.sendInvite({ toId: b.id, ideaId: 'boba_run', startsAt: Date.now() + 5 * MIN, place: 'Linking Road', note: 'hard stop, pinky promise.' }));
   const ask = await pushed('the new ask', is('new_ask', tokenB, inv.id));
   assert.equal(ask.title, `${a.name} asked you`);
   assert.equal(ask.body, 'Boba run. Lock it or pass.');
@@ -127,7 +127,7 @@ test('devices register through the backend, and a new ask reaches only the perso
 
 test('nothing private ever left the database', () => {
   const all = JSON.stringify(received);
-  for (const secret of ['@secret_asha', '@secret_bela', 'a private note', 'Linking Road']) assert.ok(!all.includes(secret), `"${secret}" must not appear in any push`);
+  for (const secret of ['@secret_asha', '@secret_bela', 'hard stop, pinky promise.', 'Linking Road']) assert.ok(!all.includes(secret), `"${secret}" must not appear in any push`);
   for (const p of received) assert.deepEqual(Object.keys(p.data).sort(), ['inviteId', 'kind'], 'the payload carries an id and a kind, nothing else');
   // Each kind went out exactly once per device: nothing was announced twice.
   const keys = received.map((p) => `${p.data.kind}>${p.to}>${p.data.inviteId}`);

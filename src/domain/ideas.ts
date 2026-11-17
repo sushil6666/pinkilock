@@ -200,6 +200,19 @@ const STARTERS_BY_TONE: Record<Exclude<NoteTone, 'chill'>, string[]> = {
   ],
 };
 
+/**
+ * Every line an ask can carry (decision O03: picked, never typed). The same list is the
+ * `ask_lines` table (supabase/migrations); send_invite refuses any other note.
+ * tests/unit/profile.test.ts keeps the two in step.
+ */
+export const ASK_LINES: string[] = [
+  ...new Set([
+    ...Object.values(STARTERS_BY_KIND).flat(),
+    ...STARTERS_ANY,
+    ...Object.values(STARTERS_BY_TONE).flat(),
+  ]),
+];
+
 export function noteStarters(kind: MicroDateIdea['kind'], tone: NoteTone = 'chill'): string[] {
   return tone === 'chill' ? [...STARTERS_BY_KIND[kind], ...STARTERS_ANY] : STARTERS_BY_TONE[tone];
 }

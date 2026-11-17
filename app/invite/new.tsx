@@ -14,7 +14,7 @@ import { inputStyle } from '@/components/ui/input';
 import { Screen } from '@/components/ui/Screen';
 import { T } from '@/components/ui/T';
 import { NOTE_TONES, ideaOf, noteStarters, type NoteTone } from '@/domain/ideas';
-import { MAX_OPEN_ASKS, NOTE_MAX, isOpen } from '@/domain/invites';
+import { MAX_OPEN_ASKS, isOpen } from '@/domain/invites';
 import { dayOptions, slotOptions, timeLabel } from '@/domain/time';
 import { haptic } from '@/lib/haptics';
 import { usePerson, useStore } from '@/state/store';
@@ -152,7 +152,7 @@ export default function NewInvite() {
         )}
       </Section>
 
-      <Section n="04" label={`One line (optional)  ${note.length}/${NOTE_MAX}`}>
+      <Section n="04" label="One line (optional)">
         <View style={styles.wrap}>
           {NOTE_TONES.map((t) => <Tag key={t.id} label={t.label} tone={tone === t.id ? color.volt : color.textDim} selected={tone === t.id} onPress={() => setTone(t.id)} />)}
         </View>
@@ -161,7 +161,7 @@ export default function NewInvite() {
             <Chip key={line} label={line} selected={note === line} onPress={() => setNote(note === line ? '' : line)} />
           ))}
         </View>
-        <TextInput value={note} onChangeText={setNote} placeholder="Brown sugar or taro. Choose wisely." placeholderTextColor={color.textMute} maxLength={NOTE_MAX} multiline style={[inputStyle, type.body, { paddingVertical: space.md, minHeight: 72, textAlignVertical: 'top' }]} accessibilityLabel="One line to go with the ask" />
+        <T v="caption" c={color.textDim}>Pick one, or none. Lines are picked, never typed: nothing can ride along in them.</T>
       </Section>
     </Screen>
   );
