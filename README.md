@@ -6,6 +6,9 @@ one Expo codebase.
 
 - `ARCHITECTURE.md`: how the app, Supabase and the DuckDB worker fit together
 - `DESIGN_SYSTEM.md`: colours, type, components and the exact spec of the lock gesture
+- `ROADMAP.md`: the phases, what each must prove, and what is next
+- `docs/phase-2-checklist.md`: the steps left to finish Phase 2 (accounts and real phones)
+- `CLAUDE.md`: the project rules, for Claude Code sessions
 
 ## Run it on your phone (mock data, no accounts needed)
 
@@ -55,6 +58,7 @@ under Settings, Secrets and variables, Actions:
 | Secret | `SUPABASE_DB_PASSWORD` | The project's database password |
 | Secret | `ANALYTICS_DB_PASSWORD` | A new password you make up, for the analytics worker's role |
 | Secret | `EXPO_TOKEN` | expo.dev, Account settings, Access tokens |
+| Secret | `EXPO_ACCESS_TOKEN` | Optional: only needed when "enhanced push security" is on for the Expo account; can be the same token as `EXPO_TOKEN` |
 | Secret | `GOOGLE_SERVICES_JSON` | The contents of Firebase's `google-services.json` (Android push; see below) |
 | Variable | `SUPABASE_PROJECT_REF` | The project ref (the id in the project URL) |
 | Variable | `EXPO_PUBLIC_SUPABASE_ANON_KEY` | Project Settings, API: the anon / publishable key |

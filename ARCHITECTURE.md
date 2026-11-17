@@ -315,3 +315,6 @@ as due times, so a restart loses nothing.
 Real photos and the video room itself, phone-number auth, distance (live mode shows area only),
 calendar export, separate app ids per build profile, push receipts, and reporting and blocking.
 Reporting and blocking must ship before real users do.
+
+`ROADMAP.md` says which phase each of these lands in: reporting, blocking and phone sign-in in
+Phase 3, photos and the video room in Phase 4.
