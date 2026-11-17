@@ -22,7 +22,7 @@ begin
   return jsonb_build_object(
     'format', 'pinkilock-export-1',
     'exported_at', now(),
-    'account', (select jsonb_build_object('id', u.id, 'phone', u.phone, 'email', nullif(u.email, ''), 'created_at', u.created_at, 'is_anonymous', u.is_anonymous)
+    'account', (select jsonb_build_object('id', u.id, 'phone', u.phone, 'created_at', u.created_at, 'is_anonymous', u.is_anonymous)
                 from auth.users u where u.id = me),
     'profile', (select to_jsonb(p) from profiles p where p.id = me),
     'contact', (select jsonb_build_object('kind', c.contact_kind, 'handle', c.contact_handle, 'photos', c.photos)
