@@ -90,8 +90,9 @@ Font scaling is allowed up to 1.3x (`maxFontSizeMultiplier`) so layouts hold on 
 | `spring.back` | damping 20, stiffness 180 | A released finger returning |
 
 Lists enter with an 18px rise and fade, staggered 60 ms per item, once. Nothing loops except the
-waiting pinky and the live countdown. With Reduce Motion on, entrances become fades and the lock
-plays without the shake and burst.
+waiting pinky and the live countdown. With Reduce Motion on, entrances become fades, the waiting
+pinky holds still and the lock plays without the shake and burst. The hold button's 900 ms sweep
+is a timer, not decoration, so it runs in full either way.
 
 ## 6. The Pinkilock gesture: exact spec
 
@@ -172,6 +173,11 @@ so a promise is never left half drawn; before that, back leaves without changing
 The stage is one accessible element labelled `Slide your pinky in to lock this plan` with an
 `activate` action, and a visible `Lock without sliding` button sits below it, so the promise
 never depends on a drag. Both run the same commit timeline from step 4.
+
+In a browser the stage is as wide as the column that holds it (not the window) and clips what it
+draws. It takes keyboard focus: Left or Up slides the pinky in a quarter at a time (Right or Down
+back out), the fourth press commits, and Enter, Space or End commit at once. A mouse drags it
+exactly as a finger does.
 
 ## 7. Voice
 

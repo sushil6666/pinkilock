@@ -8,15 +8,21 @@
  *     `onCommit`; the hook animation waits for the `locked` prop.
  *  2. The pan area is inset 32 px from both screen edges so it never competes with Android's
  *     edge-swipe back gesture or iOS's back swipe, and it only claims horizontal drags.
+ *
+ * The stage is as wide as whatever holds it (the screen on a phone, the centred column in a wide
+ * browser window) and clips what it draws, so a pinky waiting off stage never widens the page.
+ * In a browser it also takes the keyboard: arrow keys slide the pinky a quarter at a time, and
+ * Enter or Space locks.
  */
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { StyleSheet, View, useWindowDimensions } from 'react-native';
+import { StyleSheet, View, useWindowDimensions, type LayoutChangeEvent } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
   Easing, cancelAnimation, interpolate, runOnJS, useAnimatedReaction, useAnimatedStyle, useReducedMotion, useSharedValue,
   withDelay, withRepeat, withSequence, withSpring, withTiming,
 } from 'react-native-reanimated';
 import { haptic } from '../lib/haptics';
+import { isWeb, webOnly } from '../lib/web';
 import { color, motion } from '../theme/tokens';
 import { FINGER, MyPinky, TheirPinky, TheirTip } from './PinkyFinger';
 
@@ -44,10 +50,17 @@ const COMMIT_AT = 0.82;
 const MY_TRAVEL = 0.36;
 /** Their tip ends 48 px right of centre, so parking it off-screen takes half the width plus this. */
 const THEIR_CLEARANCE = 96;
+/** Keyboard: four presses of an arrow key take the pinky from rest to locked. */
+const KEY_STEPS = 4;
 
 export function PinkyLock({ mode, startCommitted, locked, resetKey, commitKey, onCommit, onPhase, onMiss }: Props) {
-  const { width: w } = useWindowDimensions();
+  // The window's width until the stage has been laid out, then its own.
+  const { width: windowW } = useWindowDimensions();
+  const [stageW, setStageW] = useState(0);
+  const w = stageW || windowW;
+  const onLayout = useCallback((e: LayoutChangeEvent) => setStageW(Math.round(e.nativeEvent.layout.width)), []);
   const reduced = useReducedMotion();
+  const [keyStep, setKeyStep] = useState(0);
   const cx = w / 2;
   const cy = FINGER.stageH / 2;
 
@@ -73,14 +86,14 @@ export function PinkyLock({ mode, startCommitted, locked, resetKey, commitKey, o
   const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
 
   useEffect(() => {
-    // Their waiting pinky breathes; mine nudges until first touched.
-    bob.value = withRepeat(withTiming(1, { duration: 800, easing: Easing.inOut(Easing.sin) }), -1, true);
-    if (!startCommitted) nudge.value = withRepeat(withSequence(withDelay(1600, withTiming(1, { duration: 400 })), withTiming(0, { duration: 400 })), -1);
+    // Their waiting pinky breathes; mine nudges until first touched. Neither with reduced motion.
+    if (!reduced) bob.value = withRepeat(withTiming(1, { duration: 800, easing: Easing.inOut(Easing.sin) }), -1, true);
+    if (!startCommitted && !reduced) nudge.value = withRepeat(withSequence(withDelay(1600, withTiming(1, { duration: 400 })), withTiming(0, { duration: 400 })), -1);
     return () => {
       timers.current.forEach(clearTimeout);
       [bob, nudge, pulse].forEach(cancelAnimation);
     };
-  }, [bob, nudge, pulse, startCommitted]);
+  }, [bob, nudge, pulse, startCommitted, reduced]);
 
   const commit = useCallback(() => {
     if (phaseRef.current !== 'idle') return;
@@ -107,17 +120,33 @@ export function PinkyLock({ mode, startCommitted, locked, resetKey, commitKey, o
     if (resetKey === 0) return;
     mine.value = withSpring(REST, motion.spring.back);
     active.value = true;
+    setKeyStep(0);
     setPhase('idle');
   }, [resetKey, mine, active, setPhase]);
 
+  // Browser only: the stage is focusable and the arrow keys do what a drag does.
+  const onKeyDown = useCallback((e: { key: string; preventDefault: () => void }) => {
+    if (phaseRef.current !== 'idle') return;
+    const dir = e.key === 'ArrowLeft' || e.key === 'ArrowUp' ? 1 : e.key === 'ArrowRight' || e.key === 'ArrowDown' ? -1 : 0;
+    const lock = e.key === 'Enter' || e.key === ' ' || e.key === 'End';
+    if (!dir && !lock) return;
+    e.preventDefault();
+    const next = lock ? KEY_STEPS : Math.min(KEY_STEPS, Math.max(0, keyStep + dir));
+    if (next === KEY_STEPS) return commit();
+    setKeyStep(next);
+    cancelAnimation(nudge);
+    nudge.value = 0;
+    mine.value = withTiming(REST + (next / KEY_STEPS) * (1 - REST), { duration: 120 });
+  }, [keyStep, commit, mine, nudge]);
+
   // Waiting for them: my committed pinky pulses.
   useEffect(() => {
-    if (phase === 'committed' && !locked) pulse.value = withRepeat(withTiming(1.04, { duration: 900, easing: Easing.inOut(Easing.sin) }), -1, true);
+    if (phase === 'committed' && !locked && !reduced) pulse.value = withRepeat(withTiming(1.04, { duration: 900, easing: Easing.inOut(Easing.sin) }), -1, true);
     else {
       cancelAnimation(pulse);
       pulse.value = withTiming(1, { duration: 120 });
     }
-  }, [phase, locked, pulse]);
+  }, [phase, locked, pulse, reduced]);
 
   // Both pinkies confirmed: bring theirs in if needed, hook, tug, burst.
   useEffect(() => {
@@ -206,13 +235,19 @@ export function PinkyLock({ mode, startCommitted, locked, resetKey, commitKey, o
 
   return (
     <View
-      style={{ width: w, height: FINGER.stageH }}
+      style={[styles.stage, isWeb && styles.clip]}
+      onLayout={onLayout}
       accessible
       accessibilityRole="adjustable"
       accessibilityLabel="Slide your pinky in to lock this plan"
       accessibilityHint="Double tap to lock without sliding"
       accessibilityActions={[{ name: 'activate' }, { name: 'increment' }]}
       onAccessibilityAction={commit}
+      aria-valuemin={0}
+      aria-valuemax={100}
+      aria-valuenow={phase === 'idle' ? Math.round((keyStep / KEY_STEPS) * 100) : 100}
+      aria-valuetext={phase === 'idle' ? 'Not locked yet' : phase === 'sealed' ? 'Locked' : 'Your pinky is in'}
+      {...webOnly({ tabIndex: phase === 'idle' ? 0 : -1, onKeyDown })}
     >
       <Animated.View style={[StyleSheet.absoluteFill, { backgroundColor: color.pinkWash }, flashStyle]} pointerEvents="none" />
       <Animated.View style={[styles.ring, { left: cx - 70, top: cy - 70 }, ringStyle]} pointerEvents="none" />
@@ -236,6 +271,9 @@ export function PinkyLock({ mode, startCommitted, locked, resetKey, commitKey, o
 }
 
 const styles = StyleSheet.create({
+  stage: { alignSelf: 'stretch', height: FINGER.stageH },
+  /** A browser page grows to fit what is drawn past its edge; a phone screen does not. */
+  clip: { overflow: 'hidden' },
   ring: { position: 'absolute', width: 140, height: 140, borderRadius: 70, borderWidth: 2, borderColor: color.line },
   burst: { borderColor: color.pink, borderWidth: 6 },
   track: { position: 'absolute', bottom: 6, height: 3, borderRadius: 2, backgroundColor: color.line, overflow: 'hidden' },

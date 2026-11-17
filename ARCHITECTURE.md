@@ -65,7 +65,8 @@ src/
     mock/                    seed.ts, mockBackend.ts (latency + a simulated other person)
     supabase/                supabaseBackend.ts (Auth, rpc, RLS reads, Realtime)
   state/store.ts             Zustand: cache of backend rows + actions
-  lib/                       haptics, useNow, useReveal, push (register this device, route taps)
+  lib/                       haptics, useNow, useReveal, push (register this device, route taps),
+                             web (the few things only a browser needs)
 supabase/
   config.toml                Local stack and function settings (Supabase CLI)
   migrations/                The schema, and the only source of it: tables, RLS, promise
@@ -361,6 +362,14 @@ what the server did (`OPERATIONS.md`, "Trace a bug").
   conveyed by a haptic alone.
 - **Back**: Android hardware back works on every stack screen; the lock ignores it only during the
   one second of sealing.
+- **Browser**: the web build (`npx expo export -p web`) is the same screens. Anything a browser
+  needs differently lives in `src/lib/web.ts` or in the shared component, never in a copied
+  screen. So far: a hold that completes under a finger eats the click the browser makes when the
+  finger lifts (it would otherwise tap whatever the new screen put there); a hold button commits
+  at once for a screen reader's click, as the `activate` action does on a phone, and needs the
+  full hold from a mouse, a finger or a held Space or Enter; the lock stage measures its own
+  width, clips its drawing and takes the arrow keys. Haptics and push do nothing in a browser,
+  and Me says so for push.
 
 ## 10. Environments and delivery
 
