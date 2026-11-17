@@ -44,7 +44,7 @@ export function TrustBadge({ person, size = 'sm', brief }: Props) {
 }
 
 const styles = StyleSheet.create({
-  pill: { flexDirection: 'row', alignItems: 'center', gap: 6, alignSelf: 'flex-start', borderWidth: 1, borderRadius: radius.pill, paddingHorizontal: space.md, paddingVertical: 5, backgroundColor: 'rgba(10,10,12,0.72)' },
+  pill: { flexDirection: 'row', alignItems: 'center', gap: 6, alignSelf: 'flex-start', borderWidth: 1, borderRadius: radius.pill, paddingHorizontal: space.md, paddingVertical: 5, backgroundColor: 'rgba(0,18,58,0.72)' },
   card: { flexDirection: 'row', alignItems: 'center', gap: space.lg, borderWidth: 1, borderColor: color.line, borderRadius: radius.card, backgroundColor: color.surface, paddingHorizontal: space.lg, paddingVertical: space.md },
   bar: { flexDirection: 'row', height: 6, borderRadius: 3, overflow: 'hidden', marginTop: space.sm, gap: 2 },
 });

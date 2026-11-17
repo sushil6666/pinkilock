@@ -31,7 +31,7 @@ export default function RootLayout() {
     boot();
     SystemUI.setBackgroundColorAsync(color.bg).catch(() => {});
     if (Platform.OS === 'android') {
-      // Obsidian behind the 3-button or gesture bar, with light buttons.
+      // Royal blue behind the 3-button or gesture bar, with light buttons.
       NavigationBar.setBackgroundColorAsync(color.bg).catch(() => {});
       NavigationBar.setButtonStyleAsync('light').catch(() => {});
     }
