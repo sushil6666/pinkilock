@@ -204,6 +204,10 @@ on the next push to `main`; check it first by exporting on mock data and serving
   `docs/decisions.md`, because the page holds the sign-in session.
 - **Every path is the app.** Pages answers any path with `index.html` because the build has no
   `404.html`; the app's own not-found screen does the rest. Do not add a `404.html`.
+- **No `node_modules` on Pages.** Cloudflare Pages never uploads a folder named `node_modules`,
+  and Expo puts every font and icon under `assets/node_modules/`. `scripts/prepare-web-dist.mjs`
+  moves them to `assets/vendor/` and fails the deploy if the bundle names a file that is not there.
+  Serif type or empty boxes on the live site mean this step was skipped.
 - **Rolling back.** In the dashboard, `pinkilock`, Deployments: pick an earlier one, Rollback. Then
   fix `main`, because the next push publishes again.
 - **The site is down or old.** Look at the last **Web deploy** run. Its last step fetches `/`,
@@ -404,6 +408,9 @@ rows without the id.
 - **"No Supabase project is configured":** the profile's variables are empty.
 - **Otherwise:** the run's last step, "Show why the build failed", prints EAS's error message
   and the end of the native log; the full log is on the build page linked in the run.
+- **"Duplicate resources" in `mergeReleaseResources`:** two images in `assets/` share a name and
+  differ only in extension (`x.gif` and `x.png`); Android keeps one name per image. Rename one.
+  `npm run test:unit` checks for this.
 - **"No matching client found for package name":** the Android app registered in Firebase is not
   `com.pinkilock.app`. Download google-services.json again for that package and replace the
   `GOOGLE_SERVICES_JSON` secret.

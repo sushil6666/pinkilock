@@ -111,9 +111,12 @@ Font scaling is allowed up to 1.3x (`maxFontSizeMultiplier`) so layouts hold on 
   plans happen"): a gold kind icon, the name and the area on a `surface` card with a `goldDeep`
   border.
 - **Welcome**: the first screen. The pinkies, a scribbled note pointing at them, the promise in
-  `mega`, and the three steps as notes on a `line` block, each tilted by a degree or so. In a
-  window 960 or wider it is two columns, up to `wideMax` (1080): the pinkies left, the words and
-  Start right.
+  `mega`, and the three steps as notes on a `line` block, each tilted by a degree or so.
+- **Landing**: the same first screen in a window 960 or wider, as the website's front page, up to
+  `wideMax` (1080): a top bar, the hero (pinkies left, words and Start right), then sections for
+  how it works, the rules (cards beside the padlock), micro-date ideas, places, questions, and a
+  closing Start. Sections are a pink `label` over a `display` title; cards are `surface` with a
+  `line` border; places are a pink left rule. Only tokens, so a theme change carries over.
 - **Tab bar**: 4 tabs, icon over label, active is pink with a 3px bar above the icon; counts sit in
   a pink pill.
 

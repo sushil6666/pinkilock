@@ -1,6 +1,6 @@
 /**
  * Draws the clay loops the app shows (assets/loops/*.gif) and a still of each for reduced motion
- * (assets/loops/*.png).
+ * (assets/loops/*-still.png).
  *
  *   node scripts/make-loops.mjs            (needs the playwright and three dev dependencies, and ffmpeg)
  *
@@ -80,7 +80,8 @@ for (const loop of LOOPS) {
   await tab.close();
 
   const gif = path.join(OUT, `${loop.name}.gif`);
-  const png = path.join(OUT, `${loop.name}.png`);
+  // Not `${name}.png`: Android names both files the same drawable and the build fails (tests/unit/assets.test.ts).
+  const png = path.join(OUT, `${loop.name}-still.png`);
   execFileSync('ffmpeg', ['-y', '-loglevel', 'error', '-framerate', String(loop.fps), '-i', path.join(tmp, 'f%03d.png'),
     '-vf', `scale=${loop.w}:${loop.h}:flags=lanczos,colorkey=${tokens.bg.replace('#', '0x')}:0.02:0,split[a][b];[a]palettegen=max_colors=64:stats_mode=full:reserve_transparent=1[p];[b][p]paletteuse=dither=bayer:bayer_scale=3:diff_mode=rectangle:alpha_threshold=128`,
     '-loop', '0', gif]);

@@ -107,10 +107,13 @@ jobs:
         # failure can be read from GitHub alone.
         if: failure()
         run: |
+          # build:list finds the build; only build:view includes the links to its log files.
           eas build:list --platform "$PLATFORM" --build-profile "$PROFILE" --limit 1 --json --non-interactive > last.json || exit 0
+          id="$(node -p 'JSON.parse(require("fs").readFileSync("last.json", "utf8"))[0]?.id ?? ""')"
+          [ -n "$id" ] || exit 0
+          eas build:view "$id" --json > last.json || exit 0
           node -e '
-            const b = JSON.parse(require("fs").readFileSync("last.json", "utf8"))[0];
-            if (!b) process.exit(0);
+            const b = JSON.parse(require("fs").readFileSync("last.json", "utf8"));
             const err = b.error ? `${b.error.errorCode}: ${b.error.message}` : "(no error message from EAS)";
             console.log(`::error::EAS build ${b.id} ${b.status}: ${err}`);
             require("fs").appendFileSync(process.env.GITHUB_STEP_SUMMARY, `### Why it failed\n\n${err}\n`);
@@ -122,7 +125,7 @@ jobs:
             curl -fsSL "$url" | node -e '
               let s = ""; process.stdin.on("data", (d) => (s += d)).on("end", () => {
                 const lines = s.split("\n").map((l) => { try { return JSON.parse(l).msg ?? ""; } catch { return l; } }).filter(Boolean);
-                const hits = lines.filter((l) => /error|FAILURE|What went wrong|failed/i.test(l));
+                const hits = lines.filter((l) => /error|FAILURE|What went wrong|failed|Missing class|R8:/i.test(l));
                 console.log("::group::Error lines"); console.log(hits.slice(-60).join("\n")); console.log("::endgroup::");
                 console.log("::group::Last 80 lines"); console.log(lines.slice(-80).join("\n")); console.log("::endgroup::");
               });'
