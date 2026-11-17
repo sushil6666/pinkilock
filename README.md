@@ -6,6 +6,7 @@ one Expo codebase.
 
 - `ARCHITECTURE.md`: how the app, Supabase and the DuckDB worker fit together
 - `DESIGN_SYSTEM.md`: colours, type, components and the exact spec of the lock gesture
+- `OPERATIONS.md`: running it live: secrets, workflows, shipping changes, health checks, fixes
 - `ROADMAP.md`: the phases, what each must prove, and what is next
 - `docs/phase-2-checklist.md`: the steps left to finish Phase 2 (accounts and real phones)
 - `docs/phase-3-checklist.md`: what Phase 3 needs from you (SMS provider, production project, phones)
