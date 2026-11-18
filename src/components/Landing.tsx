@@ -5,14 +5,14 @@
  *
  * Every claim on it is something the app really does (see `src/domain`): contacts locked until a
  * kept promise, both people checking in, the kept and flaked counts beside the score, block and
- * report, adults only. Do not add one it does not do.
+ * report, doubles with a friend (D070), adults only. Do not add one it does not do.
  */
 import { router } from 'expo-router';
 import { StyleSheet, View, useWindowDimensions } from 'react-native';
 import { IDEAS } from '@/domain/ideas';
 import { VENUES, type Venue } from '@/domain/venues';
 import { webOnly } from '@/lib/web';
-import { color, radius, space, wideMax } from '@/theme/tokens';
+import { color, font, radius, space, wideMax } from '@/theme/tokens';
 import { Logo } from './Logo';
 import { Loop } from './Loop';
 import { NightSky } from './NightSky';
@@ -128,6 +128,22 @@ export function Landing({ onStart }: { onStart: () => void }) {
           </View>
         </Section>
 
+        {/* Doubles (D070, D084): four short lines, centred, then what a duo is in plain words. */}
+        <View style={styles.doubles} {...webOnly({ role: 'region' as const, 'aria-label': t('landing.doublesEyebrow') })}>
+          <T v="label" c={color.pink} center>{t('landing.doublesEyebrow')}</T>
+          <View accessibilityRole="header">
+            {(['doublesYou', 'doublesThem', 'doublesPlan'] as const).map((k) => (
+              <T key={k} v="mega" center style={roomy ? styles.headline : styles.headlineTight}>{t(`landing.${k}`)}</T>
+            ))}
+            <T v="mega" center c={color.gold} style={roomy ? styles.headline : styles.headlineTight}>
+              {t('landing.doublesLine')}{' '}
+              <T v="mega" c={color.gold} style={[roomy ? styles.headline : styles.headlineTight, styles.accent]}>{t('landing.doublesLineAccent')}</T>
+            </T>
+          </View>
+          <T v="hand" c={color.pink} center>{t('landing.doublesNote')}</T>
+          <T v="heading" c={color.textDim} center style={{ maxWidth: 640 }}>{t('landing.doublesBody')}</T>
+        </View>
+
         <Section eyebrow={t('landing.ideasEyebrow')} title={t('landing.ideasTitle')}>
           <View style={{ gap: space.lg }}>
             {rows(ideas, ideaCols).map((row, r) => (
@@ -217,6 +233,8 @@ const styles = StyleSheet.create({
   cols: { flexDirection: 'row', gap: space.x5, alignItems: 'stretch' },
   gridRow: { flexDirection: 'row', gap: space.lg },
   card: { flex: 1, gap: space.sm, backgroundColor: color.surface, borderWidth: 1, borderColor: color.line, borderRadius: radius.card, padding: space.xl },
+  doubles: { gap: space.lg, alignItems: 'center', paddingVertical: space.x4, paddingHorizontal: space.xl, backgroundColor: color.surface, borderWidth: 1, borderColor: color.line, borderRadius: radius.card },
+  accent: { fontFamily: font.displayItalic },
   place: { flex: 1, gap: space.xs, borderLeftWidth: 3, borderLeftColor: color.pink, paddingLeft: space.md, paddingVertical: space.sm },
   emoji: { fontSize: 28, lineHeight: 34 },
   final: { gap: space.xl, alignItems: 'center', paddingVertical: space.x4, borderTopWidth: 1, borderTopColor: color.line },
