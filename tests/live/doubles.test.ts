@@ -63,6 +63,9 @@ test('two duos, one double: pinkies, the seal, check-in across sides, and the re
   await d.hears('the lock', inviteIs(sent.id, 'locked'));
 
   // Check-in: a code from my own side does nothing; one from the other side checks me in.
+  // Nobody on the other side has opened a code yet, so any code is refused for that first (PL038).
+  await assert.rejects(checkInWith(a, b, sent.id), (e: unknown) => e instanceof AppError && e.code === 'PL038', 'the other side has no code open yet');
+  for (const p of [c, d]) await p.backend.myCheckInCode(sent.id);
   await assert.rejects(checkInWith(a, b, sent.id), (e: unknown) => e instanceof AppError && e.code === 'PL039', "a friend's code is not proof of meeting");
   await checkInWith(a, c, sent.id);
   await checkInWith(c, a, sent.id);
