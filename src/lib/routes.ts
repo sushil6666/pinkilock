@@ -34,10 +34,11 @@ const TITLES: Record<string, string> = {
 /**
  * Open without a profile: the gate itself, onboarding, signing back in, the not-found page, and
  * the terms and privacy policy, which onboarding asks a person to agree to before a profile exists,
- * and a friend's vouch link, which is for people who may never join (it shows a first name and a
- * fixed list of phrases, and nothing else).
+ * a friend's vouch link, which is for people who may never join (it shows a first name and a
+ * fixed list of phrases, and nothing else), and the safety page, which the terms point to and which
+ * holds the emergency numbers: someone in danger should never be asked to sign in first.
  */
-const OPEN = new Set(['', 'onboarding', 'account/sign-in', '+not-found', 'legal/[doc]', 'vouch/[token]']);
+const OPEN = new Set(['', 'onboarding', 'account/sign-in', '+not-found', 'legal/[doc]', 'vouch/[token]', 'safety']);
 
 const key = (segments: readonly string[]) => segments.join('/');
 

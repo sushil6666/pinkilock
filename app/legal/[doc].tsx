@@ -1,18 +1,32 @@
-/** The terms or the privacy policy (drafts until a lawyer has reviewed them). */
-import { useLocalSearchParams } from 'expo-router';
+/**
+ * The terms or the privacy policy (drafts until a lawyer has reviewed them). Where the terms point
+ * to the safety page, a button takes you straight there, with the numbers on it, signed in or not.
+ */
+import { router, useLocalSearchParams } from 'expo-router';
+import { Fragment } from 'react';
+import { Button } from '@/components/ui/Button';
 import { Screen } from '@/components/ui/Screen';
 import { T } from '@/components/ui/T';
+import { countryOf } from '@/domain/countries';
 import { LEGAL_VERSION, PRIVACY, TERMS } from '@/legal/drafts';
+import { useStore } from '@/state/store';
 import { color, space } from '@/theme/tokens';
 
 export default function LegalDoc() {
   const { doc } = useLocalSearchParams<{ doc: string }>();
+  const country = countryOf(useStore((s) => s.me?.country));
   const privacy = doc === 'privacy';
+  const numbers = [country.emergency, country.womenHelpline].filter(Boolean).join(' or ');
   return (
     <Screen desk="read" back="back" title={privacy ? 'Privacy' : 'Terms'}>
       <T v="caption" c={color.textMute} style={{ marginBottom: space.lg }}>Version {LEGAL_VERSION}</T>
       {(privacy ? PRIVACY : TERMS).split('\n\n').map((para, i) => (
-        <T key={i} c={i === 0 ? color.flare : color.text} style={{ marginBottom: space.md }}>{para}</T>
+        <Fragment key={i}>
+          <T c={i === 0 ? color.flare : color.text} style={{ marginBottom: space.md }}>{para}</T>
+          {para.includes('safety page') && (
+            <Button kind="danger" icon="phone" label={`Safety page: call ${numbers}`} onPress={() => router.push('/safety')} style={{ marginBottom: space.lg }} />
+          )}
+        </Fragment>
       ))}
     </Screen>
   );
