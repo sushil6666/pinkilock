@@ -20,6 +20,7 @@ a processor or a kind of data updates this file in the same pull request.
 | Profile line under review | `private.line_reviews` | Until decided or replaced | The person (their own); moderators |
 | Requests and appeals | `privacy_requests` | Until deleted | Operators |
 | Push tokens and sent notifications | `push_tokens`, `notifications` | Notifications 30 days | No client |
+| Push tickets: Expo's id for a sent push, with the device token | `push_tickets` | Until Expo answers, a day at most | No client; the push function |
 | Error reports: code, trace id, screen, build | `client_errors` | 30 days | Operators |
 | Friend vouches: who vouched, the phrases | `vouches` | Until either account is deleted | No client; the card shows a count and the top phrases |
 | Duo: who my duo partner is, and the links made to join | `duos`, `private.duo_links` | Until left, blocked or deleted | The two people in the duo; others see only that a card has one |

@@ -82,3 +82,7 @@ set role service_role;
 select t.ok((select count(*) from claim_notifications(100)) = (select count(*) from notifications), 'the service role claims the whole outbox');
 select t.ok((select count(*) from claim_notifications(100)) = 0, 'a second claim finds nothing to send twice');
 reset role;
+
+-- Push receipts (WP0b): tickets are read every 15 minutes, quiet or not.
+reset role;
+select t.ok((select schedule from cron.job where jobname = 'pinkilock-push-receipts') = '*/15 * * * *', 'receipts are checked every 15 minutes');

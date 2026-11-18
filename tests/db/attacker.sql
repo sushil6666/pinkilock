@@ -414,3 +414,10 @@ select t.ok(t.sqlstate(format(:'move', :'x_name', 'Koregaon Park', :'x_line', 'P
 select t.ok(t.fails(format($$update profiles set city_changed_at = null, city = 'Pune' where id = %L$$, :'x')),
   'X cannot reset their own move clock or set their city directly');
 reset role;
+
+-- WP0b: push tickets are the push function's alone.
+set role authenticated;
+select t.as_user(:'x');
+select t.ok(t.fails('select count(*) from push_tickets') and t.fails($$insert into push_tickets (id, notification_id, token) values ('t', 1, 'x')$$),
+  'X cannot read or write push tickets');
+reset role;

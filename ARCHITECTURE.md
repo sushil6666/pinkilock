@@ -347,8 +347,12 @@ promise function / sweep -> invites row changes -> trigger invites_notify -> not
   push token, hand it to `backend.registerPushToken`, and on a tap open the invite or the plan.
   While the app is in the foreground the system banner is suppressed, because the in-app banner
   (driven by Realtime) already says it.
-- **Not built:** Expo push receipts are not polled, so a delivery that Expo accepts and APNs or
-  FCM later rejects is not noticed until that device's next send.
+- **Receipts.** Expo's first answer only says it accepted a push. The function keeps each ticket
+  (`push_tickets`) and, from 15 minutes on, asks Expo for its receipt: a device that turned out
+  to be gone loses its token, any other failure is written on the notification
+  (`receipt_error`), and answered tickets are dropped (unanswered ones after a day, as Expo keeps
+  receipts that long). A cron job wakes the function every 15 minutes while any are due, so a
+  quiet hour does not let them lapse; a receipts failure never stops sending.
 
 ## 7. Analytics and the trust engine (DuckDB)
 
