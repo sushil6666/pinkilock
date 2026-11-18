@@ -478,7 +478,9 @@ keeps the English and the app shows the phone's language. Dates, times and numbe
 phone's locale through `Intl`, plan times are shown in the viewer's own time zone (when another
 clock reads differently, the plan names it too: the other person's on a call, the place's on a
 date in person, from the city's `time_zone`, never from where a phone seems to be), and distance
-is in miles where the locale's country uses them (US, UK, Liberia, Myanmar). The language comes
+is in miles where the
+viewer's profile country uses them (US, UK, Liberia, Myanmar), or the phone's region before
+there is a profile. The language comes
 from the phone, or `?lang=` in a browser. On a phone a right-to-left language flips the layout
 from the next start; in a browser `<html>` gets `lang` and `dir`. Two pseudo-languages exist only
 for testing: `en-XA` (accented and a third longer) shows any text that skipped `t()` and any label
