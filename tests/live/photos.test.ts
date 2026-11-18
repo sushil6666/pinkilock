@@ -42,6 +42,8 @@ after(() => {
     sql(`delete from public.events where actor_id in (${list}) or invite_id in (select id from public.invites where from_id in (${list}) or to_id in (${list}));
          delete from auth.users where id in (${list});`);
   }
+  // The clients keep timers and sockets open, as in the other live tests: leave when done.
+  setTimeout(() => process.exit(process.exitCode ?? 0), 200).unref();
 });
 
 test('a photo goes in through the function, without its metadata, and waits for a person', { skip: !DB }, async () => {
