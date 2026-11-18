@@ -296,7 +296,7 @@ export function createMockBackend(): Backend {
         if (!d.me) fail('PL002');
         const { contactKind, contactHandle, ...card } = patch;
         const next = { ...d.me, ...card };
-        checkProfile(next, d.me.city, { area: d.me.area, pronouns: d.me.pronouns });
+        checkProfile(next, d.me.city, { area: d.me.area, pronouns: d.me.pronouns, ideaIds: d.me.ideaIds });
         const now = Date.now();
         if (next.name !== d.me.name && (changed.name ?? 0) > now - 30 * rules.DAY) fail('PL070');
         if (next.tagline !== d.me.tagline && (changed.tagline ?? 0) > now - 7 * rules.DAY) fail('PL071');

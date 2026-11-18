@@ -184,10 +184,8 @@ reference under every error on screen; `client_errors` and `log_client_error`; o
 logger with breadcrumbs; no empty catch (a unit test, in place of a lint rule, since the project
 has no linter); the build stamp; Share diagnostics; `private.invite_timeline`; the crash screen;
 "Trace a bug" in `OPERATIONS.md`. **Not done:** polling Expo push receipts (delivery after Expo
-accepts a push is still unseen); one trace id shared across the several calls of a single tap
-(today each database call has its own); and direct table writes (profile save, pass) carry no
-trace until WP1 moves them into functions. Source maps wait for the crash tool in WP7. For WP8:
-`client_errors` rows are personal data and are not yet in `export_my_data`.
+accepts a push is still unseen); and direct table writes (pass) carry no trace. Source maps wait for the crash tool in WP7. **Built 2026-11-18:** one trace id per tap (every server call of one Backend method shares it,
+`src/services/traceScope.ts`); `client_errors` rows are in `export_my_data` as `error_reports`.
 
 ### WP1. Nothing free-form reaches a stranger before the reveal (G1, G2, G3, G18)
 
@@ -542,9 +540,20 @@ locale uses them. Right-to-left is wired (layout direction on a phone, `dir` and
 browser). Two pseudo-languages stand in for the second language until a translator writes one:
 `en-XA` (a third longer) and `ar-XB` (right to left), and a unit test fails on words written into a
 screen. No screen names a country. **Left:** a real second language from a native speaker, with its
-catalogue rows (ideas, tags, ask lines); the app tests run in it; time zones named on cross-zone
-plans (needs each person's zone on the server); ideas by region; area lists for each city as it
+catalogue rows (ideas, tags, ask lines); the app tests run in it; area lists for each city as it
 opens.
+
+**Status, 2026-11-18: time zones built** (decision D080). Each city has a time zone (`cities.time_zone`,
+`zone` in `CITIES`). A plan names a second clock when it reads differently from the phone's: the
+other person's city on a video or game plan, the place's city on a date in person. The zone comes
+from the city, so nothing new is collected and a VPN changes nothing. The two-browser test puts one
+person's phone on London time and checks the Mumbai time it is shown.
+
+**Status, 2026-11-18: ideas by region built** (decision D081). An idea can list the countries it is
+offered in (`ideas.countries`; cutting chai, momo, pani puri and kulfi are India's). Onboarding and
+Me offer what is on offer where the person lives; `save_profile` refuses a newly picked idea from
+elsewhere (PL104) and keeps any already saved. A unit test holds every country to at least 20
+ideas; the attacker suite tries a modified app.
 
 **Done when:** the app runs fully in a second language in the app tests, a user in a second time
 zone sees correct plan times in the live test, and no screen contains a hard-coded country.

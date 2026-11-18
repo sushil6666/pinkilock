@@ -87,6 +87,7 @@ export const ERRORS = {
   PL101: 'Checking works for Instagram and WhatsApp for now.',
   PL102: 'Checking handles is not switched on yet.',
   PL103: 'Their handle is verified: it was proved from that account.',
+  PL104: 'Pick things that are on offer where you live.',
 
   PA001: 'Phone sign-in is not switched on yet.',
   PA002: 'Email sign-in is not switched on yet.',

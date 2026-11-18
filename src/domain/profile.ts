@@ -11,7 +11,8 @@
 import { areasIn } from './areas';
 import { contactKindOf, contactKindsFor } from './contacts';
 import { AppError } from './errors';
-import { IDEAS, VIBES } from './ideas';
+import { CITIES } from './countries';
+import { IDEAS, VIBES, offeredIn } from './ideas';
 import type { OnboardingInput } from './types';
 
 export const NAME_MIN = 2;
@@ -64,7 +65,7 @@ const vibeSet = new Set(VIBES);
 export function checkProfile(
   p: Pick<OnboardingInput, 'name' | 'age' | 'area' | 'pronouns' | 'tagline' | 'vibes' | 'ideaIds'>,
   city = 'Mumbai',
-  was?: { area: string; pronouns: string },
+  was?: { area: string; pronouns: string; ideaIds?: string[] },
 ): void {
   if (!nameOk(p.name)) throw new AppError('PL060');
   if (!Number.isInteger(p.age) || p.age < 18 || p.age > 99) throw new AppError('PL061');
@@ -76,6 +77,8 @@ export function checkProfile(
   if (area && area !== was?.area && areasIn(city).length && !areasIn(city).includes(area)) throw new AppError('PL095');
   const pronouns = p.pronouns.trim();
   if (pronouns && pronouns !== was?.pronouns && !PRONOUN_OPTIONS.includes(pronouns)) throw new AppError('PL096');
+  const country = CITIES.find((c) => c.name === city)?.country;
+  if (p.ideaIds.some((id) => !was?.ideaIds?.includes(id) && !offeredIn(id, country))) throw new AppError('PL104');
 }
 
 /**

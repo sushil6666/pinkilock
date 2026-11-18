@@ -17,7 +17,7 @@ import { inputStyle } from '@/components/ui/input';
 import { HoldButton } from '@/components/ui/HoldButton';
 import { Screen } from '@/components/ui/Screen';
 import { T } from '@/components/ui/T';
-import { IDEAS, KIND_LABEL, KIND_ORDER, TAGLINE_PROMPTS, VIBE_GROUPS } from '@/domain/ideas';
+import { KIND_LABEL, KIND_ORDER, TAGLINE_PROMPTS, VIBE_GROUPS, ideasFor } from '@/domain/ideas';
 import type { ContactKind } from '@/domain/types';
 import { haptic } from '@/lib/haptics';
 import { useStore } from '@/state/store';
@@ -120,7 +120,7 @@ export default function Onboarding() {
               <View style={styles.wrap}>
                 {openCities().map((c) => (
                   <Chip key={c.name} label={c.name} sub={COUNTRIES.find((k) => k.code === c.country)?.name} selected={city === c.name}
-                    onPress={() => { setCity(c.name); setArea(''); setAreaQuery(''); }} />
+                    onPress={() => { setCity(c.name); setArea(''); setAreaQuery(''); setIdeaIds(ideaIds.filter((id) => ideasFor(c.country).some((i) => i.id === id))); }} />
                 ))}
               </View>
               <T v="caption" c={color.textDim}>{t('onboarding.oneCity')}</T>
@@ -158,7 +158,7 @@ export default function Onboarding() {
             {KIND_ORDER.map((kind) => (
               <View key={kind} style={{ gap: space.sm }}>
                 <T v="label" c={color.textDim}>{KIND_LABEL[kind]}</T>
-                {IDEAS.filter((idea) => idea.kind === kind).map((idea) => (
+                {ideasFor(country).filter((idea) => idea.kind === kind).map((idea) => (
                   <IdeaChip key={idea.id} idea={idea} selected={ideaIds.includes(idea.id)} onPress={() => toggle(ideaIds, setIdeaIds, idea.id, 6)} />
                 ))}
               </View>

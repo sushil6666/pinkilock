@@ -9,6 +9,8 @@ export interface MicroDateIdea {
   minutes: number;
   kind: IdeaKind;
   blurb: string;
+  /** Offered only in these countries (WP9); everywhere when left out. */
+  countries?: string[];
 }
 
 /** One of CONTACT_KINDS in src/domain/contacts.ts (which kinds a person sees depends on their country). */

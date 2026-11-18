@@ -24,7 +24,8 @@ import { T } from '@/components/ui/T';
 import { daresFor, ideaOf, openerOf } from '@/domain/ideas';
 import { CHECK_IN_CLOSES_AFTER, CHECK_IN_OPENS_BEFORE, canReveal, checkInPhase, friendOn, isDouble, otherId } from '@/domain/invites';
 import { DoubleParty } from '@/components/DoubleParty';
-import { shortCountdown, timeLabel, whenLabel } from '@/domain/time';
+import { shortCountdown, timeLabel, whenLabel, zoneNote } from '@/domain/time';
+import { zoneOfCity } from '@/domain/countries';
 import { trustOf, trustScore } from '@/domain/trust';
 import { haptic } from '@/lib/haptics';
 import { useNow } from '@/lib/useNow';
@@ -82,6 +83,10 @@ export default function PlanScreen() {
   const double = isDouble(invite);
   // On a double that was kept without me, I am the one who missed it.
   const myFlake = (flaked && (invite.flakedBy === me.id || (double && !invite.flakedBy && !iAmIn))) || (kept && double && !iAmIn);
+  // Another clock, named, when it reads differently from mine: theirs on a call, the place's on a date in person.
+  const zoneLine = idea.kind === 'irl'
+    ? zoneNote(invite.startsAt, zoneOfCity(me.city), { city: me.city })
+    : zoneNote(invite.startsAt, zoneOfCity(other.city), { name });
   const both = double ? t('checkIn.both', { a: name, b: theirFriend?.name ?? t('ticket.theirDuo') }) : name;
 
   const run = async (work: () => Promise<void>, ok: () => void) => {
@@ -122,6 +127,7 @@ export default function PlanScreen() {
             <View style={{ flex: 1, gap: 4 }}>
               <T v="title">{idea.title}</T>
               <Meta icon="clock" text={t('plan.whenFor', { when: whenLabel(invite.startsAt, now), minutes: invite.minutes })} />
+              {zoneLine ? <Meta icon="globe" text={zoneLine} /> : null}
               <Meta icon={idea.kind === 'irl' ? 'map-pin' : 'smartphone'} text={invite.place} />
             </View>
           </View>

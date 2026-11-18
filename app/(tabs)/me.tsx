@@ -16,7 +16,7 @@ import { Columns } from '@/components/ui/Columns';
 import { Screen } from '@/components/ui/Screen';
 import { Sheet } from '@/components/ui/Sheet';
 import { T } from '@/components/ui/T';
-import { IDEAS, KIND_LABEL, KIND_ORDER, VIBE_GROUPS } from '@/domain/ideas';
+import { IDEAS, KIND_LABEL, KIND_ORDER, VIBE_GROUPS, offeredIn } from '@/domain/ideas';
 import { maskEmail } from '@/domain/email';
 import { maskPhone } from '@/domain/phone';
 import { trustScore } from '@/domain/trust';
@@ -206,7 +206,7 @@ export default function Me() {
         <View key={kind} style={{ gap: space.sm, marginBottom: space.lg }}>
           <T v="label" c={color.textMute}>{KIND_LABEL[kind]}</T>
           <View style={styles.wrap}>
-            {IDEAS.filter((i) => i.kind === kind).map((i) => <Chip key={i.id} label={`${i.emoji} ${i.title}`} selected={me.ideaIds.includes(i.id)} onPress={() => toggleIdea(i.id)} />)}
+            {IDEAS.filter((i) => i.kind === kind && (offeredIn(i.id, me.country) || me.ideaIds.includes(i.id))).map((i) => <Chip key={i.id} label={`${i.emoji} ${i.title}`} selected={me.ideaIds.includes(i.id)} onPress={() => toggleIdea(i.id)} />)}
           </View>
         </View>
       ))}

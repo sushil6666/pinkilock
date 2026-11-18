@@ -905,4 +905,10 @@ export const en = {
     flagYes: 'Yes, it did not work',
     flagged: 'Thanks. We have noted it.',
   },
+
+  /** A plan's time on another clock, when it differs from this phone's. */
+  zones: {
+    forThem: '{time} {zone} for {name}',
+    inCity: '{time} {zone} in {city}',
+  },
 };
