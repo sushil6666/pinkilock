@@ -44,7 +44,7 @@ insert into public.profile_private (profile_id, contact_kind, contact_handle) va
 select t.ok((select string_agg(table_schema || '.' || table_name || ':' || privs, ' ' order by table_schema, table_name) from (
     select table_schema, table_name, string_agg(privilege_type, ',' order by privilege_type) as privs
     from information_schema.role_table_grants where grantee = 'authenticated' and table_schema <> 't' group by 1, 2) g)
-  = 'public.ask_lines:SELECT public.cities:SELECT public.countries:SELECT public.ideas:SELECT public.invites:SELECT public.passes:DELETE,INSERT,SELECT public.profile_cards:SELECT '
+  = 'public.ask_lines:SELECT public.cities:SELECT public.countries:SELECT public.duos:SELECT public.ideas:SELECT public.invites:SELECT public.passes:DELETE,INSERT,SELECT public.profile_cards:SELECT '
     'public.profile_private:SELECT public.trust_scores:SELECT public.venues:SELECT public.vibes:SELECT',
   'a signed-in user holds exactly these table rights and no others');
 select t.ok(not exists (select 1 from information_schema.role_table_grants where grantee = 'anon'),
@@ -52,8 +52,8 @@ select t.ok(not exists (select 1 from information_schema.role_table_grants where
 select t.ok((select string_agg(n.nspname || '.' || p.proname, ' ' order by n.nspname, p.proname)
     from pg_proc p join pg_namespace n on n.oid = p.pronamespace
     where n.nspname in ('public', 'private', 'analytics') and has_function_privilege('authenticated', p.oid, 'execute'))
-  = 'private.blocked_pair private.shares_invite private.vouch_summary public.bail public.block_user public.check_in public.create_vouch_link public.date_feedback public.decline_invite '
-    'public.delete_my_account public.discover public.export_my_data public.file_privacy_request public.give_consents public.log_client_error public.log_event public.my_blocks public.my_checkin_code public.my_consents public.my_line_review public.my_moderation public.offer_pinky public.rate_date public.register_push_token public.report_user '
+  = 'private.blocked_pair private.has_duo private.on_invite private.shares_invite private.vouch_summary public.bail public.block_user public.check_in public.create_duo_link public.create_vouch_link public.date_feedback public.decline_invite '
+    'public.delete_my_account public.discover public.duo_link_name public.export_my_data public.file_privacy_request public.give_consents public.join_duo public.leave_duo public.log_client_error public.log_event public.my_blocks public.my_checkin_code public.my_consents public.my_line_review public.my_moderation public.offer_pinky public.rate_date public.register_push_token public.report_user '
     'public.save_availability public.save_profile public.send_invite public.unblock_user public.unregister_push_token public.vouch public.vouch_link_name',
   'a signed-in user can call exactly these functions and no others');
 select t.ok(not exists (select 1 from pg_proc p join pg_namespace n on n.oid = p.pronamespace
@@ -300,3 +300,13 @@ select t.ok((select name from public.profiles where id = :'y') = 'Yami'
   and (select contact_handle from public.profile_private where profile_id = :'y') = '@yami.secret',
   'nothing X wrote at Y''s rows landed');
 select t.ok((select count(*) from public.invites where status = 'kept' and :'x' in (from_id, to_id)) = 2, 'X and Y have two kept promises between them');
+
+-- Duos and doubles (F3; the full walk is tests/db/doubles.sql): X cannot forge a duo, read one, or
+-- seat people on a double.
+set role authenticated;
+select t.as_user(:'x');
+select t.ok(t.fails(format($$insert into duos (person, partner) values (%L, %L)$$, :'x', :'y')), 'X cannot write a duo row');
+select t.ok((select count(*) from duos) = 0, 'X reads no duo');
+select t.ok(t.sqlstate(format($$select send_invite(%L, 'boba_run', now() + interval '2 hours', 'Bandra', '', null, true)$$, :'crowd1')) = 'PL092', 'X cannot ask a double without a duo (PL092)');
+select t.ok(t.fails(format($$update invites set from_friend = %L where from_id = %L$$, :'y', :'x')), 'X cannot seat anyone on a plan directly');
+reset role;

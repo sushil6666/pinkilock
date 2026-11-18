@@ -12,7 +12,7 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import { AppError, RESYNC_CODES, isErrorCode, newTrace } from '../../domain/errors';
 import { ideaOf } from '../../domain/ideas';
-import { CHECK_IN_CLOSES_AFTER, otherId } from '../../domain/invites';
+import { CHECK_IN_CLOSES_AFTER, isDouble, otherId, peopleOf } from '../../domain/invites';
 import type { Account, BlockedPerson, CodeKind, Invite, MyContact, Profile, Reveal } from '../../domain/types';
 import { log, quiet } from '../../lib/log';
 import type { Backend, BackendEvent, Changes, Notice, Snapshot } from '../backend';
@@ -27,6 +27,7 @@ function toInvite(r: Row): Invite {
     place: r.place, note: r.note, status: r.status, createdAt: ms(r.created_at)!, expiresAt: ms(r.expires_at)!,
     firstPinkyBy: r.first_pinky_by, lockedAt: ms(r.locked_at), checkIns: r.check_ins ?? [], flakedBy: r.flaked_by,
     declinedBy: r.declined_by, resolvedAt: ms(r.resolved_at),
+    fromFriendId: r.from_friend ?? null, toFriendId: r.to_friend ?? null, pinkies: r.pinkies ?? [],
   };
 }
 
@@ -40,6 +41,7 @@ function toProfile(r: Row): Profile {
     freeWindows: r.free_windows ?? [],
     vouchCount: r.vouch_count ?? 0,
     vouchPhrases: r.vouch_phrases ?? [],
+    hasDuo: !!r.has_duo,
   };
 }
 
@@ -130,6 +132,7 @@ export function createSupabaseBackend(url: string, anonKey: string, storage: Ses
 
   /** What changed for me, in words, when the other person (or the clock) moves an invite. */
   function noticeFor(prev: Invite | undefined, next: Invite): Notice | undefined {
+    if (isDouble(next)) return doubleNotice(prev, next);
     const name = names.get(otherId(next, meId)) ?? 'They';
     const idea = ideaOf(next.ideaId).title;
     if (!prev) {
@@ -154,6 +157,32 @@ export function createSupabaseBackend(url: string, anonKey: string, storage: Ses
     return undefined;
   }
 
+  /** The same news for a double, where four people move it. Names only, never what anyone chose. */
+  function doubleNotice(prev: Invite | undefined, next: Invite): Notice | undefined {
+    const nameOf = (id: string | null | undefined) => (id && names.get(id)) || 'Someone';
+    const idea = ideaOf(next.ideaId).title;
+    const id = next.id;
+    if (!prev) {
+      return next.status === 'sent' && next.fromId !== meId
+        ? { tone: 'pink', title: `${nameOf(next.fromId)} asked you on a double`, body: `${idea}. Lock it or pass.`, inviteId: id }
+        : undefined;
+    }
+    if (next.fromId === meId && (prev.pinkies?.length ?? 0) < 3 && (next.pinkies?.length ?? 0) >= 3 && next.status === 'half_locked') {
+      return { tone: 'pink', title: 'All three pinkies are out', body: `${idea}. Slide in to seal it.`, inviteId: id };
+    }
+    if (prev.status === next.status) return undefined;
+    if (next.status === 'locked' && next.fromId !== meId) return { tone: 'pink', title: 'The double is locked', body: `${idea} is a promise now. Be there.`, inviteId: id };
+    if (next.status === 'declined' && next.declinedBy !== meId) return { tone: 'flare', title: `${nameOf(next.declinedBy)} passed`, body: 'The double is off. No hard feelings.', inviteId: id };
+    if (next.status === 'kept') return { tone: 'volt', title: 'Promise kept', body: 'The reveal is open between the people who showed.', inviteId: id };
+    if (next.status === 'flaked') {
+      const bailed = (next.resolvedAt ?? 0) <= next.startsAt + CHECK_IN_CLOSES_AFTER;
+      if (bailed) return next.flakedBy === meId ? undefined : { tone: 'flare', title: `${nameOf(next.flakedBy)} bailed`, body: 'Their score takes the hit, not yours.', inviteId: id };
+      if (!next.checkIns.includes(meId)) return { tone: 'flare', title: 'Promise missed', body: `Check-in for ${idea} closed without you. That is on your record.`, inviteId: id };
+      return { tone: 'flare', title: 'The double fell through', body: 'Not enough people showed. Your score is fine.', inviteId: id };
+    }
+    return undefined;
+  }
+
   /** One invite row arrived (Realtime or a re-read). Tell the store, with a banner if it is news. */
   async function takeInvite(next: Invite) {
     const prev = known.get(next.id);
@@ -161,11 +190,11 @@ export function createSupabaseBackend(url: string, anonKey: string, storage: Ses
     // Mark it known before any await, so the same row arriving twice is only announced once.
     known.set(next.id, next);
     // Someone who joined after I booted: fetch their card before the invite needs their name.
-    const them = otherId(next, meId);
-    if (!names.has(them)) await refreshCards([them]);
+    const unknown = peopleOf(next).filter((id) => id !== meId && !names.has(id));
+    if (unknown.length) await refreshCards(unknown);
     const notice = noticeFor(prev, next);
     listeners.forEach((l) => l({ changes: { invites: [next] }, notice }));
-    if (next.status === 'kept' || next.status === 'flaked') refreshCards([next.fromId, next.toId]);
+    if (next.status === 'kept' || next.status === 'flaked') refreshCards(peopleOf(next));
   }
 
   /** Re-read what I can see: catches whatever happened while the socket was down or the app asleep. */
@@ -173,6 +202,7 @@ export function createSupabaseBackend(url: string, anonKey: string, storage: Ses
     const [cards, invites] = await Promise.all([
       db.from('profile_cards').select('*'),
       db.from('invites').select('*').order('created_at', { ascending: false }),
+      readDuo().then((duoId) => listeners.forEach((l) => l({ changes: { duoId } }))),
     ]);
     if (cards.data) announceCards(cards.data.map(toProfile));
     for (const row of invites.data ?? []) await takeInvite(toInvite(row));
@@ -197,10 +227,16 @@ export function createSupabaseBackend(url: string, anonKey: string, storage: Ses
     }
   }
 
+  /** My duo partner, from my own row (RLS returns no one else's). */
+  async function readDuo(): Promise<string | null> {
+    const res = await db.from('duos').select('partner').maybeSingle();
+    return (check(res) as Row | null)?.partner ?? null;
+  }
+
   /** Drop people and invites I can no longer see, and tell the store. */
   function forget(profiles: string[], invites: string[]): Changes {
     const dropInvites = new Set(invites);
-    for (const [id, inv] of known) if (profiles.includes(otherId(inv, meId))) dropInvites.add(id);
+    for (const [id, inv] of known) if (peopleOf(inv).some((p) => p !== meId && profiles.includes(p))) dropInvites.add(id);
     dropInvites.forEach((id) => known.delete(id));
     profiles.forEach((id) => names.delete(id));
     const changes: Changes = { removed: { profiles, invites: [...dropInvites] } };
@@ -241,6 +277,15 @@ export function createSupabaseBackend(url: string, anonKey: string, storage: Ses
         if (payload.eventType !== 'DELETE') takeInvite(toInvite(payload.new)).catch(quiet('realtime.invite'));
         // Deletes carry only the id (and reach every subscriber): an account that went away.
         else if ((payload.old as Row)?.id && known.has((payload.old as Row).id)) forget([], [(payload.old as Row).id]);
+      })
+      // My duo row: a friend joined, or one of us left. Re-read rather than trust the payload.
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'duos' }, () => {
+        readDuo()
+          .then(async (duoId) => {
+            if (duoId && !names.has(duoId)) await refreshCards([duoId]);
+            listeners.forEach((l) => l({ changes: { duoId } }));
+          })
+          .catch(quiet('realtime.duo'));
       })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'trust_scores' }, (payload) => {
         const id = (payload.new as Row)?.profile_id;
@@ -288,11 +333,12 @@ export function createSupabaseBackend(url: string, anonKey: string, storage: Ses
   async function snapshot(): Promise<Snapshot> {
     const id = await uid();
     // My own card and everyone I share an invite with (all RLS returns), plus the first page of Discover.
-    const [cards, invites, passes, priv] = await Promise.all([
+    const [cards, invites, passes, priv, duoId] = await Promise.all([
       db.from('profile_cards').select('*'),
       db.from('invites').select('*').order('created_at', { ascending: false }),
       db.from('passes').select('passed_id'),
       db.from('profile_private').select('contact_kind, contact_handle').eq('profile_id', id).maybeSingle(),
+      readDuo(),
     ]);
     const all = check(cards).map(toProfile);
     if (all.some((p) => p.id === id)) {
@@ -309,7 +355,7 @@ export function createSupabaseBackend(url: string, anonKey: string, storage: Ses
       listen();
       rpc('log_event', { p_type: 'app_open' }).catch(quiet('log_event'));
     }
-    return { me, myContact, profiles: all.filter((x) => x.id !== id), invites: list, passedIds: check(passes).map((r: Row) => r.passed_id) };
+    return { me, myContact, profiles: all.filter((x) => x.id !== id), invites: list, passedIds: check(passes).map((r: Row) => r.passed_id), duoId };
   }
 
   async function rpcInvite(fn: string, args: Row): Promise<Changes> {
@@ -433,8 +479,32 @@ export function createSupabaseBackend(url: string, anonKey: string, storage: Ses
       return page.length ? { profiles: page } : {};
     },
 
+    async createDuoLink() {
+      await uid();
+      return rpc<string>('create_duo_link');
+    },
+
+    async duoLinkName(token) {
+      await uid();
+      return (await rpc<string | null>('duo_link_name', { p_token: token })) ?? null;
+    },
+
+    async joinDuo(token) {
+      await uid();
+      const duoId = await rpc<string>('join_duo', { p_token: token });
+      const card = check(await db.from('profile_cards').select('*').eq('id', duoId)).map(toProfile);
+      card.forEach((p) => names.set(p.id, p.name));
+      return { duoId, profiles: card };
+    },
+
+    async leaveDuo() {
+      await uid();
+      await rpc('leave_duo');
+      return { duoId: null };
+    },
+
     sendInvite: (input) =>
-      rpcInvite('send_invite', { p_to: input.toId, p_idea: input.ideaId, p_starts_at: new Date(input.startsAt).toISOString(), p_place: input.venueId ? '' : input.place, p_note: input.note, p_venue: input.venueId ?? null }),
+      rpcInvite('send_invite', { p_to: input.toId, p_idea: input.ideaId, p_starts_at: new Date(input.startsAt).toISOString(), p_place: input.venueId ? '' : input.place, p_note: input.note, p_venue: input.venueId ?? null, p_double: !!input.double }),
     offerPinky: (inviteId) => rpcInvite('offer_pinky', { p_invite: inviteId }),
     declineInvite: (inviteId) => rpcInvite('decline_invite', { p_invite: inviteId }),
     async myCheckInCode(inviteId) {
@@ -450,10 +520,10 @@ export function createSupabaseBackend(url: string, anonKey: string, storage: Ses
     },
     bail: (inviteId) => rpcInvite('bail', { p_invite: inviteId }),
 
-    async getReveal(inviteId): Promise<Reveal> {
+    async getReveal(inviteId, profileId): Promise<Reveal> {
       const id = await uid();
       const invite = known.get(inviteId) ?? toInvite(check(await db.from('invites').select('*').eq('id', inviteId).single()) as Row);
-      const them = otherId(invite, id);
+      const them = profileId ?? otherId(invite, id);
       // No status check here on purpose: the private_after_kept policy returns no row until it is kept.
       const row = check(await db.from('profile_private').select('*').eq('profile_id', them).maybeSingle()) as Row | null;
       if (!row) throw new AppError('PC003');
@@ -488,7 +558,8 @@ export function createSupabaseBackend(url: string, anonKey: string, storage: Ses
     async block(profileId) {
       await uid();
       await rpc('block_user', { p_profile: profileId });
-      return forget([profileId], []);
+      // A block between duo partners ends the duo on the server; read whether mine is still there.
+      return { ...forget([profileId], []), duoId: await readDuo() };
     },
 
     async unblock(profileId) {
@@ -497,7 +568,7 @@ export function createSupabaseBackend(url: string, anonKey: string, storage: Ses
       // Unless they blocked me too, they come back, with whatever we had before.
       const [card, invites] = await Promise.all([
         db.from('profile_cards').select('*').eq('id', profileId),
-        db.from('invites').select('*').or(`from_id.eq.${safeId(profileId)},to_id.eq.${safeId(profileId)}`),
+        db.from('invites').select('*').or(['from_id', 'to_id', 'from_friend', 'to_friend'].map((c) => `${c}.eq.${safeId(profileId)}`).join(',')),
       ]);
       const profiles = check(card).map(toProfile);
       profiles.forEach((p) => names.set(p.id, p.name));
@@ -515,7 +586,7 @@ export function createSupabaseBackend(url: string, anonKey: string, storage: Ses
     async report(input) {
       await uid();
       await rpc('report_user', { p_profile: input.profileId, p_reason: input.reason, p_detail: input.detail, p_invite: input.inviteId ?? null });
-      return forget([input.profileId], []);
+      return { ...forget([input.profileId], []), duoId: await readDuo() };
     },
 
     async exportMyData() {
