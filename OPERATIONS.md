@@ -323,6 +323,10 @@ Open the failing run.
 - **Authentication failed:** `ANALYTICS_DB_PASSWORD` and the role's password disagree. Rerun
   **Supabase deploy**.
 - **Could not connect:** check `SUPABASE_POOLER_HOST` against the deploy run summary.
+- **Permission denied for a table, view or function:** a migration gave the worker something to read
+  that `pinkilock_analytics` has no right to. Fix it in a new migration, never by a grant in the
+  dashboard. `tests/db` runs the pipeline as that role, so the fix can be checked there first.
+  A view that calls a function needs the right to call it, so read the table instead (issue #51).
 
 The app keeps showing the last good scores in the meantime, so nothing breaks for users.
 

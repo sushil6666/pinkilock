@@ -621,7 +621,7 @@ a query filter. None of this is a defence on its own: every rule that matters is
   (roles, their default privileges, `auth.uid()`, a pg_cron stand-in), runs every file in
   `supabase/migrations`, walks three users through the state machine as the `authenticated` role
   (RLS, the functions, the reveal, the cron schedule, the analytics role's rights), runs the DuckDB
-  pipeline and checks what it wrote, then checks the push outbox: who is told what, that nothing
+  pipeline logged in as `pinkilock_analytics` (with the worker's rights and no more) and checks what it wrote, then checks the push outbox: who is told what, that nothing
   private is in it, and that clients cannot touch it.
   Last, the attacker suite (`attacker.sql`): one signed-in person with a modified app tries the
   tables and functions directly. It pins exactly which tables and functions the API roles hold,
