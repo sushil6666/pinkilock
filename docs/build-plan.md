@@ -265,7 +265,7 @@ workflow once `ANTHROPIC_API_KEY` exists. Reports gain `shared_contact`; `script
 moderation tool (also WP7's "moderation view"), with strikes and suspension. G18 closes whenever
 review is on; the attacker suite keeps it marked because the default is off. **Left:** a person's
 appeal (WP8, since built). **Built 2026-11-18:** the area is picked from the city's list, pronouns from a
-list, and onboarding asks for the city (migration `20261118000003`, decision D071).
+list, and onboarding asks for the city (migration `20261118000003`, decision D073).
 
 ### WP2. Make accounts cost something (G4, G6)
 
@@ -530,12 +530,12 @@ deletion waits for the lawyer's number.
   word, and what is playful in one place is offensive in another.
 - Emergency numbers and the safety page (WP8) are per country.
 
-**Status, 2026-11-18: first part built** (decision D071). Onboarding asks for country and city from
+**Status, 2026-11-18: first part built** (decision D073). Onboarding asks for country and city from
 the open list, and the area is picked from that city's list. Contact kinds are a catalogue by region
 (Telegram and Signal everywhere; LINE, KakaoTalk and WeChat where they are used). Phone sign-in has a
 country picker and assumes no country.
 
-**Status, 2026-11-18: strings built** (decision D072). Every word on screen is in `src/i18n/en.ts`
+**Status, 2026-11-18: strings built** (decision D074). Every word on screen is in `src/i18n/en.ts`
 behind `t()`, with plurals; error messages are shown by code in the phone's language; dates,
 times and numbers follow the phone's locale through `Intl`, and distance shows in miles where the
 locale uses them. Right-to-left is wired (layout direction on a phone, `dir` and `lang` in a

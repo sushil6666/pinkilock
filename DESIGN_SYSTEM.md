@@ -36,19 +36,20 @@ alone: every status also has a word or an icon.
 
 ## 2. Type
 
-Three families, loaded with `expo-font`:
+Two families, loaded with `expo-font`:
 
-- **Sora** ExtraBold (800) for display: sentence case (never uppercase), tight leading, negative
-  letter spacing. Round and loud.
-- **Plus Jakarta Sans** (400, 500, 700) for everything else. Numbers use tabular figures.
+- **Inter Tight** ExtraBold (800) for display: sentence case (never uppercase), tight leading,
+  negative letter spacing. Crisp, compact and loud. Its ExtraBold Italic is for the wordmark only.
+- **Inter Tight** (400, 500, 700) for everything else, so one family carries the whole app. Numbers
+  use tabular figures.
 - **Caveat Brush** for a hand: a person's own words (the note on an ask) and the odd scribble on the
   first screen. Never for a control, a rule or a number someone has to read exactly.
 
 | Style | Family | Size / line | Use |
 | --- | --- | --- | --- |
-| `mega` | Sora 800 | 54 / 58, -1.5 tracking | Countdown digits, Kept., the first screen's promise |
-| `display` | Sora 800 | 38 / 42, -1 tracking | Screen titles, names on cards |
-| `title` | Sora 800 | 25 / 30, -0.5 tracking | Card titles |
+| `mega` | Inter Tight 800 | 54 / 58, -1.5 tracking | Countdown digits, Kept., the first screen's promise |
+| `display` | Inter Tight 800 | 38 / 42, -1 tracking | Screen titles, names on cards |
+| `title` | Inter Tight 800 | 25 / 30, -0.5 tracking | Card titles |
 | `heading` | Plus Jakarta Sans 700 | 20 / 26 | Section heads |
 | `body` | Plus Jakarta Sans 400 | 16 / 23 | Body |
 | `bodyBold` | Plus Jakarta Sans 700 | 16 / 23 | Emphasis, buttons |
@@ -99,7 +100,7 @@ Font scaling is allowed up to 1.3x (`maxFontSizeMultiplier`) so layouts hold on 
 - **Logo**: the two pinkies locked (pink theirs, gold mine, the app icon's geometry), turned 45
   degrees so they rise to the right and standing on a 14-unit block of `pinkDeep` and `goldDeep`
   (3D depth straight down the screen) with a `shine` along each finger, beside
-  "pinkilock" in Sora, slanted 12 degrees like an italic, with no full stop (`src/components/Logo.tsx`). It sits top centre on
+  "pinkilock" in Inter Tight ExtraBold Italic, with no full stop (`src/components/Logo.tsx`). It sits top centre on
   every screen: `Screen` draws it in the header, with the back control left and the screen's title
   as a small label under it. A page with its own top bar passes `logo={false}`. Read out as
   "Pinkilock".

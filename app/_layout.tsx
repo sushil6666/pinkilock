@@ -3,8 +3,7 @@
  * and the one-time boot of the backend. Screens below can assume all of that is in place.
  */
 import { CaveatBrush_400Regular } from '@expo-google-fonts/caveat-brush';
-import { PlusJakartaSans_400Regular, PlusJakartaSans_500Medium, PlusJakartaSans_700Bold } from '@expo-google-fonts/plus-jakarta-sans';
-import { Sora_800ExtraBold } from '@expo-google-fonts/sora';
+import { InterTight_400Regular, InterTight_500Medium, InterTight_700Bold, InterTight_800ExtraBold, InterTight_800ExtraBold_Italic } from '@expo-google-fonts/inter-tight';
 import { useFonts } from 'expo-font';
 import * as NavigationBar from 'expo-navigation-bar';
 import { Stack, router, usePathname, useSegments, type ErrorBoundaryProps } from 'expo-router';
@@ -59,7 +58,7 @@ export function ErrorBoundary({ error, retry }: ErrorBoundaryProps) {
 }
 
 export default function RootLayout() {
-  const [fontsLoaded, fontError] = useFonts({ Sora_800ExtraBold, CaveatBrush_400Regular, PlusJakartaSans_400Regular, PlusJakartaSans_500Medium, PlusJakartaSans_700Bold });
+  const [fontsLoaded, fontError] = useFonts({ InterTight_800ExtraBold, InterTight_800ExtraBold_Italic, CaveatBrush_400Regular, InterTight_400Regular, InterTight_500Medium, InterTight_700Bold });
   const ready = useStore((s) => s.ready);
   const boot = useStore((s) => s.boot);
   const onboarded = useStore((s) => !!s.me);
