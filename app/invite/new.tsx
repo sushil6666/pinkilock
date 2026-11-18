@@ -53,7 +53,7 @@ export default function NewInvite() {
 
   if (!person || !me) {
     return (
-      <Screen back="close" scroll={false}>
+      <Screen desk="form" back="close" scroll={false}>
         <View style={{ flex: 1, justifyContent: 'center' }}><T v="display">Nobody{'\n'}to ask.</T></View>
       </Screen>
     );
@@ -96,6 +96,7 @@ export default function NewInvite() {
 
   return (
     <Screen
+      desk="form"
       back="close"
       title="Vibe check"
       footer={<>{hint}<HoldButton label={asDouble ? `Hold to ask ${person.name} + duo` : `Hold to ask ${person.name}`} onComplete={submit} disabled={!!missing || full} busy={busy} /></>}

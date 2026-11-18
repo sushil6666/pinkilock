@@ -12,6 +12,8 @@ import { Spark } from '@/components/Spark';
 import { TrustBadge } from '@/components/TrustBadge';
 import { Button } from '@/components/ui/Button';
 import { Tag } from '@/components/ui/Chip';
+import { Columns } from '@/components/ui/Columns';
+import { useDesktop } from '@/lib/desktop';
 import { Screen } from '@/components/ui/Screen';
 import { T } from '@/components/ui/T';
 import { ideaOf } from '@/domain/ideas';
@@ -49,12 +51,13 @@ export default function Discover() {
     if (low && me) refill().catch(quiet('discover.refill'));
   }, [low, me, refill]);
 
+  const desktop = useDesktop();
   if (!me) return <Redirect href="/onboarding" />;
   const person = queue[0];
 
   if (!person) {
     return (
-      <Screen inTabs scroll={false}>
+      <Screen inTabs scroll={false} desk="form">
         <View style={{ flex: 1, justifyContent: 'center', gap: space.lg }}>
           <T v="label" c={color.pink}>Discover</T>
           <T v="display">That's{'\n'}everyone{'\n'}for now.</T>
@@ -75,8 +78,9 @@ export default function Discover() {
         <T v="label" c={color.textMute}>{queue.length} nearby</T>
       </View>
 
-      <Animated.View key={person.id} entering={FadeIn.duration(260)} style={{ gap: space.lg }}>
-        <Pressable accessibilityRole="button" accessibilityLabel={`Open ${person.name}'s profile`} onPress={() => router.push(`/profile/${person.id}`)} style={styles.card}>
+      <Animated.View key={person.id} entering={FadeIn.duration(260)}>
+        <Columns left={<>
+        <Pressable accessibilityRole="button" accessibilityLabel={`Open ${person.name}'s profile`} onPress={() => router.push(`/profile/${person.id}`)} style={[styles.card, desktop && { height: 560 }]}>
           <Portrait name={person.name} palette={person.palette} glyph={person.glyph} fill style={StyleSheet.absoluteFill} />
           <View style={styles.cardBody}>
             <TrustBadge person={person} />
@@ -101,7 +105,7 @@ export default function Discover() {
         </Pressable>
 
         {person.tagline ? <T v="heading">{person.tagline}</T> : null}
-
+        </>} right={<>
         <Spark me={me} person={person} />
         <Vouches person={person} />
 
@@ -139,6 +143,7 @@ export default function Discover() {
           <Button kind="ghost" icon="x" label="Pass" onPress={() => pass(person.id)} style={{ flex: 1 }} />
           <Button icon="send" label="Vibe check" onPress={() => router.push({ pathname: '/invite/new', params: { to: person.id } })} style={{ flex: 2 }} />
         </View>
+        </>} />
       </Animated.View>
     </Screen>
   );

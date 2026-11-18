@@ -40,10 +40,10 @@ export default function JoinDuo() {
     setBusy(false);
   };
 
-  if (name === undefined) return <Screen back="close" scroll={false}><View /></Screen>;
+  if (name === undefined) return <Screen desk="form" back="close" scroll={false}><View /></Screen>;
   if (done) {
     return (
-      <Screen back="close">
+      <Screen desk="form" back="close">
         <View style={{ gap: space.lg }}>
           <T v="display">{`You and${'\n'}${name}.`}</T>
           <T c={color.textDim}>You are a duo now. Either of you can ask someone with a duo out on a double, and you both come.</T>
@@ -54,7 +54,7 @@ export default function JoinDuo() {
   }
   if (name === null) {
     return (
-      <Screen back="close">
+      <Screen desk="form" back="close">
         <View style={{ gap: space.lg }}>
           <T v="display">Link{'\n'}expired.</T>
           <ErrorText text={error || 'This duo link cannot be joined. Ask your friend for a new one.'} tone={color.textDim} />
@@ -64,7 +64,7 @@ export default function JoinDuo() {
     );
   }
   return (
-    <Screen back="close" footer={<><ErrorText text={error} /><Button icon="users" label={`Join ${name}'s duo`} onPress={join} disabled={!!duo} busy={busy} /></>}>
+    <Screen desk="form" back="close" footer={<><ErrorText text={error} /><Button icon="users" label={`Join ${name}'s duo`} onPress={join} disabled={!!duo} busy={busy} /></>}>
       <View style={{ gap: space.xl }}>
         <T v="display">{`${name} wants${'\n'}you as a duo.`}</T>
         <T c={color.textDim}>

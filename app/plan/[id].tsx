@@ -17,6 +17,7 @@ import { TrustBadge } from '@/components/TrustBadge';
 import { Button } from '@/components/ui/Button';
 import { Tag } from '@/components/ui/Chip';
 import { HoldButton } from '@/components/ui/HoldButton';
+import { Columns } from '@/components/ui/Columns';
 import { Screen } from '@/components/ui/Screen';
 import { Sheet } from '@/components/ui/Sheet';
 import { T } from '@/components/ui/T';
@@ -98,7 +99,8 @@ export default function PlanScreen() {
 
   return (
     <Screen back="back" title={kept && !myFlake ? 'Promise kept' : flaked || myFlake ? 'Promise broken' : 'Locked plan'} footer={footer}>
-      <Animated.View entering={FadeInDown.duration(360)} style={{ gap: space.xl }}>
+      <Animated.View entering={FadeInDown.duration(360)}>
+        <Columns gap={space.xl} left={<>
         <View style={{ gap: space.sm }}>
           <T v="label" c={kept && !myFlake ? color.gold : flaked || myFlake ? color.flare : color.pink}>
             {myFlake ? (kept || !invite.flakedBy ? 'You missed it' : 'You flaked')
@@ -131,6 +133,7 @@ export default function PlanScreen() {
           </Pressable>}
         </View>
         {double ? <DoubleParty invite={invite} meId={me.id} show={locked ? 'checkins' : 'none'} /> : null}
+        </>} right={<>
 
         {locked && (
           <View style={{ gap: space.md }}>
@@ -208,6 +211,7 @@ export default function PlanScreen() {
             )}
           </View>
         )}
+        </>} />
       </Animated.View>
 
       <Sheet
