@@ -23,16 +23,29 @@ const sql = (q: string) => execFileSync('psql', [DB, '-v', 'ON_ERROR_STOP=1', '-
 
 interface Push { to: string; title: string; body: string; data: { inviteId: string; kind: string } }
 const received: Push[] = [];
+/** Ticket ids the function asked receipts for. */
+const receiptAsks: string[] = [];
+let ticketNo = 0;
 const waiters = new Set<() => void>();
 const expo = http.createServer((req, res) => {
   let raw = '';
   req.on('data', (c) => (raw += c));
   req.on('end', () => {
+    // Receipts: a ticket for a "gone" token plays a phone that accepted the push and then turned out
+    // to be uninstalled; every other receipt is ok.
+    if (req.url?.endsWith('/getReceipts')) {
+      const { ids } = JSON.parse(raw) as { ids: string[] };
+      receiptAsks.push(...ids);
+      const data = Object.fromEntries(ids.map((id) => [id, id.startsWith('gone') ? { status: 'error', message: 'gone', details: { error: 'DeviceNotRegistered' } } : { status: 'ok' }]));
+      res.writeHead(200, { 'content-type': 'application/json' }).end(JSON.stringify({ data }));
+      return;
+    }
     const messages = JSON.parse(raw) as Push[];
     received.push(...messages);
     waiters.forEach((w) => w());
     // A token with "dead" in it plays an uninstalled app.
-    const data = messages.map((m) => (m.to.includes('dead') ? { status: 'error', message: 'not registered', details: { error: 'DeviceNotRegistered' } } : { status: 'ok', id: 'ticket' }));
+    const data = messages.map((m) => (m.to.includes('dead') ? { status: 'error', message: 'not registered', details: { error: 'DeviceNotRegistered' } }
+      : { status: 'ok', id: `${m.to.includes('gone') ? 'gone' : 'ticket'}-${++ticketNo}` }));
     res.writeHead(200, { 'content-type': 'application/json' }).end(JSON.stringify({ data }));
   });
 });
@@ -62,6 +75,7 @@ const b = person('TestBela');
 const tokenA = `ExponentPushToken[a-${stamp}]`;
 const tokenB = `ExponentPushToken[b-${stamp}]`;
 const deadB = `ExponentPushToken[dead-${stamp}]`;
+const goneB = `ExponentPushToken[gone-${stamp}]`;
 const is = (kind: string, to: string, inviteId: string) => (p: Push) => p.data.kind === kind && p.to === to && p.data.inviteId === inviteId;
 
 before(async () => {
@@ -89,6 +103,7 @@ test('devices register through the backend, and a new ask reaches only the perso
   await a.backend.registerPushToken(tokenA, 'android');
   await b.backend.registerPushToken(tokenB, 'ios');
   await b.backend.registerPushToken(deadB, 'android');
+  await b.backend.registerPushToken(goneB, 'android');
 
   const inv = one(await a.backend.sendInvite({ toId: b.id, ideaId: 'boba_run', startsAt: Date.now() + 5 * MIN, place: 'Linking Road', note: 'hard stop, pinky promise.' }));
   const ask = await pushed('the new ask', is('new_ask', tokenB, inv.id));
@@ -123,6 +138,20 @@ test('devices register through the backend, and a new ask reaches only the perso
   assert.equal((await pushed('the bail', is('bailed', tokenB, inv.id))).title, `${a.name} bailed`);
   await new Promise((r) => setTimeout(r, 1500));
   assert.ok(!received.some((p) => p.to === tokenA && p.data.kind === 'bailed'), 'the one who bailed is not told about their own bail');
+});
+
+test('receipts: a phone that took a push and then turned out to be gone loses its token', async () => {
+  await pushed('a push to the gone device', (p) => p.to === goneB);
+  // Receipts are asked for 15 minutes after a send; make the tickets that old, then wait for a sweep.
+  sql(`update public.push_tickets set sent_at = now() - interval '16 minutes' where token in ('${goneB}', '${tokenB}')`);
+  // What the 15-minute receipts job does when tickets are due.
+  sql('select public.kick_push()');
+  for (let i = 0; i < SWEEP_WAIT / 500 && sql(`select count(*) from public.push_tokens where token = '${goneB}'`) !== '0'; i++) await new Promise((r) => setTimeout(r, 500));
+  assert.equal(sql(`select count(*) from public.push_tokens where token = '${goneB}'`), '0', 'the gone token is deleted');
+  assert.ok(receiptAsks.some((id) => id.startsWith('gone')), 'the function asked for the receipt');
+  assert.ok(Number(sql(`select count(*) from public.notifications where recipient_id = '${b.id}' and receipt_error = 'DeviceNotRegistered'`)) >= 1, 'the receipt error is on the notification');
+  assert.equal(sql(`select count(*) from public.push_tickets where token in ('${goneB}', '${tokenB}') and sent_at < now() - interval '15 minutes'`), '0', 'answered tickets are cleared');
+  assert.equal(sql(`select count(*) from public.push_tokens where token = '${tokenB}'`), '1', "B's working phone keeps its token");
 });
 
 test('nothing private ever left the database', () => {

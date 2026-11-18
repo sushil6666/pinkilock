@@ -88,7 +88,7 @@ export default function Discover() {
             <T v="display" numberOfLines={1} adjustsFontSizeToFit>{t('profile.nameAge', { name: person.name, age: person.age })}</T>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
               <Feather name="map-pin" size={14} color={color.textDim} />
-              <T v="caption" c={color.textDim}>{[person.area, person.distanceKm > 0 ? fmtDistance(person.distanceKm) : '', person.pronouns].filter(Boolean).join('  /  ')}</T>
+              <T v="caption" c={color.textDim}>{[person.area, person.distanceKm > 0 ? fmtDistance(person.distanceKm, me.country) : '', person.pronouns].filter(Boolean).join('  /  ')}</T>
             </View>
             {person.hasDuo ? (
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>

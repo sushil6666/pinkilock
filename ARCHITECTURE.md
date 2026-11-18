@@ -167,7 +167,7 @@ Full DDL is `supabase/migrations`. Tables:
 | `ask_lines` | The lines an ask can carry (the same list as `ASK_LINES` in `src/domain/ideas.ts`) | Read only |
 | `venues` | Suggested public places to meet (the same list as `VENUES` in `src/domain/venues.ts`); a venue is switched off, never deleted | Read only |
 | `invites` | The whole product: who, what, when, status, `first_pinky_by`, `check_ins`, `flaked_by` | Read: the two people on it. **No direct writes at all** |
-| `passes` | People I passed on in Discover | Only me |
+| `passes` | People I passed on in Discover; written only through `pass_profile` and `restore_passes` | Only me (read) |
 | `events` | Append-only behaviour log. Rows are never deleted; a deleted account's rows lose their actor | No client access. Written by the functions, read by analytics |
 | `trust_scores` | One row per person, written by the DuckDB worker | Read: any signed-in user |
 | `profile_cards` (view) | `profiles` joined to `trust_scores` | What the app selects for a card |
@@ -347,8 +347,12 @@ promise function / sweep -> invites row changes -> trigger invites_notify -> not
   push token, hand it to `backend.registerPushToken`, and on a tap open the invite or the plan.
   While the app is in the foreground the system banner is suppressed, because the in-app banner
   (driven by Realtime) already says it.
-- **Not built:** Expo push receipts are not polled, so a delivery that Expo accepts and APNs or
-  FCM later rejects is not noticed until that device's next send.
+- **Receipts.** Expo's first answer only says it accepted a push. The function keeps each ticket
+  (`push_tickets`) and, from 15 minutes on, asks Expo for its receipt: a device that turned out
+  to be gone loses its token, any other failure is written on the notification
+  (`receipt_error`), and answered tickets are dropped (unanswered ones after a day, as Expo keeps
+  receipts that long). A cron job wakes the function every 15 minutes while any are due, so a
+  quiet hour does not let them lapse; a receipts failure never stops sending.
 
 ## 7. Analytics and the trust engine (DuckDB)
 
@@ -461,6 +465,13 @@ double reads the plan and the four cards (`private.on_invite`, `private.shares_i
 between any two of them ends it and hides it from those two. The reveal policy opens a contact only
 between two people on opposite sides who both checked in. Round two stays a two-person thing.
 
+### Add to calendar
+
+A locked plan offers "Add to calendar": `src/domain/calendar.ts` writes an `.ics` file (the idea, a
+first name, the place, the time in UTC, a reminder; never a contact handle) and
+`src/lib/calendarFile.ts` hands it over, as a download in a browser or through the share sheet on
+a phone. Pinkilock sends it to no calendar service; where it goes is the person's choice.
+
 ### Share my date and the after-date check
 
 A locked plan offers "Share my date" (who, what, where, when, through the phone's share sheet; no
@@ -478,7 +489,9 @@ keeps the English and the app shows the phone's language. Dates, times and numbe
 phone's locale through `Intl`, plan times are shown in the viewer's own time zone (when another
 clock reads differently, the plan names it too: the other person's on a call, the place's on a
 date in person, from the city's `time_zone`, never from where a phone seems to be), and distance
-is in miles where the locale's country uses them (US, UK, Liberia, Myanmar). The language comes
+is in miles where the
+viewer's profile country uses them (US, UK, Liberia, Myanmar), or the phone's region before
+there is a profile. The language comes
 from the phone, or `?lang=` in a browser. On a phone a right-to-left language flips the layout
 from the next start; in a browser `<html>` gets `lang` and `dir`. Two pseudo-languages exist only
 for testing: `en-XA` (accented and a third longer) shows any text that skipped `t()` and any label

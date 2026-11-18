@@ -191,9 +191,13 @@ export function region(): string {
     return (formats.split('-').find((p, i) => i > 0 && /^[A-Za-z]{2}$/.test(p)) ?? '').toUpperCase();
   }
 }
-/** "3 km" or "2 mi", rounded the way a person would say it. */
-export function fmtDistance(km: number): string {
-  const miles = MILES.includes(region());
+/**
+ * "3 km" or "2 mi", rounded the way a person would say it. Units follow the country on the
+ * viewer's profile when there is one (an Indian phone set to US English still reads km), and the
+ * phone's region otherwise.
+ */
+export function fmtDistance(km: number, country?: string): string {
+  const miles = MILES.includes((country || region()).toUpperCase());
   const n = miles ? km * 0.621371 : km;
   const shown = n < 10 ? Math.round(n * 10) / 10 : Math.round(n);
   return t(miles ? 'common.miles' : 'common.km', { n: fmtNumber(shown) });

@@ -9,6 +9,10 @@
  * recipient can already read (supabase/migrations/..._push.sql); this function adds only the
  * invite id and the kind, so that a tap can open the right screen.
  *
+ * It also asks Expo for the receipts of what it sent at least 15 minutes ago (push_tickets): a
+ * device that turned out to be gone loses its token, and any other failure is written on the
+ * notification as receipt_error.
+ *
  * Secrets (supabase secrets set ...):
  *   PUSH_HOOK_SECRET    shared with Postgres (Vault: push_function_secret). Required.
  *   EXPO_ACCESS_TOKEN   only if "enhanced push security" is on for the Expo account.
@@ -20,6 +24,13 @@
  */
 
 const EXPO_PUSH_URL = Deno.env.get('EXPO_PUSH_URL') ?? 'https://exp.host/--/api/v2/push/send';
+/** The receipts endpoint sits beside the send one, here and in a test's stand-in. */
+const EXPO_RECEIPTS_URL = /\/send$/.test(EXPO_PUSH_URL)
+  ? EXPO_PUSH_URL.replace(/\/send$/, '/getReceipts')
+  : `${EXPO_PUSH_URL.replace(/\/$/, '')}/getReceipts`;
+/** Receipts are ready about 15 minutes after a send, and Expo keeps them for a day. */
+const RECEIPT_AFTER_MS = 15 * 60_000;
+const RECEIPT_KEPT_MS = 24 * 60 * 60_000;
 const HOOK_SECRET = Deno.env.get('PUSH_HOOK_SECRET') ?? '';
 const EXPO_ACCESS_TOKEN = Deno.env.get('EXPO_ACCESS_TOKEN');
 const REST = `${Deno.env.get('SUPABASE_URL')}/rest/v1`;
@@ -28,8 +39,9 @@ const SERVICE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
 const BATCH = 100;
 
 interface Row { id: number; recipient_id: string; invite_id: string; kind: string; title: string; body: string; trace: string | null }
-interface Ticket { status: 'ok' | 'error'; message?: string; details?: { error?: string } }
-interface Totals { claimed: number; sent: number; no_device: number; failed: number; tokens_removed: number }
+interface Ticket { status: 'ok' | 'error'; id?: string; message?: string; details?: { error?: string } }
+interface Receipt { status: 'ok' | 'error'; message?: string; details?: { error?: string } }
+interface Totals { claimed: number; sent: number; no_device: number; failed: number; tokens_removed: number; receipts: number; receipt_errors: number }
 
 const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } });
 
@@ -95,13 +107,17 @@ async function deliver(rows: Row[], totals: Totals): Promise<void> {
   const delivered = new Set<number>();
   const errors = new Map<number, string>();
   const dead: string[] = [];
+  const kept: { id: string; notification_id: number; token: string }[] = [];
   for (let i = 0; i < sends.length; i += BATCH) {
     const chunk = sends.slice(i, i + BATCH);
     try {
       const tickets = await sendToExpo(chunk);
       chunk.forEach(({ row, token }, k) => {
         const ticket = tickets[k];
-        if (ticket?.status === 'ok') return void delivered.add(row.id);
+        if (ticket?.status === 'ok') {
+          if (ticket.id) kept.push({ id: ticket.id, notification_id: row.id, token });
+          return void delivered.add(row.id);
+        }
         const why = ticket?.details?.error ?? ticket?.message ?? 'no ticket';
         // The app was uninstalled or the token rotated: stop sending to it.
         if (why === 'DeviceNotRegistered') dead.push(token);
@@ -139,6 +155,48 @@ async function deliver(rows: Row[], totals: Totals): Promise<void> {
     await rest('DELETE', `push_tokens?token=${inList(dead)}`);
     totals.tokens_removed += dead.length;
   }
+  // Kept for the receipt check on a later run.
+  if (kept.length) await rest('POST', 'push_tickets', kept);
+}
+
+/**
+ * The receipts of tickets at least 15 minutes old, asked for in chunks of 300. An answered ticket
+ * is done; one still unanswered after a day never will be. Ids and Expo's error name only.
+ */
+async function checkReceipts(totals: Totals): Promise<void> {
+  const ready = new Date(Date.now() - RECEIPT_AFTER_MS).toISOString();
+  const waiting = (await rest<{ id: string; notification_id: number; token: string }[]>(
+    'GET', `push_tickets?select=id,notification_id,token&sent_at=lt.${encodeURIComponent(ready)}&order=sent_at&limit=300`)) ?? [];
+  if (waiting.length) {
+    const res = await fetch(EXPO_RECEIPTS_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Accept: 'application/json', ...(EXPO_ACCESS_TOKEN ? { Authorization: `Bearer ${EXPO_ACCESS_TOKEN}` } : {}) },
+      body: JSON.stringify({ ids: waiting.map((t) => t.id) }),
+    });
+    if (!res.ok) throw new Error(`Expo receipts answered ${res.status}`);
+    const receipts = ((await res.json()).data ?? {}) as Record<string, Receipt>;
+    const answered: string[] = [];
+    const gone: string[] = [];
+    for (const t of waiting) {
+      const r = receipts[t.id];
+      if (!r) continue;
+      answered.push(t.id);
+      totals.receipts++;
+      if (r.status === 'ok') continue;
+      const why = r.details?.error ?? r.message ?? 'receipt error';
+      totals.receipt_errors++;
+      if (why === 'DeviceNotRegistered') gone.push(t.token);
+      await rest('PATCH', `notifications?id=eq.${t.notification_id}`, { receipt_error: why });
+      console.log(JSON.stringify({ event: 'push_receipt', notification: t.notification_id, outcome: why }));
+    }
+    if (gone.length) {
+      await rest('DELETE', `push_tokens?token=${inList([...new Set(gone)])}`);
+      totals.tokens_removed += new Set(gone).size;
+    }
+    if (answered.length) await rest('DELETE', `push_tickets?id=${inList(answered)}`);
+  }
+  const old = new Date(Date.now() - RECEIPT_KEPT_MS).toISOString();
+  await rest('DELETE', `push_tickets?sent_at=lt.${encodeURIComponent(old)}`);
 }
 
 Deno.serve(async (req) => {
@@ -146,8 +204,11 @@ Deno.serve(async (req) => {
   const given = (req.headers.get('Authorization') ?? '').replace(/^Bearer /, '');
   if (!HOOK_SECRET || !sameSecret(given, HOOK_SECRET)) return json({ error: 'Not allowed' }, 401);
 
-  const totals: Totals = { claimed: 0, sent: 0, no_device: 0, failed: 0, tokens_removed: 0 };
+  const totals: Totals = { claimed: 0, sent: 0, no_device: 0, failed: 0, tokens_removed: 0, receipts: 0, receipt_errors: 0 };
   try {
+    // Receipts first, so a device that is gone is not sent to again in this run. A failure here
+    // never stops sending: the tickets wait for the next run.
+    await checkReceipts(totals).catch((e) => console.log(JSON.stringify({ event: 'push_receipts_failed', error: e instanceof Error ? e.message : 'failed' })));
     // Keep going until the outbox is empty, so that one wake-up covers a burst.
     for (let round = 0; round < 10; round++) {
       // Claiming is atomic in Postgres: two overlapping runs can never take the same row.

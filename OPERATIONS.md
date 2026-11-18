@@ -308,8 +308,10 @@ Work along the chain until you find the break:
 3. Was it sent, but nothing showed on the phone?
    - On Android, the build needs `GOOGLE_SERVICES_JSON` and the FCM key on expo.dev.
    - Check that the phone allowed notifications. The **Me** tab shows whether push is on.
-   - Expo receipts are not checked (see `ARCHITECTURE.md` section 6), so a rejection by FCM or
-     APNs is silent.
+   - Look at `receipt_error` on the row: FCM or APNs refused it after Expo accepted it
+     (`DeviceNotRegistered` also removes the token; `MismatchSenderId` or `InvalidCredentials`
+     mean the FCM or APNs keys on expo.dev are wrong). The function's log has a `push_receipt`
+     line per failure, with the notification id.
 
 Notifications older than an hour, or that have failed 5 times, are never sent. That is on
 purpose: a late "check-in is open" is worse than none.

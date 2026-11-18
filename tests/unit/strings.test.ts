@@ -11,7 +11,7 @@ import { join, relative } from 'node:path';
 import { test } from 'node:test';
 import { IDEAS } from '../../src/domain/ideas';
 import { en } from '../../src/i18n/en';
-import { fmtTime, setLocale, t } from '../../src/i18n';
+import { fmtDistance, fmtTime, setLocale, t } from '../../src/i18n';
 
 const root = join(__dirname, '..', '..');
 const walk = (dir: string): string[] =>
@@ -101,6 +101,9 @@ test('plurals, filling and fallbacks', () => {
   assert.equal(fmtTime(Date.UTC(2026, 10, 18, 14, 5), 'UTC'), '14:05');
   setLocale('en', 'en-US');
   assert.match(fmtTime(Date.UTC(2026, 10, 18, 14, 5), 'UTC'), /^2:05\sPM$/);
+  assert.equal(fmtDistance(8.7), '5.4 mi', 'no profile country: the phone region (US) gives miles');
+  assert.equal(fmtDistance(8.7, 'IN'), '8.7 km', 'an Indian profile reads km on a US-English phone');
+  assert.equal(fmtDistance(8.7, 'GB'), '5.4 mi');
   setLocale('en');
 });
 
