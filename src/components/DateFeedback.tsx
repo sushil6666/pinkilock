@@ -46,8 +46,8 @@ export function DateFeedback({ inviteId, otherId, name }: { inviteId: string; ot
 
   if (state.rated) {
     return state.roundTwo ? (
-      <View style={{ gap: space.sm, borderWidth: 1, borderColor: color.volt, borderRadius: radius.card, backgroundColor: color.voltWash, padding: space.lg }}>
-        <T v="label" c={color.volt}>Round two</T>
+      <View style={{ gap: space.sm, borderWidth: 1, borderColor: color.gold, borderRadius: radius.card, backgroundColor: color.goldWash, padding: space.lg }}>
+        <T v="label" c={color.gold}>Round two</T>
         <T v="heading">{`You and ${name} both want to meet again.`}</T>
         <Button icon="repeat" label={`Plan round two with ${name}`} onPress={() => router.push({ pathname: '/invite/new', params: { to: otherId } })} />
       </View>

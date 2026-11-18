@@ -9,18 +9,18 @@ import { color } from './tokens';
 type Level = 'raised' | 'glow';
 
 const ios: Record<Level, ViewStyle> = {
-  raised: { shadowColor: '#000', shadowOpacity: 0.45, shadowRadius: 24, shadowOffset: { width: 0, height: 8 } },
-  glow: { shadowColor: color.pink, shadowOpacity: 0.55, shadowRadius: 22, shadowOffset: { width: 0, height: 6 } },
+  raised: { shadowColor: color.shadow, shadowOpacity: 0.5, shadowRadius: 24, shadowOffset: { width: 0, height: 8 } },
+  glow: { shadowColor: color.gold, shadowOpacity: 0.5, shadowRadius: 22, shadowOffset: { width: 0, height: 6 } },
 };
 
 const android: Record<Level, ViewStyle> = {
-  raised: { elevation: 8, shadowColor: '#000' },
-  glow: { elevation: 10, shadowColor: color.pink },
+  raised: { elevation: 8, shadowColor: color.shadow },
+  glow: { elevation: 10, shadowColor: color.gold },
 };
 
 const web: Record<Level, ViewStyle> = {
-  raised: { boxShadow: '0 8px 24px rgba(0,0,0,0.45)' } as ViewStyle,
-  glow: { boxShadow: '0 6px 22px rgba(255,46,147,0.55)' } as ViewStyle,
+  raised: { boxShadow: '0 8px 24px rgba(14,8,56,0.5)' } as ViewStyle,
+  glow: { boxShadow: '0 6px 22px rgba(245,201,92,0.5)' } as ViewStyle,
 };
 
 export function elevation(level: Level): ViewStyle {

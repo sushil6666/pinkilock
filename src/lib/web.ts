@@ -8,14 +8,14 @@ import { color } from '../theme/tokens';
 export const isWeb = Platform.OS === 'web';
 
 /**
- * The browser's own focus ring, in sky blue so that it reads on the blue ground. Spread into the
+ * The browser's own focus ring, in pale lavender so that it reads on the night sky. Spread into the
  * style of anything focusable that is not a text input (those get theirs in `ui/input.ts`).
  */
 export const focusRing: object = isWeb ? { outlineColor: color.textDim } : {};
 
 /**
  * One rule for every control, present and future: whatever the keyboard lands on gets the same
- * sky-blue ring, clear of its own edge so that it reads around a pink button too. Added through
+ * lavender ring, clear of its own edge so that it reads around a gold button too. Added through
  * the style sheet's own interface, so it needs no inline style. Runs once, when this file loads.
  */
 function startFocusRing(): void {

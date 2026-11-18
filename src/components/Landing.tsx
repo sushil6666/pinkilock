@@ -13,7 +13,9 @@ import { IDEAS } from '@/domain/ideas';
 import { VENUES, type Venue } from '@/domain/venues';
 import { webOnly } from '@/lib/web';
 import { color, radius, space } from '@/theme/tokens';
+import { Logo } from './Logo';
 import { Loop } from './Loop';
+import { NightSky } from './NightSky';
 import { Notes, Scribble } from './Welcome';
 import { Button } from './ui/Button';
 import { T } from './ui/T';
@@ -66,7 +68,7 @@ export function Landing({ onStart }: { onStart: () => void }) {
   return (
     <View style={{ gap: space.x5 * 2 }}>
       <View style={styles.nav} {...webOnly({ role: 'navigation' as const })}>
-        <T v="title" c={color.pink}>Pinkilock</T>
+        <Logo size={22} />
         <View style={styles.navRight}>
           <Button kind="quiet" icon="log-in" label="Sign in" onPress={signIn} />
           <Button kind="ghost" label="Start" icon="arrow-right" onPress={onStart} />
@@ -75,8 +77,10 @@ export function Landing({ onStart }: { onStart: () => void }) {
 
       <View style={styles.hero}>
         <View style={styles.heroArt}>
-          <Loop name="pinkyLock" />
-          <Scribble wide />
+          <NightSky>
+            <Loop name="pinkyLock" />
+            <Scribble wide />
+          </NightSky>
         </View>
         <View style={styles.heroWords}>
           <T v="mega" style={roomy ? styles.headline : styles.headlineTight} accessibilityRole="header">No ghosting.{'\n'}No endless{'\n'}swiping.</T>

@@ -173,7 +173,7 @@ test('email: link keeps the id and history; sign in on a new phone gets them bac
   const before = linked.invites.map((i) => i.id).sort();
 
   await assert.rejects(c.backend.sendCode('email', email, 'link'), /another account/, 'someone else cannot take the address');
-  await assert.rejects(c.backend.sendCode('email', `e2e-nobody-${Date.now()}@example.com`, 'sign_in'), /No account/, 'sign-in never makes a new account');
+  await assert.rejects(c.backend.sendCode('email', `e2e-nobody-${Date.now()}@example.com`, 'sign_in'), (e: { code?: string }) => e.code === 'PA005', 'sign-in never makes a new account');
 
   const fresh = createSupabaseBackend(URL!, KEY!, memoryStorage());
   assert.equal((await fresh.boot()).me, null, 'a new phone starts as nobody');
@@ -206,7 +206,7 @@ test('phone: link keeps the id and history; sign in on a new phone gets them bac
 
   // Someone else cannot take the number. C, not B: the email test signed B out everywhere (G19).
   await assert.rejects(c.backend.sendCode('phone', phone, 'link').then(() => c.backend.verifyCode('phone', phone, '123456', 'link')), /another account/);
-  await assert.rejects(c.backend.sendCode('phone', '+919000000103', 'sign_in'), /No account/, 'sign-in never makes a new account');
+  await assert.rejects(c.backend.sendCode('phone', '+919000000103', 'sign_in'), (e: { code?: string }) => e.code === 'PA005', 'sign-in never makes a new account');
 
   // A new phone: empty storage, sign in with the number.
   const fresh = createSupabaseBackend(URL!, KEY!, memoryStorage());

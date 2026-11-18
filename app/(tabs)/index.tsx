@@ -55,7 +55,7 @@ export default function Discover() {
         <View style={{ flex: 1, justifyContent: 'center', gap: space.lg }}>
           <T v="label" c={color.pink}>Discover</T>
           <T v="display">That's{'\n'}everyone{'\n'}for now.</T>
-          <T c={color.textDim}>No infinite deck here. {busyWith.size > 0 ? `You have ${busyWith.size} ${busyWith.size === 1 ? 'person' : 'people'} in play: go keep those promises.` : 'New people show up as they join near you.'}</T>
+          <T c={color.textDim}>No infinite deck here. {busyWith.size > 0 ? `You have ${busyWith.size} ${busyWith.size === 1 ? 'plan' : 'plans'} in motion. Go keep those promises.` : 'New people appear here as they join near you.'}</T>
           {passedIds.length > 0 && <Button kind="ghost" icon="rotate-ccw" label={`Look again at ${passedIds.length} you passed`} onPress={restore} />}
           {busyWith.size > 0 && <Button label="See your asks" icon="send" onPress={() => router.push('/(tabs)/invites')} />}
         </View>
@@ -68,7 +68,7 @@ export default function Discover() {
   return (
     <Screen inTabs>
       <View style={styles.head}>
-        <T v="label" c={color.pink}>Pinkilock</T>
+        <T v="label" c={color.pink}>Discover</T>
         <T v="label" c={color.textMute}>{queue.length} nearby</T>
       </View>
 
@@ -98,7 +98,7 @@ export default function Discover() {
 
         {person.vibes.length > 0 && (
           <View style={styles.vibes}>
-            {person.vibes.map((v) => <Tag key={v} label={v} tone={me.vibes.includes(v) ? color.volt : color.textDim} />)}
+            {person.vibes.map((v) => <Tag key={v} label={v} tone={me.vibes.includes(v) ? color.gold : color.textDim} />)}
           </View>
         )}
 
@@ -119,7 +119,7 @@ export default function Discover() {
                     <T v="bodyBold">{idea.title}</T>
                     <T v="caption" c={color.textDim}>{idea.minutes} min  /  {idea.blurb}</T>
                   </View>
-                  {shared.includes(id) ? <Tag label="You too" tone={color.volt} /> : <Feather name="arrow-up-right" size={18} color={color.textMute} />}
+                  {shared.includes(id) ? <Tag label="You too" tone={color.gold} /> : <Feather name="arrow-up-right" size={18} color={color.textMute} />}
                 </Pressable>
               </Animated.View>
             );

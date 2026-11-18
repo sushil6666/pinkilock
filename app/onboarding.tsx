@@ -80,7 +80,7 @@ export default function Onboarding() {
     : <Button label={step === 0 ? 'Start' : 'Next'} icon="arrow-right" onPress={() => setStep(step + 1)} disabled={!canNext} />;
 
   return (
-    <Screen wide={wide} back={step > 0 ? 'back' : false} onBack={() => setStep(step - 1)} title={step > 0 ? `${step} of ${STEPS - 1}` : undefined} footer={wide ? undefined : footer}>
+    <Screen wide={wide} logo={!wide} back={step > 0 ? 'back' : false} onBack={() => setStep(step - 1)} title={step > 0 ? `${step} of ${STEPS - 1}` : undefined} footer={wide ? undefined : footer}>
       {step > 0 && (
         <View style={styles.progress} accessibilityRole="progressbar" accessibilityValue={{ min: 0, max: STEPS - 1, now: step }}>
           {Array.from({ length: STEPS - 1 }, (_, i) => <View key={i} style={[styles.bar, i < step && { backgroundColor: color.pink }]} />)}
@@ -96,7 +96,7 @@ export default function Onboarding() {
             <View style={{ gap: space.sm }}>
               <T v="label" c={color.textDim}>First name</T>
               <TextInput value={name} onChangeText={setName} placeholder="Riya" placeholderTextColor={color.textMute} maxLength={NAME_MAX} autoCapitalize="words" autoCorrect={false} style={inputStyle} accessibilityLabel="First name" returnKeyType="next" />
-              {name.trim().length >= 2 && !nameOk(name) && <T v="caption" c={color.flare}>Just your first name: letters only, no numbers, spaces or symbols.</T>}
+              {name.trim().length >= 2 && !nameOk(name) && <T v="caption" c={color.flare}>First name only, in letters. No numbers, spaces or symbols.</T>}
             </View>
             <View style={{ flexDirection: 'row', gap: space.md }}>
               <View style={{ gap: space.sm, width: 104 }}>
@@ -123,7 +123,7 @@ export default function Onboarding() {
           <>
             <View style={{ gap: space.sm }}>
               <T v="display">What are{'\n'}you up for?</T>
-              <T c={color.textDim}>Pick at least three. These replace the bio: people ask you out to one of them.</T>
+              <T c={color.textDim}>Pick at least three. They are your bio: people ask you out to one of them.</T>
             </View>
             {KIND_ORDER.map((kind) => (
               <View key={kind} style={{ gap: space.sm }}>
@@ -133,14 +133,14 @@ export default function Onboarding() {
                 ))}
               </View>
             ))}
-            <T v="caption" c={ideaIds.length >= 3 ? color.volt : color.textDim}>{ideaIds.length} picked{ideaIds.length < 3 ? `, ${3 - ideaIds.length} to go` : ''} (6 max)</T>
+            <T v="caption" c={ideaIds.length >= 3 ? color.gold : color.textDim}>{ideaIds.length} picked{ideaIds.length < 3 ? `, ${3 - ideaIds.length} to go` : ''} (6 max)</T>
           </>
         )}
 
         {step === 3 && (
           <>
             <T v="display">Your vibe,{'\n'}briefly.</T>
-            <T v="caption" c={vibes.length > 0 ? color.volt : color.textDim}>{vibes.length} of 3 tags picked</T>
+            <T v="caption" c={vibes.length > 0 ? color.gold : color.textDim}>{vibes.length} of 3 tags picked</T>
             {VIBE_GROUPS.map((group) => (
               <View key={group.label} style={{ gap: space.sm }}>
                 <T v="label" c={color.textDim}>{group.label}</T>
@@ -152,7 +152,7 @@ export default function Onboarding() {
             <View style={{ gap: space.sm }}>
               <T v="label" c={color.textDim}>One line about you (optional)</T>
               <View style={styles.wrap}>
-                {TAGLINE_PROMPTS.map((p) => <Tag key={p} label={p.trim()} tone={tagline.startsWith(p) ? color.volt : color.textDim} selected={tagline.startsWith(p)} onPress={() => setTagline(p)} />)}
+                {TAGLINE_PROMPTS.map((p) => <Tag key={p} label={p.trim()} tone={tagline.startsWith(p) ? color.gold : color.textDim} selected={tagline.startsWith(p)} onPress={() => setTagline(p)} />)}
               </View>
               <TextInput value={tagline} onChangeText={setTagline} placeholder="Will judge your chai order." placeholderTextColor={color.textMute} maxLength={80} style={[inputStyle, type.body]} accessibilityLabel="One line about you" />
               {looksLikeContact(tagline) && <T v="caption" c={color.flare}>Contacts unlock after a kept promise. Take that out.</T>}
@@ -163,7 +163,7 @@ export default function Onboarding() {
                 {CONTACTS.map((k) => <Chip key={k} label={k} selected={contactKind === k} onPress={() => setContactKind(k)} />)}
               </View>
               <TextInput value={handle} onChangeText={setHandle} placeholder={contactKind === 'WhatsApp' ? '+91 number' : '@yourhandle'} placeholderTextColor={color.textMute} maxLength={40} autoCapitalize="none" autoCorrect={false} keyboardType={contactKind === 'WhatsApp' ? 'phone-pad' : 'default'} style={inputStyle} accessibilityLabel={`${contactKind} handle`} />
-              <T v="caption" c={color.textDim}>Nobody sees this until a promise with you is kept. Not before, not for a match, not for a lock.</T>
+              <T v="caption" c={color.textDim}>Nobody sees this until you both keep a promise. Not when you match, and not when you lock a plan.</T>
             </View>
           </>
         )}
@@ -175,7 +175,7 @@ export default function Onboarding() {
             <View style={{ gap: space.md }}>
               {[
                 ['If I lock it, I show up.', 'On time, for the whole ten minutes or the whole boba.'],
-                ['If I cannot, I say so early.', 'Bailing still counts as a flake. Vanishing counts for more.'],
+                ['If I cannot, I say so early.', 'Bailing still counts as a flake, but vanishing counts for more.'],
                 ['My record is public.', 'Kept and flaked promises show on my profile as my trust score.'],
               ].map(([head, sub]) => (
                 <View key={head} style={styles.oath}>

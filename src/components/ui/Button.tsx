@@ -20,7 +20,7 @@ interface Props {
 }
 
 /** The slab under each kind: what the button stands on, and what shows below it. */
-const SLAB: Record<Kind, string | null> = { primary: color.pinkDeep, ghost: color.line, danger: color.flare, quiet: null };
+const SLAB: Record<Kind, string | null> = { primary: color.goldDeep, ghost: color.line, danger: color.flare, quiet: null };
 
 /**
  * A button is a slab you can press: the face stands `depth` above a darker block and sinks onto it
@@ -35,10 +35,10 @@ export function Button({ label, onPress, kind = 'primary', icon, disabled, busy,
     sink.value = withTiming(off ? 1 : 0, { duration: motion.fast });
   }, [off, sink]);
   const face = useAnimatedStyle(() => ({ transform: [{ translateY: slab ? sink.value * depth : 0 }] }));
-  // A primary button that cannot be pressed yet is a quiet blue slab, not a faded pink one:
-  // pink at half strength over the blue ground turns to a muddy purple.
+  // A primary button that cannot be pressed yet is a quiet indigo slab, not a faded gold one:
+  // gold at half strength over the night sky turns to a muddy olive.
   const waiting = kind === 'primary' && !!disabled && !busy;
-  const fg = waiting ? color.textMute : kind === 'primary' ? color.onPink : kind === 'danger' ? color.flare : color.text;
+  const fg = waiting ? color.textMute : kind === 'primary' ? color.onGold : kind === 'danger' ? color.flare : color.text;
 
   return (
     <Pressable
@@ -74,7 +74,7 @@ export function Button({ label, onPress, kind = 'primary', icon, disabled, busy,
 const styles = StyleSheet.create({
   slab: { position: 'absolute', left: 0, right: 0, bottom: 0, top: depth, borderRadius: radius.card },
   base: { minHeight: 56, borderRadius: radius.card, paddingHorizontal: space.xl, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: space.sm },
-  primary: { backgroundColor: color.pink },
+  primary: { backgroundColor: color.gold },
   waiting: { backgroundColor: color.surfaceHi, borderWidth: 1, borderColor: color.line },
   ghost: { borderWidth: 1, borderColor: color.line, backgroundColor: color.surface },
   danger: { borderWidth: 1, borderColor: color.flare, backgroundColor: color.surface },

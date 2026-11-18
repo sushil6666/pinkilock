@@ -7,7 +7,7 @@
     "version": "0.2.0",
     "orientation": "portrait",
     "userInterfaceStyle": "dark",
-    "backgroundColor": "#001C55",
+    "backgroundColor": "#241A63",
     "newArchEnabled": true,
     "ios": {
       "bundleIdentifier": "com.pinkilock.app",
@@ -19,23 +19,23 @@
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "monochromeImage": "./assets/adaptive-icon-mono.png",
-        "backgroundColor": "#001C55"
+        "backgroundColor": "#241A63"
       }
     },
     "androidNavigationBar": {
-      "backgroundColor": "#001C55",
+      "backgroundColor": "#241A63",
       "barStyle": "light-content"
     },
     "androidStatusBar": {
-      "backgroundColor": "#001C55",
+      "backgroundColor": "#241A63",
       "barStyle": "light-content"
     },
     "web": {
       "bundler": "metro",
       "output": "single",
       "favicon": "./assets/favicon.png",
-      "themeColor": "#001C55",
-      "backgroundColor": "#001C55",
+      "themeColor": "#241A63",
+      "backgroundColor": "#241A63",
       "description": "One person. One tiny plan. One pinky promise that you both show up."
     },
     "plugins": [
@@ -45,7 +45,7 @@
       [
         "expo-splash-screen",
         {
-          "backgroundColor": "#001C55",
+          "backgroundColor": "#241A63",
           "image": "./assets/splash-icon.png",
           "imageWidth": 220
         }
@@ -54,7 +54,7 @@
         "expo-notifications",
         {
           "icon": "./assets/notification-icon.png",
-          "color": "#FF2E93",
+          "color": "#FF6FAE",
           "defaultChannel": "promises"
         }
       ],

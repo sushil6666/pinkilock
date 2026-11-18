@@ -1,50 +1,59 @@
 # Pinkilock design system
 
-Streetwear editorial, not dating-app pastel. Royal blue ground, one loud colour, heavy type, hard
-edges, and things that look made by hand: clay you could squash, buttons you press down onto a
-block, notes stuck on a little crooked, a scribble in the margin. All values below are in `src/theme/tokens.ts`; screens never hard-code a colour or a size.
+Moonlight over Mumbai. A twilight-indigo night sky (never black), a golden moon, pink and gold
+pinkies, heavy rounded type, and things that look made by hand: clay you could squash, buttons you
+press down onto a block, notes stuck on a little crooked, a scribble in the margin. The night is
+alive: stars twinkle, the moon glows, buttons spring. All values below are in
+`src/theme/tokens.ts`; screens never hard-code a colour or a size.
 
 ## 1. Colour
 
 | Token | Hex | Use |
 | --- | --- | --- |
-| `bg` | `#001C55` | Every screen background (deep royal blue; the brightest blue that keeps pink labels readable) |
-| `surface` | `#04225F` | Cards |
-| `surfaceHi` | `#0B2F7C` | Pressed cards, inputs, chips |
-| `line` | `#4169E1` | 1px borders, dividers (royal blue) |
-| `text` | `#F6F6F1` | Primary text (17.9:1 on `bg`) |
-| `textDim` | `#A9D8F7` | Secondary text (sky blue, 10.7:1 on `bg`) |
-| `textMute` | `#7DB0E0` | Captions (muted sky blue, 7.1:1 on `bg`), never body |
-| `pink` | `#FF2E93` | The one accent: primary actions, their pinky, the lock (5.9:1 on `bg`) |
-| `pinkDeep` | `#B3115F` | Pressed pink, gradients |
-| `pinkWash` | `rgba(255,46,147,0.14)` | Tinted fills behind pink text |
-| `volt` | `#D7FF3E` | Kept promises and high trust only |
-| `flare` | `#FF5A36` | Flakes and destructive actions only |
-| `onPink` | `#00123A` | Text on pink (navy on pink is 5.3:1; white on pink fails) |
+| `bg` | `#241A63` | Every screen background (twilight indigo: the night sky; no black anywhere) |
+| `surface` | `#30237A` | Cards |
+| `surfaceHi` | `#3D2E91` | Pressed cards, inputs, chips, the skyline |
+| `line` | `#5A49B8` | 1px borders, dividers (violet) |
+| `text` | `#FFF8E7` | Primary text, a warm moonlit white (14.1:1 on `bg`) |
+| `textDim` | `#D3CBF5` | Secondary text (pale lavender, 9.7:1 on `bg`) |
+| `textMute` | `#A99CE3` | Captions (muted lavender, 6.1:1 on `bg`), never body |
+| `gold` | `#F5C95C` | Moonlight gold: the primary action, kept promises, high trust, my pinky (9.6:1 on `bg`) |
+| `goldDeep` | `#B8892A` | The block under a gold button, knuckle lines, place-card borders |
+| `goldWash` | `rgba(245,201,92,0.14)` | Tinted fills behind gold text; the moon's glow |
+| `moon` | `#FFE6A3` | The moon, stars and lit windows on the first screen only |
+| `pink` | `#FF6FAE` | Their pinky, the lock, eyebrows, selected chips (5.8:1 on `bg`) |
+| `pinkDeep` | `#C2457E` | Knuckle lines, gradients |
+| `shine` | `rgba(255,255,255,0.34)` | Light along the top of the logo's fingers |
+| `pinkWash` / `pinkHalo` | `rgba(255,111,174,0.16 / 0.38)` | Tinted fills behind pink text; the nail on my pinky |
+| `flare` | `#FF8466` | Flakes and destructive actions only (6.2:1 on `bg`) |
+| `onGold` / `onPink` | `#241A63` | Text on gold (9.6:1) and on pink (5.8:1): the sky's own indigo |
+| `onPhoto` | `rgba(20,14,60,0.88)` | Behind a badge that sits on a portrait, so gold and white stay sharp |
+| `shadow` | `#0E0838` | What shadows are cast in: the sky, deeper. Never black |
 
-Rules: pink is for what you can do or what is locked; volt and flare are status, never decoration.
-No gradients on text. No pastel tints. State is never shown by colour alone: every status also has
-a word or an icon.
+Rules: gold is for what you can do and for promises kept; pink is the pinky and what is locked;
+flare is status, never decoration. No black, no gradients on text. State is never shown by colour
+alone: every status also has a word or an icon.
 
 ## 2. Type
 
-Two families, loaded with `expo-font`:
+Three families, loaded with `expo-font`:
 
-- **Archivo Black** for display: always uppercase, tight leading, letter spacing -0.5.
-- **Space Grotesk** (400, 500, 700) for everything else. Numbers use tabular figures.
+- **Sora** ExtraBold (800) for display: sentence case (never uppercase), tight leading, negative
+  letter spacing. Round and loud.
+- **Plus Jakarta Sans** (400, 500, 700) for everything else. Numbers use tabular figures.
 - **Caveat Brush** for a hand: a person's own words (the note on an ask) and the odd scribble on the
   first screen. Never for a control, a rule or a number someone has to read exactly.
 
 | Style | Family | Size / line | Use |
 | --- | --- | --- | --- |
-| `mega` | Archivo Black | 56 / 58 | Countdown digits, LOCKED |
-| `display` | Archivo Black | 40 / 42 | Screen titles, names on cards |
-| `title` | Archivo Black | 26 / 29 | Card titles |
-| `heading` | Space Grotesk 700 | 20 / 26 | Section heads |
-| `body` | Space Grotesk 400 | 16 / 23 | Body |
-| `bodyBold` | Space Grotesk 700 | 16 / 23 | Emphasis, buttons |
-| `label` | Space Grotesk 700 | 12 / 16, +1.4 tracking, uppercase | Eyebrows, tags, tab labels |
-| `caption` | Space Grotesk 500 | 13 / 18 | Meta lines |
+| `mega` | Sora 800 | 54 / 58, -1.5 tracking | Countdown digits, Kept., the first screen's promise |
+| `display` | Sora 800 | 38 / 42, -1 tracking | Screen titles, names on cards |
+| `title` | Sora 800 | 25 / 30, -0.5 tracking | Card titles |
+| `heading` | Plus Jakarta Sans 700 | 20 / 26 | Section heads |
+| `body` | Plus Jakarta Sans 400 | 16 / 23 | Body |
+| `bodyBold` | Plus Jakarta Sans 700 | 16 / 23 | Emphasis, buttons |
+| `label` | Plus Jakarta Sans 700 | 12 / 16, +1.4 tracking, uppercase | Eyebrows, tags, tab labels |
+| `caption` | Plus Jakarta Sans 500 | 13 / 18 | Meta lines |
 | `hand` | Caveat Brush | 24 / 27 | A person's own note, scribbles, the step numbers on the first screen |
 
 Font scaling is allowed up to 1.3x (`maxFontSizeMultiplier`) so layouts hold on large-text phones.
@@ -57,8 +66,8 @@ Font scaling is allowed up to 1.3x (`maxFontSizeMultiplier`) so layouts hold on 
 - Radius: 6 (chips), 14 (cards, buttons), 28 (sheets), 999 (pills, badges). Cards are squared
   off, never bubbly.
 - Borders do most of the separation work (1px `line`). Shadows are used for two things only:
-  `raised` (cards over content: iOS y8 blur 24 black 45%, Android elevation 8) and `glow` (the
-  primary action and the lock: iOS pink shadow blur 22 at 55%, Android elevation 10 with pink
+  `raised` (cards over content: iOS y8 blur 24 in `shadow` at 50%, Android elevation 8) and `glow`
+  (the primary action and the lock: iOS gold shadow blur 22 at 50%, Android elevation 10 with gold
   `shadowColor`). `src/theme/elevation.ts` returns the right props per platform.
 - Touch targets are at least 48 by 48.
 
@@ -66,27 +75,41 @@ Font scaling is allowed up to 1.3x (`maxFontSizeMultiplier`) so layouts hold on 
 
 - **Button**: a slab you press. The 56-high face (radius 14) stands `depth` (5) above a darker block
   and sinks onto it in 70 ms under a finger, a mouse or a key, then springs back; light haptic on
-  press in. `primary` is a pink face on `pinkDeep`; `ghost` a `surface` face with a 1px line on
+  press in. `primary` is a gold face on `goldDeep` with `onGold` text; `ghost` a `surface` face with a 1px line on
   `line`; `danger` a `surface` face with a flare outline on `flare`; `quiet` is text only. A button
   that cannot be pressed sits sunk, level with its block. No glow.
 - **HoldButton**: the same slab, drawn as a `depth`-thick bottom edge in its fill colour. Press and hold 900 ms to commit (send an ask, swear the promise, bail). A fill
   sweeps left to right; haptic ticks at 33% and 66%, medium impact on completion; letting go early
   drains the fill in 180 ms. Used wherever a tap would be too cheap.
-- **Chip**: 40 high, radius 6, uppercase label. Selected is pink fill, navy text.
+- **Chip**: 40 high, radius 6, uppercase label. Selected is pink fill, indigo text.
 - **InviteCard**: a ticket. Eyebrow with status, the idea in display type, time row, note in quotes,
   a perforated divider, then who it is with and their trust badge.
-- **TrustBadge**: pill with a shield icon, score in tabular figures and the tier name. Volt at 90+,
+- **TrustBadge**: pill on `onPhoto` with a 1.5px border in its tone and a shield icon, score in tabular figures and the tier name. Gold at 90+,
   white 75 to 89, flare under 55. `size="lg"` adds the kept and flaked counts.
 - **Portrait**: people are shown as a two-colour gradient block with a large glyph and initial, so
   the prototype ships no stock photos of real people.
 - **LockedReveal**: blurred tiles and a masked handle with a lock and the line that says what
   unlocks it.
 - **Sheet**: bottom sheet for confirmations (pass, bail). Rises 280 ms with `easeOutCubic` over a
-  70% navy scrim. There are no system alerts anywhere in the app.
+  72% indigo scrim. There are no system alerts anywhere in the app.
 - **Loop**: a short clay animation, a GIF drawn in 3D by `scripts/make-loops.mjs` (two pinkies
   hooking; a padlock clicking shut). Drawn on `bg` and keyed out, so it only goes on `bg`, never on a
   card. Decoration: hidden from screen readers, and a still frame (the lock closed) with reduced
   motion. The welcome screen and the not-found screen use them.
+- **Logo**: the two pinkies locked (pink theirs, gold mine, the app icon's geometry), turned 45
+  degrees so they rise to the right and standing on a 14-unit block of `pinkDeep` and `goldDeep`
+  (3D depth straight down the screen) with a `shine` along each finger, beside
+  "pinkilock" in Sora, slanted 12 degrees like an italic, with no full stop (`src/components/Logo.tsx`). It sits top centre on
+  every screen: `Screen` draws it in the header, with the back control left and the screen's title
+  as a small label under it. A page with its own top bar passes `logo={false}`. Read out as
+  "Pinkilock".
+- **NightSky**: the first screen's backdrop (`src/components/NightSky.tsx`): the golden moon with a
+  soft glow that breathes, a dozen stars that twinkle out of step, and the Mumbai skyline along
+  the sea (towers with lit windows, the Gateway arch, the Sea Link's cables in gold), running to
+  the screen's edges. The pinkies float in it. Decoration only, still with reduced motion.
+- **Places**: on the phone's first screen, a sideways row of real venues from `VENUES` ("Where
+  plans happen"): a gold kind icon, the name and the area on a `surface` card with a `goldDeep`
+  border.
 - **Welcome**: the first screen. The pinkies, a scribbled note pointing at them, the promise in
   `mega`, and the three steps as notes on a `line` block, each tilted by a degree or so.
 - **Landing**: the same first screen in a window 960 or wider, as the website's front page, up to
@@ -109,7 +132,7 @@ Font scaling is allowed up to 1.3x (`maxFontSizeMultiplier`) so layouts hold on 
 | `spring.back` | damping 20, stiffness 180 | A released finger returning |
 
 Lists enter with an 18px rise and fade, staggered 60 ms per item, once. Nothing loops except the
-waiting pinky and the live countdown. With Reduce Motion on, entrances become fades, the waiting
+waiting pinky, the live countdown, and the first screen's stars and moon. With Reduce Motion on, entrances become fades, the waiting
 pinky holds still and the lock plays without the shake and burst. The hold button's 900 ms sweep
 is a timer, not decoration, so it runs in full either way.
 
@@ -123,7 +146,7 @@ UI thread (Reanimated shared values, Gesture Handler pan).
 - The stage is the full screen width `W`, 340 high, centred at `(cx, cy)`.
 - Each pinky is one SVG stroke, 36 wide, round caps: a horizontal run from its own screen edge and
   a 90 degree curl of radius 34 ending in a 46 long tip. **Theirs** enters from the left, is pink
-  and curls down. **Mine** enters from the right, is `text` white and curls up. Each has a nail
+  and curls down. **Mine** enters from the right, is `gold` and curls up. Each has a nail
   (a short lighter stroke at the tip) and two knuckle lines.
 - Locked pose: their run sits at `cy - 30` with the curl centred on `cx + 30`; mine at `cy + 30`
   with the curl on `cx - 30`. The two strokes then cross twice. Draw order is theirs, mine, then
