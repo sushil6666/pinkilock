@@ -353,3 +353,22 @@ select t.ok(t.sqlstate($$select save_profile('Xavier', 25, 'Bandra West', '', ''
   'X cannot pick an idea from another country''s list (PL104)');
 reset role;
 update public.ideas set countries = null where id = 'two_truths';
+
+-- The data download (format 4): Y's lists the two flags Y made on X's handle, by person and plan,
+-- without X's handle; X's says nothing about who flagged it.
+set role authenticated;
+select t.as_user(:'y');
+select export_my_data() as ey \gset
+select t.ok(jsonb_array_length(:'ey'::jsonb -> 'contact_flags_made') = 2
+  and (:'ey'::jsonb -> 'contact_flags_made' -> 0 ->> 'profile') = :'x'
+  and not (:'ey'::jsonb -> 'contact_flags_made')::text ilike '%' || (select contact_handle from profile_private where profile_id = :'x') || '%',
+  'Y''s export lists the flags Y made, and not X''s handle');
+select t.as_user(:'x');
+select export_my_data() as ex \gset
+-- Y appears in X's export as the other person on their plans, never as a flagger.
+select t.ok(jsonb_array_length(:'ex'::jsonb -> 'contact_flags_made') = 0
+  and not exists (select 1 from jsonb_object_keys(:'ex'::jsonb) k where k ilike '%flag%' and k <> 'contact_flags_made')
+  and not exists (select 1 from jsonb_array_elements(:'ex'::jsonb -> 'events') e where e ->> 'type' = 'bad_contact'),
+  'X''s export does not say who flagged X''s handle');
+select t.ok((:'ex'::jsonb -> 'contact') ? 'verified_at' and (:'ex'::jsonb ->> 'format') = 'pinkilock-export-4', 'the export says when the handle was verified');
+reset role;
