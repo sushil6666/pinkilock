@@ -53,6 +53,8 @@ All of these live in GitHub, under Settings, Secrets and variables, Actions. Non
 | Variable | `PROD_SUPABASE_PROJECT_REF`, `PROD_EXPO_PUBLIC_SUPABASE_ANON_KEY` | Deploy (target `production`), EAS `production`, analytics | Empty until there is a production project |
 | Secret | `PROD_SUPABASE_DB_PASSWORD`, `PROD_ANALYTICS_DB_PASSWORD` | Same as their staging twins, for production | As for staging |
 | Variable | `PROD_SUPABASE_POOLER_HOST` | Analytics worker (production) | Printed by a production deploy run |
+| Secret | `CLOUDFLARE_API_TOKEN` | Web deploy publishes the website with it | A custom token scoped to the account, Cloudflare Pages: Edit and nothing else. Make a new one in the Cloudflare dashboard (My Profile, API Tokens), update the secret, delete the old one |
+| Variable | `CLOUDFLARE_ACCOUNT_ID` | Web deploy | Not a secret |
 | Secret | `PROD_SUPABASE_ACCESS_TOKEN` | Optional: only if production is in another Supabase account | As for `SUPABASE_ACCESS_TOKEN` |
 
 Kept outside GitHub, and managed by the deploy:
@@ -74,6 +76,7 @@ Kept outside GitHub, and managed by the deploy:
 | **Live two-user test** | After each staging deploy; or by hand | Two anonymous users go through the whole flow, then three more through block, report, export and delete, on staging; all are deleted after. Never run on production |
 | **Analytics worker** | Every 6 hours; or by hand | Recomputes trust scores and metrics, once per project that is set up. If a run fails it opens an `analytics-worker` issue (`analytics-worker-production` for production), and the next good run closes it |
 | **EAS build** | By hand (pick a profile and platform) | Copies the backend values into the EAS environment, builds, and puts the install link in the run summary |
+| **Web deploy** | A push to `main` that can change the website (not Markdown, docs, `supabase/` or tests); or by hand | Builds the web app against the production project (the preview project, with a warning, until production exists), adds the security headers and the share tags, refuses to publish if anything secret is in the bundle, publishes to Cloudflare Pages (project `pinkilock`) and checks pinkilock.com |
 | **EAS init** | Once, by hand | Created the EAS project (id is already in `app.json`) |
 
 GitHub can pause scheduled workflows in a repo with no activity for 60 days. If trust scores
@@ -133,7 +136,9 @@ so it needs a new binary; an over-the-air update cannot reach 0.1.0 builds. A pr
 without the Supabase keys fails at build time and refuses to start (`EXPO_PUBLIC_APP_ENV`).
 Android release builds are shrunk and obfuscated (R8). Signing out revokes the session on the
 server, not only on the phone. GitHub Actions are pinned to commits; Dependabot opens monthly pull
-requests for actions and npm packages.
+requests for actions and npm packages, except the packages the Expo SDK pins (`expo`, `expo-*`,
+`react`, `react-native-*` and the rest listed in `.github/dependabot.yml`). Those move together in an
+Expo SDK upgrade with `npx expo install --fix`, never one at a time.
 
 ### The security gates in CI
 
@@ -181,6 +186,32 @@ least one minute. What uses them here, and how to use fewer:
 2. Run **EAS build** (`preview`, `android`) and install from the link in the run summary.
 
 There are no over-the-air updates. A JavaScript change reaches phones only through a new build.
+
+### The website
+
+pinkilock.com is the app's own web build, published by **Web deploy** from `main` to Cloudflare
+Pages (project `pinkilock`). Nothing is uploaded by hand. A change to the screens reaches the site
+on the next push to `main`; check it first by exporting on mock data and serving it locally
+(`README.md`, "The web build").
+
+- **The domain.** The DNS for pinkilock.com is on Cloudflare in the same account. The site answers
+  on `pinkilock.com` and `www.pinkilock.com`, both attached once in the dashboard (Workers & Pages,
+  `pinkilock`, Custom domains). `mail.pinkilock.com` belongs to Resend for email: never change
+  its records.
+- **Headers.** `web/_headers` is the security policy: the page runs only its own scripts and talks
+  only to its own origin and the Supabase project. A new outside service (a font, analytics, an
+  error reporter) is blocked by it until the policy names it, and adding one is a decision for
+  `docs/decisions.md`, because the page holds the sign-in session.
+- **Every path is the app.** Pages answers any path with `index.html` because the build has no
+  `404.html`; the app's own not-found screen does the rest. Do not add a `404.html`.
+- **No `node_modules` on Pages.** Cloudflare Pages never uploads a folder named `node_modules`,
+  and Expo puts every font and icon under `assets/node_modules/`. `scripts/prepare-web-dist.mjs`
+  moves them to `assets/vendor/` and fails the deploy if the bundle names a file that is not there.
+  Serif type or empty boxes on the live site mean this step was skipped.
+- **Rolling back.** In the dashboard, `pinkilock`, Deployments: pick an earlier one, Rollback. Then
+  fix `main`, because the next push publishes again.
+- **The site is down or old.** Look at the last **Web deploy** run. Its last step fetches `/`,
+  `/plans` and `/share.png` from pinkilock.com and warns if any of them is not a 200.
 
 ### A change to the push function
 
@@ -375,7 +406,14 @@ rows without the id.
 
 - **Missing `EXPO_TOKEN`, or no `projectId`:** see the error text in the run.
 - **"No Supabase project is configured":** the profile's variables are empty.
-- **Otherwise:** open the build page linked in the run for the native log.
+- **Otherwise:** the run's last step, "Show why the build failed", prints EAS's error message
+  and the end of the native log; the full log is on the build page linked in the run.
+- **"Duplicate resources" in `mergeReleaseResources`:** two images in `assets/` share a name and
+  differ only in extension (`x.gif` and `x.png`); Android keeps one name per image. Rename one.
+  `npm run test:unit` checks for this.
+- **"No matching client found for package name":** the Android app registered in Firebase is not
+  `com.pinkilock.app`. Download google-services.json again for that package and replace the
+  `GOOGLE_SERVICES_JSON` secret.
 
 ### A request or an appeal comes in
 
@@ -401,6 +439,18 @@ with `person <uuid> unsuspend "appeal accepted"` (or the matching action) when i
 Only after its checklist and the lawyer's sign-off (WP8). Then a migration sets `active = true` in
 `countries` and `cities`, and the same change goes into `src/domain/countries.ts`. Discover is per
 city; a city with no venue list falls back to typed places.
+
+A first profile also needs the request's network country (`cf-ipcountry`) to be open (PL078).
+GitHub's runners are in the US, so the live-test workflow stores a random one-run token in
+`private.config` `network_check_token`, the test sends it as the `x-pinkilock-test-token` header,
+and the workflow clears it at the end, pass or fail. If a cancelled run left one behind, clear it:
+`select private.set_config('network_check_token', '')`. Opening a country is only the migration
+above (D063).
+
+When the link gate is on, the live test links its test people in the database right after they
+set up (address `test-<id>@e2e.pinkilock.invalid`, a domain that never receives mail) and deletes
+them at the end. A cancelled run can leave some behind: `delete from auth.users where email like
+'%@e2e.pinkilock.invalid'`.
 
 ### Retention
 

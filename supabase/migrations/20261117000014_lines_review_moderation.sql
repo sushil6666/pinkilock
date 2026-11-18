@@ -1,4 +1,4 @@
--- The rest of WP1 that needs no account (docs/build-plan.md; decisions O03, D032):
+-- The rest of WP1 that needs no account (docs/build-plan.md; decisions O03, D040):
 --
 --   * The ask line is picked, never typed: send_invite accepts only a line from `ask_lines` (the
 --     same list as ASK_LINES in src/domain/ideas.ts) or none (PL069).

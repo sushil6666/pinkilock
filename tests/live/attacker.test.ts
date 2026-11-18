@@ -16,7 +16,8 @@ import { execFileSync } from 'node:child_process';
 import { after, before, test } from 'node:test';
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import { AppError } from '../../src/domain/errors';
-import { KEY, MIN, URL, person, profile, type Person } from './helpers';
+import { KEY, LINK_GATE, MIN, URL, memoryStorage, person, profile, type Person } from './helpers';
+import { createSupabaseBackend } from '../../src/services/supabase/supabaseBackend';
 
 const x = person('TestXavier');
 const y = person('TestYami');
@@ -119,6 +120,7 @@ test('errors carry a code and a trace id, and the phone error log cannot be read
   assert.ok((await raw.from('client_errors').insert({ code: 'PC001' })).error, 'write client errors directly');
   assert.ok((await raw.rpc('log_client_error', { p_code: 'not a code', p_trace: null, p_route: '', p_app_version: '', p_platform: null })).error, 'a made-up code');
   assert.ok((await raw.schema('private' as never).rpc('invite_timeline', { p_invite: x.id })).error, 'the operator timeline');
+  assert.ok((await raw.schema('private' as never).rpc('set_config', { p_key: 'network_check_token', p_value: 'x'.repeat(64) })).error, 'setting the network-check token');
   if (withDb) {
     assert.equal(sql(`select code || ' ' || route from public.client_errors where user_id = '${x.id}' and trace = 'TESTTRAC'`), 'PL020 /invite/new', 'the report landed');
     // The refused ask logged no event; an accepted call does, with the trace the phone sent.
@@ -149,16 +151,35 @@ test('G1, G3 closed: profiles are written only through save_profile, which refus
   await assert.rejects(x.backend.updateMe({ name: 'xavier.real' }), (e: unknown) => e instanceof AppError && e.code === 'PL060', 'a handle as the name');
   await assert.rejects(x.backend.updateMe({ vibes: ['any text at all'] }), (e: unknown) => e instanceof AppError && e.code === 'PL062', 'a tag that is not in the catalogue');
   await assert.rejects(x.backend.sendInvite({ toId: y.id, ideaId: 'boba_run', startsAt: Date.now() + 60 * MIN, place: 'Linking Road', note: 'call me 98765 43210' }),
-    (e: unknown) => e instanceof AppError && e.code === 'PL065', 'a number in an ask');
+    (e: unknown) => e instanceof AppError && e.code === 'PL069', 'a number in an ask: asks carry only a picked line (PL069)');
   const after = await x.backend.updateMe({ tagline: 'still here' });
   assert.equal(after.me?.tagline, 'still here', 'an ordinary edit still saves');
   assert.equal(after.me?.name, me.name, 'and nothing refused got through');
 });
 
-gap('G4', 'an anonymous account can send an ask', async () => {
-  const res = await raw.rpc('send_invite', { p_to: y.id, p_idea: 'boba_run', p_starts_at: new Date(Date.now() + 60 * MIN).toISOString(), p_place: '', p_note: '' });
-  assert.ok(res.error, 'the ask was sent');
-});
+// G4 is closed wherever the link gate is on (a project with a mail sender or SMS provider); on a
+// project without one, such as the local stack, it stays open. Test people are linked when the gate
+// is on (helpers.ts), so the check uses a fresh anonymous account of its own.
+if (LINK_GATE) {
+  test('G4 closed: an anonymous account cannot send an ask (PL068)', async () => {
+    const storage = memoryStorage();
+    const anon = createSupabaseBackend(URL!, KEY!, storage);
+    await anon.boot();
+    const anonId = (await anon.completeOnboarding(profile('TestAnon', '@e2e_anon'))).me!.id;
+    try {
+      const own = createClient(URL!, KEY!, { auth: { storage, persistSession: true, autoRefreshToken: false } });
+      const res = await own.rpc('send_invite', { p_to: y.id, p_idea: 'boba_run', p_starts_at: new Date(Date.now() + 60 * MIN).toISOString(), p_place: '', p_note: '' });
+      assert.equal((res.error as { code?: string } | null)?.code, 'PL068', `the ask was not refused for want of a link: ${JSON.stringify(res.error)}`);
+    } finally {
+      sql(`delete from auth.users where id = '${anonId}'`);
+    }
+  });
+} else {
+  gap('G4', 'an anonymous account can send an ask', async () => {
+    const res = await raw.rpc('send_invite', { p_to: y.id, p_idea: 'boba_run', p_starts_at: new Date(Date.now() + 60 * MIN).toISOString(), p_place: '', p_note: '' });
+    assert.ok(res.error, 'the ask was sent');
+  });
+}
 
 // Needs email sign-in switched on, which the local stack has and a project without a mail sender
 // does not; there the answer says nothing either way.

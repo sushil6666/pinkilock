@@ -22,8 +22,9 @@
     "test:push:local": "bash tests/live/local_push.sh"
   },
   "dependencies": {
-    "@expo-google-fonts/archivo-black": "^0.2.3",
-    "@expo-google-fonts/space-grotesk": "^0.2.3",
+    "@expo-google-fonts/archivo-black": "^0.4.1",
+    "@expo-google-fonts/caveat-brush": "0.4.1",
+    "@expo-google-fonts/space-grotesk": "^0.4.1",
     "@expo/metro-runtime": "~4.0.1",
     "@expo/vector-icons": "~14.0.4",
     "@react-native-async-storage/async-storage": "1.23.1",
@@ -65,8 +66,9 @@
     "@babel/core": "^7.25.2",
     "@types/aes-js": "^3.1.4",
     "@types/react": "~18.3.12",
-    "playwright": "^1.63.0",
+    "playwright": "^1.65.1",
     "supabase": "^3.2.0",
+    "three": "0.187.0",
     "tsx": "^4.23.15",
     "typescript": "~5.3.3"
   },

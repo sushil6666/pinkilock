@@ -1,5 +1,9 @@
 # Keeps the pinned GitHub Actions (pinned to commits, docs/build-plan.md G25) and npm packages
 # current: Dependabot opens a pull request when a new version exists. Nothing merges by itself.
+#
+# Packages whose versions the Expo SDK chooses are left alone (D059). Bumping one of them on its
+# own breaks the match with the SDK (and with the native build); they move together, in one
+# Expo SDK upgrade, with `npx expo install --fix`. Everything else, and every action, still updates.
 version: 2
 updates:
   - package-ecosystem: github-actions
@@ -11,3 +15,20 @@ updates:
     schedule:
       interval: monthly
     open-pull-requests-limit: 5
+    ignore:
+      # The SDK itself and its modules
+      - dependency-name: "expo"
+      - dependency-name: "expo-*"
+      - dependency-name: "@expo/*"
+      # React and React Native, pinned by the SDK
+      - dependency-name: "react"
+      - dependency-name: "react-dom"
+      - dependency-name: "react-native"
+      - dependency-name: "react-native-*"
+      - dependency-name: "@react-native-async-storage/*"
+      # Pinned by expo-router (see "overrides" in package.json)
+      - dependency-name: "@react-navigation/*"
+      # Versions the SDK's `expo install --check` also pins
+      - dependency-name: "@types/react"
+      - dependency-name: "typescript"
+      - dependency-name: "@babel/core"

@@ -1,7 +1,8 @@
 # Pinkilock design system
 
 Streetwear editorial, not dating-app pastel. Royal blue ground, one loud colour, heavy type, hard
-edges. All values below are in `src/theme/tokens.ts`; screens never hard-code a colour or a size.
+edges, and things that look made by hand: clay you could squash, buttons you press down onto a
+block, notes stuck on a little crooked, a scribble in the margin. All values below are in `src/theme/tokens.ts`; screens never hard-code a colour or a size.
 
 ## 1. Colour
 
@@ -31,6 +32,8 @@ Two families, loaded with `expo-font`:
 
 - **Archivo Black** for display: always uppercase, tight leading, letter spacing -0.5.
 - **Space Grotesk** (400, 500, 700) for everything else. Numbers use tabular figures.
+- **Caveat Brush** for a hand: a person's own words (the note on an ask) and the odd scribble on the
+  first screen. Never for a control, a rule or a number someone has to read exactly.
 
 | Style | Family | Size / line | Use |
 | --- | --- | --- | --- |
@@ -42,6 +45,7 @@ Two families, loaded with `expo-font`:
 | `bodyBold` | Space Grotesk 700 | 16 / 23 | Emphasis, buttons |
 | `label` | Space Grotesk 700 | 12 / 16, +1.4 tracking, uppercase | Eyebrows, tags, tab labels |
 | `caption` | Space Grotesk 500 | 13 / 18 | Meta lines |
+| `hand` | Caveat Brush | 24 / 27 | A person's own note, scribbles, the step numbers on the first screen |
 
 Font scaling is allowed up to 1.3x (`maxFontSizeMultiplier`) so layouts hold on large-text phones.
 
@@ -60,10 +64,12 @@ Font scaling is allowed up to 1.3x (`maxFontSizeMultiplier`) so layouts hold on 
 
 ## 4. Components
 
-- **Button**: 56 high, radius 14. `primary` pink fill with navy label and glow; `ghost` 1px line
-  with white label; `danger` flare outline. Press: scale 0.97 in 90 ms, back with a spring; light
-  haptic on press in.
-- **HoldButton**: press and hold 900 ms to commit (send an ask, swear the promise, bail). A fill
+- **Button**: a slab you press. The 56-high face (radius 14) stands `depth` (5) above a darker block
+  and sinks onto it in 70 ms under a finger, a mouse or a key, then springs back; light haptic on
+  press in. `primary` is a pink face on `pinkDeep`; `ghost` a `surface` face with a 1px line on
+  `line`; `danger` a `surface` face with a flare outline on `flare`; `quiet` is text only. A button
+  that cannot be pressed sits sunk, level with its block. No glow.
+- **HoldButton**: the same slab, drawn as a `depth`-thick bottom edge in its fill colour. Press and hold 900 ms to commit (send an ask, swear the promise, bail). A fill
   sweeps left to right; haptic ticks at 33% and 66%, medium impact on completion; letting go early
   drains the fill in 180 ms. Used wherever a tap would be too cheap.
 - **Chip**: 40 high, radius 6, uppercase label. Selected is pink fill, navy text.
@@ -77,6 +83,17 @@ Font scaling is allowed up to 1.3x (`maxFontSizeMultiplier`) so layouts hold on 
   unlocks it.
 - **Sheet**: bottom sheet for confirmations (pass, bail). Rises 280 ms with `easeOutCubic` over a
   70% navy scrim. There are no system alerts anywhere in the app.
+- **Loop**: a short clay animation, a GIF drawn in 3D by `scripts/make-loops.mjs` (two pinkies
+  hooking; a padlock clicking shut). Drawn on `bg` and keyed out, so it only goes on `bg`, never on a
+  card. Decoration: hidden from screen readers, and a still frame (the lock closed) with reduced
+  motion. The welcome screen and the not-found screen use them.
+- **Welcome**: the first screen. The pinkies, a scribbled note pointing at them, the promise in
+  `mega`, and the three steps as notes on a `line` block, each tilted by a degree or so.
+- **Landing**: the same first screen in a window 960 or wider, as the website's front page, up to
+  `wideMax` (1080): a top bar, the hero (pinkies left, words and Start right), then sections for
+  how it works, the rules (cards beside the padlock), micro-date ideas, places, questions, and a
+  closing Start. Sections are a pink `label` over a `display` title; cards are `surface` with a
+  `line` border; places are a pink left rule. Only tokens, so a theme change carries over.
 - **Tab bar**: 4 tabs, icon over label, active is pink with a 3px bar above the icon; counts sit in
   a pink pill.
 

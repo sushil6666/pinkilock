@@ -19,7 +19,7 @@ jobs:
       EXPO_PUBLIC_SUPABASE_URL: https://${{ vars.SUPABASE_PROJECT_REF }}.supabase.co
       EXPO_PUBLIC_SUPABASE_ANON_KEY: ${{ vars.EXPO_PUBLIC_SUPABASE_ANON_KEY }}
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Check that the project values are set
         run: |
           missing=0
@@ -27,15 +27,29 @@ jobs:
             if [ -z "${!name}" ]; then echo "::error::$name is not set (Settings, Secrets and variables, Actions)"; missing=1; fi
           done
           exit $missing
-      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 22
           cache: npm
       - run: npm ci
       - name: Link the project (for the clean-up connection)
         run: npx supabase link --project-ref "$SUPABASE_PROJECT_REF"
+      - name: A one-run pass through the network-country check
+        # GitHub's runners are in the US, and only open countries may make a first profile (PL078).
+        # The test sends this random token instead; it is cleared in the last step (D063).
+        run: |
+          token="$(openssl rand -hex 32)"
+          echo "::add-mask::$token"
+          echo "E2E_NETWORK_TOKEN=$token" >> "$GITHUB_ENV"
+          echo "select private.set_config('network_check_token', :'t')" \
+            | psql "$(scripts/supabase-db-url.sh postgres "$SUPABASE_DB_PASSWORD")" -v ON_ERROR_STOP=1 -qAt -v t="$token" >/dev/null
       - name: Two users, the whole flow
         run: |
           E2E_DB_URL="$(scripts/supabase-db-url.sh postgres "$SUPABASE_DB_PASSWORD")"
           export E2E_DB_URL
           npm run test:live
+      - name: Clear the network-check token
+        if: always()
+        run: |
+          echo "select private.set_config('network_check_token', '')" \
+            | psql "$(scripts/supabase-db-url.sh postgres "$SUPABASE_DB_PASSWORD")" -v ON_ERROR_STOP=1 -qAt >/dev/null

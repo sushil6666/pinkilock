@@ -21,7 +21,7 @@ import { after, before, test } from 'node:test';
 import { createClient } from '@supabase/supabase-js';
 import type { Invite } from '../../src/domain/types';
 import { createSupabaseBackend } from '../../src/services/supabase/supabaseBackend';
-import { KEY, MIN, SWEEP_WAIT, URL, checkInWith, inviteIs, one, person, profile, type Person } from './helpers';
+import { KEY, MIN, SWEEP_WAIT, TEST_EMAIL_DOMAIN, URL, checkInWith, inviteIs, one, person, profile, type Person } from './helpers';
 
 
 const a = person('TestAsha');
@@ -65,7 +65,7 @@ after(async () => {
   if (process.env.E2E_DB_URL && ids.length) {
     const list = ids.map((id) => `'${id}'`).join(', ');
     execFileSync('psql', [process.env.E2E_DB_URL, '-v', 'ON_ERROR_STOP=1', '-q', '-c',
-      `delete from public.events where actor_id in (${list}) or invite_id in (select id from public.invites where from_id in (${list}) or to_id in (${list})); delete from auth.users where id in (${list}) and is_anonymous;`]);
+      `delete from public.events where actor_id in (${list}) or invite_id in (select id from public.invites where from_id in (${list}) or to_id in (${list})); delete from auth.users where id in (${list}) and (is_anonymous or email like '%@${TEST_EMAIL_DOMAIN}');`]);
     console.log(`cleaned up ${ids.length} test users`);
   } else if (ids.length) {
     console.log(`left behind test users ${ids.join(', ')} (set E2E_DB_URL to delete them)`);
@@ -140,15 +140,19 @@ test('expiry: an unanswered ask is expired by the scheduled sweep', async () => 
   a.quiet();
   b.quiet();
   // Expires at its start time. 20 seconds out leaves room for clock skew between here and the server.
-  const sent = one(await a.backend.sendInvite({ toId: b.id, ideaId: 'video_coffee', startsAt: Date.now() + 20_000, place: '', note: '' }));
-  await b.hears('the ask', inviteIs(sent.id, 'sent'));
+  // B asks A here: an expired ask holds back the same sender for 7 days (PL026), and the kept test
+  // below needs A to ask B again.
+  const sent = one(await b.backend.sendInvite({ toId: a.id, ideaId: 'video_coffee', startsAt: Date.now() + 20_000, place: '', note: '' }));
+  await a.hears('the ask', inviteIs(sent.id, 'sent'));
   // Nobody calls the sweep here: pg_cron does, and Realtime carries the result to both phones.
   await Promise.all([
     a.hears('the expiry', inviteIs(sent.id, 'expired'), SWEEP_WAIT),
     b.hears('the expiry', inviteIs(sent.id, 'expired'), SWEEP_WAIT),
   ]);
-  await assert.rejects(b.backend.offerPinky(sent.id), /not open any more/);
-  await locked(b, sent.id, 'after an expiry');
+  await assert.rejects(a.backend.offerPinky(sent.id), /not open any more/);
+  await locked(a, sent.id, 'after an expiry');
+  await assert.rejects(b.backend.sendInvite({ toId: a.id, ideaId: 'video_coffee', startsAt: Date.now() + 90 * MIN, place: '', note: '' }), /asked them recently/,
+    'an expired ask holds back the same sender (PL026)');
 });
 
 test('kept: lock, both check in, and only then does the reveal open', async () => {

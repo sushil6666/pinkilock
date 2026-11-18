@@ -106,6 +106,8 @@ select t.ok(t.fails('create table public.loot (x int)') and t.fails('create func
 select t.ok(t.fails('select sweep_invites()'), 'X cannot run the clock');
 select t.ok(t.fails('select claim_notifications(10)'), 'X cannot claim the push outbox');
 select t.ok(t.fails($$select set_push_config('https://evil.example', 'secret')$$), 'X cannot repoint the push function');
+select t.ok(t.fails($$select private.set_config('network_check_token', repeat('x', 64))$$), 'X cannot set the network-check token');
+select t.ok(t.fails('select private.network_check_skipped()'), 'X cannot probe the network-check token');
 select t.ok(t.fails(format($$select queue_notification(%L, null, 'new_ask', 'Free prize', 'Tap here')$$, :'y')), 'X cannot queue a push to someone');
 select t.ok(t.fails('select kick_push()'), 'X cannot trigger a push run');
 select t.ok(t.fails(format($$select private.end_live_invites(%L, %L, 'x')$$, :'y', :'z')), 'X cannot end other people''s plans');
