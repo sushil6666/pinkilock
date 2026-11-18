@@ -484,7 +484,10 @@ words written straight into a screen.
 
 Catalogue content is not in the strings files: idea titles and openers, profile tags, ask lines
 and venues are rows in SQL tables, and are translated per region by a native speaker as each
-region opens (WP9). Stored values stay as they were written: the place on a remote ask, and the
+region opens (WP9). A local idea (cutting chai, pani puri) lists the countries it is offered in
+(`ideas.countries`, null for everywhere): onboarding and Me offer only what is on offer where the
+person lives, and `save_profile` refuses a newly picked one from elsewhere (PL104) while keeping
+any already saved. Stored values stay as they were written: the place on a remote ask, and the
 picked ask line, are read by the other person as sent.
 
 ### On the phone

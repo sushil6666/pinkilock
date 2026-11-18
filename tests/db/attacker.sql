@@ -344,3 +344,12 @@ select t.as_user(:'x');
 select t.ok(my_contact_flags() = 2, 'X sees that their handle has two flags, and not who sent them');
 reset role;
 update public.invites set resolved_at = now() where status = 'kept' and :'x' in (from_id, to_id) and :'y' in (from_id, to_id);
+
+-- WP9: a modified app cannot slip in an idea that is not offered where the person lives (PL104).
+update public.ideas set countries = array['GB'] where id = 'two_truths';
+set role authenticated;
+select t.as_user(:'x');
+select t.ok(t.sqlstate($$select save_profile('Xavier', 25, 'Bandra West', '', '', '{}', array['boba_run','chai_walk','two_truths'])$$) = 'PL104',
+  'X cannot pick an idea from another country''s list (PL104)');
+reset role;
+update public.ideas set countries = null where id = 'two_truths';

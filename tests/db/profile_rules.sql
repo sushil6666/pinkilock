@@ -146,3 +146,22 @@ select t.ok((select contact_verified_at is not null from profile_private where p
 select save_profile('Riya', 25, 'Khar', '', '', '{}', array['boba_run','chai_walk','meme_duel'], 'WhatsApp', '9876500003');
 select t.ok((select contact_verified_at is null from profile_private where profile_id = :'r'), 'a new handle loses the tick');
 reset role;
+
+-- Ideas by region (WP9, PL104). No open city is outside India yet, so a catalogue idea is made
+-- another country's for the test, then put back.
+update public.ideas set countries = array['GB'] where id = 'hot_takes';
+set role authenticated;
+select t.as_user(:'r');
+select t.ok(t.sqlstate($$select save_profile('Riya', 25, 'Khar', '', '', '{}', array['boba_run','chai_walk','meme_duel','hot_takes'])$$) = 'PL104',
+  'an idea offered only in another country cannot be picked (PL104)');
+reset role;
+update public.ideas set countries = array['GB'] where id = 'chai_walk';
+set role authenticated;
+select t.as_user(:'r');
+select t.ok(t.sqlstate($$select save_profile('Riya', 25, 'Khar', '', '', '{}', array['boba_run','chai_walk','meme_duel'])$$) is null,
+  'an idea already saved stays when the catalogue moves it elsewhere');
+reset role;
+update public.ideas set countries = null where id = 'hot_takes';
+update public.ideas set countries = array['IN'] where id = 'chai_walk';
+select t.ok((select countries from ideas where id = 'pani_puri_duel') = array['IN'] and (select countries from ideas where id = 'boba_run') is null,
+  'pani puri is offered in India only; boba everywhere');
