@@ -4,7 +4,8 @@
  *   node scripts/make-icons.mjs        (needs the playwright dev dependency and its Chromium)
  *
  * The mark is the app's own lock: two pinkies in their locked pose, the same geometry as
- * src/components/PinkyFinger.tsx, in the DESIGN_SYSTEM.md colours (pink and bone on royal blue,
+ * src/components/PinkyFinger.tsx, turned 45 degrees and given 3D depth (D066), in the DESIGN_SYSTEM.md colours (pink and moonlight gold on the
+ * night-sky indigo,
  * hard edges, no gradients). These are placeholders until real artwork exists; the PNGs in
  * assets/ are committed, so nobody needs to run this to build.
  */
@@ -14,25 +15,40 @@ import { fileURLToPath } from 'node:url';
 import { chromium } from 'playwright';
 
 const OUT = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'assets');
-const C = { bg: '#001C55', pink: '#FF2E93', pinkDeep: '#B3115F', text: '#F6F6F1', textDim: '#A9D8F7' };
+const C = { bg: '#241A63', pink: '#FF6FAE', pinkDeep: '#C2457E', gold: '#F5C95C', goldDeep: '#B8892A', text: '#FFF8E7', textDim: '#D3CBF5' };
 
 // PinkyFinger.tsx, FINGER: stroke 36, curl 34, tip 46, offset 30. Drawn around (0, 0).
 const S = 36, CURL = 34, TIP = 46, OFF = 30, REACH = 150;
-function mark({ mono = false } = {}) {
-  const theirs = mono ? '#FFFFFF' : C.pink;
-  const mine = mono ? '#FFFFFF' : C.text;
+/** The two hooked pinkies, flat, in the given colours. `detail` adds nails and knuckle lines. */
+function pinkies(theirs, mine, detail) {
   const stroke = `fill="none" stroke-width="${S}" stroke-linecap="round" stroke-linejoin="round"`;
   return `
     <path d="M ${-REACH} ${-OFF} H ${OFF - CURL} a ${CURL} ${CURL} 0 0 1 ${CURL} ${CURL} v ${TIP}" ${stroke} stroke="${theirs}"/>
     <path d="M ${REACH} ${OFF} H ${-OFF + CURL} a ${CURL} ${CURL} 0 0 1 ${-CURL} ${-CURL} v ${-TIP}" ${stroke} stroke="${mine}"/>
     <line x1="${OFF}" x2="${OFF}" y1="6" y2="${-OFF + CURL + TIP}" stroke="${theirs}" stroke-width="${S}" stroke-linecap="round"/>
-    ${mono ? '' : `
+    ${detail ? `
+    <line x1="${-REACH + 14}" x2="-62" y1="${-OFF - 9}" y2="${-OFF - 9}" stroke="rgba(255,255,255,0.32)" stroke-width="7" stroke-linecap="round"/>
+    <line x1="60" x2="${REACH - 14}" y1="${OFF - 9}" y2="${OFF - 9}" stroke="rgba(255,255,255,0.32)" stroke-width="7" stroke-linecap="round"/>
     <line x1="${OFF}" x2="${OFF}" y1="30" y2="46" stroke="rgba(255,255,255,0.42)" stroke-width="16" stroke-linecap="round"/>
-    <line x1="${-OFF}" x2="${-OFF}" y1="-30" y2="-46" stroke="rgba(255,46,147,0.38)" stroke-width="16" stroke-linecap="round"/>
+    <line x1="${-OFF}" x2="${-OFF}" y1="-30" y2="-46" stroke="rgba(255,111,174,0.38)" stroke-width="16" stroke-linecap="round"/>
     <line x1="-92" x2="-92" y1="${-OFF - 9}" y2="${-OFF + 9}" stroke="${C.pinkDeep}" stroke-width="3" stroke-linecap="round"/>
     <line x1="-104" x2="-104" y1="${-OFF - 9}" y2="${-OFF + 9}" stroke="${C.pinkDeep}" stroke-width="3" stroke-linecap="round"/>
-    <line x1="92" x2="92" y1="${OFF - 9}" y2="${OFF + 9}" stroke="${C.textDim}" stroke-width="3" stroke-linecap="round"/>
-    <line x1="104" x2="104" y1="${OFF - 9}" y2="${OFF + 9}" stroke="${C.textDim}" stroke-width="3" stroke-linecap="round"/>`}`;
+    <line x1="92" x2="92" y1="${OFF - 9}" y2="${OFF + 9}" stroke="${C.goldDeep}" stroke-width="3" stroke-linecap="round"/>
+    <line x1="104" x2="104" y1="${OFF - 9}" y2="${OFF + 9}" stroke="${C.goldDeep}" stroke-width="3" stroke-linecap="round"/>` : ''}`;
+}
+
+/**
+ * The mark (Logo.tsx draws the same): the pinkies turned 45 degrees so they rise to the right,
+ * standing on a solid block of their deep colours (the 3D depth, straight down the screen), with a
+ * shine along the top of each finger. One-colour versions are flat, for the OS to tint.
+ */
+const TILT = -45, DEPTH = 14;
+function mark({ mono = false } = {}) {
+  const turn = (inner) => `<g transform="rotate(${TILT})">${inner}</g>`;
+  if (mono) return turn(pinkies('#FFFFFF', '#FFFFFF', false));
+  let block = '';
+  for (let d = DEPTH; d > 0; d -= 2) block += `<g transform="translate(0 ${d})">${turn(pinkies(C.pinkDeep, C.goldDeep, false))}</g>`;
+  return `<g transform="translate(0 ${-DEPTH / 2})">${block}${turn(pinkies(C.pink, C.gold, true))}</g>`;
 }
 
 /** size: canvas in px. scale: how big the mark is. bg: fill or null for transparent. */
@@ -49,7 +65,7 @@ const FILES = [
   { name: 'adaptive-icon.png', size: 1024, scale: 1.75, bg: null },
   // Android 13 themed icon: one colour, the system tints it.
   { name: 'adaptive-icon-mono.png', size: 1024, scale: 1.75, bg: null, mono: true },
-  // Splash: the mark alone; app.json puts it on royal blue.
+  // Splash: the mark alone; app.json puts it on the night-sky indigo.
   { name: 'splash-icon.png', size: 1024, scale: 2.6, bg: null },
   // Android status bar: white on transparent only (the OS draws the alpha channel).
   { name: 'notification-icon.png', size: 96, scale: 0.26, bg: null, mono: true },
@@ -68,8 +84,8 @@ const SHARE = { name: 'share.png', width: 1200, height: 630 };
 const share = `
   <svg xmlns="http://www.w3.org/2000/svg" width="${SHARE.width}" height="${SHARE.height}" viewBox="0 0 ${SHARE.width} ${SHARE.height}">
     <rect width="${SHARE.width}" height="${SHARE.height}" fill="${C.bg}"/>
-    <g transform="translate(${SHARE.width / 2} 250) scale(1.5)">${mark()}</g>
-    <text x="${SHARE.width / 2}" y="500" text-anchor="middle" fill="${C.text}" font-family="Arial Black, Arial, Helvetica, sans-serif" font-weight="900" font-size="76" letter-spacing="2">PINKILOCK</text>
+    <g transform="translate(${SHARE.width / 2} 235) scale(1.35)">${mark()}</g>
+    <text x="${SHARE.width / 2}" y="500" text-anchor="middle" fill="${C.text}" font-family="Arial Black, Arial, Helvetica, sans-serif" font-weight="900" font-style="italic" font-size="76">pinkilock</text>
     <text x="${SHARE.width / 2}" y="560" text-anchor="middle" fill="${C.textDim}" font-family="Arial, Helvetica, sans-serif" font-size="32">No ghosting. No endless swiping.</text>
   </svg>`;
 

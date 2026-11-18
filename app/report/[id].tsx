@@ -49,7 +49,7 @@ export default function Report() {
     return (
       <Screen scroll={false} footer={<Button label="Back to Discover" icon="arrow-right" onPress={() => backToDiscover()} />}>
         <Animated.View entering={FadeInDown.duration(360)} style={{ flex: 1, justifyContent: 'center', gap: space.lg }}>
-          <T v="label" c={color.volt}>Reported</T>
+          <T v="label" c={color.gold}>Reported</T>
           <T v="display">Thanks.{'\n'}That's{'\n'}handled.</T>
           <T c={color.textDim}>{name} is blocked: you will not see each other again, and any plan between you has ended without a mark on your record. A person reads every report.</T>
         </Animated.View>

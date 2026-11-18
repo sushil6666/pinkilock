@@ -38,9 +38,9 @@ export default function Plans() {
         <Pressable accessibilityRole="button" accessibilityLabel={`Next: ${ideaOf(next.ideaId).title} with ${who(next)?.name}`} onPress={() => open(next)} style={[styles.hero, elevation('glow')]}>
           <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
             <T v="label" c={color.pink}>Next up</T>
-            {checkInPhase(next, now) === 'open' && <T v="label" c={color.volt}>{next.checkIns.includes(meId) ? 'You are checked in' : 'Check-in is open'}</T>}
+            {checkInPhase(next, now) === 'open' && <T v="label" c={color.gold}>{next.checkIns.includes(meId) ? 'You are checked in' : 'Check-in is open'}</T>}
           </View>
-          <Countdown target={next.startsAt} now={now} tone={now >= next.startsAt ? color.volt : color.text} />
+          <Countdown target={next.startsAt} now={now} tone={now >= next.startsAt ? color.gold : color.text} />
           <View style={styles.heroFoot}>
             <T style={{ fontSize: 30, lineHeight: 38 }} maxFontSizeMultiplier={1}>{ideaOf(next.ideaId).emoji}</T>
             <View style={{ flex: 1 }}>
@@ -53,7 +53,7 @@ export default function Plans() {
       ) : (
         <View style={styles.empty}>
           <T v="title">Nothing locked.</T>
-          <T c={color.textDim}>A plan shows up here the moment two pinkies hook. Answer an ask or send one.</T>
+          <T c={color.textDim}>Plans appear here as soon as both pinkies lock. Answer an ask, or send one to get started.</T>
           <Button icon="send" label="See your asks" onPress={() => router.push('/(tabs)/invites')} />
         </View>
       )}

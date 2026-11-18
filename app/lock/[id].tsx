@@ -62,7 +62,7 @@ export default function LockScreen() {
       <Screen back="close" scroll={false}>
         <View style={{ flex: 1, justifyContent: 'center', gap: space.md }}>
           <T v="display">Nothing{'\n'}to lock.</T>
-          <T c={color.textDim}>This ask is not waiting on your pinky right now.</T>
+          <T c={color.textDim}>This ask doesn't need your pinky right now.</T>
           <Button kind="ghost" label="Back" onPress={goBack} />
         </View>
       </Screen>
@@ -78,11 +78,11 @@ export default function LockScreen() {
 
   const errorRef = error ? splitRef(error).ref : null;
   const prompt =
-    closed ? `${name.toUpperCase()} PULLED OUT` :
-    error ? 'THAT DID NOT LAND' :
-    phase === 'idle' ? (missed ? 'ALMOST. ALL THE WAY IN.' : 'SLIDE YOUR PINKY IN') :
-    phase === 'committed' ? (locked ? 'HOLD ON' : `PINKY OUT. WAITING ON ${name.toUpperCase()}`) :
-    phase === 'sealing' ? 'HOLD ON' : '';
+    closed ? `${name} pulled out` :
+    error ? "That didn't go through" :
+    phase === 'idle' ? (missed ? 'Almost. Slide all the way in.' : 'Slide your pinky in') :
+    phase === 'committed' ? (locked ? 'Hold on' : `Pinky out. Waiting on ${name}`) :
+    phase === 'sealing' ? 'Hold on' : '';
 
   return (
     <Screen back={phase === 'sealing' || sealed ? false : 'close'} scroll={false} title={sealed ? undefined : 'The Pinkilock'}>
@@ -131,7 +131,7 @@ export default function LockScreen() {
             {closed ? 'Nothing was promised, so nothing goes on anyone\'s record.'
               : error ? error
               : phase === 'idle' ? 'Locking means: I show up on time, or I bail early and own it.'
-              : mode === 'first' && !locked ? `Yours is in. It locks the moment ${name} hooks on. You can leave; it will still lock.`
+              : mode === 'first' && !locked ? `Your pinky is in. It locks as soon as ${name} adds theirs. You can leave this screen and it will still lock.`
               : 'Both pinkies are in.'}
           </T>
           {closed ? <Button kind="ghost" label="Back" onPress={goBack} />

@@ -54,7 +54,7 @@ export function CheckInCodes({ inviteId, name, remote, done, onCheckIn }: Props)
     <View style={{ gap: space.md }}>
       <View style={styles.mine} accessible accessibilityLabel={mine ? `Your check-in code: ${mine.split('').join(' ')}` : 'Your check-in code is loading'}>
         <T v="label" c={color.textDim}>Your code</T>
-        <T v="mega" c={color.volt} selectable>{mine ?? '····'}</T>
+        <T v="mega" c={color.gold} selectable>{mine ?? '····'}</T>
         <T v="caption" c={color.textDim}>{remote ? `Read it out to ${name} on the call.` : `Show it to ${name}.`}</T>
       </View>
       {done ? <T c={color.textDim}>{`You are in. Keep your code up until ${name} has entered it.`}</T> : (<>
@@ -81,5 +81,5 @@ export function CheckInCodes({ inviteId, name, remote, done, onCheckIn }: Props)
 }
 
 const styles = StyleSheet.create({
-  mine: { gap: 2, borderWidth: 1, borderColor: color.volt, borderRadius: radius.card, backgroundColor: color.voltWash, padding: space.lg, alignItems: 'flex-start' },
+  mine: { gap: 2, borderWidth: 1, borderColor: color.gold, borderRadius: radius.card, backgroundColor: color.goldWash, padding: space.lg, alignItems: 'flex-start' },
 });

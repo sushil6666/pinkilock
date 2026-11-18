@@ -103,7 +103,7 @@ export function stage(width, height) {
   const scene = new THREE.Scene();
   scene.background = col(C.bg);
 
-  // Sky-blue fill from above, the page's own blue from below, so the clay sits in the page.
+  // Lavender fill from above, the page's own night-sky indigo from below, so the clay sits in the page.
   scene.add(new THREE.HemisphereLight(col(C.textDim), col(C.bg), 1.15));
   const key = new THREE.DirectionalLight(0xffffff, 1.9);
   key.position.set(-160, 260, 420);
@@ -128,7 +128,7 @@ const span = (a, b, x) => Math.min(1, Math.max(0, (x - a) / (b - a)));
 
 // ---------------------------------------------------------------------------------------------
 // Loop 1: two pinkies slide in, hook, tug, hold, let go. No flash or ring: pink fading over
-// the blue turns a muddy purple, and a GIF bands it.
+// the indigo turns muddy, and a GIF bands it.
 
 const S = 22, CURL = 36, TIP = 44, OFF = 30, Z = 25, REACH = 150;
 
@@ -205,7 +205,7 @@ function pinky(dir, tone, crease, nailTone, seed) {
 export function pinkyLoop(width, height) {
   const { renderer, scene, camera } = stage(width, height);
   const theirs = pinky(-1, C.pink, C.pinkDeep, C.text, 7);
-  const mine = pinky(1, C.text, C.textMute, C.pink, 11);
+  const mine = pinky(1, C.gold, C.goldDeep, C.pink, 11);
   scene.add(theirs, mine);
 
   const LIFT = 46, TRAVEL = 70;
@@ -256,7 +256,7 @@ export function padlockLoop(width, height) {
 
   // The shackle: a bent rod in the bone colour, one leg longer so it can swing open.
   const shackle = new THREE.Group();
-  const rodMat = clay(C.text, 5, [10, 1]);
+  const rodMat = clay(C.gold, 5, [10, 1]);
   const R = 46, rod = 12;
   const arch = new THREE.Mesh(lumpy(new THREE.TorusGeometry(R, rod, 20, 64, Math.PI), 0.8, 5), rodMat);
   arch.position.y = 0;

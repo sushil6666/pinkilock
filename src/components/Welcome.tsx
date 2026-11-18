@@ -1,15 +1,19 @@
 /**
- * The first thing anyone sees, in the app and on the website: the clay pinkies hooking, the
- * promise in big type, and the three steps as notes stuck down by hand.
+ * The first thing anyone sees, in the app and on the website: the clay pinkies hooking in a night
+ * sky over Mumbai, the promise in big type, the three steps as notes stuck down by hand, and a few
+ * of the real places plans happen at.
  *
  * This is the phone and narrow-window version, one column. In a wide browser window onboarding shows
  * `Landing` instead, the website's full front page, which reuses the scribble and the notes from here.
  */
+import { Feather } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import { StyleSheet, View } from 'react-native';
+import { ScrollView, StyleSheet, View } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 import { color, radius, space } from '../theme/tokens';
+import { VENUES, type VenueKind } from '../domain/venues';
 import { Loop } from './Loop';
+import { NightSky } from './NightSky';
 import { Button } from './ui/Button';
 import { T } from './ui/T';
 
@@ -47,17 +51,39 @@ export function Notes() {
   );
 }
 
+/** A few of the real places plans happen at (the venue catalogue), so the city is in the picture. */
+const PLACE_IDS = ['mum_marine_drive', 'mum_carter_road', 'mum_prithvi', 'mum_juhu_beach', 'mum_kala_ghoda'];
+const PLACES = VENUES.filter((v) => PLACE_IDS.includes(v.id));
+const KIND_ICON: Record<VenueKind, keyof typeof Feather.glyphMap> = { promenade: 'sunset', park: 'feather', mall: 'shopping-bag', market: 'shopping-cart', landmark: 'star' };
+
+function Places() {
+  return (
+    <View style={{ gap: space.md }}>
+      <T v="label" c={color.gold}>Where plans happen</T>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: space.md, paddingRight: space.lg }} style={{ marginRight: -space.xl }}>
+        {PLACES.map((v) => (
+          <View key={v.id} style={styles.place}>
+            <Feather name={KIND_ICON[v.kind]} size={20} color={color.gold} />
+            <T v="bodyBold" numberOfLines={2}>{v.name}</T>
+            <T v="caption" c={color.textDim}>{v.area}</T>
+          </View>
+        ))}
+      </ScrollView>
+    </View>
+  );
+}
+
 export function Welcome() {
   return (
     <View style={{ gap: space.xl }}>
-      <View>
+      <NightSky>
         <Loop name="pinkyLock" />
         <Scribble wide={false} />
-      </View>
-      <T v="label" c={color.pink}>Pinkilock</T>
+      </NightSky>
       <T v="mega" style={styles.headline}>No ghosting.{'\n'}No endless{'\n'}swiping.</T>
       <T v="heading" c={color.textDim}>One person. One tiny plan. One pinky promise that you both show up.</T>
       <View style={{ marginTop: space.md }}><Notes /></View>
+      <Places />
       <Button kind="quiet" icon="log-in" label="I already have an account" onPress={() => router.push({ pathname: '/account/sign-in', params: { mode: 'sign_in' } })} />
     </View>
   );
@@ -72,5 +98,6 @@ const styles = StyleSheet.create({
   // A note stuck down by hand: the face sits a few pixels off a darker block, a little crooked.
   under: { backgroundColor: color.line, borderRadius: radius.chip },
   note: { flexDirection: 'row', alignItems: 'center', gap: space.md, backgroundColor: color.surface, borderWidth: 1, borderColor: color.line, borderRadius: radius.chip, paddingHorizontal: space.lg, paddingVertical: space.md, transform: [{ translateX: -4 }, { translateY: -4 }] },
+  place: { width: 150, minHeight: 112, justifyContent: 'flex-end', gap: 2, padding: space.md, borderRadius: radius.card, borderWidth: 1, borderColor: color.goldDeep, backgroundColor: color.surface },
   number: { fontSize: 36, lineHeight: 38, width: 22, textAlign: 'center' },
 });

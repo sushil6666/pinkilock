@@ -104,7 +104,7 @@ export default function Me() {
   const toggleIdea = async (id: string) => {
     const has = me.ideaIds.includes(id);
     if (has && me.ideaIds.length <= 3) return setError('Keep at least three. They are how people ask you out.');
-    if (!has && me.ideaIds.length >= 6) return setError('Six is the cap. Drop one first.');
+    if (!has && me.ideaIds.length >= 6) return setError('You can pick up to six. Remove one first.');
     setError('');
     try {
       await updateMe({ ideaIds: has ? me.ideaIds.filter((x) => x !== id) : [...me.ideaIds, id] });
@@ -115,7 +115,7 @@ export default function Me() {
 
   const toggleVibe = async (v: string) => {
     const has = me.vibes.includes(v);
-    if (!has && me.vibes.length >= 3) return setError('Three tags is the cap. Drop one first.');
+    if (!has && me.vibes.length >= 3) return setError('You can pick up to three tags. Remove one first.');
     setError('');
     try {
       await updateMe({ vibes: has ? me.vibes.filter((x) => x !== v) : [...me.vibes, v] });
@@ -145,8 +145,8 @@ export default function Me() {
       <TrustBadge person={me} size="lg" />
       <T v="caption" c={color.textDim} style={{ marginTop: space.sm }}>
         {live
-          ? 'Worked out from your kept promises, bails and no-shows. Refreshes every few minutes.'
-          : `Kept promises push it up, flakes pull it down. One flake from here would make it ${trustScore(me.kept, me.flaked + 1)}.`}
+          ? 'Based on your kept promises, bails and no-shows. Updates every few minutes.'
+          : `Keeping promises raises it and flaking lowers it. One more flake would take it to ${trustScore(me.kept, me.flaked + 1)}.`}
       </T>
 
       {me.tagline ? <T v="heading" style={{ marginTop: space.xl }}>{me.tagline}</T> : null}
@@ -159,7 +159,7 @@ export default function Me() {
       ) : null}
       <View style={[styles.wrap, { marginTop: space.md, alignItems: 'center' }]}>
         {me.vibes.map((v) => <Chip key={v} label={v} />)}
-        <Tag label={editVibes ? 'Done' : 'Change tags'} tone={editVibes ? color.volt : color.textDim} onPress={() => setEditVibes(!editVibes)} />
+        <Tag label={editVibes ? 'Done' : 'Change tags'} tone={editVibes ? color.gold : color.textDim} onPress={() => setEditVibes(!editVibes)} />
       </View>
       {editVibes && VIBE_GROUPS.map((group) => (
         <View key={group.label} style={{ gap: space.sm, marginTop: space.lg }}>
@@ -189,7 +189,7 @@ export default function Me() {
           return <Chip key={w.id} label={w.label} selected={on} onPress={() => saveAvailability(on ? (me.freeWindows ?? []).filter((x) => x !== w.id) : [...(me.freeWindows ?? []), w.id]).catch((e) => setError(shown(e, '/(tabs)/me')))} />;
         })}
       </View>
-      <T v="caption" c={color.textDim} style={{ marginTop: space.sm }}>People asking you see these times first. None picked means any time.</T>
+      <T v="caption" c={color.textDim} style={{ marginTop: space.sm }}>People see these times first when they ask you out. Leave them all off to show any time.</T>
 
       <T v="label" c={color.textDim} style={styles.section}>Unlocks when a promise is kept</T>
       <View style={styles.panel}>
@@ -202,15 +202,15 @@ export default function Me() {
 
       <T v="label" c={color.textDim} style={styles.section}>Account</T>
       <View style={styles.panel}>
-        <Feather name={account?.email && !account.phone ? 'mail' : 'phone'} size={18} color={keeps ? color.volt : color.textDim} />
+        <Feather name={account?.email && !account.phone ? 'mail' : 'phone'} size={18} color={keeps ? color.gold : color.textDim} />
         <View style={{ flex: 1 }}>
-          <T v="bodyBold">{keeps ? [account?.email && maskEmail(account.email), account?.phone && maskPhone(account.phone)].filter(Boolean).join(' · ') : 'No email or phone number yet'}</T>
-          <T v="caption" c={color.textDim}>{keeps ? 'You can sign in with it on any phone.' : 'Add one to keep this account if you change phones. Without it, losing this phone loses your record.'}</T>
+          <T v="bodyBold">{keeps ? [account?.email && maskEmail(account.email), account?.phone && maskPhone(account.phone)].filter(Boolean).join(' · ') : 'No email or phone number added'}</T>
+          <T v="caption" c={color.textDim}>{keeps ? 'Use it to sign in on any device.' : 'Add one so you never lose your account. Without it, your promises and score live only on this device.'}</T>
         </View>
       </View>
       <View style={{ gap: space.sm, marginTop: space.sm }}>
-        {!account?.email ? <Button kind="ghost" icon="mail" label="Add your email" onPress={() => router.push({ pathname: '/account/sign-in', params: { mode: 'link', kind: 'email' } })} /> : null}
-        {!account?.phone ? <Button kind="ghost" icon="phone" label="Add your phone number" onPress={() => router.push({ pathname: '/account/sign-in', params: { mode: 'link', kind: 'phone' } })} /> : null}
+        {!account?.email ? <Button kind="ghost" icon="mail" label="Add email address" onPress={() => router.push({ pathname: '/account/sign-in', params: { mode: 'link', kind: 'email' } })} /> : null}
+        {!account?.phone ? <Button kind="ghost" icon="phone" label="Add phone number" onPress={() => router.push({ pathname: '/account/sign-in', params: { mode: 'link', kind: 'phone' } })} /> : null}
         {keeps ? <Button kind="ghost" icon="log-out" label="Sign out" onPress={() => setSheet('sign_out')} /> : null}
         <Button kind="ghost" icon="slash" label="Blocked people" onPress={() => router.push('/account/blocked')} />
         <Button kind="ghost" icon="download" label="Download my data" busy={busy === 'export'} onPress={exportData} />
@@ -220,16 +220,16 @@ export default function Me() {
 
       <T v="label" c={color.textDim} style={styles.section}>Data</T>
       <View style={styles.panel}>
-        <Feather name={live ? 'cloud' : 'smartphone'} size={18} color={live ? color.volt : color.textDim} />
+        <Feather name={live ? 'cloud' : 'smartphone'} size={18} color={live ? color.gold : color.textDim} />
         <View style={{ flex: 1 }}>
-          <T v="bodyBold">{live ? 'Live: Supabase' : 'Mock data on this phone'}</T>
-          <T v="caption" c={color.textDim}>{live ? 'Postgres with row-level security and realtime.' : 'Ten made-up people who answer by themselves. Add Supabase keys to go live.'}</T>
+          <T v="bodyBold">{live ? 'Connected' : 'Demo mode'}</T>
+          <T v="caption" c={color.textDim}>{live ? 'Your plans and promises stay in sync across your devices.' : 'You are exploring with ten sample people who reply on their own.'}</T>
         </View>
       </View>
 
       <T v="label" c={color.textDim} style={styles.section}>Notifications</T>
       <View style={styles.panel}>
-        <Feather name={push.state === 'on' ? 'bell' : 'bell-off'} size={18} color={push.state === 'on' ? color.volt : push.state === 'unavailable' ? color.textDim : color.flare} />
+        <Feather name={push.state === 'on' ? 'bell' : 'bell-off'} size={18} color={push.state === 'on' ? color.gold : push.state === 'unavailable' ? color.textDim : color.flare} />
         <View style={{ flex: 1 }}>
           <T v="bodyBold">{push.state === 'on' ? 'On for this phone' : push.state === 'denied' ? 'Turned off' : push.state === 'error' ? 'Not working' : 'Not available here'}</T>
           <T v="caption" c={color.textDim}>{push.detail}</T>
@@ -239,7 +239,7 @@ export default function Me() {
       <T v="label" c={color.textDim} style={styles.section}>Safety and privacy</T>
       <View style={{ gap: space.sm }}>
         <Button kind="ghost" icon="shield" label="Safety and emergency numbers" onPress={() => router.push('/safety')} />
-        <Button kind="ghost" icon="message-square" label="Ask us: your data, your score, an appeal" onPress={() => router.push('/account/requests')} />
+        <Button kind="ghost" icon="message-square" label="Contact us about your data, score or an appeal" onPress={() => router.push('/account/requests')} />
         <View style={{ flexDirection: 'row', gap: space.md }}>
           <Tag label="Terms" onPress={() => router.push('/legal/terms')} />
           <Tag label="Privacy" onPress={() => router.push('/legal/privacy')} />

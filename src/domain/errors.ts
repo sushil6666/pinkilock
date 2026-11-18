@@ -73,7 +73,7 @@ export const ERRORS = {
   PA002: 'Email sign-in is not switched on yet.',
   PA003: 'That does not look right. Check it and try again.',
   PA004: 'That is already on another account. Sign in with it instead.',
-  PA005: 'No account uses that yet. Set one up first, then add it in Me.',
+  PA005: 'We could not find an account with that. Create one first, then add it from the Me tab.',
   PA006: 'That code did not match or has expired. Check it, or send a new one.',
   PA007: 'Wait a moment before asking for another code.',
   PA008: 'Add a phone number or an email first, or you could not get back in.',

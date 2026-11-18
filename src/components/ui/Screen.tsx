@@ -1,7 +1,7 @@
 /**
  * Every screen sits in one of these. It owns the safe area (notch, Dynamic Island, home
- * indicator, Android gesture or 3-button bar), the gutter, the optional back header and a
- * footer that stays above the keyboard, so no screen handles insets itself.
+ * indicator, Android gesture or 3-button bar), the gutter, the header (the logo top centre, with an
+ * optional back control and title under the logo) and a footer that stays above the keyboard, so no screen handles insets itself.
  *
  * It also owns the width. Nothing is drawn wider than `columnMax`: in a wide browser window or
  * on a tablet the screen is a centred column with the app's own background around it and a
@@ -15,6 +15,7 @@ import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, View
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { webOnly } from '../../lib/web';
 import { color, columnMax, gutter, space, wideMax } from '../../theme/tokens';
+import { Logo } from '../Logo';
 import { T } from './T';
 
 interface Props {
@@ -30,6 +31,8 @@ interface Props {
   inTabs?: boolean;
   /** The first screen only, in a wide window: drawn up to `wideMax` instead of the column. */
   wide?: boolean;
+  /** The logo sits top centre on every screen; only a page with its own top bar turns it off. */
+  logo?: boolean;
 }
 
 /**
@@ -49,11 +52,11 @@ export function goBack() {
 /** Centred, never wider than the column. For anything that is drawn outside a Screen. */
 export const column = { width: '100%', maxWidth: columnMax, alignSelf: 'center' } as const;
 
-export function Screen({ children, title, back = false, onBack, right, footer, scroll = true, inTabs, wide }: Props) {
+export function Screen({ children, title, back = false, onBack, right, footer, scroll = true, inTabs, wide, logo = true }: Props) {
   const width = wide ? { ...column, maxWidth: wideMax } : column;
   const insets = useSafeAreaInsets();
   const bottom = inTabs ? space.xxl : Math.max(insets.bottom, space.lg) + space.sm;
-  const hasHeader = back !== false || !!title || !!right;
+  const hasHeader = logo || back !== false || !!title || !!right;
 
   return (
     <KeyboardAvoidingView {...webOnly({ role: 'main' as const })} style={[styles.root, { paddingTop: insets.top, paddingLeft: insets.left, paddingRight: insets.right }]} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
@@ -66,7 +69,10 @@ export function Screen({ children, title, back = false, onBack, right, footer, s
               <Feather name={back === 'close' ? 'x' : 'arrow-left'} size={22} color={color.text} />
             </Pressable>
           ) : <View style={styles.headerBtn} />}
-          <T v="label" c={color.textDim} numberOfLines={1} style={{ flex: 1, textAlign: 'center' }}>{title ?? ''}</T>
+          <View style={styles.middle}>
+            {logo && <Logo size={18} />}
+            {title ? <T v="label" c={color.textDim} numberOfLines={1} center>{title}</T> : null}
+          </View>
           <View style={[styles.headerBtn, { alignItems: 'flex-end' }]}>{right}</View>
         </View>
       )}
@@ -92,7 +98,8 @@ const styles = StyleSheet.create({
   fill: { flex: 1 },
   rail: { ...StyleSheet.absoluteFillObject, alignItems: 'center' },
   railLines: { flex: 1, width: '100%', maxWidth: columnMax + 2, borderLeftWidth: StyleSheet.hairlineWidth, borderRightWidth: StyleSheet.hairlineWidth, borderColor: color.line },
-  header: { ...column, height: 52, flexDirection: 'row', alignItems: 'center', paddingHorizontal: gutter - 4 },
+  header: { ...column, minHeight: 56, flexDirection: 'row', alignItems: 'center', paddingHorizontal: gutter - 4, paddingVertical: space.xs },
+  middle: { flex: 1, alignItems: 'center', gap: 2 },
   headerBtn: { width: 48, height: 48, justifyContent: 'center' },
   footer: { ...column, paddingHorizontal: gutter, paddingTop: space.md, gap: space.md, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: color.line, backgroundColor: color.bg },
 });

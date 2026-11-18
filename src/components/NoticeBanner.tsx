@@ -10,7 +10,7 @@ import { elevation } from '../theme/elevation';
 import { color, columnMax, gutter, radius, space } from '../theme/tokens';
 import { T } from './ui/T';
 
-const TONE = { pink: color.pink, volt: color.volt, flare: color.flare };
+const TONE = { pink: color.pink, volt: color.gold, flare: color.flare };
 
 export function NoticeBanner() {
   const notice = useStore((s) => s.notice);

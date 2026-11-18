@@ -18,7 +18,7 @@ export function TrustBadge({ person, size = 'sm', brief }: Props) {
   if (size === 'sm') {
     return (
       <View style={[styles.pill, { borderColor: t.tone }]} accessible accessibilityLabel={label}>
-        <Feather name="shield" size={13} color={t.tone} />
+        <Feather name="shield" size={15} color={t.tone} />
         <T v="label" c={t.tone} style={{ fontVariant: ['tabular-nums'] }}>{t.score}</T>
         {!brief && <T v="label" c={color.text}>{t.label}</T>}
       </View>
@@ -33,7 +33,7 @@ export function TrustBadge({ person, size = 'sm', brief }: Props) {
         </View>
         <T v="caption" c={color.textDim}>{t.kept} kept  /  {t.flaked} flaked</T>
         <View style={styles.bar}>
-          <View style={{ flex: Math.max(t.kept, 0.001), backgroundColor: color.volt }} />
+          <View style={{ flex: Math.max(t.kept, 0.001), backgroundColor: color.gold }} />
           <View style={{ flex: t.flaked, backgroundColor: color.flare }} />
           {t.kept + t.flaked === 0 && <View style={{ flex: 1, backgroundColor: color.line }} />}
         </View>
@@ -44,7 +44,7 @@ export function TrustBadge({ person, size = 'sm', brief }: Props) {
 }
 
 const styles = StyleSheet.create({
-  pill: { flexDirection: 'row', alignItems: 'center', gap: 6, alignSelf: 'flex-start', borderWidth: 1, borderRadius: radius.pill, paddingHorizontal: space.md, paddingVertical: 5, backgroundColor: 'rgba(0,18,58,0.72)' },
+  pill: { flexDirection: 'row', alignItems: 'center', gap: 6, alignSelf: 'flex-start', borderWidth: 1.5, borderRadius: radius.pill, paddingHorizontal: space.md, paddingVertical: 6, backgroundColor: color.onPhoto },
   card: { flexDirection: 'row', alignItems: 'center', gap: space.lg, borderWidth: 1, borderColor: color.line, borderRadius: radius.card, backgroundColor: color.surface, paddingHorizontal: space.lg, paddingVertical: space.md },
   bar: { flexDirection: 'row', height: 6, borderRadius: 3, overflow: 'hidden', marginTop: space.sm, gap: 2 },
 });

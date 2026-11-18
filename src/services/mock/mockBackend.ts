@@ -489,7 +489,7 @@ export function createMockBackend(): Backend {
         return;
       }
       if (!(await AsyncStorage.getItem(parked(kind, address)).catch(() => null))) {
-        fail('PA005', `No account uses that ${what} yet. Set one up first, then add it in Me.`);
+        fail('PA005', `We could not find an account with that ${what}. Create one first, then add it from the Me tab.`);
       }
     },
 
@@ -504,7 +504,7 @@ export function createMockBackend(): Backend {
         return snapshot(d);
       }
       const raw = await AsyncStorage.getItem(parked(kind, address));
-      if (!raw) fail('PA005', `No account uses that ${kind === 'phone' ? 'number' : 'email address'} yet. Set one up first, then add it in Me.`);
+      if (!raw) fail('PA005', `We could not find an account with that ${kind === 'phone' ? 'number' : 'email address'}. Create one first, then add it from the Me tab.`);
       db = JSON.parse(raw) as Db;
       if (db.phone) await AsyncStorage.removeItem(parked('phone', db.phone));
       if (db.email) await AsyncStorage.removeItem(parked('email', db.email));

@@ -30,7 +30,7 @@ export default function Safety() {
         </View>
         {TIPS.map(([head, sub]) => (
           <View key={head} style={{ flexDirection: 'row', gap: space.md }}>
-            <Feather name="shield" size={18} color={color.volt} style={{ marginTop: 3 }} />
+            <Feather name="shield" size={18} color={color.gold} style={{ marginTop: 3 }} />
             <View style={{ flex: 1, gap: 2 }}>
               <T v="bodyBold">{head}</T>
               <T c={color.textDim}>{sub}</T>

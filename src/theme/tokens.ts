@@ -6,22 +6,32 @@ import { Easing } from 'react-native-reanimated';
 import type { TextStyle } from 'react-native';
 
 export const color = {
-  bg: '#001C55',
-  surface: '#04225F',
-  surfaceHi: '#0B2F7C',
-  line: '#4169E1',
-  text: '#F6F6F1',
-  textDim: '#A9D8F7',
-  textMute: '#7DB0E0',
-  pink: '#FF2E93',
-  pinkDeep: '#B3115F',
-  pinkWash: 'rgba(255,46,147,0.14)',
-  volt: '#D7FF3E',
-  voltWash: 'rgba(215,255,62,0.12)',
-  flare: '#FF5A36',
-  flareWash: 'rgba(255,90,54,0.14)',
-  onPink: '#00123A',
-  scrim: 'rgba(0,10,40,0.7)',
+  bg: '#241A63',
+  surface: '#30237A',
+  surfaceHi: '#3D2E91',
+  line: '#5A49B8',
+  text: '#FFF8E7',
+  textDim: '#D3CBF5',
+  textMute: '#A99CE3',
+  gold: '#F5C95C',
+  goldDeep: '#B8892A',
+  goldWash: 'rgba(245,201,92,0.14)',
+  moon: '#FFE6A3',
+  pink: '#FF6FAE',
+  pinkDeep: '#C2457E',
+  pinkWash: 'rgba(255,111,174,0.16)',
+  pinkHalo: 'rgba(255,111,174,0.38)',
+  /** Light catching the top of a clay shape (the logo's fingers). */
+  shine: 'rgba(255,255,255,0.34)',
+  flare: '#FF8466',
+  flareWash: 'rgba(255,132,102,0.14)',
+  onGold: '#241A63',
+  onPink: '#241A63',
+  scrim: 'rgba(20,14,60,0.72)',
+  /** Behind a badge that sits on a photo or portrait: dark enough that gold and white stay sharp. */
+  onPhoto: 'rgba(20,14,60,0.88)',
+  /** The colour shadows are cast in: the night sky, deeper. Never black. */
+  shadow: '#0E0838',
 } as const;
 
 export const space = { xs: 4, sm: 8, md: 12, lg: 16, xl: 20, xxl: 24, x3: 32, x4: 40, x5: 56 } as const;
@@ -39,19 +49,19 @@ export const depth = 5;
 export const radius = { chip: 6, card: 14, sheet: 28, pill: 999 } as const;
 
 export const font = {
-  display: 'ArchivoBlack_400Regular',
-  regular: 'SpaceGrotesk_400Regular',
-  medium: 'SpaceGrotesk_500Medium',
-  bold: 'SpaceGrotesk_700Bold',
+  display: 'Sora_800ExtraBold',
+  regular: 'PlusJakartaSans_400Regular',
+  medium: 'PlusJakartaSans_500Medium',
+  bold: 'PlusJakartaSans_700Bold',
   hand: 'CaveatBrush_400Regular',
 } as const;
 
 const tabular: TextStyle = { fontVariant: ['tabular-nums'] };
 
 export const type = {
-  mega: { fontFamily: font.display, fontSize: 56, lineHeight: 58, letterSpacing: -0.5, textTransform: 'uppercase', ...tabular },
-  display: { fontFamily: font.display, fontSize: 40, lineHeight: 42, letterSpacing: -0.5, textTransform: 'uppercase' },
-  title: { fontFamily: font.display, fontSize: 26, lineHeight: 29, letterSpacing: -0.3, textTransform: 'uppercase' },
+  mega: { fontFamily: font.display, fontSize: 54, lineHeight: 58, letterSpacing: -1.5, ...tabular },
+  display: { fontFamily: font.display, fontSize: 38, lineHeight: 42, letterSpacing: -1 },
+  title: { fontFamily: font.display, fontSize: 25, lineHeight: 30, letterSpacing: -0.5 },
   heading: { fontFamily: font.bold, fontSize: 20, lineHeight: 26 },
   body: { fontFamily: font.regular, fontSize: 16, lineHeight: 23 },
   bodyBold: { fontFamily: font.bold, fontSize: 16, lineHeight: 23 },

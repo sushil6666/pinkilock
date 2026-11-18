@@ -12,7 +12,6 @@ export default function NotFound() {
     <Screen scroll={false}>
       <View style={{ flex: 1, justifyContent: 'center', gap: space.lg }}>
         <Loop name="padlock" style={{ maxWidth: 240 }} />
-        <T v="label" c={color.pink}>Pinkilock</T>
         <T v="display">Nothing{'\n'}here.</T>
         <T c={color.textDim}>That link does not lead anywhere. Nothing was promised, so nothing is lost.</T>
         <Button label="Go to the start" icon="arrow-right" onPress={() => router.replace('/')} />

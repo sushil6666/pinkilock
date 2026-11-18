@@ -1,6 +1,6 @@
 /**
  * Draws the clay loops the app shows (assets/loops/*.gif) and a still of each for reduced motion
- * (assets/loops/*.png).
+ * (assets/loops/*-still.png).
  *
  *   node scripts/make-loops.mjs            (needs the playwright and three dev dependencies, and ffmpeg)
  *
@@ -9,8 +9,8 @@
  * read from src/theme/tokens.ts, so a palette change is one rerun. The GIFs are committed, so nobody
  * needs to run this to build.
  *
- * The background is drawn in the page's blue and then keyed out, so the GIF's own colour table can
- * never shift it: the page shows through, and the soft edges were already drawn against that blue.
+ * The background is drawn in the page's own `bg` and then keyed out, so the GIF's own colour table can
+ * never shift it: the page shows through, and the soft edges were already drawn against that colour.
  */
 import { execFileSync } from 'node:child_process';
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, statSync, writeFileSync, createReadStream, existsSync } from 'node:fs';
@@ -27,7 +27,7 @@ const OUT = path.join(ROOT, 'assets', 'loops');
 const tokens = Object.fromEntries(
   [...readFileSync(path.join(ROOT, 'src/theme/tokens.ts'), 'utf8').matchAll(/^\s+(\w+): '(#[0-9A-Fa-f]{6})',/gm)].map((m) => [m[1], m[2]]),
 );
-for (const k of ['bg', 'pink', 'pinkDeep', 'text', 'textDim', 'textMute', 'onPink']) if (!tokens[k]) throw new Error(`token ${k} not found in tokens.ts`);
+for (const k of ['bg', 'pink', 'pinkDeep', 'gold', 'goldDeep', 'text', 'textDim', 'textMute', 'onPink']) if (!tokens[k]) throw new Error(`token ${k} not found in tokens.ts`);
 
 /** name: file name. scene: export in scene.js. w, h: output size. frames, fps. still: the moment kept for reduced motion. */
 const LOOPS = [
@@ -80,7 +80,8 @@ for (const loop of LOOPS) {
   await tab.close();
 
   const gif = path.join(OUT, `${loop.name}.gif`);
-  const png = path.join(OUT, `${loop.name}.png`);
+  // Not `${name}.png`: Android names both files the same drawable and the build fails (tests/unit/assets.test.ts).
+  const png = path.join(OUT, `${loop.name}-still.png`);
   execFileSync('ffmpeg', ['-y', '-loglevel', 'error', '-framerate', String(loop.fps), '-i', path.join(tmp, 'f%03d.png'),
     '-vf', `scale=${loop.w}:${loop.h}:flags=lanczos,colorkey=${tokens.bg.replace('#', '0x')}:0.02:0,split[a][b];[a]palettegen=max_colors=64:stats_mode=full:reserve_transparent=1[p];[b][p]paletteuse=dither=bayer:bayer_scale=3:diff_mode=rectangle:alpha_threshold=128`,
     '-loop', '0', gif]);

@@ -40,7 +40,7 @@ export default function Blocked() {
         <T v="display">Blocked</T>
         <T c={color.textDim}>They cannot see you and you cannot see them. Unblocking brings their card back; plans that ended stay ended.</T>
         {error ? <ErrorText text={error} /> : null}
-        {list?.length === 0 ? <T c={color.textMute}>Nobody. Good.</T> : null}
+        {list?.length === 0 ? <T c={color.textMute}>You haven't blocked anyone.</T> : null}
         {list?.map((p) => (
           <View key={p.profileId} style={{ flexDirection: 'row', alignItems: 'center', gap: space.md, borderWidth: 1, borderColor: color.line, borderRadius: radius.card, backgroundColor: color.surface, padding: space.md }}>
             <View style={{ flex: 1 }}>

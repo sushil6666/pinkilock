@@ -54,7 +54,7 @@ export default function ProfileScreen() {
       <Screen back="back" scroll={false}>
         <View style={{ flex: 1, justifyContent: 'center', gap: space.md }}>
           <T v="display">Gone.</T>
-          <T c={color.textDim}>This profile is not around any more.</T>
+          <T c={color.textDim}>This profile is no longer available.</T>
         </View>
       </Screen>
     );
@@ -101,7 +101,7 @@ export default function ProfileScreen() {
                   <T v="bodyBold">{idea.title}</T>
                   <T v="caption" c={color.textDim}>{idea.minutes} min  /  {idea.blurb}</T>
                 </View>
-                {shared.includes(ideaId) ? <Tag label="You too" tone={color.volt} /> : !live ? <Feather name="arrow-up-right" size={18} color={color.textMute} /> : null}
+                {shared.includes(ideaId) ? <Tag label="You too" tone={color.gold} /> : !live ? <Feather name="arrow-up-right" size={18} color={color.textMute} /> : null}
               </Pressable>
             );
           })}
