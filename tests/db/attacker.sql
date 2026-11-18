@@ -44,7 +44,7 @@ insert into public.profile_private (profile_id, contact_kind, contact_handle) va
 select t.ok((select string_agg(table_schema || '.' || table_name || ':' || privs, ' ' order by table_schema, table_name) from (
     select table_schema, table_name, string_agg(privilege_type, ',' order by privilege_type) as privs
     from information_schema.role_table_grants where grantee = 'authenticated' and table_schema <> 't' group by 1, 2) g)
-  = 'public.areas:SELECT public.ask_lines:SELECT public.cities:SELECT public.contact_kinds:SELECT public.countries:SELECT public.duos:SELECT public.ideas:SELECT public.invites:SELECT public.passes:DELETE,INSERT,SELECT public.profile_cards:SELECT '
+  = 'public.areas:SELECT public.ask_lines:SELECT public.cities:SELECT public.contact_kinds:SELECT public.countries:SELECT public.duos:SELECT public.ideas:SELECT public.invites:SELECT public.passes:SELECT public.profile_cards:SELECT '
     'public.profile_private:SELECT public.pronoun_options:SELECT public.trust_scores:SELECT public.venues:SELECT public.vibes:SELECT',
   'a signed-in user holds exactly these table rights and no others');
 select t.ok(not exists (select 1 from information_schema.role_table_grants where grantee = 'anon'),
@@ -53,7 +53,7 @@ select t.ok((select string_agg(n.nspname || '.' || p.proname, ' ' order by n.nsp
     from pg_proc p join pg_namespace n on n.oid = p.pronamespace
     where n.nspname in ('public', 'private', 'analytics') and has_function_privilege('authenticated', p.oid, 'execute'))
   = 'private.blocked_pair private.has_duo private.on_invite private.shares_invite private.vouch_summary public.bail public.block_user public.check_in public.create_duo_link public.create_vouch_link public.date_feedback public.decline_invite '
-    'public.delete_my_account public.discover public.duo_link_name public.export_my_data public.file_privacy_request public.give_consents public.join_duo public.leave_duo public.log_client_error public.log_event public.my_blocks public.my_checkin_code public.my_consents public.my_contact_flags public.my_line_review public.my_moderation public.offer_pinky public.rate_date public.register_push_token public.report_bad_contact public.report_user '
+    'public.delete_my_account public.discover public.duo_link_name public.export_my_data public.file_privacy_request public.give_consents public.join_duo public.leave_duo public.log_client_error public.log_event public.my_blocks public.my_checkin_code public.my_consents public.my_contact_flags public.my_line_review public.my_moderation public.offer_pinky public.pass_profile public.rate_date public.register_push_token public.report_bad_contact public.report_user public.restore_passes '
     'public.save_availability public.save_profile public.send_invite public.start_contact_check public.unblock_user public.unregister_push_token public.vouch public.vouch_link_name',
   'a signed-in user can call exactly these functions and no others');
 select t.ok(not exists (select 1 from pg_proc p join pg_namespace n on n.oid = p.pronamespace
@@ -82,7 +82,7 @@ select t.ok(t.fails(format($$insert into profile_private values (%L, 'Instagram'
 -- Checked again after reset role: nothing of Y's changed.
 select t.ok(t.fails(format($$update profiles set name = 'Owned' where id = %L$$, :'y'))
   and t.fails(format($$update profile_private set contact_handle = '@owned' where profile_id = %L$$, :'y')), 'X cannot write Y''s profile or contact');
-delete from passes where profile_id = :'y';
+select t.ok(t.fails(format('delete from passes where profile_id = %L', :'y')), 'X cannot delete Y''s passes');
 
 select t.ok(t.fails(format($$insert into invites (from_id, to_id, idea_id, starts_at, minutes, expires_at)
   values (%L, %L, 'boba_run', now() + interval '1 hour', 25, now() + interval '1 hour')$$, :'x', :'y')), 'X cannot insert an invite');
@@ -96,6 +96,8 @@ select t.ok(t.fails('select count(*) from notifications') and t.fails('select co
 select t.ok(t.fails($$insert into ideas values ('x_idea', 'X', 'x', 10, 'irl', 'x')$$) and t.fails($$update ideas set title = 'X'$$), 'X cannot change the catalogue');
 select t.ok(t.fails('select count(*) from analytics.metrics_daily'), 'X cannot read the analytics tables');
 select t.ok(t.fails(format($$insert into passes (profile_id, passed_id) values (%L, %L)$$, :'y', :'z')), 'X cannot write a pass as someone else');
+select t.ok(t.fails(format($$insert into passes (profile_id, passed_id) values (%L, %L)$$, :'x', :'z')) and t.fails('delete from passes'),
+  'X cannot write or delete passes directly, even their own: only pass_profile and restore_passes');
 select t.ok(t.fails('create table public.loot (x int)') and t.fails('create function public.loot() returns int language sql as ''select 1'''),
   'X cannot create tables or functions in public');
 
@@ -216,7 +218,7 @@ begin
     insert into x_seen select id from discover(50) on conflict do nothing;
     get diagnostics n = row_count;
     begin
-      insert into passes (profile_id, passed_id) select auth.uid(), id from x_seen on conflict do nothing;
+      perform pass_profile(s.id) from x_seen s;
     exception when others then null; -- the pass limit stops this first; that is fine too
     end;
   end loop;
@@ -233,7 +235,7 @@ select t.ok((select count(*) filter (where not t.fails(format(
 select t.as_user(:'x');
 select t.ok(t.sqlstate($$select log_event('app_open', jsonb_build_object('junk', repeat('x', 100000)))$$) = 'PL041',
   'G6 closed: the event log takes at most 1 kB from the app in one call');
-select t.ok(t.sqlstate(format($$insert into passes (profile_id, passed_id) select %L, ('00000000-0000-0000-0001-' || lpad(n::text, 12, '0'))::uuid from generate_series(1, 220) n on conflict do nothing$$, :'x')) = 'PL028',
+select t.ok(t.sqlstate($$select pass_profile(('00000000-0000-0000-0001-' || lpad(n::text, 12, '0'))::uuid) from generate_series(1, 220) n$$) = 'PL028',
   'G6 closed: no one can pass on more than 200 people in a day');
 
 -- G7 closed: checking in needs the other person's code, which only passes between two people who

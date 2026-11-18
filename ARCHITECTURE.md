@@ -167,7 +167,7 @@ Full DDL is `supabase/migrations`. Tables:
 | `ask_lines` | The lines an ask can carry (the same list as `ASK_LINES` in `src/domain/ideas.ts`) | Read only |
 | `venues` | Suggested public places to meet (the same list as `VENUES` in `src/domain/venues.ts`); a venue is switched off, never deleted | Read only |
 | `invites` | The whole product: who, what, when, status, `first_pinky_by`, `check_ins`, `flaked_by` | Read: the two people on it. **No direct writes at all** |
-| `passes` | People I passed on in Discover | Only me |
+| `passes` | People I passed on in Discover; written only through `pass_profile` and `restore_passes` | Only me (read) |
 | `events` | Append-only behaviour log. Rows are never deleted; a deleted account's rows lose their actor | No client access. Written by the functions, read by analytics |
 | `trust_scores` | One row per person, written by the DuckDB worker | Read: any signed-in user |
 | `profile_cards` (view) | `profiles` joined to `trust_scores` | What the app selects for a card |

@@ -60,9 +60,9 @@ select save_profile('Mira', 24, 'Juhu', '', '', '{}', array['boba_run','chai_wal
 select t.ok(t.sqlstate($$select save_profile('Mira', 24, 'Juhu', '', '', '{}', array['boba_run','chai_walk','meme_duel'])$$) = 'PL027', 'the 21st profile save in a day is refused (PL027)');
 
 -- Passes are counted even when the same row is written again.
-insert into passes (profile_id, passed_id) values (:'m', :'l') on conflict do nothing;
-delete from passes where profile_id = :'m';
-insert into passes (profile_id, passed_id) values (:'m', :'l');
+select pass_profile(:'l');
+select restore_passes();
+select pass_profile(:'l');
 reset role;
 select t.ok((select count(*) from private.actions where user_id = :'m' and kind = 'pass') = 2, 'every pass is counted, even after the row was deleted and written again');
 select t.ok((select schedule from cron.job where jobname = 'pinkilock-actions-retention') = '23 3 * * *', 'the action log is cleared daily');

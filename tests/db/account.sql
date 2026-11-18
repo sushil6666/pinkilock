@@ -28,7 +28,7 @@ select (send_invite(:'f', 'sunset_spot', now() + interval '3 hours', '', '')).id
 select t.as_user(:'f');
 select t.ok((offer_pinky(:'gf')).status = 'half_locked', 'and have another one open');
 select register_push_token('ExponentPushToken[f-phone]', 'android');
-insert into passes (profile_id, passed_id) values (:'f', :'c');
+select pass_profile(:'c');
 select t.as_user(:'c');
 select report_user(:'f', 'fake', 'c-report-about-f');
 select t.as_user(:'f');

@@ -425,14 +425,14 @@ export function createSupabaseBackend(url: string, anonKey: string, storage: Ses
     },
 
     async pass(profileId) {
-      const id = await uid();
-      check(await db.from('passes').upsert({ profile_id: id, passed_id: profileId }).select('passed_id'));
+      await uid();
+      await rpc('pass_profile', { p_profile: profileId });
       return { passedIds: check(await db.from('passes').select('passed_id')).map((r: Row) => r.passed_id) };
     },
 
     async restorePasses() {
-      const id = await uid();
-      check(await db.from('passes').delete().eq('profile_id', id).select('passed_id'));
+      await uid();
+      await rpc('restore_passes');
       return { passedIds: [] };
     },
 
