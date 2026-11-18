@@ -53,3 +53,20 @@ select t.as_user(:'v');
 select t.ok((select free_windows from profile_cards where id = :'u') = array['wkd_evening', 'wke_afternoon'], 'and show on my card');
 select t.ok(t.sqlstate($$select save_availability(array['3am on tuesdays'])$$) = 'PL083', 'only windows from the list (PL083)');
 reset role;
+
+-- Friend vouches (market review).
+set role authenticated;
+select t.as_user(:'u');
+select create_vouch_link() as tok \gset
+select t.ok(t.sqlstate(format('select vouch(%L, array[''always on time''])', :'tok')) = 'PL086', 'I cannot vouch for myself');
+select t.as_user(:'v');
+select t.ok(vouch_link_name(:'tok') = 'Uma', 'a friend sees whose link it is (first name only)');
+select t.ok(t.sqlstate(format('select vouch(%L, array[''will lend you money''])', :'tok')) = 'PL087', 'phrases come from the list (PL087)');
+select vouch(:'tok', array['always on time', 'great listener']);
+select t.as_user(:'w');
+select vouch(:'tok', array['always on time']);
+select t.as_user(:'v');
+select t.ok((select (vouch_count, vouch_phrases[1]) = (2, 'always on time') from profile_cards where id = :'u'), 'U''s card shows two vouches, the most picked phrase first');
+select t.ok(t.fails('select count(*) from vouches'), 'no one can read who vouched');
+select t.ok(t.sqlstate($$select vouch('0000000000000000', array['always on time'])$$) = 'PL085', 'an unknown link is refused (PL085)');
+reset role;

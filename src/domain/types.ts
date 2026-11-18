@@ -38,6 +38,9 @@ export interface Profile {
   answerMinutes?: number | null;
   /** When this person is usually free (src/domain/freeWindows.ts); empty means any time. */
   freeWindows?: string[];
+  /** Friends who vouched (market review), and the phrases they picked most. Never who. */
+  vouchCount?: number;
+  vouchPhrases?: string[];
   /** How many extra photos exist. The photos themselves live behind the reveal. */
   photoCount: number;
 }

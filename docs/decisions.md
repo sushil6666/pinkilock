@@ -66,6 +66,7 @@ first table with its date.
 | D048 | 2026-11-17 | Draft terms and privacy text ship in the app, marked as drafts, until a lawyer replaces them | Consent must point at something true; a draft that matches the app is better than nothing | Claude | `src/legal/drafts.ts` | Until the lawyer's versions |
 | D049 | 2026-11-17 | Share my date uses the phone's share sheet and a local notification; no trusted contact is stored and nothing is sent automatically | An automatic alert needs a stored contact and an SMS or email sender; keeping it on the phone holds no one else's data | Claude | `src/components/ShareMyDate.tsx` | In force once merged |
 | D050 | 2026-11-17 | Free windows guide, they do not restrict: an ask outside them is still allowed, the matching times are just marked | A hard rule would refuse good asks from people who set windows once and forgot | Claude | `src/domain/freeWindows.ts` | In force once merged |
+| D051 | 2026-11-17 | Friend vouches are picked phrases only, shown as a count and the top phrases, labelled as unchecked friends' words; who vouched is never shown | Typed praise could carry a contact; naming vouchers would expose people who never joined | Claude | `vouches`, `src/components/Vouches.tsx` | In force once merged |
 
 ## Waiting for the owner
 

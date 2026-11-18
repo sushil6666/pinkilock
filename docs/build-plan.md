@@ -660,7 +660,7 @@ plan `ended` by a block or deletion always refunds; and the Trust Score never de
 
 ### Also from the review, not large
 
-Built: share my date and the after-date check (on the phone only), the "usually answers in" badge and round two (with WP7). Also built: "when I'm free" windows. Still to build: an
+Built: share my date and the after-date check (on the phone only), the "usually answers in" badge and round two (with WP7). Also built: "when I'm free" windows and friend vouches. Still to build: an
 "usually answers in" badge (the worker already computes the figure); "round two" after a kept
 date; friend vouches. Recommended order when the owner wants them: share my date first.
 

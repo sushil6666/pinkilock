@@ -413,6 +413,13 @@ what the server did (`OPERATIONS.md`, "Trace a bug").
 weekday evenings. Asks can still pick any time; the composer marks the times inside the other
 person's windows (`src/domain/freeWindows.ts`, in the phone's time zone).
 
+### Friend vouches
+
+A person makes a link (`create_vouch_link`: three a day, each good for 7 days and three friends); a
+friend who opens it picks one to three phrases from a fixed list (`vouch`), signed in or not. The
+card shows the count and the phrases picked most (`private.vouch_summary`), never who vouched;
+`vouches` is readable by no client role.
+
 ### Share my date and the after-date check
 
 A locked plan offers "Share my date" (who, what, where, when, through the phone's share sheet; no

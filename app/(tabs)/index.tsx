@@ -20,6 +20,7 @@ import { quiet } from '@/lib/log';
 import { useStore } from '@/state/store';
 import { color, radius, space } from '@/theme/tokens';
 import { answersIn } from '@/domain/answers';
+import { Vouches } from '@/components/Vouches';
 
 export default function Discover() {
   const me = useStore((s) => s.me);
@@ -93,6 +94,7 @@ export default function Discover() {
         {person.tagline ? <T v="heading">{person.tagline}</T> : null}
 
         <Spark me={me} person={person} />
+        <Vouches person={person} />
 
         {person.vibes.length > 0 && (
           <View style={styles.vibes}>
