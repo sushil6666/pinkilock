@@ -220,8 +220,10 @@ Phone sign-in takes the picked country's dialling code instead of assuming India
 handle only through `private.normalize_contact` (each app's own format; `src/domain/profile.ts` is
 the app's copy, `HANDLE_CASES` the shared test table). After a kept plan, `report_bad_contact`
 lets someone the handle was revealed to flag it within a week, once per plan, into
-`contact_reports` (no client reads it) and as a `bad_contact` event that the trust pipeline counts
-like an early bail; `my_contact_flags` tells the owner how many, never who. A proof is a code from
+`contact_reports` (no client reads it). A verified handle cannot be flagged, and a flag waits 7
+days: `private.settle_contact_reports` (hourly) clears it if the owner verified or changed the
+handle, ignores it if the flagger flags more than half of their dates, and otherwise writes a
+`bad_contact` event that the trust pipeline counts like an early bail (D079); `my_contact_flags` tells the owner how many, never who. A proof is a code from
 `start_contact_check` sent from that account to Pinkilock on WhatsApp or Instagram: Meta calls the
 `contact-verify` Edge Function (signature checked), which asks `confirm_contact_code` (service role
 only) to set `profile_private.contact_verified_at`. A new handle clears it.

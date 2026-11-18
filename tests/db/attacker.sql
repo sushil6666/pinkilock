@@ -312,8 +312,9 @@ select t.ok(t.fails(format($$update invites set from_friend = %L where from_id =
 reset role;
 
 -- ---------------------------------------------------------------------------------------------
--- 7. Contact handles (D077, D078): a flag only from someone the handle was shown to, once per
---    plan; no one reads the flags; only the server confirms a proof.
+-- 7. Contact handles (D077, D078, D079): a flag only from someone the handle was shown to, once
+--    per plan, never on a verified handle, and it counts only after 7 days; no one reads the flags;
+--    only the server confirms a proof.
 -- ---------------------------------------------------------------------------------------------
 
 set role authenticated;
@@ -332,8 +333,8 @@ select report_bad_contact(id, :'x') from invites where status = 'kept' and :'x' 
 select report_bad_contact(id, :'x') from invites where status = 'kept' and :'x' in (from_id, to_id) and :'y' in (from_id, to_id);
 reset role;
 select t.ok((select count(*) from public.contact_reports where owner_id = :'x') = 2
-  and (select count(*) from public.events where type = 'bad_contact' and actor_id = :'x') = 2,
-  'Y flags X once for each of their two kept plans, and a second tap on the same plan adds nothing');
+  and (select count(*) from public.events where type = 'bad_contact' and actor_id = :'x') = 0,
+  'Y flags X once for each of their two kept plans, a second tap adds nothing, and nothing counts yet (D079)');
 -- Kept and flagged a week ago is too late.
 update public.invites set resolved_at = now() - interval '8 days' where status = 'kept' and :'x' in (from_id, to_id) and :'y' in (from_id, to_id);
 set role authenticated;
@@ -344,3 +345,29 @@ select t.as_user(:'x');
 select t.ok(my_contact_flags() = 2, 'X sees that their handle has two flags, and not who sent them');
 reset role;
 update public.invites set resolved_at = now() where status = 'kept' and :'x' in (from_id, to_id) and :'y' in (from_id, to_id);
+
+-- D079: a verified handle cannot be flagged.
+update public.profile_private set contact_verified_at = now() where profile_id = :'y';
+set role authenticated;
+select t.as_user(:'x');
+select t.ok(t.sqlstate(format('select report_bad_contact(%L, %L)', (select id from invites where status = 'kept' and :'x' in (from_id, to_id) limit 1), :'y')) = 'PL103',
+  'X cannot flag Y''s handle once Y has verified it (PL103)');
+reset role;
+update public.profile_private set contact_verified_at = null where profile_id = :'y';
+-- After 7 days the flags are settled: on a handle that never changed they count; on a handle the
+-- owner changed they are cleared; from someone who flags more than half their dates they are ignored.
+insert into public.contact_reports (invite_id, reporter_id, owner_id, handle, at) values
+  (gen_random_uuid(), :'x', :'y', '@yami.old', now() - interval '8 days'),
+  (gen_random_uuid(), :'crowd1', :'y', '@yami.secret', now() - interval '8 days'),
+  (gen_random_uuid(), :'crowd1', :'y', '@yami.secret', now() - interval '8 days'),
+  (gen_random_uuid(), :'crowd1', :'y', '@yami.secret', now() - interval '8 days');
+update public.contact_reports set at = now() - interval '8 days' where owner_id = :'x';
+select private.settle_contact_reports();
+select t.ok((select count(*) from public.events where type = 'bad_contact' and actor_id = :'x') = 2
+  and (select bool_and(outcome = 'counted') from public.contact_reports where owner_id = :'x'),
+  'after 7 days, Y''s two flags on X''s unchanged, unverified handle count');
+select t.ok((select outcome from public.contact_reports where owner_id = :'y' and reporter_id = :'x') = 'cleared',
+  'a flag on a handle the owner has since changed is cleared');
+select t.ok((select bool_and(outcome = 'ignored') from public.contact_reports where reporter_id = :'crowd1')
+  and (select count(*) from public.events where type = 'bad_contact' and actor_id = :'y') = 0,
+  'flags from someone who flags more than half of their dates are ignored, and Y''s record is clean');

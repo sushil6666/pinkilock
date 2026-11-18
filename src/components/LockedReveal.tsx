@@ -102,7 +102,8 @@ export function LockedReveal({ person, reveal, hint, onFlag }: Props) {
       </View>
 
       {!open && <T v="caption" c={color.textDim}>{hint}</T>}
-      {open && onFlag && (
+      {/* A verified handle was proved from that account, so it cannot be flagged (D079). */}
+      {open && onFlag && !reveal.contactVerified && (
         flag === 'done' ? <T v="caption" c={color.textDim}>{t('contact.flagged')}</T>
         : flag ? (
           <View style={{ gap: space.sm }}>
