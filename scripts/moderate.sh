@@ -7,11 +7,16 @@
 #   scripts/moderate.sh <db-url> report <id> <action> "<reason>" act on a report
 #   scripts/moderate.sh <db-url> person <uuid> <action> "<reason>" act on a person directly
 #   scripts/moderate.sh <db-url> history <uuid>                 what was done to a person, and why
+#   scripts/moderate.sh <db-url> photos                         photos waiting for a person (D088)
+#   scripts/moderate.sh <db-url> photo <id> <action> "<reason>"  approve or hold one
 #   scripts/moderate.sh <db-url> requests                       privacy requests and appeals waiting
 #   scripts/moderate.sh <db-url> answer <id> "<what was done>"   mark one answered
 #
 # Actions: dismiss, hide_line (removes the line, no new line for 30 days, one strike; two strikes
 # suspend), suspend, unsuspend, approve_line, reject_line.
+# Photo actions: approve_photo; hold_photo (shown to nobody); hold_photo_contact (it carries a
+# handle, a number, a code or a QR: shown to nobody, and one strike, as for a line).
+# A photo is looked at in the dashboard: Storage, bucket `photos`, at the path `photos` lists.
 set -euo pipefail
 db="${1:?usage: moderate.sh <db-url> queue|report|person|history ...}"
 cmd="${2:-queue}"
@@ -38,6 +43,17 @@ case "$cmd" in
     who="${3:?person uuid}"; action="${4:?action}"; reason="${5:?reason}"
     echo "select private.moderate(null, :'who'::uuid, :'action', :'reason')" | q -qAt -v who="$who" -v action="$action" -v reason="$reason"
     ;;
+  photos)
+    echo "== Photos waiting for a person (oldest first). Open each in the dashboard: Storage > photos > path"
+    q -c "select x.id, x.created_at::timestamp(0) as at, x.profile_id, x.path, x.bytes, p.contact_strikes as strikes,
+                 p.suspended_at is not null as suspended
+          from public.photos x left join public.profiles p on p.id = x.profile_id
+          where x.status = 'pending' order by x.created_at"
+    ;;
+  photo)
+    id="${3:?photo id}"; action="${4:?action}"; reason="${5:?reason}"
+    echo "select private.moderate_photo(:'id'::uuid, :'action', :'reason')" | q -qAt -v id="$id" -v action="$action" -v reason="$reason"
+    ;;
   requests)
     echo "== Requests and appeals waiting for an answer (oldest first; answer within 30 days)"
     q -c "select r.id, r.at::timestamp(0), r.kind, r.user_id, r.moderation_action_id as appeal_of, r.detail
@@ -52,7 +68,7 @@ case "$cmd" in
     echo "select at::timestamp(0), action, report_id, note from private.moderation_actions where profile_id = :'who'::uuid order by at" | q -v who="$who"
     ;;
   *)
-    echo "usage: moderate.sh <db-url> queue | report <id> <action> <reason> | person <uuid> <action> <reason> | history <uuid> | requests | answer <id> <outcome>" >&2
+    echo "usage: moderate.sh <db-url> queue | report <id> <action> <reason> | person <uuid> <action> <reason> | photos | photo <id> <action> <reason> | history <uuid> | requests | answer <id> <outcome>" >&2
     exit 2
     ;;
 esac

@@ -92,7 +92,7 @@ For a production project later, the same values with a `PROD_` prefix (step 6).
 
 **2. Deploy the backend.** Run the **Supabase deploy** workflow (it also runs on every push to
 `main` that touches `supabase/`). It turns on anonymous sign-ins, applies the migrations (schema,
-RLS, the every-minute `sweep_invites` schedule, push), deploys the `push`, `review-line` and `contact-verify` Edge Functions (the last stays off until Meta is set up, see OPERATIONS.md), connects
+RLS, the every-minute `sweep_invites` schedule, push), deploys the `push`, `review-line`, `contact-verify` and `photo` Edge Functions (the last stays off until Meta is set up, see OPERATIONS.md), connects
 Postgres to it with a fresh shared secret, sets the analytics role's password, and finishes by
 running the live two-user test against the project.
 

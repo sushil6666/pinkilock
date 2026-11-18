@@ -440,6 +440,18 @@ handle, a number or a QR code, so photo upload must not ship without this.
 is never returned to another account; a direct upload that skips the app stays `pending`; a photo
 with location metadata comes back without it.
 
+**Status, 2026-11-18: extra photos built, with a person as the check** (decision D088). Up to three
+photos behind the lock, in a private Storage bucket that no client can write to: the `photo` Edge
+Function checks the caller, strips every bit of metadata on the server (a unit test with real
+JPEGs carrying GPS EXIF; the live test reads the stored file back) and stores the file as
+`pending`. Every photo waits for a moderator (`scripts/moderate.sh photos`): approved, held, or held
+as carrying a contact, which is a strike like a line. RLS on `photos` and the Storage policy show an
+approved photo only where the reveal is; the attacker suites try a direct upload, calling
+`add_photo`, writing a row and signing someone else's file. Three photos, six uploads a week.
+**Left:** the public photo taken with the camera; the automatic checks (one face, no text, no QR,
+nudity), which wait for O04 and replace the person for the clear cases; re-encoding on the server
+(the app re-encodes; the server only strips).
+
 ### WP8. Privacy and regulation, built once for every region (G16, G17)
 
 Get a privacy lawyer before the first public launch; this package builds what they will ask for.

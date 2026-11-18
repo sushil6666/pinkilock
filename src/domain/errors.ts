@@ -90,6 +90,10 @@ export const ERRORS = {
   PL104: 'Pick things that are on offer where you live.',
   PL105: 'You moved city this week. You can move again 7 days after.',
   PL106: 'Name your area in letters: 3 to 30, up to 4 words.',
+  PL107: 'That photo could not be used. Pick another one.',
+  PL108: 'You have three photos. Remove one first.',
+  PL109: 'That is enough new photos for this week. Try again in a few days.',
+  PL110: 'That photo is not there any more.',
 
   PA001: 'Phone sign-in is not switched on yet.',
   PA002: 'Email sign-in is not switched on yet.',

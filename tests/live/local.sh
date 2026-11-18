@@ -17,4 +17,4 @@ for _ in $(seq 1 60); do
   [ $(( $(date +%s) - $(date -d "$last" +%s) )) -ge 12 ] && break
   sleep 1
 done
-exec npx tsx --test tests/live/two_users.test.ts tests/live/safety.test.ts tests/live/doubles.test.ts tests/live/attacker.test.ts
+exec npx tsx --test tests/live/two_users.test.ts tests/live/safety.test.ts tests/live/doubles.test.ts tests/live/attacker.test.ts tests/live/photos.test.ts

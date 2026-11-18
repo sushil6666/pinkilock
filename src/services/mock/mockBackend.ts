@@ -10,7 +10,7 @@ import { fail } from '../../domain/errors';
 import * as rules from '../../domain/invites';
 import { ASK_LINES, ideaOf } from '../../domain/ideas';
 import { REPORT_DETAIL_MAX, REPORT_REASONS, REPORTS_PER_DAY } from '../../domain/safety';
-import type { BlockedPerson, CodeKind, Invite, MyContact, NewInvite, OnboardingInput, Profile, ReportReason, Reveal } from '../../domain/types';
+import type { BlockedPerson, CodeKind, Invite, MyContact, MyPhoto, NewInvite, OnboardingInput, Profile, ReportReason, Reveal } from '../../domain/types';
 import { quiet } from '../../lib/log';
 import type { Backend, BackendEvent, Changes, ClientErrorReport, Notice, Snapshot } from '../backend';
 import { ALWAYS_PASSES, ME_ID, SEED_DUOS, SEED_ME_RECORD, inCity, seedFriend, seedInvites, seedProfiles, seedReveals } from './seed';
@@ -70,6 +70,16 @@ export function createMockBackend(): Backend {
   const reveals = seedReveals();
   /** Flags I raised, by invite and person. The made-up people never flag my handle. */
   const flagged = new Set<string>();
+  /**
+   * My photos (D088), in memory only. The same rules as the server: three at most, six uploads a
+   * week. A person checks each one on the server; here, a stand-in "moderator" approves a photo
+   * three seconds after it was added, so the whole flow can be tried alone.
+   */
+  let myPhotoList: { id: string; uri: string; at: number }[] = [];
+  let photoUploads: number[] = [];
+  const PHOTO_CHECK_MS = 3000;
+  const listPhotos = (): MyPhoto[] =>
+    myPhotoList.map((p) => ({ id: p.id, url: p.uri, status: Date.now() - p.at >= PHOTO_CHECK_MS ? 'approved' : 'pending' }));
   let proofTimer: ReturnType<typeof setTimeout> | null = null;
   const listeners = new Set<(e: BackendEvent) => void>();
   let timer: ReturnType<typeof setInterval> | null = null;
@@ -510,6 +520,31 @@ export function createMockBackend(): Backend {
       return reveals[them];
     },
 
+    async myPhotos() {
+      await wait(LATENCY);
+      return listPhotos();
+    },
+
+    async addPhoto(photo) {
+      const d = await load();
+      await wait(LATENCY);
+      if (!d.me) fail('PL002');
+      if (myPhotoList.length >= 3) fail('PL108');
+      const now = Date.now();
+      photoUploads = photoUploads.filter((at) => at > now - 7 * rules.DAY);
+      if (photoUploads.length >= 6) fail('PL109');
+      photoUploads.push(now);
+      myPhotoList = [...myPhotoList, { id: `photo-${now}`, uri: photo.uri, at: now }];
+      return listPhotos();
+    },
+
+    async removePhoto(id) {
+      await wait(LATENCY);
+      if (!myPhotoList.some((p) => p.id === id)) fail('PL110');
+      myPhotoList = myPhotoList.filter((p) => p.id !== id);
+      return listPhotos();
+    },
+
     async reportBadContact(inviteId, ownerId) {
       const d = await load();
       await wait(LATENCY);
@@ -625,6 +660,8 @@ export function createMockBackend(): Backend {
       await load();
       await wait(LATENCY);
       await AsyncStorage.removeItem(KEY).catch(quiet('mock.clear'));
+      myPhotoList = [];
+      photoUploads = [];
       db = fresh();
       return snapshot(db);
     },
@@ -683,6 +720,8 @@ export function createMockBackend(): Backend {
 
     async demoReset() {
       await AsyncStorage.removeItem(KEY).catch(quiet('mock.clear'));
+      myPhotoList = [];
+      photoUploads = [];
       db = fresh();
       return snapshot(db);
     },

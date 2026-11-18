@@ -225,3 +225,24 @@ test('an area of my own: a place name, never a contact (D087)', async () => {
   assert.equal(named.me?.area, 'Saket Extension', 'a plain name of my own saves');
 });
 
+test('photos (D088): no direct upload, no rule-skipping, and no one else\'s file', async () => {
+  const jpeg = new Uint8Array([0xff, 0xd8, 0xff, 0xd9]);
+  // Straight into the bucket, under my own folder and under Y's.
+  for (const path of [`${x.id}/mine.jpg`, `${y.id}/theirs.jpg`]) {
+    const up = await raw.storage.from('photos').upload(path, jpeg, { contentType: 'image/jpeg' });
+    assert.ok(up.error, `a direct upload to ${path.split('/')[0] === x.id ? 'my' : 'their'} folder must be refused`);
+  }
+  // The rules and the row are the photo function's only.
+  refused(await raw.rpc('add_photo', { p_user: x.id, p_bytes: 4, p_jpeg: true }), 'calling add_photo myself');
+  refused(await raw.from('photos').insert({ profile_id: x.id, path: `${x.id}/x.jpg`, bytes: 4 }), 'writing a photo row');
+  refused(await raw.from('photo_trash').select('*'), 'reading the photo trash');
+  // The function wants a real session, and a real JPEG.
+  const anon = await fetch(`${URL}/functions/v1/photo`, { method: 'POST', headers: { apikey: KEY!, Authorization: `Bearer ${KEY}` }, body: jpeg });
+  assert.equal(anon.status, 401, 'the anon key is not a person');
+  const token = (await raw.auth.getSession()).data.session!.access_token;
+  const text = await fetch(`${URL}/functions/v1/photo`, { method: 'POST', headers: { apikey: KEY!, Authorization: `Bearer ${token}` }, body: '@e2e_xavier' });
+  assert.equal(((await text.json()) as { code?: string }).code, 'PL107', 'text sent as a photo is refused');
+  // Signing a link to a file whose row I cannot read gives nothing.
+  const link = await raw.storage.from('photos').createSignedUrl(`${y.id}/anything.jpg`, 60);
+  assert.ok(link.error || !link.data?.signedUrl, 'no link to a file I may not read');
+});

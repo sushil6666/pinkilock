@@ -8,7 +8,7 @@ import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as ScreenCapture from 'expo-screen-capture';
 import { useEffect, useState } from 'react';
-import { Platform, StyleSheet, View } from 'react-native';
+import { Image, Platform, StyleSheet, View } from 'react-native';
 import Animated, { FadeIn } from 'react-native-reanimated';
 import type { Profile, Reveal } from '../domain/types';
 import { quiet } from '../lib/log';
@@ -81,9 +81,15 @@ export function LockedReveal({ person, reveal, hint, onFlag }: Props) {
 
       <View style={styles.grid}>
         {tiles.map((photo, i) => (
-          <View key={i} style={styles.tile} accessible accessibilityRole="image" accessibilityLabel={photo ? photo.caption : t('reveal.lockedPhoto')}>
-            <LinearGradient colors={photo ? photo.palette : (i % 2 ? [person.palette[1], person.palette[0]] : person.palette)} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={StyleSheet.absoluteFill} />
-            {photo ? (
+          <View key={i} style={styles.tile} accessible accessibilityRole="image"
+            accessibilityLabel={photo ? (photo.caption ?? t('reveal.photoOf', { name: person.name })) : t('reveal.lockedPhoto')}>
+            <LinearGradient colors={photo?.palette ?? (i % 2 ? [person.palette[1], person.palette[0]] : person.palette)} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={StyleSheet.absoluteFill} />
+            {photo?.url ? (
+              // A ten-minute link from the server, for a photo RLS let me read (D088). Not cached.
+              <Animated.View entering={FadeIn.delay(i * 120).duration(500)} style={StyleSheet.absoluteFill}>
+                <Image source={{ uri: photo.url, cache: 'reload' }} style={StyleSheet.absoluteFill} resizeMode="cover" />
+              </Animated.View>
+            ) : photo ? (
               <Animated.View entering={FadeIn.delay(i * 120).duration(500)} style={styles.tileOpen}>
                 <T style={{ fontSize: 40, lineHeight: 50 }} maxFontSizeMultiplier={1}>{photo.glyph}</T>
                 <T v="caption" style={styles.caption}>{photo.caption}</T>
