@@ -16,7 +16,8 @@ const sql = readdirSync(dir).sort().map((f) => readFileSync(join(dir, f), 'utf8'
 const block = (head: string) => sql.match(new RegExp(`insert into public\\.${head} values\\n([\\s\\S]*?)\\non conflict`))![1];
 
 test('areas in SQL are AREAS', () => {
-  const rows = [...block('areas \\(city, name\\)').matchAll(/\('([^']+)', '([^']+)'\)/g)];
+  // Every migration's rows, in order.
+  const rows = [...sql.matchAll(/insert into public\.areas \(city, name\) values\n([\s\S]*?)\non conflict/g)].flatMap((b) => [...b[1].matchAll(/\('([^']+)', '([^']+)'\)/g)]);
   const bySql: Record<string, string[]> = {};
   for (const [, city, name] of rows) (bySql[city] ??= []).push(name);
   assert.deepEqual(bySql, AREAS);
@@ -48,7 +49,8 @@ test('the area and pronouns are picked; what was saved before the lists still pa
   assert.equal(code(() => checkProfile({ ...card, area: 'Bandra' })), 'PL095');
   assert.equal(code(() => checkProfile({ ...card, pronouns: 'xe/xem' })), 'PL096');
   assert.equal(code(() => checkProfile({ ...card, area: 'Bandra', pronouns: 'xe/xem' }, 'Mumbai', { area: 'Bandra', pronouns: 'xe/xem' })), null);
-  assert.equal(code(() => checkProfile({ ...card, area: 'Anywhere' }, 'Pune')), null, 'a city with no list yet takes a typed area');
+  assert.equal(code(() => checkProfile({ ...card, area: 'Anywhere' }, 'Patna')), null, 'a city with no list yet takes a typed area');
+  assert.equal(code(() => checkProfile({ ...card, area: 'Bandra West' }, 'Delhi NCR')), 'PL095', 'an area from another city');
   assert.deepEqual(matchAreas('Mumbai', 'band'), ['Bandra East', 'Bandra West']);
 });
 

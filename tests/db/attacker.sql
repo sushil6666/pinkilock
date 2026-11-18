@@ -398,4 +398,19 @@ select t.ok(not exists (select 1 from jsonb_array_elements(:'ex'::jsonb -> 'cont
   and not exists (select 1 from jsonb_array_elements(:'ex'::jsonb -> 'events') e where e ->> 'type' = 'bad_contact'),
   'X''s export does not say who flagged X''s handle');
 select t.ok((:'ex'::jsonb -> 'contact') ? 'verified_at' and (:'ex'::jsonb ->> 'format') = 'pinkilock-export-4', 'the export says when the handle was verified');
+
+-- D080: moving city. X cannot take an area from the old city along, cannot hop cities more than
+-- once a week (so nobody looks through every city's people), and cannot reset the clock.
+reset role;
+-- X's name and line as they stand, so that only the area and the city change.
+select name as x_name, coalesce((select r.text from private.line_reviews r where r.profile_id = p.id and r.status in ('pending', 'held')), tagline) as x_line
+  from public.profiles p where id = :'x' \gset
+set role authenticated;
+select t.as_user(:'x');
+\set move 'select save_profile(%L, 25, %L, '''', %L, ''{}'', array[''boba_run'',''chai_walk'',''meme_duel''], null, null, %L)'
+select t.ok(t.sqlstate(format(:'move', :'x_name', 'Bandra West', :'x_line', 'Delhi NCR')) = 'PL095', 'X cannot carry a Mumbai area to Delhi NCR (PL095)');
+select t.ok(t.sqlstate(format(:'move', :'x_name', 'Saket', :'x_line', 'Delhi NCR')) is null, 'X moves to Delhi NCR once, with an area there');
+select t.ok(t.sqlstate(format(:'move', :'x_name', 'Koregaon Park', :'x_line', 'Pune')) = 'PL105', 'X cannot hop to another city in the same week (PL105)');
+select t.ok(t.fails(format($$update profiles set city_changed_at = null, city = 'Pune' where id = %L$$, :'x')),
+  'X cannot reset their own move clock or set their city directly');
 reset role;

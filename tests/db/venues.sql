@@ -9,12 +9,13 @@ insert into auth.users (id) values (:'v');
 insert into public.profiles (id, name, age, area) values (:'v', 'Veer', 27, 'Juhu');
 insert into public.venues (id, city, area, name, kind, active) values ('test_closed', 'Mumbai', 'Nowhere', 'A place that closed', 'park', false);
 
-select t.ok((select count(*) from public.venues where active) = 24 and exists (select 1 from public.venues where id = 'mum_carter_road'), 'the venue catalogue has 24 places');
+select t.ok((select count(*) from public.venues where active) = 237 and (select count(distinct city) from public.venues where active) = 20
+  and exists (select 1 from public.venues where id = 'mum_carter_road'), 'the venue catalogue has 237 places in 20 cities');
 select t.ok(not exists (select 1 from public.venues where char_length(name || ', ' || area) > 60), 'every venue fits in the place field');
 
 set role authenticated;
 select t.as_user(:'v');
-select t.ok((select count(*) from venues) = 25, 'a signed-in user reads the catalogue');
+select t.ok((select count(*) from venues) = 238, 'a signed-in user reads the catalogue');
 select t.ok(t.fails($$insert into venues values ('x', 'Mumbai', 'Bandra', 'My flat', 'landmark')$$) and t.fails($$update venues set name = 'My flat'$$) and t.fails('delete from venues'),
   'a user cannot change the catalogue');
 

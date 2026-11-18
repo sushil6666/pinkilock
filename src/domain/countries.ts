@@ -27,14 +27,32 @@ export const COUNTRIES: Country[] = [
 
 export const CITIES: City[] = [
   { name: 'Mumbai', country: 'IN', active: true, zone: 'Asia/Kolkata' },
-  { name: 'Pune', country: 'IN', active: false, zone: 'Asia/Kolkata' },
-  { name: 'Bengaluru', country: 'IN', active: false, zone: 'Asia/Kolkata' },
-  { name: 'Delhi', country: 'IN', active: false, zone: 'Asia/Kolkata' },
-  { name: 'Hyderabad', country: 'IN', active: false, zone: 'Asia/Kolkata' },
+  { name: 'Delhi NCR', country: 'IN', active: true, zone: 'Asia/Kolkata' },
+  { name: 'Bengaluru', country: 'IN', active: true, zone: 'Asia/Kolkata' },
+  { name: 'Hyderabad', country: 'IN', active: true, zone: 'Asia/Kolkata' },
+  { name: 'Chennai', country: 'IN', active: true, zone: 'Asia/Kolkata' },
+  { name: 'Kolkata', country: 'IN', active: true, zone: 'Asia/Kolkata' },
+  { name: 'Pune', country: 'IN', active: true, zone: 'Asia/Kolkata' },
+  { name: 'Ahmedabad', country: 'IN', active: true, zone: 'Asia/Kolkata' },
+  { name: 'Bhubaneswar', country: 'IN', active: true, zone: 'Asia/Kolkata' },
+  { name: 'Chandigarh', country: 'IN', active: true, zone: 'Asia/Kolkata' },
+  { name: 'Coimbatore', country: 'IN', active: true, zone: 'Asia/Kolkata' },
+  { name: 'Goa', country: 'IN', active: true, zone: 'Asia/Kolkata' },
+  { name: 'Indore', country: 'IN', active: true, zone: 'Asia/Kolkata' },
+  { name: 'Jaipur', country: 'IN', active: true, zone: 'Asia/Kolkata' },
+  { name: 'Kochi', country: 'IN', active: true, zone: 'Asia/Kolkata' },
+  { name: 'Lucknow', country: 'IN', active: true, zone: 'Asia/Kolkata' },
+  { name: 'Nagpur', country: 'IN', active: true, zone: 'Asia/Kolkata' },
+  { name: 'Surat', country: 'IN', active: true, zone: 'Asia/Kolkata' },
+  { name: 'Vadodara', country: 'IN', active: true, zone: 'Asia/Kolkata' },
+  { name: 'Visakhapatnam', country: 'IN', active: true, zone: 'Asia/Kolkata' },
 ];
 
 /** The time zone of a city, or undefined for one we do not know. */
 export const zoneOfCity = (city: string | undefined): string | undefined => CITIES.find((c) => c.name === city)?.zone;
+
+/** The eight metros (tier 1), first in the city picker; the rest follow A to Z (D080). */
+export const METROS = ['Mumbai', 'Delhi NCR', 'Bengaluru', 'Hyderabad', 'Chennai', 'Kolkata', 'Pune', 'Ahmedabad'];
 
 export const countryOf = (code: string | undefined): Country => COUNTRIES.find((c) => c.code === code) ?? COUNTRIES[0];
 

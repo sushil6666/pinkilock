@@ -45,7 +45,7 @@ export default function Discover() {
   const busyWith = new Set(me ? invites.filter(isLive).map((i) => otherId(i, me.id)) : []);
   // My duo partner, and everyone on a live double with me, are not people to discover.
   const onPlans = new Set(me ? invites.filter(isLive).flatMap((i) => peopleOf(i)) : []);
-  const queue = profiles.filter((p) => !passedIds.includes(p.id) && !busyWith.has(p.id) && !onPlans.has(p.id) && p.id !== duoId);
+  const queue = profiles.filter((p) => p.city === me?.city && !passedIds.includes(p.id) && !busyWith.has(p.id) && !onPlans.has(p.id) && p.id !== duoId);
   // Running low: ask for the next page before the last card.
   const low = queue.length < 3;
   useEffect(() => {
@@ -62,7 +62,7 @@ export default function Discover() {
         <View style={{ flex: 1, justifyContent: 'center', gap: space.lg }}>
           <T v="label" c={color.pink}>{t('discover.title')}</T>
           <T v="display">{t('discover.emptyTitle')}</T>
-          <T c={color.textDim}>{busyWith.size > 0 ? t('discover.emptyBusy', { count: busyWith.size }) : t('discover.emptyNew')}</T>
+          <T c={color.textDim}>{busyWith.size > 0 ? t('discover.emptyBusy', { count: busyWith.size }) : t('discover.emptyNew', { city: me.city })}</T>
           {passedIds.length > 0 && <Button kind="ghost" icon="rotate-ccw" label={t('discover.lookAgain', { count: passedIds.length })} onPress={restore} />}
           {busyWith.size > 0 && <Button label={t('discover.seeAsks')} icon="send" onPress={() => router.push('/(tabs)/invites')} />}
         </View>
@@ -76,7 +76,7 @@ export default function Discover() {
     <Screen inTabs>
       <View style={styles.head}>
         <T v="label" c={color.pink}>{t('discover.title')}</T>
-        <T v="label" c={color.textMute}>{t('discover.nearby', { count: queue.length })}</T>
+        <T v="label" c={color.textMute}>{t('discover.nearby', { count: queue.length, city: me.city })}</T>
       </View>
 
       <Animated.View key={person.id} entering={FadeIn.duration(260)}>
