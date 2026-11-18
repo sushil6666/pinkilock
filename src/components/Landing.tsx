@@ -12,7 +12,7 @@ import { StyleSheet, View, useWindowDimensions } from 'react-native';
 import { IDEAS } from '@/domain/ideas';
 import { VENUES, type Venue } from '@/domain/venues';
 import { webOnly } from '@/lib/web';
-import { color, radius, space } from '@/theme/tokens';
+import { color, radius, space, wideMax } from '@/theme/tokens';
 import { Logo } from './Logo';
 import { Loop } from './Loop';
 import { NightSky } from './NightSky';
@@ -68,130 +68,137 @@ export function Landing({ onStart }: { onStart: () => void }) {
   return (
     <View style={{ gap: space.x5 * 2 }}>
       <View style={styles.nav} {...webOnly({ role: 'navigation' as const })}>
+        {/* The logo sits in the middle, as on every app screen: a side on each hand, equal width. */}
+        <View style={styles.navSide} />
         <Logo size={22} />
-        <View style={styles.navRight}>
+        <View style={[styles.navSide, styles.navRight]}>
           <Button kind="quiet" icon="log-in" label="Sign in" onPress={signIn} />
           <Button kind="ghost" label="Start" icon="arrow-right" onPress={onStart} />
         </View>
       </View>
 
-      <View style={styles.hero}>
-        <View style={styles.heroArt}>
-          <NightSky>
+      {/* The night sky runs the full width of the window, the skyline edge to edge; the hero's
+          two columns sit in the middle of it. */}
+      <NightSky moon={styles.moon} wide>
+        <View style={[styles.inner, styles.hero]}>
+          <View style={styles.heroArt}>
             <Loop name="pinkyLock" />
             <Scribble wide />
-          </NightSky>
-        </View>
-        <View style={styles.heroWords}>
-          <T v="mega" style={roomy ? styles.headline : styles.headlineTight} accessibilityRole="header">No ghosting.{'\n'}No endless{'\n'}swiping.</T>
-          <T v="heading" c={color.textDim}>One person. One tiny plan. One pinky promise that you both show up.</T>
-          <View style={styles.ctaRow}>
-            <Button label="Start" icon="arrow-right" onPress={onStart} style={{ minWidth: 200 }} />
-            <Button kind="quiet" icon="log-in" label="I already have an account" onPress={signIn} />
+          </View>
+          <View style={styles.heroWords}>
+            <T v="mega" style={roomy ? styles.headline : styles.headlineTight} accessibilityRole="header">No ghosting.{'\n'}No endless{'\n'}swiping.</T>
+            <T v="heading" c={color.textDim}>One person. One tiny plan. One pinky promise that you both show up.</T>
+            <View style={styles.ctaRow}>
+              <Button label="Start" icon="arrow-right" onPress={onStart} style={{ minWidth: 200 }} />
+              <Button kind="quiet" icon="log-in" label="I already have an account" onPress={signIn} />
+            </View>
           </View>
         </View>
-      </View>
+      </NightSky>
 
-      <Section eyebrow="How it works" title="Three steps. That is the whole app.">
-        <View style={styles.cols}>
-          <View style={{ flex: 1 }}><Notes /></View>
-          <View style={{ flex: 1, justifyContent: 'center' }}>
-            <T c={color.textDim} style={{ maxWidth: 420 }}>
-              Everyone on Pinkilock is here for the same reason: to meet someone, briefly, for real. You
-              pick the plan and the time. They lock pinkies or pass. Then you both turn up, check in, and
-              the app unlocks how to reach each other.
-            </T>
+      <View style={[styles.inner, { gap: space.x5 * 2 }]}>
+
+        <Section eyebrow="How it works" title="Three steps. That is the whole app.">
+          <View style={styles.cols}>
+            <View style={{ flex: 1 }}><Notes /></View>
+            <View style={{ flex: 1, justifyContent: 'center' }}>
+              <T c={color.textDim} style={{ maxWidth: 420 }}>
+                Everyone on Pinkilock is here for the same reason: to meet someone, briefly, for real. You
+                pick the plan and the time. They lock pinkies or pass. Then you both turn up, check in, and
+                the app unlocks how to reach each other.
+              </T>
+            </View>
           </View>
-        </View>
-      </Section>
+        </Section>
 
-      <Section eyebrow="The rules" title="Built so showing up is the easy part.">
-        <View style={styles.cols}>
-          <View style={{ flex: 1.4, gap: space.lg }}>
-            {rows(RULES, 2).map((row, r) => (
+        <Section eyebrow="The rules" title="Built so showing up is the easy part.">
+          <View style={styles.cols}>
+            <View style={{ flex: 1.4, gap: space.lg }}>
+              {rows(RULES, 2).map((row, r) => (
+                <View key={r} style={styles.gridRow}>
+                  {row.map(([head, body]) => (
+                    <View key={head} style={styles.card}>
+                      <T v="heading">{head}</T>
+                      <T c={color.textDim}>{body}</T>
+                    </View>
+                  ))}
+                </View>
+              ))}
+            </View>
+            <View style={{ flex: 1, justifyContent: 'center' }}>
+              <Loop name="padlock" />
+            </View>
+          </View>
+        </Section>
+
+        <Section eyebrow="Micro-dates" title="Small enough to say yes to.">
+          <View style={{ gap: space.lg }}>
+            {rows(ideas, ideaCols).map((row, r) => (
               <View key={r} style={styles.gridRow}>
-                {row.map(([head, body]) => (
-                  <View key={head} style={styles.card}>
-                    <T v="heading">{head}</T>
-                    <T c={color.textDim}>{body}</T>
+                {row.map((idea) => (
+                  <View key={idea.id} style={styles.card}>
+                    <T style={styles.emoji} {...webOnly({ 'aria-hidden': true })}>{idea.emoji}</T>
+                    <T v="bodyBold">{idea.title}</T>
+                    <T v="caption" c={color.textMute}>{idea.minutes} min</T>
+                    <T v="caption" c={color.textDim}>{idea.blurb}</T>
+                  </View>
+                ))}
+              </View>
+            ))}
+            <T v="hand" c={color.pink}>pick three. that is your bio.</T>
+            {IDEAS.length > ideas.length && <T v="caption" c={color.textMute}>And {IDEAS.length - ideas.length} more in the app.</T>}
+          </View>
+        </Section>
+
+        <Section eyebrow="Places" title="Meet somewhere busy and public.">
+          <View style={{ gap: space.lg }}>
+            <T c={color.textDim} style={{ maxWidth: 560 }}>
+              In-person plans are picked from a list of well-known spots: promenades, parks, markets and
+              landmarks. Nobody has to suggest their place, and nobody can.
+            </T>
+            {rows(PLACES, 4).map((row, r) => (
+              <View key={r} style={styles.gridRow}>
+                {row.map((v) => (
+                  <View key={v.id} style={styles.place}>
+                    <T v="label" c={color.pink}>{v.kind}</T>
+                    <T v="bodyBold">{v.name}</T>
+                    <T v="caption" c={color.textMute}>{v.area}</T>
+                  </View>
+                ))}
+                {Array.from({ length: 4 - row.length }, (_, i) => <View key={`gap${i}`} style={{ flex: 1 }} />)}
+              </View>
+            ))}
+            <T v="caption" c={color.textMute}>{CITIES.join(', ')} for now, {VENUES.length} places and growing.</T>
+          </View>
+        </Section>
+
+        <Section eyebrow="Questions" title="Fair questions.">
+          <View style={{ gap: space.x4 }}>
+            {rows(FAQ, 2).map((row, r) => (
+              <View key={r} style={styles.gridRow}>
+                {row.map(([q, a]) => (
+                  <View key={q} style={{ flex: 1, gap: space.sm }}>
+                    <T v="heading">{q}</T>
+                    <T c={color.textDim}>{a}</T>
                   </View>
                 ))}
               </View>
             ))}
           </View>
-          <View style={{ flex: 1, justifyContent: 'center' }}>
-            <Loop name="padlock" />
+        </Section>
+
+        <View style={styles.final}>
+          <T v="mega" style={styles.headline} center accessibilityRole="header">Pinky promise?</T>
+          <T v="heading" c={color.textDim} center>Make a profile, pick three plans, send your first vibe check. Adults only, 18 and over.</T>
+          <Button label="Start" icon="arrow-right" onPress={onStart} style={{ minWidth: 260, alignSelf: 'center' }} />
+        </View>
+
+        <View style={styles.footer} {...webOnly({ role: 'contentinfo' as const })}>
+          <Logo size={14} />
+          <View style={styles.navRight}>
+            <Button kind="quiet" label="Terms" onPress={() => router.push('/legal/terms')} />
+            <Button kind="quiet" label="Privacy" onPress={() => router.push('/legal/privacy')} />
           </View>
-        </View>
-      </Section>
-
-      <Section eyebrow="Micro-dates" title="Small enough to say yes to.">
-        <View style={{ gap: space.lg }}>
-          {rows(ideas, ideaCols).map((row, r) => (
-            <View key={r} style={styles.gridRow}>
-              {row.map((idea) => (
-                <View key={idea.id} style={styles.card}>
-                  <T style={styles.emoji} {...webOnly({ 'aria-hidden': true })}>{idea.emoji}</T>
-                  <T v="bodyBold">{idea.title}</T>
-                  <T v="caption" c={color.textMute}>{idea.minutes} min</T>
-                  <T v="caption" c={color.textDim}>{idea.blurb}</T>
-                </View>
-              ))}
-            </View>
-          ))}
-          <T v="hand" c={color.pink}>pick three. that is your bio.</T>
-          {IDEAS.length > ideas.length && <T v="caption" c={color.textMute}>And {IDEAS.length - ideas.length} more in the app.</T>}
-        </View>
-      </Section>
-
-      <Section eyebrow="Places" title="Meet somewhere busy and public.">
-        <View style={{ gap: space.lg }}>
-          <T c={color.textDim} style={{ maxWidth: 560 }}>
-            In-person plans are picked from a list of well-known spots: promenades, parks, markets and
-            landmarks. Nobody has to suggest their place, and nobody can.
-          </T>
-          {rows(PLACES, 4).map((row, r) => (
-            <View key={r} style={styles.gridRow}>
-              {row.map((v) => (
-                <View key={v.id} style={styles.place}>
-                  <T v="label" c={color.pink}>{v.kind}</T>
-                  <T v="bodyBold">{v.name}</T>
-                  <T v="caption" c={color.textMute}>{v.area}</T>
-                </View>
-              ))}
-              {Array.from({ length: 4 - row.length }, (_, i) => <View key={`gap${i}`} style={{ flex: 1 }} />)}
-            </View>
-          ))}
-          <T v="caption" c={color.textMute}>{CITIES.join(', ')} for now, {VENUES.length} places and growing.</T>
-        </View>
-      </Section>
-
-      <Section eyebrow="Questions" title="Fair questions.">
-        <View style={{ gap: space.x4 }}>
-          {rows(FAQ, 2).map((row, r) => (
-            <View key={r} style={styles.gridRow}>
-              {row.map(([q, a]) => (
-                <View key={q} style={{ flex: 1, gap: space.sm }}>
-                  <T v="heading">{q}</T>
-                  <T c={color.textDim}>{a}</T>
-                </View>
-              ))}
-            </View>
-          ))}
-        </View>
-      </Section>
-
-      <View style={styles.final}>
-        <T v="mega" style={styles.headline} center accessibilityRole="header">Pinky promise?</T>
-        <T v="heading" c={color.textDim} center>Make a profile, pick three plans, send your first vibe check. Adults only, 18 and over.</T>
-        <Button label="Start" icon="arrow-right" onPress={onStart} style={{ minWidth: 260, alignSelf: 'center' }} />
-      </View>
-
-      <View style={styles.footer} {...webOnly({ role: 'contentinfo' as const })}>
-        <T v="caption" c={color.textMute}>Pinkilock</T>
-        <View style={styles.navRight}>
-          <Button kind="quiet" label="Terms" onPress={() => router.push('/legal/terms')} />
-          <Button kind="quiet" label="Privacy" onPress={() => router.push('/legal/privacy')} />
         </View>
       </View>
     </View>
@@ -200,8 +207,12 @@ export function Landing({ onStart }: { onStart: () => void }) {
 
 const styles = StyleSheet.create({
   nav: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingTop: space.md },
-  navRight: { flexDirection: 'row', alignItems: 'center', gap: space.md },
+  navSide: { flex: 1 },
+  navRight: { flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', gap: space.md },
+  // The text columns stop at `wideMax` so lines stay readable; the sky and the skyline do not.
+  inner: { width: '100%', maxWidth: wideMax, alignSelf: 'center' },
   hero: { flexDirection: 'row', alignItems: 'center', gap: space.x5, marginTop: -space.x4 },
+  moon: { right: undefined, left: '40%', top: 0 },
   heroArt: { flex: 1.1 },
   heroWords: { flex: 1, gap: space.xl },
   headline: { fontSize: 64, lineHeight: 64 },

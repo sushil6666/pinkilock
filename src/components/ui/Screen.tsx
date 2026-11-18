@@ -14,7 +14,7 @@ import type { ReactNode } from 'react';
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { webOnly } from '../../lib/web';
-import { color, columnMax, gutter, space, wideMax } from '../../theme/tokens';
+import { color, columnMax, gutter, space } from '../../theme/tokens';
 import { Logo } from '../Logo';
 import { T } from './T';
 
@@ -29,7 +29,7 @@ interface Props {
   scroll?: boolean;
   /** Tab screens: the tab bar already covers the bottom inset. */
   inTabs?: boolean;
-  /** The first screen only, in a wide window: drawn up to `wideMax` instead of the column. */
+  /** The first screen only, in a wide window: drawn across the whole window instead of the column. */
   wide?: boolean;
   /** The logo sits top centre on every screen; only a page with its own top bar turns it off. */
   logo?: boolean;
@@ -53,7 +53,8 @@ export function goBack() {
 export const column = { width: '100%', maxWidth: columnMax, alignSelf: 'center' } as const;
 
 export function Screen({ children, title, back = false, onBack, right, footer, scroll = true, inTabs, wide, logo = true }: Props) {
-  const width = wide ? { ...column, maxWidth: wideMax } : column;
+  // The website's front page uses the whole window; it keeps its own text to `wideMax`.
+  const width = wide ? { width: '100%' } as const : column;
   const insets = useSafeAreaInsets();
   const bottom = inTabs ? space.xxl : Math.max(insets.bottom, space.lg) + space.sm;
   const hasHeader = logo || back !== false || !!title || !!right;
@@ -61,7 +62,7 @@ export function Screen({ children, title, back = false, onBack, right, footer, s
   return (
     <KeyboardAvoidingView {...webOnly({ role: 'main' as const })} style={[styles.root, { paddingTop: insets.top, paddingLeft: insets.left, paddingRight: insets.right }]} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       {/* The column's edges, only visible where the window is wider than it. */}
-      <View style={styles.rail} pointerEvents="none"><View style={[styles.railLines, wide && { maxWidth: wideMax + 2 }]} /></View>
+      {!wide && <View style={styles.rail} pointerEvents="none"><View style={styles.railLines} /></View>}
       {hasHeader && (
         <View style={styles.header}>
           {back !== false ? (

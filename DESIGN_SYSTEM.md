@@ -93,7 +93,7 @@ Font scaling is allowed up to 1.3x (`maxFontSizeMultiplier`) so layouts hold on 
 - **Sheet**: bottom sheet for confirmations (pass, bail). Rises 280 ms with `easeOutCubic` over a
   72% indigo scrim. There are no system alerts anywhere in the app.
 - **Loop**: a short clay animation, a GIF drawn in 3D by `scripts/make-loops.mjs` (two pinkies
-  hooking; a padlock clicking shut). Drawn on `bg` and keyed out, so it only goes on `bg`, never on a
+  hooking, the pair tilted 45 degrees rising to the right like the logo mark; a padlock clicking shut). Drawn on `bg` and keyed out, so it only goes on `bg`, never on a
   card. Decoration: hidden from screen readers, and a still frame (the lock closed) with reduced
   motion. The welcome screen and the not-found screen use them.
 - **Logo**: the two pinkies locked (pink theirs, gold mine, the app icon's geometry), turned 45
@@ -106,14 +106,17 @@ Font scaling is allowed up to 1.3x (`maxFontSizeMultiplier`) so layouts hold on 
 - **NightSky**: the first screen's backdrop (`src/components/NightSky.tsx`): the golden moon with a
   soft glow that breathes, a dozen stars that twinkle out of step, and the Mumbai skyline along
   the sea (towers with lit windows, the Gateway arch, the Sea Link's cables in gold), running to
-  the screen's edges. The pinkies float in it. Decoration only, still with reduced motion.
+  the screen's edges. The pinkies float in it. Decoration only, still with reduced motion. On the
+  desktop front page (`wide`) the sky spans the whole window, the moon sits above the pinkies, and
+  the city carries on past the landmarks with more towers, cropped at the sides, never the top.
 - **Places**: on the phone's first screen, a sideways row of real venues from `VENUES` ("Where
   plans happen"): a gold kind icon, the name and the area on a `surface` card with a `goldDeep`
   border.
 - **Welcome**: the first screen. The pinkies, a scribbled note pointing at them, the promise in
   `mega`, and the three steps as notes on a `line` block, each tilted by a degree or so.
-- **Landing**: the same first screen in a window 960 or wider, as the website's front page, up to
-  `wideMax` (1080): a top bar, the hero (pinkies left, words and Start right), then sections for
+- **Landing**: the same first screen in a window 960 or wider, as the website's front page, using
+  the whole window (no side hairlines); text columns stop at `wideMax` (1200). A top bar with the
+  logo in the middle and Sign in and Start on the right, the hero (pinkies left, words and Start right), then sections for
   how it works, the rules (cards beside the padlock), micro-date ideas, places, questions, and a
   closing Start. Sections are a pink `label` over a `display` title; cards are `surface` with a
   `line` border; places are a pink left rule. Only tokens, so a theme change carries over.

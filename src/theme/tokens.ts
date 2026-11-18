@@ -41,8 +41,8 @@ export const gutter = space.xl;
  * wide browser window or on a tablet every screen sits in a centred column of this width.
  */
 export const columnMax = 480;
-/** The first screen in a wide browser window is the one place drawn wider: two columns, up to this. */
-export const wideMax = 1080;
+/** The first screen in a wide browser window fills the window; its text columns stop at this. */
+export const wideMax = 1200;
 /** How far a button stands off its slab, and how far it sinks when pressed. */
 export const depth = 5;
 
