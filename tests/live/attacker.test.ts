@@ -217,3 +217,11 @@ test('moving city: an area from the new city, once a week, and no direct writes'
   await assert.rejects(x.backend.updateMe({ city: 'Pune', area: 'Koregaon Park' }), (e: unknown) => e instanceof AppError && e.code === 'PL105', 'a second move in the same week');
   assert.ok((await raw.from('profiles').update({ city_changed_at: null }).eq('id', x.id).select('id')).error, 'a direct write to the move clock');
 });
+
+test('an area of my own: a place name, never a contact (D087)', async () => {
+  await assert.rejects(x.backend.updateMe({ area: 'call 98765 43210' }), (e: unknown) => e instanceof AppError && e.code === 'PL065', 'a number as the area');
+  await assert.rejects(x.backend.updateMe({ area: 'Saket!!' }), (e: unknown) => e instanceof AppError && e.code === 'PL106', 'symbols as the area');
+  const named = await x.backend.updateMe({ area: 'Saket Extension' });
+  assert.equal(named.me?.area, 'Saket Extension', 'a plain name of my own saves');
+});
+

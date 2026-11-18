@@ -300,7 +300,7 @@ export function createMockBackend(): Backend {
         // Moving city (D083): an open city, an area from its list, once a week.
         const moving = next.city !== d.me.city;
         if (moving && !openCities().some((c) => c.name === next.city)) fail('PL076');
-        checkProfile(next, next.city, { area: moving ? '' : d.me.area, pronouns: d.me.pronouns, ideaIds: d.me.ideaIds });
+        checkProfile(next, next.city, { area: d.me.area, city: d.me.city, pronouns: d.me.pronouns, ideaIds: d.me.ideaIds });
         const now = Date.now();
         if (moving && (changed.city ?? 0) > now - 7 * rules.DAY) fail('PL105');
         if (moving) {

@@ -51,6 +51,38 @@ export function looksLikeContact(text: string | null | undefined): boolean {
   return CONTACT_PATTERNS.some((p) => p.test(t));
 }
 
+/**
+ * An area a person names themselves, when theirs is not on the city's list (D087): it has to read as
+ * a place. The same rule as private.custom_area_ok in SQL; AREA_CASES runs through both.
+ */
+export function customAreaOk(text: string): boolean {
+  const a = text.trim();
+  return [...a].length >= 3 && [...a].length <= 30
+    && /^\p{L}[\p{L}\p{M}0-9 .'-]*$/u.test(a)
+    && a.replace(/[^0-9]/g, '').length <= 3
+    && a.split(/\s+/).length <= 4
+    && !looksLikeContact(a);
+}
+
+/** [area, accepted]: the shared table for customAreaOk and private.custom_area_ok (tests/db/profile_rules.sql). */
+export const AREA_CASES: [string, boolean][] = [
+  ['Baramunda', true],
+  ['Sector 17', true],
+  ['St. Inez', true],
+  ["D'Souza Colony", true],
+  ['Navi-Mumbai', true],
+  ['Kharadi Bypass Road', true],
+  ['Bo', false],
+  ['A place with far too many words', false],
+  ['Gali 1234', false],
+  ['17 Sector', false],
+  ['Bandra!!', false],
+  ['insta riya', false],
+  ['riya.co', false],
+  ['call me now', false],
+  ['abcdefghijklmnopqrstuvwxyzabcde', false],
+];
+
 /** Pronouns are picked, never typed (WP1). The same list is `pronoun_options` in SQL. */
 export const PRONOUN_OPTIONS = ['she/her', 'he/him', 'they/them', 'she/they', 'he/they', 'any pronouns'];
 
@@ -65,7 +97,7 @@ const vibeSet = new Set(VIBES);
 export function checkProfile(
   p: Pick<OnboardingInput, 'name' | 'age' | 'area' | 'pronouns' | 'tagline' | 'vibes' | 'ideaIds'>,
   city = 'Mumbai',
-  was?: { area: string; pronouns: string; ideaIds?: string[] },
+  was?: { area: string; pronouns: string; ideaIds?: string[]; city?: string },
 ): void {
   if (!nameOk(p.name)) throw new AppError('PL060');
   if (!Number.isInteger(p.age) || p.age < 18 || p.age > 99) throw new AppError('PL061');
@@ -74,7 +106,12 @@ export function checkProfile(
   if ([...p.area.trim()].length > AREA_MAX || [...p.pronouns.trim()].length > PRONOUNS_MAX || [...p.tagline.trim()].length > TAGLINE_MAX) throw new AppError('PL064');
   if (looksLikeContact(p.tagline) || looksLikeContact(p.area) || looksLikeContact(p.pronouns)) throw new AppError('PL065');
   const area = p.area.trim();
-  if (area && area !== was?.area && areasIn(city).length && !areasIn(city).includes(area)) throw new AppError('PL095');
+  // The area (D087): from the city's list, or a plain place name of the person's own. A move to
+  // another city cannot keep the old city's area.
+  if (area && areasIn(city).length && !areasIn(city).includes(area)) {
+    if (was?.city && was.city !== city && area === was.area) throw new AppError('PL095');
+    if (area !== was?.area && !customAreaOk(area)) throw new AppError('PL106');
+  }
   const pronouns = p.pronouns.trim();
   if (pronouns && pronouns !== was?.pronouns && !PRONOUN_OPTIONS.includes(pronouns)) throw new AppError('PL096');
   const country = CITIES.find((c) => c.name === city)?.country;
