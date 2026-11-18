@@ -192,7 +192,7 @@ jobs:
           else
             echo "::notice::META_APP_SECRET and META_VERIFY_TOKEN are not set, so contact proofs stay off"
           fi
-          printf '%s\n' "select private.set_config('verify_whatsapp', :'wa')" "select private.set_config('verify_instagram', :'ig')" \
+          printf '%s\n' "select private.set_config('verify_whatsapp', :'wa');" "select private.set_config('verify_instagram', :'ig');" \
             | psql "$db" -v ON_ERROR_STOP=1 -qAt -v wa="$wa" -v ig="$ig" >/dev/null
           echo "- Contact proofs: WhatsApp ${wa:+on}${wa:-off}, Instagram ${ig:+on}${ig:-off}" >> "$GITHUB_STEP_SUMMARY"
       - name: Line review, by AI once a Claude API key exists

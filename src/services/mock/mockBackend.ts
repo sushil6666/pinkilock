@@ -506,6 +506,7 @@ export function createMockBackend(): Backend {
       await wait(LATENCY);
       const i = d.invites.find((x) => x.id === inviteId);
       if (!i || ownerId === ME_ID || !rules.canReveal(i, ME_ID, ownerId) || (i.resolvedAt ?? 0) < Date.now() - 7 * rules.DAY) fail('PL100');
+      if (reveals[ownerId]?.contactVerified) fail('PL103');
       flagged.add(`${inviteId}/${ownerId}`);
     },
 
