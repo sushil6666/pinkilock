@@ -9,6 +9,7 @@ import assert from 'node:assert/strict';
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { test } from 'node:test';
+import { IDEAS } from '../../src/domain/ideas';
 import { en } from '../../src/i18n/en';
 import { fmtTime, setLocale, t } from '../../src/i18n';
 
@@ -101,4 +102,10 @@ test('plurals, filling and fallbacks', () => {
   setLocale('en', 'en-US');
   assert.match(fmtTime(Date.UTC(2026, 10, 18, 14, 5), 'UTC'), /^2:05\sPM$/);
   setLocale('en');
+});
+
+test('every plan option opens to what you do, where, the cost and why it works', () => {
+  const info = en.ideaInfo.ideas as Record<string, Record<string, string>>;
+  for (const idea of IDEAS) for (const part of ['what', 'where', 'cost', 'why']) assert.ok(info[idea.id]?.[part], `${idea.id} has no "${part}" in ideaInfo`);
+  assert.deepEqual(Object.keys(info).sort(), IDEAS.map((i) => i.id).sort(), 'ideaInfo names an idea that does not exist');
 });
