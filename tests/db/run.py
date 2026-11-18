@@ -12,10 +12,12 @@ temporary folder and removes it afterwards. `--duckdb-python` names the interpre
 duckdb if it is not this one.
 """
 import argparse
+import os
 import pathlib
 import subprocess
 import sys
 import tempfile
+import urllib.parse
 
 import pgserver
 
@@ -47,6 +49,17 @@ def main() -> int:
                 if out.returncode != 0:
                     print(out.stderr, file=sys.stderr)
                     return 1
+            # The pipeline logs in as pinkilock_analytics, set up by the same script the deploy uses,
+            # so it has the worker's rights and no more: a view that calls a function the role may not
+            # run fails here, not first on the scheduled run (issue #51).
+            role_env = {**os.environ, "ANALYTICS_DB_PASSWORD": "analytics-test"}
+            out = subprocess.run([str(ROOT / "scripts" / "analytics-role.sh"), uri], capture_output=True, text=True, env=role_env)
+            if out.returncode != 0:
+                print(out.stderr, file=sys.stderr)
+                return 1
+            parts = urllib.parse.urlsplit(uri)
+            host = parts.netloc.rsplit("@", 1)[-1]
+            worker_uri = urllib.parse.urlunsplit(parts._replace(netloc=f"pinkilock_analytics:analytics-test@{host}"))
             # The pipeline runs twice: once on the promise scenario, and again after blocks,
             # reports and an account deletion, which must leave everyone else's score alone.
             # Last, the attacker suite (docs/build-plan.md, WP0): a hostile signed-in client, then a
@@ -57,7 +70,7 @@ def main() -> int:
                          HERE / "tracing.sql", HERE / "profile_rules.sql", HERE / "venues.sql", HERE / "limits.sql", HERE / "review.sql", HERE / "ratings.sql", HERE / "privacy.sql", HERE / "doubles.sql"):
                 if step == "pipeline":
                     print("== analytics/duckdb_pipeline.py")
-                    run = subprocess.run([args.duckdb_python, str(ROOT / "analytics" / "duckdb_pipeline.py"), "--dsn", uri])
+                    run = subprocess.run([args.duckdb_python, str(ROOT / "analytics" / "duckdb_pipeline.py"), "--dsn", worker_uri])
                     if run.returncode != 0:
                         return 1
                     continue
