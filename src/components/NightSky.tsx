@@ -7,6 +7,7 @@
  * the tokens, so the sky is the screen's own `bg` and the pinkies' GIF sits on it with no edge.
  */
 import type { ReactNode } from 'react';
+import type { StyleProp, ViewStyle } from 'react-native';
 import { useEffect } from 'react';
 import { Platform, StyleSheet, View } from 'react-native';
 import Animated, { Easing, useAnimatedStyle, useReducedMotion, useSharedValue, withDelay, withRepeat, withTiming } from 'react-native-reanimated';
@@ -31,7 +32,7 @@ function Star({ x, y, size, delay, still }: { x: number; y: number; size: number
   return <Animated.View style={[styles.star, { left: `${x * 100}%`, top: `${y * 100}%`, width: size, height: size, borderRadius: size }, style]} />;
 }
 
-function Moon({ still }: { still: boolean }) {
+function Moon({ still, at }: { still: boolean; at?: StyleProp<ViewStyle> }) {
   const breathe = useSharedValue(0);
   useEffect(() => {
     if (still) return;
@@ -39,7 +40,7 @@ function Moon({ still }: { still: boolean }) {
   }, [breathe, still]);
   const glow = useAnimatedStyle(() => ({ transform: [{ scale: 1 + breathe.value * 0.05 }] }));
   return (
-    <View style={styles.moonWrap}>
+    <View style={[styles.moonWrap, at]}>
       <Animated.View style={[styles.moon, GLOW, glow]}>
         <View style={[styles.crater, { width: 14, height: 14, left: 18, top: 22 }]} />
         <View style={[styles.crater, { width: 9, height: 9, left: 44, top: 46 }]} />
@@ -49,11 +50,30 @@ function Moon({ still }: { still: boolean }) {
   );
 }
 
+/** More of the city either side of the landmarks, for a sky as wide as a desktop window. Fixed, so it never jumps. */
+const SPREAD = 805;
+const SIDE_TOWERS: [number, number, number][] = (() => {
+  let seed = 7;
+  const next = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
+  const out: [number, number, number][] = [];
+  for (const [from, to] of [[-SPREAD, -4], [394, 390 + SPREAD]]) {
+    for (let x = from; x < to; ) {
+      const w = 20 + Math.round(next() * 22);
+      out.push([x, Math.min(w, to - x), 22 + Math.round(next() * 46)]);
+      x += w + 2 + Math.round(next() * 8);
+    }
+  }
+  return out;
+})();
+
 /** The city along the water: towers, the Gateway's arch, the Sea Link's tower and cables. */
-function Skyline() {
+function Skyline({ wide }: { wide?: boolean }) {
   const windows = [14, 46, 54, 76, 132, 166, 300, 334, 348, 372];
+  // Wide: the same landmarks in the middle of a longer city, drawn a little bigger, cropped at the
+  // sides rather than the top, so the towers keep their tops on any window.
+  const box = wide ? `${-SPREAD} 0 ${390 + SPREAD * 2} 86` : '0 0 390 86';
   return (
-    <Svg width="100%" height={86} viewBox="0 0 390 86" preserveAspectRatio="xMidYMax slice">
+    <Svg width="100%" height={wide ? 120 : 86} viewBox={box} preserveAspectRatio="xMidYMax slice">
       <Defs>
         <LinearGradient id="sea" x1="0" y1="0" x2="0" y2="1">
           <Stop offset="0" stopColor={color.gold} stopOpacity={0.22} />
@@ -71,6 +91,7 @@ function Skyline() {
         <Rect x={300} y={10} width={22} height={66} />
         <Rect x={326} y={30} width={34} height={46} />
         <Rect x={362} y={46} width={28} height={30} />
+        {wide && SIDE_TOWERS.map(([x, w, h]) => <Rect key={x} x={x} y={76 - h} width={w} height={h} />)}
       </G>
       <G stroke={color.gold} strokeWidth={1.4} fill="none" opacity={0.85}>
         <Path d="M190 70 H298" />
@@ -79,22 +100,24 @@ function Skyline() {
       </G>
       <G fill={color.moon}>
         {windows.map((x, i) => <Rect key={x} x={x} y={46 + (i % 3) * 8} width={4} height={4} />)}
+        {wide && SIDE_TOWERS.filter((_, i) => i % 2 === 0).map(([x, w, h], i) => <Rect key={x} x={x + Math.round(w / 3)} y={76 - h + 8 + (i % 3) * 8} width={4} height={4} />)}
       </G>
-      <Rect x={0} y={76} width={390} height={10} fill="url(#sea)" />
+      <Rect x={wide ? -SPREAD : 0} y={76} width={wide ? 390 + SPREAD * 2 : 390} height={10} fill="url(#sea)" />
     </Svg>
   );
 }
 
-export function NightSky({ children }: { children?: ReactNode }) {
+/** For a sky wider than a phone: `moon` moves the moon (top right by default), `wide` lengthens the city. */
+export function NightSky({ children, moon, wide }: { children?: ReactNode; moon?: StyleProp<ViewStyle>; wide?: boolean }) {
   const still = useReducedMotion();
   return (
     <View accessible={false} importantForAccessibility="no-hide-descendants" accessibilityElementsHidden {...webOnly({ 'aria-hidden': true })}>
       <View style={styles.sky}>
         {STARS.map(([x, y, size, delay]) => <Star key={`${x}${y}`} x={x} y={y} size={size} delay={delay} still={still} />)}
-        <Moon still={still} />
+        <Moon still={still} at={moon} />
         <View style={styles.float}>{children}</View>
       </View>
-      <View style={styles.city}><Skyline /></View>
+      <View style={styles.city}><Skyline wide={wide} /></View>
     </View>
   );
 }

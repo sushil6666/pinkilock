@@ -459,7 +459,8 @@ a query filter. None of this is a defence on its own: every rule that matters is
   tab bar, sheets and the notice banner use `column` from `Screen.tsx`. A phone is narrower than
   the column, so nothing changes there. No screen sets its own width. The one exception is the
   first screen: in a window 960 or wider onboarding asks `Screen` for `wide` and shows the
-  website's front page (`src/components/Landing.tsx`) up to `wideMax` (1080); narrower, it shows
+  website's front page (`src/components/Landing.tsx`) across the whole window, with no hairlines and
+  its text kept to `wideMax` (1200); narrower, it shows
   the one-column `Welcome`. Start on either goes into the same sign-up steps, in the column.
   `public/index.html` is the page the web build loads into: it paints `bg` before the app has
   loaded, and `app.json` (`web.themeColor`) gives the browser bar the same blue. Those two files

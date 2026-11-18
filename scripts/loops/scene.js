@@ -206,7 +206,12 @@ export function pinkyLoop(width, height) {
   const { renderer, scene, camera } = stage(width, height);
   const theirs = pinky(-1, C.pink, C.pinkDeep, C.text, 7);
   const mine = pinky(1, C.gold, C.goldDeep, C.pink, 11);
-  scene.add(theirs, mine);
+  // Tilted 45 degrees, rising to the right, like the logo mark (D066). The hook still happens
+  // along the fingers' own line; only the whole pair is turned.
+  const pair = new THREE.Group();
+  pair.add(theirs, mine);
+  pair.rotation.z = Math.PI / 4;
+  scene.add(pair);
 
   const LIFT = 46, TRAVEL = 70;
   return (p) => {
