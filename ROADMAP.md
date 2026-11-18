@@ -57,6 +57,12 @@ Supabase stack and in CI; it reaches the real project when the PR merges.
 - [ ] Store readiness: privacy policy, age rating, data-safety forms, TestFlight and Play internal
   testing. (Skipped for now.)
 - [ ] A way to review reports other than the SQL editor.
+- [x] **Contact handles that work** (D077): each app's format checked in the app and on the
+  server, a "Check it" link, and a flag after a kept plan when a handle did not work, which counts
+  against the owner's Trust Score.
+- [ ] **Proved handles** (D078): built (code, `contact-verify` function, Verified tick). Needs a
+  Pinkilock WhatsApp Business number and an Instagram professional account on a Meta app
+  (OPERATIONS.md, "Turning on contact proofs").
 
 **Done when** a stranger can keep their account with an email or a phone number on a store test build, block or report
 someone, and delete their account, on both platforms, against the production project.

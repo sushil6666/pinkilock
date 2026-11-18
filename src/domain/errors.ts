@@ -80,6 +80,12 @@ export const ERRORS = {
   PL094: 'Wait for the other three, then seal it.',
   PL095: 'Pick your area from the list.',
   PL096: 'Pick your pronouns from the list.',
+  PL097: 'That is not an Instagram username: letters, numbers, dots and underscores, up to 30.',
+  PL098: 'That is not a Snapchat username: 3 to 15, starting with a letter.',
+  PL099: 'Use your WhatsApp number with its country code, like +91 98765 43210.',
+  PL100: 'You can flag a handle only from a promise you kept this week.',
+  PL101: 'Checking works for Instagram and WhatsApp for now.',
+  PL102: 'Checking handles is not switched on yet.',
 
   PA001: 'Phone sign-in is not switched on yet.',
   PA002: 'Email sign-in is not switched on yet.',

@@ -166,6 +166,35 @@ jobs:
         run: npx supabase functions deploy push --use-api --no-verify-jwt
       - name: Deploy the line review function
         run: npx supabase functions deploy review-line --use-api --no-verify-jwt
+      - name: Deploy the contact proof function
+        run: npx supabase functions deploy contact-verify --use-api --no-verify-jwt
+      - name: Contact proofs (WhatsApp, Instagram), once Meta is set up
+        # Off until META_APP_SECRET and META_VERIFY_TOKEN are secrets. Where codes go comes from the
+        # repository variables PINKILOCK_WHATSAPP_NUMBER (digits, with 91) and PINKILOCK_INSTAGRAM
+        # (the account's username); a missing one leaves that app off. OPERATIONS.md has the steps.
+        env:
+          META_APP_SECRET: ${{ secrets.META_APP_SECRET }}
+          META_VERIFY_TOKEN: ${{ secrets.META_VERIFY_TOKEN }}
+          WHATSAPP_TOKEN: ${{ secrets.WHATSAPP_TOKEN }}
+          INSTAGRAM_TOKEN: ${{ secrets.INSTAGRAM_TOKEN }}
+          WA_NUMBER: ${{ vars.PINKILOCK_WHATSAPP_NUMBER }}
+          IG_ACCOUNT: ${{ vars.PINKILOCK_INSTAGRAM }}
+        run: |
+          db="$(scripts/supabase-db-url.sh postgres "$SUPABASE_DB_PASSWORD")"
+          wa=""; ig=""
+          if [ -n "$META_APP_SECRET" ] && [ -n "$META_VERIFY_TOKEN" ]; then
+            args=("META_APP_SECRET=$META_APP_SECRET" "META_VERIFY_TOKEN=$META_VERIFY_TOKEN")
+            [ -n "$WHATSAPP_TOKEN" ] && args+=("WHATSAPP_TOKEN=$WHATSAPP_TOKEN")
+            [ -n "$INSTAGRAM_TOKEN" ] && args+=("INSTAGRAM_TOKEN=$INSTAGRAM_TOKEN")
+            npx supabase secrets set "${args[@]}" >/dev/null
+            wa="$(printf '%s' "$WA_NUMBER" | tr -cd '0-9')"
+            [ -n "$INSTAGRAM_TOKEN" ] && ig="$(printf '%s' "$IG_ACCOUNT" | tr -d ' @')"
+          else
+            echo "::notice::META_APP_SECRET and META_VERIFY_TOKEN are not set, so contact proofs stay off"
+          fi
+          printf '%s\n' "select private.set_config('verify_whatsapp', :'wa')" "select private.set_config('verify_instagram', :'ig')" \
+            | psql "$db" -v ON_ERROR_STOP=1 -qAt -v wa="$wa" -v ig="$ig" >/dev/null
+          echo "- Contact proofs: WhatsApp ${wa:+on}${wa:-off}, Instagram ${ig:+on}${ig:-off}" >> "$GITHUB_STEP_SUMMARY"
       - name: Line review, by AI once a Claude API key exists
         # 'ai' when ANTHROPIC_API_KEY is set (the review-line function asks Claude, a person decides
         # anything unsure); otherwise 'off' (the pattern check only, as before). A moderator can set

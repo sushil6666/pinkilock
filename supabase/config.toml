@@ -456,3 +456,8 @@ enabled = true
 # gateway's JWT check is off and the function checks the secret itself.
 [functions.push]
 verify_jwt = false
+
+# Called by Meta (WhatsApp and Instagram webhooks), which signs each call with the app secret; the
+# function checks that signature itself.
+[functions.contact-verify]
+verify_jwt = false

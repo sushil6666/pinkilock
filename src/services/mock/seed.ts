@@ -112,6 +112,7 @@ export function seedReveals(): Record<string, Reveal> {
         profileId: p.id,
         contactKind: p.contact[0],
         contactHandle: p.contact[1],
+        contactVerified: p.contact[0] !== 'Snapchat',
         photos: p.photos.map(([caption, glyph], i) => ({
           caption,
           glyph,

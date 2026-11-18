@@ -9,6 +9,7 @@ import { StyleSheet, TextInput, View } from 'react-native';
 import { Portrait } from '@/components/Portrait';
 import { TrustBadge } from '@/components/TrustBadge';
 import { Chip, Tag } from '@/components/ui/Chip';
+import { IdeaChip } from '@/components/IdeaChip';
 import { HoldButton } from '@/components/ui/HoldButton';
 import { inputStyle } from '@/components/ui/input';
 import { Screen } from '@/components/ui/Screen';
@@ -128,7 +129,7 @@ export default function NewInvite() {
         <View style={{ gap: space.sm }}>
           {person.ideaIds.map((id) => {
             const option = ideaOf(id);
-            return <Chip key={id} label={`${option.emoji}  ${option.title}`} sub={t('onboarding.ideaSub', { minutes: option.minutes, blurb: option.blurb })} selected={id === ideaId} onPress={() => setIdeaId(id)} />;
+            return <IdeaChip key={id} idea={option} selected={id === ideaId} onPress={() => setIdeaId(id)} />;
           })}
         </View>
       </Section>

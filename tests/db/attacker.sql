@@ -53,8 +53,8 @@ select t.ok((select string_agg(n.nspname || '.' || p.proname, ' ' order by n.nsp
     from pg_proc p join pg_namespace n on n.oid = p.pronamespace
     where n.nspname in ('public', 'private', 'analytics') and has_function_privilege('authenticated', p.oid, 'execute'))
   = 'private.blocked_pair private.has_duo private.on_invite private.shares_invite private.vouch_summary public.bail public.block_user public.check_in public.create_duo_link public.create_vouch_link public.date_feedback public.decline_invite '
-    'public.delete_my_account public.discover public.duo_link_name public.export_my_data public.file_privacy_request public.give_consents public.join_duo public.leave_duo public.log_client_error public.log_event public.my_blocks public.my_checkin_code public.my_consents public.my_line_review public.my_moderation public.offer_pinky public.rate_date public.register_push_token public.report_user '
-    'public.save_availability public.save_profile public.send_invite public.unblock_user public.unregister_push_token public.vouch public.vouch_link_name',
+    'public.delete_my_account public.discover public.duo_link_name public.export_my_data public.file_privacy_request public.give_consents public.join_duo public.leave_duo public.log_client_error public.log_event public.my_blocks public.my_checkin_code public.my_consents public.my_contact_flags public.my_line_review public.my_moderation public.offer_pinky public.rate_date public.register_push_token public.report_bad_contact public.report_user '
+    'public.save_availability public.save_profile public.send_invite public.start_contact_check public.unblock_user public.unregister_push_token public.vouch public.vouch_link_name',
   'a signed-in user can call exactly these functions and no others');
 select t.ok(not exists (select 1 from pg_proc p join pg_namespace n on n.oid = p.pronamespace
     where n.nspname in ('public', 'private', 'analytics') and has_function_privilege('anon', p.oid, 'execute')),
@@ -310,3 +310,37 @@ select t.ok((select count(*) from duos) = 0, 'X reads no duo');
 select t.ok(t.sqlstate(format($$select send_invite(%L, 'boba_run', now() + interval '2 hours', 'Bandra', '', null, true)$$, :'crowd1')) = 'PL092', 'X cannot ask a double without a duo (PL092)');
 select t.ok(t.fails(format($$update invites set from_friend = %L where from_id = %L$$, :'y', :'x')), 'X cannot seat anyone on a plan directly');
 reset role;
+
+-- ---------------------------------------------------------------------------------------------
+-- 7. Contact handles (D077, D078): a flag only from someone the handle was shown to, once per
+--    plan; no one reads the flags; only the server confirms a proof.
+-- ---------------------------------------------------------------------------------------------
+
+set role authenticated;
+select t.as_user(:'x');
+select t.ok(t.sqlstate(format('select report_bad_contact(%L, %L)', :'yz', :'z')) = 'PL100', 'X cannot flag Z''s handle from a plan X is not on (PL100)');
+select t.ok(t.sqlstate(format('select report_bad_contact(%L, %L)', (select id from invites where status = 'kept' and :'x' in (from_id, to_id) limit 1), :'x')) = 'PL100',
+  'X cannot flag their own handle (PL100)');
+select t.ok(t.fails('select * from contact_reports') and t.fails($$insert into contact_reports values (gen_random_uuid(), auth.uid(), auth.uid(), '@x')$$),
+  'X cannot read or write the flags');
+select t.ok(t.fails($$select confirm_contact_code('Instagram', 'xavier', 'PINKY-000000')$$), 'X cannot confirm a proof code; only the server can');
+select t.ok(t.fails(format($$update profile_private set contact_verified_at = now() where profile_id = %L$$, :'x')), 'X cannot mark their own handle verified');
+select t.ok(t.fails('select * from private.contact_codes'), 'X cannot read anyone''s proof code');
+select t.as_user(:'y');
+select t.ok(t.sqlstate(format('select report_bad_contact(%L, %L)', :'xy2', :'x')) = 'PL100', 'Y cannot flag X from a plan that was broken (PL100)');
+select report_bad_contact(id, :'x') from invites where status = 'kept' and :'x' in (from_id, to_id) and :'y' in (from_id, to_id);
+select report_bad_contact(id, :'x') from invites where status = 'kept' and :'x' in (from_id, to_id) and :'y' in (from_id, to_id);
+reset role;
+select t.ok((select count(*) from public.contact_reports where owner_id = :'x') = 2
+  and (select count(*) from public.events where type = 'bad_contact' and actor_id = :'x') = 2,
+  'Y flags X once for each of their two kept plans, and a second tap on the same plan adds nothing');
+-- Kept and flagged a week ago is too late.
+update public.invites set resolved_at = now() - interval '8 days' where status = 'kept' and :'x' in (from_id, to_id) and :'y' in (from_id, to_id);
+set role authenticated;
+select t.as_user(:'y');
+select t.ok(t.sqlstate(format('select report_bad_contact(%L, %L)', (select id from invites where status = 'kept' and :'x' in (from_id, to_id) limit 1), :'x')) = 'PL100',
+  'Y cannot flag X from a plan kept more than a week ago (PL100)');
+select t.as_user(:'x');
+select t.ok(my_contact_flags() = 2, 'X sees that their handle has two flags, and not who sent them');
+reset role;
+update public.invites set resolved_at = now() where status = 'kept' and :'x' in (from_id, to_id) and :'y' in (from_id, to_id);

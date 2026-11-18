@@ -56,6 +56,9 @@ All of these live in GitHub, under Settings, Secrets and variables, Actions. Non
 | Secret | `CLOUDFLARE_API_TOKEN` | Web deploy publishes the website with it | A custom token scoped to the account, Cloudflare Pages: Edit and nothing else. Make a new one in the Cloudflare dashboard (My Profile, API Tokens), update the secret, delete the old one |
 | Variable | `CLOUDFLARE_ACCOUNT_ID` | Web deploy | Not a secret |
 | Secret | `PROD_SUPABASE_ACCESS_TOKEN` | Optional: only if production is in another Supabase account | As for `SUPABASE_ACCESS_TOKEN` |
+| Secret | `META_APP_SECRET`, `META_VERIFY_TOKEN` | Deploy gives them to the `contact-verify` function; contact proofs are off until both exist (D078) | Reset the app secret in Meta's App Dashboard (App settings, Basic), update the secret, run **Supabase deploy**. The verify token is any string you choose; change it in Meta's webhook settings at the same time |
+| Secret | `WHATSAPP_TOKEN`, `INSTAGRAM_TOKEN` | `contact-verify`: answers on WhatsApp; looks up who sent an Instagram message and answers | Make a new system-user token (WhatsApp) or long-lived token (Instagram) in Meta, update, run **Supabase deploy** |
+| Variable | `PINKILOCK_WHATSAPP_NUMBER`, `PINKILOCK_INSTAGRAM` | Deploy: where the app tells people to send their code (digits with 91; the account's username) | Not secrets. Empty leaves that app's proofs off |
 
 Kept outside GitHub, and managed by the deploy:
 
@@ -216,6 +219,28 @@ on the next push to `main`; check it first by exporting on mock data and serving
 ### A change to the push function
 
 Edit `supabase/functions/push`, then run `npm run test:push:local`. Merging deploys it.
+
+### Turning on contact proofs (D078)
+
+People prove a handle by sending a code from it to Pinkilock. Until this is set up the app says
+"Checking handles is not switched on yet". Steps, once:
+
+1. Make a Meta app (developers.facebook.com, type Business) and add the **WhatsApp** product. Give
+   it a phone number that is not on any WhatsApp app (a new SIM works), and make a permanent
+   system-user token with `whatsapp_business_messaging`.
+2. For Instagram: turn `@pinkilock` into a professional account, add **Instagram** (API with
+   Instagram login) to the same app, connect the account, and make a long-lived token with
+   `instagram_business_basic` and `instagram_business_manage_messages` (needs Meta's app review).
+3. In GitHub add the secrets `META_APP_SECRET`, `META_VERIFY_TOKEN` (any long random string),
+   `WHATSAPP_TOKEN`, `INSTAGRAM_TOKEN`, and the variables `PINKILOCK_WHATSAPP_NUMBER` (e.g.
+   `919800000000`) and `PINKILOCK_INSTAGRAM` (`pinkilock`). Run **Supabase deploy**.
+4. In Meta, for each product, set the webhook to `https://<ref>.supabase.co/functions/v1/contact-verify`
+   with the same verify token, and subscribe to `messages`.
+5. Check: tap Verify in the app, send the code, and the tick appears within a few seconds. The
+   function's logs show `{"at":"contact_verify","WhatsApp:verified":1}` and never a number or name.
+
+Receiving messages costs nothing; the "Verified" answer is free inside WhatsApp's 24-hour reply
+window.
 
 ### A change to the analytics worker
 

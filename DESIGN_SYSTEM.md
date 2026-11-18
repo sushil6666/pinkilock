@@ -83,6 +83,7 @@ Font scaling is allowed up to 1.3x (`maxFontSizeMultiplier`) so layouts hold on 
   sweeps left to right; haptic ticks at 33% and 66%, medium impact on completion; letting go early
   drains the fill in 180 ms. Used wherever a tap would be too cheap.
 - **Chip**: 40 high, radius 6, uppercase label. Selected is pink fill, indigo text.
+- **Plan option** (`IdeaChip`): a chip with the time and one-liner under the title, and a chevron on the right (48 wide) that opens What you do / Where / Cost / Why it works under a hairline. Headings are gold captions (indigo when selected). The row picks; only the chevron opens.
 - **InviteCard**: a ticket. Eyebrow with status, the idea in display type, time row, note in quotes,
   a perforated divider, then who it is with and their trust badge.
 - **TrustBadge**: pill on `onPhoto` with a 1.5px border in its tone and a shield icon, score in tabular figures and the tier name. Gold at 90+,
