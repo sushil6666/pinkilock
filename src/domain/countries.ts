@@ -11,7 +11,8 @@ export const DIAL_CODES: Record<string, string> = { IN: '91', GB: '44', US: '1',
 
 /** Open cities, with their country, for onboarding. */
 export const openCities = (): City[] => CITIES.filter((c) => c.active && COUNTRIES.some((k) => k.code === c.country && k.active));
-export interface City { name: string; country: string; active: boolean }
+/** `zone` is the city's IANA time zone, the `time_zone` column. */
+export interface City { name: string; country: string; active: boolean; zone: string }
 
 export const COUNTRIES: Country[] = [
   { code: 'IN', name: 'India', active: true, emergency: '112', womenHelpline: '181' },
@@ -25,12 +26,15 @@ export const COUNTRIES: Country[] = [
 ];
 
 export const CITIES: City[] = [
-  { name: 'Mumbai', country: 'IN', active: true },
-  { name: 'Pune', country: 'IN', active: false },
-  { name: 'Bengaluru', country: 'IN', active: false },
-  { name: 'Delhi', country: 'IN', active: false },
-  { name: 'Hyderabad', country: 'IN', active: false },
+  { name: 'Mumbai', country: 'IN', active: true, zone: 'Asia/Kolkata' },
+  { name: 'Pune', country: 'IN', active: false, zone: 'Asia/Kolkata' },
+  { name: 'Bengaluru', country: 'IN', active: false, zone: 'Asia/Kolkata' },
+  { name: 'Delhi', country: 'IN', active: false, zone: 'Asia/Kolkata' },
+  { name: 'Hyderabad', country: 'IN', active: false, zone: 'Asia/Kolkata' },
 ];
+
+/** The time zone of a city, or undefined for one we do not know. */
+export const zoneOfCity = (city: string | undefined): string | undefined => CITIES.find((c) => c.name === city)?.zone;
 
 export const countryOf = (code: string | undefined): Country => COUNTRIES.find((c) => c.code === code) ?? COUNTRIES[0];
 

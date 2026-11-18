@@ -19,7 +19,13 @@ test('countries in SQL are COUNTRIES', () => {
 test('cities in SQL are CITIES', () => {
   const block = sql.match(/insert into public\.cities \(name, country, active\) values\n([\s\S]*?)\non conflict/)![1];
   const rows = [...block.matchAll(/\('([^']+)', '([A-Z]{2})', (true|false)\)/g)].map((m) => ({ name: m[1], country: m[2], active: m[3] === 'true' }));
-  assert.deepEqual(rows, CITIES);
+  assert.deepEqual(rows, CITIES.map(({ name, country, active }) => ({ name, country, active })));
+});
+
+test('city time zones in SQL are the zones in CITIES, and real ones', () => {
+  const zones = Object.fromEntries([...sql.matchAll(/update public\.cities set time_zone = '([^']+)' where name = '([^']+)';/g)].map((m) => [m[2], m[1]]));
+  assert.deepEqual(zones, Object.fromEntries(CITIES.map((c) => [c.name, c.zone])));
+  for (const c of CITIES) assert.doesNotThrow(() => new Intl.DateTimeFormat('en', { timeZone: c.zone }), c.zone);
 });
 
 test('the legal version the app shows is the one the server asks consent for', () => {

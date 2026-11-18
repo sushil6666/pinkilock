@@ -472,7 +472,9 @@ are words (report reasons, kinds of date, ask tones, free windows, tag groups) c
 from `src/i18n`; the English is `src/i18n/en.ts`, and a new language is a file of the same shape
 in which any key left out shows in English. Error messages are looked up by code, so the SQL
 keeps the English and the app shows the phone's language. Dates, times and numbers use the
-phone's locale through `Intl`, plan times are shown in the viewer's own time zone, and distance
+phone's locale through `Intl`, plan times are shown in the viewer's own time zone (when another
+clock reads differently, the plan names it too: the other person's on a call, the place's on a
+date in person, from the city's `time_zone`, never from where a phone seems to be), and distance
 is in miles where the locale's country uses them (US, UK, Liberia, Myanmar). The language comes
 from the phone, or `?lang=` in a browser. On a phone a right-to-left language flips the layout
 from the next start; in a browser `<html>` gets `lang` and `dir`. Two pseudo-languages exist only

@@ -79,3 +79,15 @@ select t.ok(not exists (select 1 from auth.users where id = :'q2'), 'an account 
 select t.ok(exists (select 1 from auth.users where id = :'p2'), 'a set-up account is kept');
 select t.ok((:'r'::jsonb ->> 'inactive_accounts_deleted')::int = 0, 'deleting inactive accounts is off until a period is set');
 select t.ok((select schedule from cron.job where jobname = 'pinkilock-retention') = '41 3 * * *', 'retention runs daily');
+
+-- City time zones (WP9): every city says one, and a made-up zone is refused.
+reset role;
+select t.ok((select bool_and(time_zone is not null) from cities), 'every city has a time zone');
+create function pg_temp.bad_zone_refused() returns boolean language plpgsql as $$
+begin
+  insert into public.cities (name, country, active, time_zone) values ('Atlantis', 'IN', false, 'Mars/Base');
+  return false;
+exception when others then
+  return true;
+end $$;
+select t.ok(pg_temp.bad_zone_refused(), 'a city with a zone that does not exist is refused');

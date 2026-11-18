@@ -542,9 +542,14 @@ locale uses them. Right-to-left is wired (layout direction on a phone, `dir` and
 browser). Two pseudo-languages stand in for the second language until a translator writes one:
 `en-XA` (a third longer) and `ar-XB` (right to left), and a unit test fails on words written into a
 screen. No screen names a country. **Left:** a real second language from a native speaker, with its
-catalogue rows (ideas, tags, ask lines); the app tests run in it; time zones named on cross-zone
-plans (needs each person's zone on the server); ideas by region; area lists for each city as it
+catalogue rows (ideas, tags, ask lines); the app tests run in it; ideas by region; area lists for each city as it
 opens.
+
+**Status, 2026-11-18: time zones built** (decision D080). Each city has a time zone (`cities.time_zone`,
+`zone` in `CITIES`). A plan names a second clock when it reads differently from the phone's: the
+other person's city on a video or game plan, the place's city on a date in person. The zone comes
+from the city, so nothing new is collected and a VPN changes nothing. The two-browser test puts one
+person's phone on London time and checks the Mumbai time it is shown.
 
 **Done when:** the app runs fully in a second language in the app tests, a user in a second time
 zone sees correct plan times in the live test, and no screen contains a hard-coded country.
