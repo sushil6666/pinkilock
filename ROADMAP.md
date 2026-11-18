@@ -82,4 +82,7 @@ someone, and delete their account, on both platforms, against the production pro
 
 - Photo upload to Supabase Storage, with extra photos still hidden until a kept promise.
 - The video room named in video plans.
-- Calendar export, and distance in live mode.
+- [x] **Calendar export**: "Add to calendar" on a locked plan makes an `.ics` file on the phone and
+  hands it over (a download in a browser, the share sheet on a phone). It reaches phones with the next
+  binary, since it adds `expo-sharing`; older builds hide the button.
+- Distance in live mode.

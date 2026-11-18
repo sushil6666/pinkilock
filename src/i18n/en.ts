@@ -923,4 +923,11 @@ export const en = {
     forThem: '{time} {zone} for {name}',
     inCity: '{time} {zone} in {city}',
   },
+
+  /** The calendar file for a locked plan. It goes only where the person sends it. */
+  calendar: {
+    add: 'Add to calendar',
+    title: '{idea} with {who} (Pinkilock)',
+    note: 'A pinky promise. Check in with your codes in the app when you meet.',
+  },
 };

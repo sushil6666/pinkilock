@@ -461,6 +461,13 @@ double reads the plan and the four cards (`private.on_invite`, `private.shares_i
 between any two of them ends it and hides it from those two. The reveal policy opens a contact only
 between two people on opposite sides who both checked in. Round two stays a two-person thing.
 
+### Add to calendar
+
+A locked plan offers "Add to calendar": `src/domain/calendar.ts` writes an `.ics` file (the idea, a
+first name, the place, the time in UTC, a reminder; never a contact handle) and
+`src/lib/calendarFile.ts` hands it over, as a download in a browser or through the share sheet on
+a phone. Pinkilock sends it to no calendar service; where it goes is the person's choice.
+
 ### Share my date and the after-date check
 
 A locked plan offers "Share my date" (who, what, where, when, through the phone's share sheet; no

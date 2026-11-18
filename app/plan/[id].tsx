@@ -11,6 +11,7 @@ import { CheckInCodes } from '@/components/CheckInCodes';
 import { Countdown } from '@/components/Countdown';
 import { DateFeedback } from '@/components/DateFeedback';
 import { ShareMyDate } from '@/components/ShareMyDate';
+import { AddToCalendar } from '@/components/AddToCalendar';
 import { LockedReveal } from '@/components/LockedReveal';
 import { Portrait } from '@/components/Portrait';
 import { TrustBadge } from '@/components/TrustBadge';
@@ -196,6 +197,7 @@ export default function PlanScreen() {
         {error ? <ErrorText text={error} /> : null}
 
         {kept && !myFlake && <DateFeedback inviteId={invite.id} otherId={other.id} name={both} double={double} />}
+        {locked && <AddToCalendar invite={invite} idea={idea.title} who={both} />}
         {locked && <ShareMyDate invite={invite} other={other} idea={idea.title} />}
 
         {!flaked && !double && (
