@@ -3,21 +3,30 @@
  * indicator, Android gesture or 3-button bar), the gutter, the header (the logo top centre, with an
  * optional back control and title under the logo) and a footer that stays above the keyboard, so no screen handles insets itself.
  *
- * It also owns the width. Nothing is drawn wider than `columnMax`: in a wide browser window or
- * on a tablet the screen is a centred column with the app's own background around it and a
- * hairline down each side. Things drawn outside a Screen (the tab bar, sheets, the notice
- * banner) use `column` from here, so the rule lives in one place.
+ * It also owns the width. On a phone, or a narrow window, nothing is drawn wider than `columnMax`:
+ * the screen is a centred column with a hairline down each side where the window is wider. On a
+ * desktop window (`useDesktop`) each screen says what kind it is with `desk`:
+ * - `page` (the default): up to `deskMax`, for screens that lay out two columns (`Columns`, `Grid`).
+ * - `form`: one thing to fill in or decide. The night sky and the pinkies fill the left of the
+ *   window; the form sits on the right at `columnMax`, with its footer under it.
+ * - `read`: long text, up to `readMax`.
+ * Things drawn outside a Screen (sheets, the notice banner) use `column` from here.
  */
 import { Feather } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import type { ReactNode } from 'react';
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useDesktop } from '../../lib/desktop';
 import { webOnly } from '../../lib/web';
-import { color, columnMax, gutter, space } from '../../theme/tokens';
+import { color, columnMax, deskMax, gutter, readMax, space } from '../../theme/tokens';
 import { Logo } from '../Logo';
+import { Loop } from '../Loop';
+import { NightSky } from '../NightSky';
 import { T } from './T';
 import { t } from '../../i18n';
+
+export type Desk = 'page' | 'form' | 'read';
 
 interface Props {
   children: ReactNode;
@@ -34,6 +43,10 @@ interface Props {
   wide?: boolean;
   /** The logo sits top centre on every screen; only a page with its own top bar turns it off. */
   logo?: boolean;
+  /** How the screen is laid out on a desktop window. Phones ignore it. */
+  desk?: Desk;
+  /** A `form` screen's left side on desktop, in place of the night sky and the pinkies. */
+  aside?: ReactNode;
 }
 
 /**
@@ -53,44 +66,75 @@ export function goBack() {
 /** Centred, never wider than the column. For anything that is drawn outside a Screen. */
 export const column = { width: '100%', maxWidth: columnMax, alignSelf: 'center' } as const;
 
-export function Screen({ children, title, back = false, onBack, right, footer, scroll = true, inTabs, wide, logo = true }: Props) {
-  // The website's front page uses the whole window; it keeps its own text to `wideMax`.
-  const width = wide ? { width: '100%' } as const : column;
+/** The default left side of a form on desktop: the night sky with the pinkies hooking in it. */
+function SkyAside() {
+  return (
+    <View style={styles.aside}>
+      <NightSky wide moon={styles.asideMoon}>
+        <View style={{ width: '100%', maxWidth: 520, alignSelf: 'center' }}><Loop name="pinkyLock" /></View>
+      </NightSky>
+    </View>
+  );
+}
+
+export function Screen({ children, title, back = false, onBack, right, footer, scroll = true, inTabs, wide, logo = true, desk = 'page', aside }: Props) {
+  const desktop = useDesktop() && !wide;
+  const form = desktop && desk === 'form';
+  const maxWidth = !desktop ? columnMax : desk === 'read' ? readMax : desk === 'page' ? deskMax : columnMax;
+  const width = wide ? ({ width: '100%' } as const) : ({ width: '100%', maxWidth, alignSelf: 'center' } as const);
   const insets = useSafeAreaInsets();
   const bottom = inTabs ? space.xxl : Math.max(insets.bottom, space.lg) + space.sm;
   const hasHeader = logo || back !== false || !!title || !!right;
 
+  const header = hasHeader && (
+    <View style={[styles.header, desktop && !form && { maxWidth: maxWidth + gutter * 2 }, form && styles.headerWide]}>
+      {back !== false ? (
+        <Pressable accessibilityRole="button" accessibilityLabel={t(back === 'close' ? 'common.close' : 'common.back')} hitSlop={12} onPress={onBack ?? goBack} style={styles.headerBtn}>
+          <Feather name={back === 'close' ? 'x' : 'arrow-left'} size={22} color={color.text} />
+        </Pressable>
+      ) : <View style={styles.headerBtn} />}
+      <View style={styles.middle}>
+        {logo && <Logo size={desktop ? 20 : 18} />}
+        {title ? <T v="label" c={color.textDim} numberOfLines={1} center>{title}</T> : null}
+      </View>
+      <View style={[styles.headerBtn, { alignItems: 'flex-end' }]}>{right}</View>
+    </View>
+  );
+
+  const body = scroll ? (
+    <ScrollView
+      style={styles.fill}
+      contentContainerStyle={{ ...width, paddingHorizontal: gutter, paddingTop: hasHeader ? space.sm : space.lg, paddingBottom: footer ? space.xxl : bottom, ...(form ? { flexGrow: 1, justifyContent: 'center' } : null) }}
+      keyboardShouldPersistTaps="handled"
+      showsVerticalScrollIndicator={false}
+    >
+      {children}
+    </ScrollView>
+  ) : (
+    <View style={[styles.fill, width, { paddingHorizontal: gutter, paddingBottom: footer ? 0 : bottom }]}>{children}</View>
+  );
+
+  const foot = footer && <View style={[styles.footer, form && styles.footerForm, { paddingBottom: bottom }]}>{footer}</View>;
+
   return (
     <KeyboardAvoidingView {...webOnly({ role: 'main' as const })} style={[styles.root, { paddingTop: insets.top, paddingLeft: insets.left, paddingRight: insets.right }]} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      {/* The column's edges, only visible where the window is wider than it. */}
-      {!wide && <View style={styles.rail} pointerEvents="none"><View style={styles.railLines} /></View>}
-      {hasHeader && (
-        <View style={styles.header}>
-          {back !== false ? (
-            <Pressable accessibilityRole="button" accessibilityLabel={t(back === 'close' ? 'common.close' : 'common.back')} hitSlop={12} onPress={onBack ?? goBack} style={styles.headerBtn}>
-              <Feather name={back === 'close' ? 'x' : 'arrow-left'} size={22} color={color.text} />
-            </Pressable>
-          ) : <View style={styles.headerBtn} />}
-          <View style={styles.middle}>
-            {logo && <Logo size={18} />}
-            {title ? <T v="label" c={color.textDim} numberOfLines={1} center>{title}</T> : null}
+      {/* The column's edges, only on the phone layout where the window is wider than it. */}
+      {!wide && !desktop && <View style={styles.rail} pointerEvents="none"><View style={styles.railLines} /></View>}
+      {header}
+      {form ? (
+        <View style={styles.split}>
+          {aside ?? <SkyAside />}
+          <View style={styles.formSide}>
+            {body}
+            {foot}
           </View>
-          <View style={[styles.headerBtn, { alignItems: 'flex-end' }]}>{right}</View>
         </View>
-      )}
-      {scroll ? (
-        <ScrollView
-          style={styles.fill}
-          contentContainerStyle={{ ...width, paddingHorizontal: gutter, paddingTop: hasHeader ? space.sm : space.lg, paddingBottom: footer ? space.xxl : bottom }}
-          keyboardShouldPersistTaps="handled"
-          showsVerticalScrollIndicator={false}
-        >
-          {children}
-        </ScrollView>
       ) : (
-        <View style={[styles.fill, width, { paddingHorizontal: gutter, paddingBottom: footer ? 0 : bottom }]}>{children}</View>
+        <>
+          {body}
+          {foot}
+        </>
       )}
-      {footer && <View style={[styles.footer, { paddingBottom: bottom }]}>{footer}</View>}
     </KeyboardAvoidingView>
   );
 }
@@ -101,7 +145,14 @@ const styles = StyleSheet.create({
   rail: { ...StyleSheet.absoluteFillObject, alignItems: 'center' },
   railLines: { flex: 1, width: '100%', maxWidth: columnMax + 2, borderLeftWidth: StyleSheet.hairlineWidth, borderRightWidth: StyleSheet.hairlineWidth, borderColor: color.line },
   header: { ...column, minHeight: 56, flexDirection: 'row', alignItems: 'center', paddingHorizontal: gutter - 4, paddingVertical: space.xs },
+  headerWide: { maxWidth: undefined, paddingHorizontal: space.x4 },
   middle: { flex: 1, alignItems: 'center', gap: 2 },
   headerBtn: { width: 48, height: 48, justifyContent: 'center' },
   footer: { ...column, paddingHorizontal: gutter, paddingTop: space.md, gap: space.md, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: color.line, backgroundColor: color.bg },
+  footerForm: { borderTopWidth: 0 },
+  // Desktop form: the sky on the left, the form on the right.
+  split: { flex: 1, flexDirection: 'row' },
+  aside: { flex: 1.2, justifyContent: 'center', overflow: 'hidden', paddingHorizontal: gutter },
+  asideMoon: { right: '12%', top: 0 },
+  formSide: { flex: 1, minWidth: columnMax + gutter * 2, borderLeftWidth: StyleSheet.hairlineWidth, borderLeftColor: color.line },
 });

@@ -43,6 +43,15 @@ export const gutter = space.xl;
 export const columnMax = 480;
 /** The first screen in a wide browser window fills the window; its text columns stop at this. */
 export const wideMax = 1200;
+/**
+ * Desktop: a browser window at least `deskMin` wide gets the desktop layout (`src/lib/desktop.ts`):
+ * the tabs become a side menu, pages run up to `deskMax` with two columns where they have two
+ * kinds of thing, forms sit beside the night sky at `columnMax`, and reading pages stop at `readMax`.
+ */
+export const deskMin = 960;
+export const deskMax = 1080;
+export const readMax = 760;
+export const sideNav = 232;
 /** How far a button stands off its slab, and how far it sinks when pressed. */
 export const depth = 5;
 

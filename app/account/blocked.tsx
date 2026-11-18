@@ -36,7 +36,7 @@ export default function Blocked() {
   };
 
   return (
-    <Screen back="back" title={t('blocked.title')}>
+    <Screen desk="read" back="back" title={t('blocked.title')}>
       <View style={{ gap: space.lg }}>
         <T v="display">{t('blocked.title')}</T>
         <T c={color.textDim}>{t('blocked.body')}</T>

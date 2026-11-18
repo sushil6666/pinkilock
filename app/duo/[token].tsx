@@ -41,10 +41,10 @@ export default function JoinDuo() {
     setBusy(false);
   };
 
-  if (name === undefined) return <Screen back="close" scroll={false}><View /></Screen>;
+  if (name === undefined) return <Screen desk="form" back="close" scroll={false}><View /></Screen>;
   if (done) {
     return (
-      <Screen back="close">
+      <Screen desk="form" back="close">
         <View style={{ gap: space.lg }}>
           <T v="display">{t('duo.joinedTitle', { name: name ?? '' })}</T>
           <T c={color.textDim}>{t('duo.joinedBody')}</T>
@@ -55,7 +55,7 @@ export default function JoinDuo() {
   }
   if (name === null) {
     return (
-      <Screen back="close">
+      <Screen desk="form" back="close">
         <View style={{ gap: space.lg }}>
           <T v="display">{t('duo.expiredTitle')}</T>
           <ErrorText text={error || t('duo.expiredBody')} tone={color.textDim} />
@@ -65,7 +65,7 @@ export default function JoinDuo() {
     );
   }
   return (
-    <Screen back="close" footer={<><ErrorText text={error} /><Button icon="users" label={t('duo.join', { name })} onPress={join} disabled={!!duo} busy={busy} /></>}>
+    <Screen desk="form" back="close" footer={<><ErrorText text={error} /><Button icon="users" label={t('duo.join', { name })} onPress={join} disabled={!!duo} busy={busy} /></>}>
       <View style={{ gap: space.xl }}>
         <T v="display">{t('duo.wantsTitle', { name })}</T>
         <T c={color.textDim}>

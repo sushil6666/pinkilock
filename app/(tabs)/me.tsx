@@ -11,6 +11,7 @@ import { TrustBadge } from '@/components/TrustBadge';
 import { Button } from '@/components/ui/Button';
 import { Chip, Tag } from '@/components/ui/Chip';
 import { HoldButton } from '@/components/ui/HoldButton';
+import { Columns } from '@/components/ui/Columns';
 import { Screen } from '@/components/ui/Screen';
 import { Sheet } from '@/components/ui/Sheet';
 import { T } from '@/components/ui/T';
@@ -166,6 +167,7 @@ export default function Me() {
 
   return (
     <Screen inTabs>
+      <Columns gap={0} left={<>
       <View style={{ flexDirection: 'row', gap: space.lg, alignItems: 'center', marginBottom: space.xl }}>
         <Portrait name={me.name} palette={me.palette} glyph={me.glyph} size={84} />
         <View style={{ flex: 1 }}>
@@ -210,6 +212,7 @@ export default function Me() {
       ))}
       {error ? <ErrorText text={error} style={{ marginTop: space.sm }} /> : null}
 
+      </>} right={<>
       <View style={{ marginTop: space.lg, gap: space.sm }}>
         <Vouches person={me} />
         <Button kind="ghost" icon="users" label={t('me.askVouch')} onPress={askVouch} />
@@ -335,6 +338,7 @@ export default function Me() {
         <Button kind="danger" label={t('me.signOut')} busy={busy === 'sign_out'} onPress={() => leave('sign_out')} />
         <Button kind="ghost" label={t('me.staySignedIn')} onPress={() => setSheet(null)} />
       </Sheet>
+      </>} />
     </Screen>
   );
 }

@@ -509,7 +509,12 @@ a query filter. None of this is a defence on its own: every rule that matters is
   first screen: in a window 960 or wider onboarding asks `Screen` for `wide` and shows the
   website's front page (`src/components/Landing.tsx`) across the whole window, with no hairlines and
   its text kept to `wideMax` (1200); narrower, it shows
-  the one-column `Welcome`. Start on either goes into the same sign-up steps, in the column.
+  the one-column `Welcome`. Start on either goes into the same sign-up steps.
+- **Desktop**: in a browser window 960 or wider (`src/lib/desktop.ts`, `useDesktop`) the app has
+  a desktop layout instead of the column: the tab bar is a side menu (`tabBarPosition: 'left'`),
+  and each `Screen` lays itself out by its `desk` prop (`page` up to `deskMax` with `Columns` and
+  `Grid`, `form` beside the night sky, `read` up to `readMax`). The column rule above holds for
+  phones and narrow windows only; no screen measures the window itself.
   `public/index.html` is the page the web build loads into: it paints `bg` before the app has
   loaded, and `app.json` (`web.themeColor`) gives the browser bar the same blue. Those two files
   are the only places a colour is written outside `src/theme/tokens.ts`, because neither can

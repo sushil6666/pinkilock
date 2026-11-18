@@ -48,7 +48,7 @@ export default function Report() {
 
   if (done) {
     return (
-      <Screen scroll={false} footer={<Button label={t('ask.backToDiscover')} icon="arrow-right" onPress={() => backToDiscover()} />}>
+      <Screen desk="form" scroll={false} footer={<Button label={t('ask.backToDiscover')} icon="arrow-right" onPress={() => backToDiscover()} />}>
         <Animated.View entering={FadeInDown.duration(360)} style={{ flex: 1, justifyContent: 'center', gap: space.lg }}>
           <T v="label" c={color.gold}>{t('report.done')}</T>
           <T v="display">{t('report.doneTitle')}</T>
@@ -60,6 +60,7 @@ export default function Report() {
 
   return (
     <Screen
+      desk="form"
       back="close"
       title={t('report.title')}
       footer={<>

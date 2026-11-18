@@ -46,7 +46,7 @@ export default function Requests() {
 
   if (sent) {
     return (
-      <Screen back="back" title={t('requests.title')}>
+      <Screen desk="read" back="back" title={t('requests.title')}>
         <View style={{ gap: space.lg }}>
           <T v="display">{t('requests.sentTitle')}</T>
           <T c={color.textDim}>{t('requests.sentBody')}</T>
@@ -57,7 +57,7 @@ export default function Requests() {
   }
 
   return (
-    <Screen back="back" title={t('requests.title')}>
+    <Screen desk="read" back="back" title={t('requests.title')}>
       <View style={{ gap: space.xl }}>
         {decisions.length > 0 && (
           <View style={{ gap: space.sm }}>

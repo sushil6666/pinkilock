@@ -10,7 +10,7 @@ import { t } from '@/i18n';
 
 export default function NotFound() {
   return (
-    <Screen scroll={false}>
+    <Screen desk="form" scroll={false}>
       <View style={{ flex: 1, justifyContent: 'center', gap: space.lg }}>
         <Loop name="padlock" style={{ maxWidth: 240 }} />
         <T v="display">{t('notFound.title')}</T>

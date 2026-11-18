@@ -34,7 +34,7 @@ export default function InviteScreen() {
 
   if (!invite) {
     return (
-      <Screen back="back" scroll={false}>
+      <Screen desk="form" back="back" scroll={false}>
         <View style={{ flex: 1, justifyContent: 'center', gap: space.md }}>
           <T v="display">{t('ask.goneTitle')}</T>
           <T c={color.textDim}>{t('ask.goneBody')}</T>
@@ -113,7 +113,7 @@ export default function InviteScreen() {
   }
 
   return (
-    <Screen back="back" title={t('ask.title')} footer={footer}>
+    <Screen desk="form" back="back" title={t('ask.title')} footer={footer}>
       <Animated.View entering={FadeInDown.duration(360)} style={{ gap: space.xl }}>
         <InviteCard invite={invite} meId={meId} other={other} now={now} onPress={other ? () => router.push(`/profile/${other.id}`) : undefined} />
         {double ? <DoubleParty invite={invite} meId={meId} show={invite.status === 'sent' || invite.status === 'half_locked' ? 'pinkies' : 'none'} /> : null}

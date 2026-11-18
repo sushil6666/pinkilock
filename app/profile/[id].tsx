@@ -10,6 +10,8 @@ import { TrustBadge } from '@/components/TrustBadge';
 import { Button } from '@/components/ui/Button';
 import { Chip, Tag } from '@/components/ui/Chip';
 import { HoldButton } from '@/components/ui/HoldButton';
+import { Columns } from '@/components/ui/Columns';
+import { useDesktop } from '@/lib/desktop';
 import { Screen, backToDiscover } from '@/components/ui/Screen';
 import { Sheet } from '@/components/ui/Sheet';
 import { T } from '@/components/ui/T';
@@ -27,6 +29,7 @@ import { fmtDistance, t } from '@/i18n';
 export default function ProfileScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const me = useStore((s) => s.me);
+  const desktop = useDesktop();
   const person = usePerson(id);
   const invites = useStore((s) => s.invites);
   const between = invites.filter((i) => me && otherId(i, me.id) === id);
@@ -69,15 +72,16 @@ export default function ProfileScreen() {
 
   return (
     <Screen back="back" title={person.area} footer={footer}>
-      <View style={styles.hero}>
+      <Columns gap={space.xl} left={
+      <View style={[styles.hero, desktop && { height: 560 }]}>
         <Portrait name={person.name} palette={person.palette} glyph={person.glyph} fill style={StyleSheet.absoluteFill} />
         <View style={{ padding: space.lg, gap: 4 }}>
           <T v="display" numberOfLines={1} adjustsFontSizeToFit>{t('profile.nameAge', { name: person.name, age: person.age })}</T>
           <T v="caption" c={color.textDim}>{[t('profile.areaCity', { area: person.area, city: person.city }), person.distanceKm > 0 ? fmtDistance(person.distanceKm) : '', person.pronouns].filter(Boolean).join('  /  ')}</T>
         </View>
       </View>
-
-      <View style={{ gap: space.xl, marginTop: space.xl }}>
+      } right={
+      <View style={{ gap: space.xl }}>
         <TrustBadge person={person} size="lg" />
         {answersIn(person.answerMinutes) ? <T v="caption" c={color.textDim}>{answersIn(person.answerMinutes)}</T> : null}
 
@@ -121,6 +125,7 @@ export default function ProfileScreen() {
 
         <Button kind="quiet" icon="shield" label={t('profile.blockOrReport')} onPress={() => setSafety(true)} />
       </View>
+      } />
 
       <Sheet
         visible={safety}

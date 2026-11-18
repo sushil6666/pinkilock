@@ -99,7 +99,7 @@ export default function SignInCodeScreen() {
 
   const title = t(mode === 'link' ? (isPhone ? 'signIn.yourNumber' : 'signIn.yourEmail') : 'landing.signIn');
   return (
-    <Screen back="back" title={title} footer={footer}>
+    <Screen desk="form" back="back" title={title} footer={footer}>
       <Animated.View key={sentTo ? 'code' : kind} entering={FadeInRight.duration(260)} style={{ gap: space.xl }}>
         {!sentTo ? (
           <>

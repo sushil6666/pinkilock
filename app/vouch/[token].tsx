@@ -41,10 +41,10 @@ export default function Vouch() {
     setBusy(false);
   };
 
-  if (name === undefined) return <Screen back="close" scroll={false}><View /></Screen>;
+  if (name === undefined) return <Screen desk="form" back="close" scroll={false}><View /></Screen>;
   if (name === null) {
     return (
-      <Screen back="close">
+      <Screen desk="form" back="close">
         <T v="display">{t('duo.expiredTitle')}</T>
         <ErrorText text={error || t('vouch.expiredBody')} tone={color.textDim} />
       </Screen>
@@ -52,7 +52,7 @@ export default function Vouch() {
   }
   if (done) {
     return (
-      <Screen back="close">
+      <Screen desk="form" back="close">
         <View style={{ gap: space.lg }}>
           <T v="display">{t('vouch.thanks')}</T>
           <T c={color.textDim}>{t('vouch.thanksBody', { name })}</T>
@@ -62,7 +62,7 @@ export default function Vouch() {
     );
   }
   return (
-    <Screen back="close" footer={<><ErrorText text={error} /><Button label={t('vouch.button', { name })} onPress={send} disabled={!picked.length} busy={busy} /></>}>
+    <Screen desk="form" back="close" footer={<><ErrorText text={error} /><Button label={t('vouch.button', { name })} onPress={send} disabled={!picked.length} busy={busy} /></>}>
       <View style={{ gap: space.xl }}>
         <T v="display">{t('vouch.title', { name })}</T>
         <T c={color.textDim}>{t('vouch.body', { max: VOUCH_MAX_PICKS })}</T>

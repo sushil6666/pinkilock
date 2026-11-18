@@ -55,7 +55,7 @@ export default function NewInvite() {
 
   if (!person || !me) {
     return (
-      <Screen back="close" scroll={false}>
+      <Screen desk="form" back="close" scroll={false}>
         <View style={{ flex: 1, justifyContent: 'center' }}><T v="display">{t('compose.nobody')}</T></View>
       </Screen>
     );
@@ -98,6 +98,7 @@ export default function NewInvite() {
 
   return (
     <Screen
+      desk="form"
       back="close"
       title={t('ask.title')}
       footer={<>{hint}<HoldButton label={t(asDouble ? 'compose.holdDouble' : 'compose.hold', { name: person.name })} onComplete={submit} disabled={!!missing || full} busy={busy} /></>}
