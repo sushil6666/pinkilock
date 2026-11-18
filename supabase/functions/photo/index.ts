@@ -1,5 +1,5 @@
 /**
- * photo: adds one photo behind the lock (ROADMAP Phase 4, build plan WP7b, decision D087).
+ * photo: adds one photo behind the lock (ROADMAP Phase 4, build plan WP7b, decision D088).
  *
  * The app POSTs the JPEG it made (resized, re-encoded) with the person's own access token. This
  * function:

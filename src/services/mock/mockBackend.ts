@@ -71,7 +71,7 @@ export function createMockBackend(): Backend {
   /** Flags I raised, by invite and person. The made-up people never flag my handle. */
   const flagged = new Set<string>();
   /**
-   * My photos (D087), in memory only. The same rules as the server: three at most, six uploads a
+   * My photos (D088), in memory only. The same rules as the server: three at most, six uploads a
    * week. A person checks each one on the server; here, a stand-in "moderator" approves a photo
    * three seconds after it was added, so the whole flow can be tried alone.
    */
@@ -310,7 +310,7 @@ export function createMockBackend(): Backend {
         // Moving city (D083): an open city, an area from its list, once a week.
         const moving = next.city !== d.me.city;
         if (moving && !openCities().some((c) => c.name === next.city)) fail('PL076');
-        checkProfile(next, next.city, { area: moving ? '' : d.me.area, pronouns: d.me.pronouns, ideaIds: d.me.ideaIds });
+        checkProfile(next, next.city, { area: d.me.area, city: d.me.city, pronouns: d.me.pronouns, ideaIds: d.me.ideaIds });
         const now = Date.now();
         if (moving && (changed.city ?? 0) > now - 7 * rules.DAY) fail('PL105');
         if (moving) {
@@ -529,10 +529,10 @@ export function createMockBackend(): Backend {
       const d = await load();
       await wait(LATENCY);
       if (!d.me) fail('PL002');
-      if (myPhotoList.length >= 3) fail('PL107');
+      if (myPhotoList.length >= 3) fail('PL108');
       const now = Date.now();
       photoUploads = photoUploads.filter((at) => at > now - 7 * rules.DAY);
-      if (photoUploads.length >= 6) fail('PL108');
+      if (photoUploads.length >= 6) fail('PL109');
       photoUploads.push(now);
       myPhotoList = [...myPhotoList, { id: `photo-${now}`, uri: photo.uri, at: now }];
       return listPhotos();
@@ -540,7 +540,7 @@ export function createMockBackend(): Backend {
 
     async removePhoto(id) {
       await wait(LATENCY);
-      if (!myPhotoList.some((p) => p.id === id)) fail('PL109');
+      if (!myPhotoList.some((p) => p.id === id)) fail('PL110');
       myPhotoList = myPhotoList.filter((p) => p.id !== id);
       return listPhotos();
     },

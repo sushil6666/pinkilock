@@ -204,7 +204,7 @@ async function checkReceipts(totals: Totals): Promise<void> {
 }
 
 /**
- * Photo files whose row is gone (removed, or the account deleted; D087). Storage deletes files
+ * Photo files whose row is gone (removed, or the account deleted; D088). Storage deletes files
  * through its API only, so the database lists them in photo_trash and this run, which holds the
  * service key already, deletes them and then their entries.
  */

@@ -1,4 +1,4 @@
--- Photos behind the lock (WP7b, D087), after doubles.sql. People of their own: F (owner), G (kept a
+-- Photos behind the lock (WP7b, D088), after doubles.sql. People of their own: F (owner), G (kept a
 -- promise with F), H (never met F), and G again once blocked.
 \set ON_ERROR_STOP on
 \pset tuples_only on
@@ -24,13 +24,13 @@ select t.ok(t.fails($$insert into photos (profile_id, path, bytes) values ('0000
 select t.ok(t.fails($$insert into storage.objects (bucket_id, name) values ('photos', '00000000-0000-0000-0000-0000000f0001/x.jpg')$$), 'a person cannot upload to the bucket directly');
 reset role;
 set role service_role;
-select t.ok(t.sqlstate($$select add_photo('00000000-0000-0000-0000-0000000f0001', 1000, false)$$) = 'PL106', 'a file that is not a JPEG is refused (PL106)');
-select t.ok(t.sqlstate($$select add_photo('00000000-0000-0000-0000-0000000f0001', 3000000, true)$$) = 'PL106', 'a file over 2 MB is refused (PL106)');
+select t.ok(t.sqlstate($$select add_photo('00000000-0000-0000-0000-0000000f0001', 1000, false)$$) = 'PL107', 'a file that is not a JPEG is refused (PL107)');
+select t.ok(t.sqlstate($$select add_photo('00000000-0000-0000-0000-0000000f0001', 3000000, true)$$) = 'PL107', 'a file over 2 MB is refused (PL107)');
 select t.ok(t.sqlstate($$select add_photo('00000000-0000-0000-0000-0000000f0009', 1000, true)$$) = 'PL002', 'no profile, no photo (PL002)');
 select (add_photo(:'f', 1000, true))->>'id' as p1 \gset
 select (add_photo(:'f', 1000, true))->>'id' as p2 \gset
 select (add_photo(:'f', 1000, true))->>'id' as p3 \gset
-select t.ok(t.sqlstate($$select add_photo('00000000-0000-0000-0000-0000000f0001', 1000, true)$$) = 'PL107', 'a fourth photo is refused (PL107)');
+select t.ok(t.sqlstate($$select add_photo('00000000-0000-0000-0000-0000000f0001', 1000, true)$$) = 'PL108', 'a fourth photo is refused (PL108)');
 reset role;
 -- The file the function stores, at the path it was given.
 insert into storage.objects (bucket_id, name) select 'photos', path from photos where profile_id = :'f';
@@ -65,7 +65,7 @@ select t.as_user(:'h');
 select t.ok((select count(*) = 0 from photos where profile_id = :'f') and (select count(*) = 0 from storage.objects where bucket_id = 'photos'),
   'H, who never kept a promise with F, sees no photo and no file');
 select t.ok(t.fails($$update photos set status = 'approved'$$) and t.fails($$delete from photos$$), 'nobody approves or deletes a row directly');
-select t.ok(t.sqlstate(format('select remove_photo(%L)', :'p1')) = 'PL109', 'H cannot remove F''s photo (PL109)');
+select t.ok(t.sqlstate(format('select remove_photo(%L)', :'p1')) = 'PL110', 'H cannot remove F''s photo (PL110)');
 select t.ok(t.fails($$select * from photo_trash$$), 'the trash list is no client''s');
 
 -- A block closes the photos again, as it closes the handle.
@@ -94,11 +94,11 @@ select add_photo(:'f', 1000, true);
 reset role;
 insert into private.photo_uploads (user_id) select :'f' from generate_series(1, 2);
 set role service_role;
-select t.ok(t.sqlstate($$select add_photo('00000000-0000-0000-0000-0000000f0001', 1000, true)$$) in ('PL107', 'PL108'), 'the limits still hold');
+select t.ok(t.sqlstate($$select add_photo('00000000-0000-0000-0000-0000000f0001', 1000, true)$$) in ('PL108', 'PL109'), 'the limits still hold');
 reset role;
 delete from photos where profile_id = :'f' and status = 'held';
 set role service_role;
-select t.ok(t.sqlstate($$select add_photo('00000000-0000-0000-0000-0000000f0001', 1000, true)$$) = 'PL108', 'six uploads a week, even with room for another (PL108)');
+select t.ok(t.sqlstate($$select add_photo('00000000-0000-0000-0000-0000000f0001', 1000, true)$$) = 'PL109', 'six uploads a week, even with room for another (PL109)');
 reset role;
 
 -- A suspended account adds nothing.

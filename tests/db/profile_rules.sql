@@ -76,7 +76,7 @@ insert into bad_profiles values
   ('PL065', 'a handle in the pronouns', $$select save_profile('Riya', 25, 'Khar', '@riya', '', '{}', array['boba_run','chai_walk','meme_duel'])$$),
   ('PL066', 'a contact kind that does not exist', $$select save_profile('Riya', 25, 'Khar', '', '', '{}', array['boba_run','chai_walk','meme_duel'], 'Email', 'riya')$$),
   ('PL066', 'a contact kind from another region', $$select save_profile('Riya', 25, 'Khar', '', '', '{}', array['boba_run','chai_walk','meme_duel'], 'KakaoTalk', 'riya')$$),
-  ('PL095', 'an area that is not on the city''s list', $$select save_profile('Riya', 25, 'Bandra', '', '', '{}', array['boba_run','chai_walk','meme_duel'])$$),
+  ('PL106', 'an area off the list that does not read as a place', $$select save_profile('Riya', 25, 'Bandra!!', '', '', '{}', array['boba_run','chai_walk','meme_duel'])$$),
   ('PL096', 'typed pronouns', $$select save_profile('Riya', 25, 'Khar', 'xe/xem', '', '{}', array['boba_run','chai_walk','meme_duel'])$$),
   ('PL066', 'an empty handle', $$select save_profile('Riya', 25, 'Khar', '', '', '{}', array['boba_run','chai_walk','meme_duel'], 'Instagram', '  ')$$),
   ('PL066', 'a one-character Telegram handle', $$select save_profile('Riya', 25, 'Khar', '', '', '{}', array['boba_run','chai_walk','meme_duel'], 'Telegram', 'r')$$),
@@ -165,3 +165,22 @@ update public.ideas set countries = null where id = 'hot_takes';
 update public.ideas set countries = array['IN'] where id = 'chai_walk';
 select t.ok((select countries from ideas where id = 'pani_puri_duel') = array['IN'] and (select countries from ideas where id = 'boba_run') is null,
   'pani puri is offered in India only; boba everywhere');
+
+-- An area of one's own (D087): AREA_CASES in src/domain/profile.ts, the same table.
+reset role;
+select t.ok(private.custom_area_ok(a) = ok, 'custom area: ' || a || ' -> ' || ok) from (values
+  ('Baramunda', true),
+  ('Sector 17', true),
+  ('St. Inez', true),
+  ('D''Souza Colony', true),
+  ('Navi-Mumbai', true),
+  ('Kharadi Bypass Road', true),
+  ('Bo', false),
+  ('A place with far too many words', false),
+  ('Gali 1234', false),
+  ('17 Sector', false),
+  ('Bandra!!', false),
+  ('insta riya', false),
+  ('riya.co', false),
+  ('call me now', false),
+  ('abcdefghijklmnopqrstuvwxyzabcde', false)) v(a, ok);

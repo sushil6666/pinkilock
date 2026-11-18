@@ -355,7 +355,7 @@ of Discover and cannot ask, lock or edit.
 
 ### Check photos
 
-Every new photo waits for a person (D087): nobody else sees it until it is approved. Work through
+Every new photo waits for a person (D088): nobody else sees it until it is approved. Work through
 them at least daily; a person sees "Checking" on their own photo until then.
 
 ```bash
@@ -490,6 +490,15 @@ with `person <uuid> unsuspend "appeal accepted"` (or the matching action) when i
 Only after its checklist and the lawyer's sign-off (WP8). Then a migration sets `active = true` in
 `countries` and `cities`, and the same change goes into `src/domain/countries.ts`. Discover is per
 city; a city with no venue list falls back to typed places.
+
+### Areas people name themselves
+
+`private.area_requests` counts areas typed off the list, by city and name (no person). To promote
+popular ones, read it in the SQL editor (`select * from private.area_requests order by people desc`),
+check each name is a real place, then add rows in a new migration to `areas` and the same names to
+`AREAS` in `src/domain/areas.ts` and `AREA_CENTRES` in `src/domain/areaCentres.ts` (`npm run test:unit`
+checks all three match). "Use my location" needs the `expo-location` native module, so the first
+build after D087 must be a new EAS build; an over-the-air update alone is not enough.
 
 A first profile also needs the request's network country (`cf-ipcountry`) to be open (PL078).
 GitHub's runners are in the US, so the live-test workflow stores a random one-run token in

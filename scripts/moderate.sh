@@ -7,7 +7,7 @@
 #   scripts/moderate.sh <db-url> report <id> <action> "<reason>" act on a report
 #   scripts/moderate.sh <db-url> person <uuid> <action> "<reason>" act on a person directly
 #   scripts/moderate.sh <db-url> history <uuid>                 what was done to a person, and why
-#   scripts/moderate.sh <db-url> photos                         photos waiting for a person (D087)
+#   scripts/moderate.sh <db-url> photos                         photos waiting for a person (D088)
 #   scripts/moderate.sh <db-url> photo <id> <action> "<reason>"  approve or hold one
 #   scripts/moderate.sh <db-url> requests                       privacy requests and appeals waiting
 #   scripts/moderate.sh <db-url> answer <id> "<what was done>"   mark one answered

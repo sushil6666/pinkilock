@@ -10,6 +10,8 @@ a processor or a kind of data updates this file in the same pull request.
 | --- | --- | --- | --- |
 | Account: id, email or phone, sign-in sessions | Supabase Auth (`auth.users`) | Until the account is deleted; unfinished accounts 30 days | The person; operators |
 | Card: first name, age, city, country, area, pronouns, line, tags, date ideas (and, for the server only, when the name, line and city last changed) | `profiles` | Until deleted | The person; people they share a plan with; up to 200 people a day through Discover |
+| Device location ("Use my location") | Never stored: read once on the phone to pick a city and area, then dropped | Not kept | No one; it never leaves the phone |
+| Areas named off the list: city, name, how many people, first and last time | `private.area_requests` | Until promoted to the list or cleared | No client; operators |
 | Contact handle | `profile_private` | Until deleted | The person; someone they kept a promise with |
 | Photos behind the lock (up to three; the file has no metadata: place, phone and time are stripped on the server) | `photos`, Storage bucket `photos` | Until removed or the account is deleted; the file within minutes after (`photo_trash`) | The person; moderators; once approved, someone they kept a promise with |
 | Photo uploads, for the weekly limit | `private.photo_uploads` | 8 days | No client |

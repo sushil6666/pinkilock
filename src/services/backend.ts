@@ -116,7 +116,7 @@ export interface Backend {
   bail(inviteId: string): Promise<Changes>;
 
   /**
-   * Photos behind the lock (D087): up to three, each checked by a person before anyone sees it,
+   * Photos behind the lock (D088): up to three, each checked by a person before anyone sees it,
    * and then shown only where the reveal is (after a kept promise). Live, a photo goes through
    * the `photo` Edge Function, which strips its metadata; no client writes to storage.
    */

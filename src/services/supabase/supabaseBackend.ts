@@ -125,7 +125,7 @@ export function createSupabaseBackend(url: string, anonKey: string, storage: Ses
   }
 
   /**
-   * Photos (D087). Rows come back only where RLS allows (mine; theirs once approved and revealed),
+   * Photos (D088). Rows come back only where RLS allows (mine; theirs once approved and revealed),
    * and Storage signs a file only where its row is readable. Links last ten minutes and are never
    * kept: each screen asks again.
    */

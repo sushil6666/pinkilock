@@ -80,8 +80,12 @@ someone, and delete their account, on both platforms, against the production pro
   Hyderabad, Chennai, Kolkata, Pune, Ahmedabad) and twelve tier-2 cities, each with its areas and
   busy public places to meet (237 in all). People pick their city at sign-up and can move on Me,
   once a week. The place lists should be checked by someone who lives in each city.
+- [x] **Where I am, from the phone** (D087): "Use my location" picks the city and nearest areas on
+  the device and keeps no coordinates; every city lists its common neighbourhoods (about 1,330),
+  typing suggests the nearest spellings, and anyone can name an area of their own within limits.
+  Needs a new Android build (`expo-location`).
 
-- [x] **Photos behind the lock** (D087): up to three photos on Me, stored in a private Supabase
+- [x] **Photos behind the lock** (D088): up to three photos on Me, stored in a private Supabase
   Storage bucket by the `photo` Edge Function, which strips their metadata. A person checks each one
   before anyone sees it (`scripts/moderate.sh photos`); then it shows only after a kept promise, like
   the handle. Picking needs the next binary. AI review (O04) and the public photo taken with the

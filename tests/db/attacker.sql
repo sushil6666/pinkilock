@@ -413,12 +413,12 @@ select t.ok((:'ex'::jsonb -> 'contact') ? 'verified_at' and split_part(:'ex'::js
 -- once a week (so nobody looks through every city's people), and cannot reset the clock.
 reset role;
 -- X's name and line as they stand, so that only the area and the city change.
-select name as x_name, coalesce((select r.text from private.line_reviews r where r.profile_id = p.id and r.status in ('pending', 'held')), tagline) as x_line
+select name as x_name, area as x_area, coalesce((select r.text from private.line_reviews r where r.profile_id = p.id and r.status in ('pending', 'held')), tagline) as x_line
   from public.profiles p where id = :'x' \gset
 set role authenticated;
 select t.as_user(:'x');
 \set move 'select save_profile(%L, 25, %L, '''', %L, ''{}'', array[''boba_run'',''chai_walk'',''meme_duel''], null, null, %L)'
-select t.ok(t.sqlstate(format(:'move', :'x_name', 'Bandra West', :'x_line', 'Delhi NCR')) = 'PL095', 'X cannot carry a Mumbai area to Delhi NCR (PL095)');
+select t.ok(t.sqlstate(format(:'move', :'x_name', :'x_area', :'x_line', 'Delhi NCR')) = 'PL095', 'X cannot carry a Mumbai area to Delhi NCR (PL095)');
 select t.ok(t.sqlstate(format(:'move', :'x_name', 'Saket', :'x_line', 'Delhi NCR')) is null, 'X moves to Delhi NCR once, with an area there');
 select t.ok(t.sqlstate(format(:'move', :'x_name', 'Koregaon Park', :'x_line', 'Pune')) = 'PL105', 'X cannot hop to another city in the same week (PL105)');
 select t.ok(t.fails(format($$update profiles set city_changed_at = null, city = 'Pune' where id = %L$$, :'x')),
@@ -431,3 +431,16 @@ select t.as_user(:'x');
 select t.ok(t.fails('select count(*) from push_tickets') and t.fails($$insert into push_tickets (id, notification_id, token) values ('t', 1, 'x')$$),
   'X cannot read or write push tickets');
 reset role;
+
+-- D087: an area of one's own is a plain place name, never a way to reach someone, and the list of
+-- named areas is the server's alone.
+set role authenticated;
+select t.as_user(:'x');
+select t.ok(t.sqlstate(format(:'move', :'x_name', 'call 98765 43210', :'x_line', 'Delhi NCR')) = 'PL065'
+  and t.sqlstate(format(:'move', :'x_name', 'xavier!!', :'x_line', 'Delhi NCR')) = 'PL106'
+  and t.sqlstate(format(:'move', :'x_name', 'Gali 1234', :'x_line', 'Delhi NCR')) = 'PL106',
+  'X cannot put a number or a handle on the card as an area of their own (PL065, PL106)');
+select t.ok(t.fails('select * from private.area_requests') and t.fails($$insert into private.area_requests (city, name) values ('Delhi NCR', 'x')$$),
+  'X cannot read or add to the named-area list');
+reset role;
+

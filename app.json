@@ -75,6 +75,12 @@
             "enableShrinkResourcesInReleaseBuilds": true
           }
         }
+      ],
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Pinkilock uses your location once, on this phone, to suggest your city and nearest area. It is never saved or sent."
+        }
       ]
     ],
     "icon": "./assets/icon.png",

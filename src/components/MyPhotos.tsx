@@ -1,5 +1,5 @@
 /**
- * My photos behind the lock, on Me (ROADMAP Phase 4, D087). Up to three. Each is checked by a
+ * My photos behind the lock, on Me (ROADMAP Phase 4, D088). Up to three. Each is checked by a
  * person before anyone sees it, and then shown only to someone I kept a promise with, as my
  * handle is. The state of each one is mine to see: being checked, approved, or not approved.
  */

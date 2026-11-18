@@ -1,4 +1,4 @@
--- Photos behind the lock (ROADMAP Phase 4, build plan WP7b, decision D087).
+-- Photos behind the lock (ROADMAP Phase 4, build plan WP7b, decision D088).
 --
 -- Up to three extra photos per person, shown to someone else only after a kept promise, exactly
 -- like the contact handle, and only once a person has approved them.
@@ -114,15 +114,15 @@ begin
     raise exception using errcode = 'PL072', message = 'This account is paused while we look at a report.';
   end if;
   if not coalesce(p_jpeg, false) or p_bytes is null or p_bytes < 1 or p_bytes > 2097152 then
-    raise exception using errcode = 'PL106', message = 'That photo could not be used. Pick another one.';
+    raise exception using errcode = 'PL107', message = 'That photo could not be used. Pick another one.';
   end if;
   -- Serialise one person's uploads, so two at once cannot both pass the count.
   perform pg_advisory_xact_lock(hashtext('photos:' || p_user::text));
   if (select count(*) from public.photos where profile_id = p_user) >= 3 then
-    raise exception using errcode = 'PL107', message = 'You have three photos. Remove one first.';
+    raise exception using errcode = 'PL108', message = 'You have three photos. Remove one first.';
   end if;
   if (select count(*) from private.photo_uploads where user_id = p_user and at > now() - interval '7 days') >= 6 then
-    raise exception using errcode = 'PL108', message = 'That is enough new photos for this week. Try again in a few days.';
+    raise exception using errcode = 'PL109', message = 'That is enough new photos for this week. Try again in a few days.';
   end if;
   v_path := p_user::text || '/' || v_id::text || '.jpg';
   insert into public.photos (id, profile_id, path, bytes) values (v_id, p_user, v_path, p_bytes);
@@ -148,7 +148,7 @@ declare
 begin
   if me is null then raise exception using errcode = 'PL001', message = 'Sign in first.'; end if;
   delete from public.photos where id = p_id and profile_id = me;
-  if not found then raise exception using errcode = 'PL109', message = 'That photo is not there any more.'; end if;
+  if not found then raise exception using errcode = 'PL110', message = 'That photo is not there any more.'; end if;
 end $$;
 revoke all on function public.remove_photo(uuid) from public, anon;
 grant execute on function public.remove_photo(uuid) to authenticated;

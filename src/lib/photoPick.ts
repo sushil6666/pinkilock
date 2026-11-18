@@ -1,6 +1,6 @@
 /**
  * Picks a photo on this phone or in this browser and makes it into a plain JPEG, at most 1280 px
- * on its longer side (D087). Re-encoding bakes in the rotation and drops the file's metadata; the
+ * on its longer side (D088). Re-encoding bakes in the rotation and drops the file's metadata; the
  * server strips it again in any case (supabase/functions/photo/jpeg.ts), since a modified app
  * could skip this step.
  *

@@ -1,5 +1,5 @@
 /**
- * Photos behind the lock over the network (D087, build plan WP7b): the app's own backend adds a
+ * Photos behind the lock over the network (D088, build plan WP7b): the app's own backend adds a
  * photo through the `photo` Edge Function into real Storage; the file comes back without its
  * metadata; nobody else sees it until a moderator approves it, and then only someone who kept a
  * promise with its owner; removing it closes it at once, and its file is deleted.
@@ -55,7 +55,7 @@ test('a photo goes in through the function, without its metadata, and waits for 
   assert.ok(Number(sql(`select bytes from public.photos where id = '${mine[0].id}'`)) === file.length, 'the row records the stored size');
 
   await assert.rejects(owner.backend.addPhoto({ uri: asUri(Buffer.from('@e2e_pia, my handle'), 'text/plain') }),
-    (e) => e instanceof AppError && e.code === 'PL106', 'text is not a photo');
+    (e) => e instanceof AppError && e.code === 'PL107', 'text is not a photo');
 });
 
 test('nobody else sees it until it is approved, and then only someone who kept a promise', { skip: !DB }, async () => {
@@ -87,7 +87,7 @@ test('removing it closes it at once, and its file is deleted', { skip: !DB }, as
   const path = sql(`select path from public.photos where id = '${photo.id}'`);
   assert.deepEqual(await owner.backend.removePhoto(photo.id), []);
   assert.equal((await met.backend.getReveal(inviteId, owner.id)).photos.length, 0, 'gone from the reveal');
-  await assert.rejects(met.backend.removePhoto(photo.id), (e) => e instanceof AppError && e.code === 'PL109');
+  await assert.rejects(met.backend.removePhoto(photo.id), (e) => e instanceof AppError && e.code === 'PL110');
 
   // The push function empties the trash when Postgres wakes it (only where it has its secret,
   // which tests/live/local_push.sh's set-up gives the local stack).

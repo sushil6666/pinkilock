@@ -440,7 +440,7 @@ handle, a number or a QR code, so photo upload must not ship without this.
 is never returned to another account; a direct upload that skips the app stays `pending`; a photo
 with location metadata comes back without it.
 
-**Status, 2026-11-18: extra photos built, with a person as the check** (decision D087). Up to three
+**Status, 2026-11-18: extra photos built, with a person as the check** (decision D088). Up to three
 photos behind the lock, in a private Storage bucket that no client can write to: the `photo` Edge
 Function checks the caller, strips every bit of metadata on the server (a unit test with real
 JPEGs carrying GPS EXIF; the live test reads the stored file back) and stores the file as

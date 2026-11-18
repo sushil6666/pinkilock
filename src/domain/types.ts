@@ -58,7 +58,7 @@ export interface Reveal {
   /** They proved the handle is theirs by sending a code from it (D078). */
   contactVerified?: boolean;
   /**
-   * Their approved photos (D087), each a short-lived signed link the server gave because RLS let
+   * Their approved photos (D088), each a short-lived signed link the server gave because RLS let
    * this person read it. The mock's made-up people have a caption, colours and a glyph instead.
    */
   photos: RevealPhoto[];
@@ -72,7 +72,7 @@ export interface RevealPhoto {
 }
 
 /**
- * One of my own photos behind the lock (D087): waiting for a person to check it, approved (shown
+ * One of my own photos behind the lock (D088): waiting for a person to check it, approved (shown
  * after a kept promise), or held (shown to nobody). `url` is a short-lived link to my own file.
  */
 export interface MyPhoto {
