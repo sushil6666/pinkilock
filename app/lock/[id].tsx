@@ -12,7 +12,7 @@ import { Button } from '@/components/ui/Button';
 import { Screen, goBack } from '@/components/ui/Screen';
 import { T } from '@/components/ui/T';
 import { ideaOf } from '@/domain/ideas';
-import { lockRole, otherId } from '@/domain/invites';
+import { friendOn, isDouble, lockRole, otherId } from '@/domain/invites';
 import { whenLabel } from '@/domain/time';
 import { haptic } from '@/lib/haptics';
 import { useNow } from '@/lib/useNow';
@@ -26,11 +26,17 @@ export default function LockScreen() {
   const meId = useStore((s) => s.me?.id ?? '');
   const invite = useInvite(id);
   const other = usePerson(invite ? otherId(invite, meId) : undefined);
+  const theirFriend = usePerson(invite ? friendOn(invite, otherId(invite, meId)) ?? undefined : undefined);
+  const asker = usePerson(invite?.fromId);
   const offerPinky = useStore((s) => s.offerPinky);
   const now = useNow();
 
   // What this screen was opened to do. Fixed on entry: the invite changes under us as we lock it.
-  const entry = useRef(invite ? { role: lockRole(invite, meId), mineOut: invite.status === 'half_locked' && invite.firstPinkyBy === meId } : null).current;
+  // On a double, my pinky is out once I am in `pinkies` (the asker's is the seal, so never "out" early).
+  const entry = useRef(invite ? {
+    role: lockRole(invite, meId),
+    mineOut: isDouble(invite) ? meId !== invite.fromId && !!invite.pinkies?.includes(meId) && invite.status !== 'locked' : invite.status === 'half_locked' && invite.firstPinkyBy === meId,
+  } : null).current;
   const [phase, setPhase] = useState<LockPhase>(entry?.mineOut ? 'committed' : 'idle');
   const [missed, setMissed] = useState(false);
   const [error, setError] = useState('');
@@ -70,7 +76,11 @@ export default function LockScreen() {
   }
 
   const idea = ideaOf(invite.ideaId);
+  const double = isDouble(invite);
   const name = other.name;
+  // Who the lock is waiting on, in words: one person, or the rest of a double.
+  const waitingOn = double ? 'the others' : name;
+  const withWhom = double ? `${name} + ${theirFriend?.name ?? 'their duo'}` : name;
   const mode = entry.role === 'seal' ? 'seal' : 'first';
   const locked = invite.status === 'locked';
   const closed = invite.status === 'declined' || invite.status === 'expired' || invite.status === 'ended';
@@ -78,10 +88,10 @@ export default function LockScreen() {
 
   const errorRef = error ? splitRef(error).ref : null;
   const prompt =
-    closed ? `${name} pulled out` :
+    closed ? (double ? 'The double is off' : `${name} pulled out`) :
     error ? "That didn't go through" :
     phase === 'idle' ? (missed ? 'Almost. Slide all the way in.' : 'Slide your pinky in') :
-    phase === 'committed' ? (locked ? 'Hold on' : `Pinky out. Waiting on ${name}`) :
+    phase === 'committed' ? (locked ? 'Hold on' : `Pinky out. Waiting on ${waitingOn}`) :
     phase === 'sealing' ? 'Hold on' : '';
 
   return (
@@ -93,11 +103,11 @@ export default function LockScreen() {
           </Animated.View>
         ) : (
           <>
-            <T v="label" c={color.textDim}>{mode === 'seal' ? `${name}'s pinky is out` : `You first, then ${name}`}</T>
+            <T v="label" c={color.textDim}>{double ? (mode === 'seal' ? 'All three pinkies are out' : `Your pinky, then ${asker?.name ?? 'the asker'} seals it`) : mode === 'seal' ? `${name}'s pinky is out` : `You first, then ${name}`}</T>
             <T v="display" numberOfLines={2} adjustsFontSizeToFit>{idea.emoji} {idea.title}</T>
           </>
         )}
-        <T c={color.textDim}>with {name}  /  {whenLabel(invite.startsAt, now)}</T>
+        <T c={color.textDim}>with {withWhom}  /  {whenLabel(invite.startsAt, now)}</T>
       </View>
 
       <View style={{ marginHorizontal: -gutter }}>
@@ -117,7 +127,7 @@ export default function LockScreen() {
         <Animated.View entering={FadeIn.delay(160).duration(motion.base)} style={styles.bottom}>
           <View style={styles.promise}>
             <T v="label" c={color.pink}>The anti-ghosting promise</T>
-            <T>You and {name} both show up, or say so early. A flake goes on the record of whoever flaked.</T>
+            <T>{double ? 'All four of you show up, or say so early.' : `You and ${name} both show up, or say so early.`} A flake goes on the record of whoever flaked.</T>
             <View style={{ marginTop: space.sm }}><Countdown target={invite.startsAt} now={now} /></View>
           </View>
           <Button icon="lock" label="See the plan" onPress={() => router.replace(`/plan/${invite.id}`)} />
@@ -131,8 +141,10 @@ export default function LockScreen() {
             {closed ? 'Nothing was promised, so nothing goes on anyone\'s record.'
               : error ? error
               : phase === 'idle' ? 'Locking means: I show up on time, or I bail early and own it.'
-              : mode === 'first' && !locked ? `Your pinky is in. It locks as soon as ${name} adds theirs. You can leave this screen and it will still lock.`
-              : 'Both pinkies are in.'}
+              : mode === 'first' && !locked ? (double
+                ? `Your pinky is in. It locks once everyone is in and ${asker?.name ?? 'the asker'} seals it. You can leave this screen.`
+                : `Your pinky is in. It locks as soon as ${name} adds theirs. You can leave this screen and it will still lock.`)
+              : double ? 'All four pinkies are in.' : 'Both pinkies are in.'}
           </T>
           {closed ? <Button kind="ghost" label="Back" onPress={goBack} />
             : phase === 'idle' ? <Button kind="quiet" label="Lock without sliding" onPress={() => setCommitKey((k) => k + 1)} />

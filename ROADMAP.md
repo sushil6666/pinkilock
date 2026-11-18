@@ -63,6 +63,9 @@ someone, and delete their account, on both platforms, against the production pro
 
 ## Phase 4: The date itself (planned)
 
+- [x] **Double micro-dates** (market review, F3): duos made from a link, four people on one plan,
+  check-in across sides, a flake only on whoever did not show, the reveal between people who met.
+
 - Photo upload to Supabase Storage, with extra photos still hidden until a kept promise.
 - The video room named in video plans.
 - Calendar export, and distance in live mode.

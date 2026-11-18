@@ -14,7 +14,8 @@ import { Chip } from './ui/Chip';
 import { ErrorText } from './ui/ErrorText';
 import { T } from './ui/T';
 
-export function DateFeedback({ inviteId, otherId, name }: { inviteId: string; otherId: string; name: string }) {
+/** `double`: a four-person plan. The questions stay; round two, a thing between two people, does not apply. */
+export function DateFeedback({ inviteId, otherId, name, double }: { inviteId: string; otherId: string; name: string; double?: boolean }) {
   const [state, setState] = useState<{ rated: boolean; roundTwo: boolean } | null>(null);
   const [worth, setWorth] = useState<boolean | null>(null);
   const [again, setAgain] = useState<boolean | null>(null);
@@ -68,7 +69,7 @@ export function DateFeedback({ inviteId, otherId, name }: { inviteId: string; ot
         <Chip label="Yes" selected={again === true} onPress={() => setAgain(true)} />
         <Chip label="Not this time" selected={again === false} onPress={() => setAgain(false)} />
       </View>
-      <T v="caption" c={color.textDim}>{`${name} never sees this. If you both say yes to meeting again, you both find out.`}</T>
+      <T v="caption" c={color.textDim}>{double ? 'Nobody on the plan sees your answers. They help Pinkilock, and never touch a score.' : `${name} never sees this. If you both say yes to meeting again, you both find out.`}</T>
       <ErrorText text={error} />
       <Button label="Send" onPress={() => send(false)} disabled={worth === null || again === null} busy={busy} />
       <Button kind="quiet" label="I felt unsafe" onPress={() => send(true)} />

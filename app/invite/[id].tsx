@@ -8,7 +8,8 @@ import { Button } from '@/components/ui/Button';
 import { Screen } from '@/components/ui/Screen';
 import { Sheet } from '@/components/ui/Sheet';
 import { T } from '@/components/ui/T';
-import { lockRole, otherId } from '@/domain/invites';
+import { friendOn, isDouble, lockRole, otherId } from '@/domain/invites';
+import { DoubleParty } from '@/components/DoubleParty';
 import { shortCountdown } from '@/domain/time';
 import { useNow } from '@/lib/useNow';
 import { useInvite, usePerson, useStore } from '@/state/store';
@@ -21,6 +22,9 @@ export default function InviteScreen() {
   const meId = useStore((s) => s.me?.id ?? '');
   const invite = useInvite(id);
   const other = usePerson(invite ? otherId(invite, meId) : undefined);
+  const theirFriend = usePerson(invite ? friendOn(invite, otherId(invite, meId)) ?? undefined : undefined);
+  const asker = usePerson(invite?.fromId);
+  const decliner = usePerson(invite?.declinedBy ?? undefined);
   const decline = useStore((s) => s.declineInvite);
   const now = useNow();
   const [sheet, setSheet] = useState(false);
@@ -58,9 +62,27 @@ export default function InviteScreen() {
     setBusy(false);
   };
 
+  const double = isDouble(invite);
+  const out = invite.pinkies?.length ?? 0;
+  const theirs = `${name} and ${theirFriend?.name ?? 'their duo'}`;
+
   let head: [string, string];
   let footer: ReactNode;
-  if (role === 'first') {
+  if (double && role === 'first') {
+    head = [`A double with ${theirs}.`, `All four put a pinky out, in any order; ${iSent ? 'you seal' : `${asker?.name ?? 'the asker'} seals`} it last. Until all four are in, nothing is promised.`];
+    footer = <><Button icon="lock" label="Pinky out" onPress={toLock} /><Button kind="ghost" label="Pass" onPress={() => setSheet(true)} /></>;
+  } else if (double && role === 'seal') {
+    head = ['All three pinkies are out.', 'Add yours to seal it and make it a promise for all four of you.'];
+    footer = <><Button icon="lock" label="Seal it" onPress={toLock} /><Button kind="ghost" label="Take it back" onPress={() => setSheet(true)} /></>;
+  } else if (double && (invite.status === 'sent' || invite.status === 'half_locked')) {
+    head = iSent
+      ? ['Waiting on the others.', `${out} of 3 pinkies are out. It expires in ${shortCountdown(invite.expiresAt, now)} if not everyone answers.`]
+      : ['Your pinky is out.', `It locks once everyone is in and ${asker?.name ?? 'the asker'} seals it.`];
+    footer = <Button kind="ghost" label={iSent ? 'Take it back' : 'Pull it back'} onPress={() => setSheet(true)} />;
+  } else if (double && invite.status === 'declined' && invite.declinedBy !== meId) {
+    head = [`${decliner?.name ?? 'Someone'} passed.`, 'The double is off for all four. No promise was made, so nothing goes on anyone\'s record.'];
+    footer = toDiscover;
+  } else if (role === 'first') {
     head = [`${name} wants to lock this in.`, `You go first: slide your pinky in, then ${name} seals it. Until both are in, nothing is promised.`];
     footer = <><Button icon="lock" label="Lock it" onPress={toLock} /><Button kind="ghost" label="Pass" onPress={() => setSheet(true)} /></>;
   } else if (role === 'seal') {
@@ -92,6 +114,7 @@ export default function InviteScreen() {
     <Screen back="back" title="Vibe check" footer={footer}>
       <Animated.View entering={FadeInDown.duration(360)} style={{ gap: space.xl }}>
         <InviteCard invite={invite} meId={meId} other={other} now={now} onPress={other ? () => router.push(`/profile/${other.id}`) : undefined} />
+        {double ? <DoubleParty invite={invite} meId={meId} show={invite.status === 'sent' || invite.status === 'half_locked' ? 'pinkies' : 'none'} /> : null}
         <View style={{ gap: space.sm }}>
           <T v="title">{head[0]}</T>
           <T c={color.textDim}>{head[1]}</T>
@@ -103,8 +126,10 @@ export default function InviteScreen() {
         visible={sheet}
         onClose={() => setSheet(false)}
         eyebrow={iSent ? 'Take it back' : 'Pass'}
-        title={iSent ? 'Withdraw this ask?' : `Pass on ${name}?`}
-        body={iSent
+        title={double ? 'Call off this double?' : iSent ? 'Withdraw this ask?' : `Pass on ${name}?`}
+        body={double
+          ? 'It ends for all four of you, and the others will see it is off. Nothing was promised, so nobody\'s score changes.'
+          : iSent
           ? `${name} will see that you took it back. Nothing was promised, so no record changes.`
           : `${name} will be told you passed. Nothing was promised, so nobody's score changes. A clear no beats a slow fade.`}
       >

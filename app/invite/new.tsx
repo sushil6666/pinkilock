@@ -28,9 +28,10 @@ import { suits, windowsLabel } from '@/domain/freeWindows';
 const REMOTE_PLACE = { video: 'Pinkilock video room', game: 'Voice chat in the app' } as const;
 
 export default function NewInvite() {
-  const params = useLocalSearchParams<{ to: string; idea?: string }>();
+  const params = useLocalSearchParams<{ to: string; idea?: string; double?: string }>();
   const me = useStore((s) => s.me);
   const person = usePerson(params.to);
+  const friend = usePerson(useStore((s) => s.duoId) ?? undefined);
   const openAsks = useStore((s) => s.invites.filter((i) => i.fromId === s.me?.id && isOpen(i)).length);
   const send = useStore((s) => s.sendInvite);
 
@@ -45,6 +46,8 @@ export default function NewInvite() {
   const [showAllVenues, setShowAllVenues] = useState(false);
   const [note, setNote] = useState('');
   const [tone, setTone] = useState<NoteTone>('chill');
+  // A double (docs/build-plan.md F3): my duo comes, and so does theirs.
+  const [double, setDouble] = useState(params.double === '1');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
 
@@ -61,6 +64,8 @@ export default function NewInvite() {
   const day = days.find((option) => option.id === dayId);
   const slots = day ? slotOptions(day.start, now) : [];
   const full = openAsks >= MAX_OPEN_ASKS;
+  const asDouble = double && !!friend && !!person.hasDuo;
+  const whom = asDouble ? `${person.name} and their duo` : person.name;
   const venues = remotePlace ? [] : venuesFor(me.city, person.area, me.area);
   // With no list for this city yet, the place is typed, as before.
   const typing = !remotePlace && (venueId === 'other' || venues.length === 0);
@@ -75,7 +80,7 @@ export default function NewInvite() {
     setBusy(true);
     setError('');
     try {
-      const invite = await send({ toId: person.id, ideaId, startsAt, place: remotePlace ?? (venue ? venuePlace(venue) : place), note, venueId: venue?.id });
+      const invite = await send({ toId: person.id, ideaId, startsAt, place: remotePlace ?? (venue ? venuePlace(venue) : place), note, venueId: venue?.id, double: asDouble });
       haptic.success();
       router.replace(`/invite/${invite.id}`);
     } catch (e) {
@@ -87,13 +92,13 @@ export default function NewInvite() {
 
   const hint = error || full
     ? <ErrorText text={error || `You have ${MAX_OPEN_ASKS} asks open. Wait for a reply or withdraw one.`} />
-    : <T v="caption" c={color.textDim}>{missing || `${person.name} gets 24 hours to answer. Ask ${openAsks + 1} of ${MAX_OPEN_ASKS}.`}</T>;
+    : <T v="caption" c={color.textDim}>{missing || `${whom} ${asDouble ? 'get' : 'gets'} 24 hours to answer. Ask ${openAsks + 1} of ${MAX_OPEN_ASKS}.`}</T>;
 
   return (
     <Screen
       back="close"
       title="Vibe check"
-      footer={<>{hint}<HoldButton label={`Hold to ask ${person.name}`} onComplete={submit} disabled={!!missing || full} busy={busy} /></>}
+      footer={<>{hint}<HoldButton label={asDouble ? `Hold to ask ${person.name} + duo` : `Hold to ask ${person.name}`} onComplete={submit} disabled={!!missing || full} busy={busy} /></>}
     >
       <View style={styles.to}>
         <Portrait name={person.name} palette={person.palette} glyph={person.glyph} size={52} />
@@ -102,6 +107,19 @@ export default function NewInvite() {
           <TrustBadge person={person} />
         </View>
       </View>
+
+      {person.hasDuo ? (
+        <Section n="00" label="Who comes">
+          {friend ? (
+            <View style={styles.wrap}>
+              <Chip label="Just us two" selected={!asDouble} onPress={() => setDouble(false)} />
+              <Chip label={`Double, with ${friend.name}`} sub={`${person.name}'s duo comes too`} selected={asDouble} onPress={() => setDouble(true)} />
+            </View>
+          ) : (
+            <T v="caption" c={color.textDim}>{`${person.name} has a duo. Make one with a friend in Me to ask them out on a double.`}</T>
+          )}
+        </Section>
+      ) : null}
 
       <Section n="01" label="To what">
         <View style={{ gap: space.sm }}>

@@ -21,7 +21,8 @@ import { Screen } from '@/components/ui/Screen';
 import { Sheet } from '@/components/ui/Sheet';
 import { T } from '@/components/ui/T';
 import { daresFor, ideaOf, openerOf } from '@/domain/ideas';
-import { CHECK_IN_CLOSES_AFTER, CHECK_IN_OPENS_BEFORE, checkInPhase, otherId } from '@/domain/invites';
+import { CHECK_IN_CLOSES_AFTER, CHECK_IN_OPENS_BEFORE, canReveal, checkInPhase, friendOn, isDouble, otherId } from '@/domain/invites';
+import { DoubleParty } from '@/components/DoubleParty';
 import { shortCountdown, timeLabel, whenLabel } from '@/domain/time';
 import { trustOf, trustScore } from '@/domain/trust';
 import { haptic } from '@/lib/haptics';
@@ -38,11 +39,17 @@ export default function PlanScreen() {
   const me = useStore((s) => s.me);
   const invite = useInvite(id);
   const other = usePerson(invite && me ? otherId(invite, me.id) : undefined);
+  // A double: the other side's second person, and whoever bailed.
+  const theirFriend = usePerson(invite && me ? friendOn(invite, otherId(invite, me.id)) ?? undefined : undefined);
+  const flaker = usePerson(invite?.flakedBy ?? undefined);
   const checkIn = useStore((s) => s.checkIn);
   const bail = useStore((s) => s.bail);
   const bringForward = useStore((s) => s.demoBringForward);
   const now = useNow();
-  const reveal = useReveal(invite?.status === 'kept' ? invite.id : undefined);
+  // Each reveal is asked for only when the server would give it (on a double: opposite sides, both came).
+  const showable = (id: string | undefined) => !!invite && !!me && !!id && canReveal(invite, me.id, id);
+  const reveal = useReveal(showable(other?.id) ? invite!.id : undefined, other?.id);
+  const friendReveal = useReveal(showable(theirFriend?.id) ? invite!.id : undefined, theirFriend?.id);
   const [sheet, setSheet] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
@@ -68,7 +75,10 @@ export default function PlanScreen() {
   const locked = invite.status === 'locked';
   const kept = invite.status === 'kept';
   const flaked = invite.status === 'flaked';
-  const myFlake = flaked && invite.flakedBy === me.id;
+  const double = isDouble(invite);
+  // On a double that was kept without me, I am the one who missed it.
+  const myFlake = (flaked && (invite.flakedBy === me.id || (double && !invite.flakedBy && !iAmIn))) || (kept && double && !iAmIn);
+  const both = double ? `${name} and ${theirFriend?.name ?? 'their duo'}` : name;
 
   const run = async (work: () => Promise<void>, ok: () => void) => {
     setBusy(true);
@@ -87,15 +97,18 @@ export default function PlanScreen() {
   if (!locked) footer = <Button kind="ghost" icon="user" label={`${name}'s profile`} onPress={() => router.push(`/profile/${other.id}`)} />;
 
   return (
-    <Screen back="back" title={kept ? 'Promise kept' : flaked ? 'Promise broken' : 'Locked plan'} footer={footer}>
+    <Screen back="back" title={kept && !myFlake ? 'Promise kept' : flaked || myFlake ? 'Promise broken' : 'Locked plan'} footer={footer}>
       <Animated.View entering={FadeInDown.duration(360)} style={{ gap: space.xl }}>
         <View style={{ gap: space.sm }}>
-          <T v="label" c={kept ? color.gold : flaked ? color.flare : color.pink}>
-            {kept ? 'You both showed' : flaked ? (myFlake ? 'You flaked' : `${name} flaked`) : now >= invite.startsAt ? 'Happening now' : 'Starts in'}
+          <T v="label" c={kept && !myFlake ? color.gold : flaked || myFlake ? color.flare : color.pink}>
+            {myFlake ? (kept || !invite.flakedBy ? 'You missed it' : 'You flaked')
+              : kept ? (double ? 'Both sides showed' : 'You both showed')
+              : flaked ? (double ? (invite.flakedBy ? `${flaker?.name ?? 'Someone'} flaked` : 'Not enough people showed') : `${name} flaked`)
+              : now >= invite.startsAt ? 'Happening now' : 'Starts in'}
           </T>
           {locked && <Countdown target={invite.startsAt} now={now} tone={phase === 'open' ? color.gold : color.text} />}
-          {kept && <T v="mega" c={color.gold}>Kept.</T>}
-          {flaked && <T v="mega" c={color.flare}>{myFlake ? 'Missed.' : 'Stood up.'}</T>}
+          {kept && !myFlake && <T v="mega" c={color.gold}>Kept.</T>}
+          {(flaked || myFlake) && <T v="mega" c={color.flare}>{myFlake ? 'Missed.' : 'Stood up.'}</T>}
         </View>
 
         <View style={styles.card}>
@@ -108,31 +121,35 @@ export default function PlanScreen() {
             </View>
           </View>
           {invite.note ? <T style={styles.note}>"{invite.note}"</T> : null}
-          <Pressable accessibilityRole="button" accessibilityLabel={`Open ${name}'s profile`} onPress={() => router.push(`/profile/${other.id}`)} style={styles.who}>
+          {double ? null : <Pressable accessibilityRole="button" accessibilityLabel={`Open ${name}'s profile`} onPress={() => router.push(`/profile/${other.id}`)} style={styles.who}>
             <Portrait name={name} palette={other.palette} glyph={other.glyph} size={44} />
             <View style={{ flex: 1 }}>
               <T v="bodyBold">with {name}</T>
               <T v="caption" c={color.textDim}>{other.age}, {other.area}</T>
             </View>
             <TrustBadge person={other} brief />
-          </Pressable>
+          </Pressable>}
         </View>
+        {double ? <DoubleParty invite={invite} meId={me.id} show={locked ? 'checkins' : 'none'} /> : null}
 
         {locked && (
           <View style={{ gap: space.md }}>
             <T v="label" c={color.textDim}>Check-in</T>
-            <View style={styles.checks}>
-              <Check label="You" done={iAmIn} />
-              <View style={styles.link} />
-              <Check label={name} done={theyAreIn} />
-            </View>
+            {double ? null : (
+              <View style={styles.checks}>
+                <Check label="You" done={iAmIn} />
+                <View style={styles.link} />
+                <Check label={name} done={theyAreIn} />
+              </View>
+            )}
             <T c={color.textDim}>
-              {phase === 'early' ? `Check-in opens at ${timeLabel(invite.startsAt - CHECK_IN_OPENS_BEFORE)}, ten minutes before. When you both check in, the promise is kept.`
-                : iAmIn ? `You're checked in. Waiting for ${name}.`
+              {phase === 'early' ? `Check-in opens at ${timeLabel(invite.startsAt - CHECK_IN_OPENS_BEFORE)}, ten minutes before. ${double ? 'Each of you enters a code from someone on the other side.' : 'When you both check in, the promise is kept.'}`
+                : iAmIn ? `You're checked in. Waiting for ${double ? 'the others' : name}.`
                 : `Check-in is open for another ${shortCountdown(invite.startsAt + CHECK_IN_CLOSES_AFTER, now)}. Missing it counts as a flake.`}
             </T>
-            {phase === 'open' && !(iAmIn && theyAreIn) && (
-              <CheckInCodes inviteId={invite.id} name={name} remote={idea.kind !== 'irl'} done={iAmIn} onCheckIn={async (code) => { await checkIn(invite.id, code); haptic.success(); }} />
+            {phase === 'open' && !(iAmIn && theyAreIn && (!double || invite.checkIns.length === 4)) && (
+              <CheckInCodes inviteId={invite.id} name={name} theirNames={double ? [name, theirFriend?.name ?? 'their duo'] : undefined} remote={idea.kind !== 'irl'} done={iAmIn}
+                onCheckIn={async (code) => { await checkIn(invite.id, code); haptic.success(); }} />
             )}
             {idea.kind === 'irl' && <Meta icon="shield" text="Meet somewhere public and tell a friend where you are." />}
           </View>
@@ -157,24 +174,31 @@ export default function PlanScreen() {
           </View>
         )}
 
-        {flaked && (
+        {(flaked || myFlake) && (
           <View style={[styles.banner, { borderColor: color.flare, backgroundColor: color.flareWash }]}>
-            <T v="bodyBold">{myFlake ? 'This one is on your record.' : `This is on ${name}'s record, not yours.`}</T>
+            <T v="bodyBold">{myFlake ? 'This one is on your record.' : double ? 'Only the people who did not show take the hit.' : `This is on ${name}'s record, not yours.`}</T>
             <T c={color.textDim}>{myFlake ? `Your score is now ${trustOf(me).score}. Keep your next few promises to bring it back up.` : "You showed up, so your score didn't change."}</T>
           </View>
         )}
 
         {error ? <ErrorText text={error} /> : null}
 
-        {kept && <DateFeedback inviteId={invite.id} otherId={other.id} name={name} />}
+        {kept && !myFlake && <DateFeedback inviteId={invite.id} otherId={other.id} name={both} double={double} />}
         {locked && <ShareMyDate invite={invite} other={other} idea={idea.title} />}
 
-        {!flaked && (
+        {!flaked && !double && (
           <View style={{ gap: space.sm }}>
             <T v="label" c={color.textDim}>{kept ? `${name}, unlocked` : 'What you unlock'}</T>
             <LockedReveal person={other} reveal={reveal} hint={`Opens when you and ${name} have both checked in.`} />
           </View>
         )}
+        {!flaked && double && [other, theirFriend].map((p, k) => p ? (
+          <View key={p.id} style={{ gap: space.sm }}>
+            <T v="label" c={color.textDim}>{kept && showable(p.id) ? `${p.name}, unlocked` : `What you unlock: ${p.name}`}</T>
+            <LockedReveal person={p} reveal={k === 0 ? reveal : friendReveal}
+              hint={kept ? `Stays locked: it opens only between people from each side who both checked in.` : `Opens if you and ${p.name} both check in.`} />
+          </View>
+        ) : null)}
 
         {locked && !iAmIn && (
           <View style={{ gap: space.sm, marginTop: space.md }}>
@@ -190,8 +214,8 @@ export default function PlanScreen() {
         visible={sheet}
         onClose={() => setSheet(false)}
         eyebrow="Breaking a promise"
-        title={`Bail on ${name}?`}
-        body={`You locked this. Bailing tells ${name} now, which beats not showing, but it still counts as a flake. Your trust score goes from ${trustOf(me).score} to ${me.trustScore === undefined ? trustScore(me.kept, me.flaked + 1) : 'lower'}.`}
+        title={double ? 'Bail on the double?' : `Bail on ${name}?`}
+        body={`You locked this. Bailing tells ${double ? 'the other three' : name} now, which beats not showing, but it still counts as a flake. Your trust score goes from ${trustOf(me).score} to ${me.trustScore === undefined ? trustScore(me.kept, me.flaked + 1) : 'lower'}.`}
       >
         <HoldButton tone="flare" label="Hold to bail" busy={busy} onComplete={() => run(() => bail(invite.id), () => setSheet(false))} />
         <Button kind="ghost" label="I'll be there" onPress={() => setSheet(false)} />

@@ -13,6 +13,8 @@ export interface Snapshot {
   profiles: Profile[];
   invites: Invite[];
   passedIds: string[];
+  /** My duo partner (docs/build-plan.md F3), or null. Their card is in `profiles`. */
+  duoId?: string | null;
 }
 
 /** Rows that changed. The store merges them by id. */
@@ -22,6 +24,8 @@ export interface Changes {
   profiles?: Profile[];
   invites?: Invite[];
   passedIds?: string[];
+  /** My duo partner changed: a new id, or null when the duo ended. Absent when it did not change. */
+  duoId?: string | null;
   /**
    * Rows I can no longer see: someone blocked (either way), or someone who deleted their account.
    * The store drops them. The app is never told which of those it was.
@@ -79,6 +83,16 @@ export interface Backend {
   vouchFor(token: string): Promise<string | null>;
   /** Vouch for a friend: one to three phrases from the list. Anyone can, signed in or not. */
   vouch(token: string, phrases: string[]): Promise<void>;
+  /**
+   * Duos (docs/build-plan.md F3). A link a friend with a profile opens in the app to make a duo
+   * with me: three a day, good for one day, one use. Everyone is in one duo at most.
+   */
+  createDuoLink(): Promise<string>;
+  /** Whose duo link this is (first name), or null when it cannot be joined. */
+  duoLinkName(token: string): Promise<string | null>;
+  joinDuo(token: string): Promise<Changes>;
+  /** Ends my duo for both of us. Doubles already made keep their four people. */
+  leaveDuo(): Promise<Changes>;
   /** When I am usually free (market review). Any time when empty. */
   saveAvailability(windows: string[]): Promise<Changes>;
   /** My own profile line, if a new one is waiting for review or was not accepted. Null when the card shows what I wrote. */
@@ -101,8 +115,11 @@ export interface Backend {
   demoTheirCode?(inviteId: string): string;
   bail(inviteId: string): Promise<Changes>;
 
-  /** Refuses unless the invite is kept: the reveal is gated on the server, not by a blur. */
-  getReveal(inviteId: string): Promise<Reveal>;
+  /**
+   * Refuses unless the invite is kept: the reveal is gated on the server, not by a blur. On a
+   * double, `profileId` picks whom (someone on the other side; both of us must have checked in).
+   */
+  getReveal(inviteId: string, profileId?: string): Promise<Reveal>;
 
   subscribe(listener: (e: BackendEvent) => void): () => void;
 

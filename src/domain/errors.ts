@@ -71,7 +71,13 @@ export const ERRORS = {
   PL085: 'This link has expired. Ask your friend for a new one.',
   PL086: 'You cannot vouch here.',
   PL087: 'Pick one to three from the list.',
+  PL088: 'You are already in a duo. Leave it first.',
+  PL089: 'This duo link has expired. Ask your friend for a new one.',
   PL090: 'That moderation step is not valid.',
+  PL091: 'You cannot join this duo.',
+  PL092: 'Make a duo with a friend first.',
+  PL093: 'They do not have a duo right now.',
+  PL094: 'Wait for the other three, then seal it.',
 
   PA001: 'Phone sign-in is not switched on yet.',
   PA002: 'Email sign-in is not switched on yet.',

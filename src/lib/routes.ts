@@ -27,6 +27,7 @@ const TITLES: Record<string, string> = {
   'legal/[doc]': 'Terms and privacy',
   safety: 'Safety',
   'vouch/[token]': 'Vouch for a friend',
+  'duo/[token]': 'Join a duo',
   '+not-found': 'Not found',
 };
 

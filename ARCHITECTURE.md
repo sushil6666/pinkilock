@@ -138,6 +138,13 @@ lost. In the mock it carries the simulated other person.
   nobody's flake: no bail, no-show or decline is logged, and no one's score moves. Nothing is
   pushed about it.
 
+**Doubles** (`from_friend`, `to_friend`, `pinkies`; docs/build-plan.md F3): two duos on one plan.
+The three others put a pinky out in any order (`half_locked` from the first) and the asker seals it
+last (`locked`); any one of the four passing declines it for all. Check-in takes the code of anyone
+on the other side. All four in is `kept` at once; when the window closes, at least one from each
+side in is `kept`, with a `no_show` event for each person missing, and otherwise `flaked`. Scores
+come from each person's own events, so a flake is never on a friend who showed.
+
 The rules exist twice, on purpose, and must match: `src/domain/invites.ts` (used by the mock and
 for what the UI offers) and the SQL functions in `supabase/migrations` (the authority in live mode).
 
@@ -419,6 +426,17 @@ A person makes a link (`create_vouch_link`: three a day, each good for 7 days an
 friend who opens it picks one to three phrases from a fixed list (`vouch`), signed in or not. The
 card shows the count and the phrases picked most (`private.vouch_summary`), never who vouched;
 `vouches` is readable by no client role.
+
+### Duos and doubles
+
+A person makes a duo link (`create_duo_link`: three a day, one day, one use); a friend who has a
+profile opens it in the app (`/duo/[token]`) and joins (`join_duo`). `duos` holds one row per person,
+so nobody is in two duos, and each person reads only their own row; cards say only `has_duo`. Either
+can `leave_duo`, and a block between them ends it. `send_invite(..., p_double => true)` seats both
+duo partners and refuses (PL004, naming no one) if any two of the four have a block. Everyone on a
+double reads the plan and the four cards (`private.on_invite`, `private.shares_invite`); a block
+between any two of them ends it and hides it from those two. The reveal policy opens a contact only
+between two people on opposite sides who both checked in. Round two stays a two-person thing.
 
 ### Share my date and the after-date check
 

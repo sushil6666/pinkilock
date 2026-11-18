@@ -86,8 +86,22 @@ const people: Seed[] = [
 
 export const ALWAYS_PASSES = 'nikhil';
 
+/** Who is in a duo with whom among the made-up people (docs/build-plan.md F3), both ways. */
+export const SEED_DUOS: Record<string, string> = {
+  aanya: 'meher', meher: 'aanya', zoya: 'tara', tara: 'zoya', arjun: 'kabir', kabir: 'arjun',
+};
+
+/** The friend who joins my duo in the prototype, a few seconds after I make a duo link. */
+export function seedFriend(): Profile {
+  return {
+    id: 'rhea', name: 'Rhea', age: 23, city: 'Mumbai', area: 'Bandra West', pronouns: 'she/her', distanceKm: 1,
+    tagline: 'Your plus-one for anything with snacks.', vibes: ['foodie', 'yapper'], ideaIds: ['boba_run', 'momo_stop', 'karaoke_duet'],
+    palette: ['#7FD3FF', '#123A5C'], glyph: '🫶', kept: 4, flaked: 0, photoCount: 1, hasDuo: true,
+  };
+}
+
 export function seedProfiles(): Profile[] {
-  return people.map(({ contact: _c, photos: _p, ...p }) => ({ ...p, city: 'Mumbai' }));
+  return people.map(({ contact: _c, photos: _p, ...p }) => ({ ...p, city: 'Mumbai', hasDuo: p.id in SEED_DUOS }));
 }
 
 export function seedReveals(): Record<string, Reveal> {

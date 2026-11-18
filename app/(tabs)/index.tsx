@@ -15,7 +15,7 @@ import { Tag } from '@/components/ui/Chip';
 import { Screen } from '@/components/ui/Screen';
 import { T } from '@/components/ui/T';
 import { ideaOf } from '@/domain/ideas';
-import { isLive, otherId } from '@/domain/invites';
+import { isLive, otherId, peopleOf } from '@/domain/invites';
 import { quiet } from '@/lib/log';
 import { useStore } from '@/state/store';
 import { color, radius, space } from '@/theme/tokens';
@@ -27,6 +27,7 @@ export default function Discover() {
   const profiles = useStore((s) => s.profiles);
   const invites = useStore((s) => s.invites);
   const passedIds = useStore((s) => s.passedIds);
+  const duoId = useStore((s) => s.duoId);
   const pass = useStore((s) => s.pass);
   const restore = useStore((s) => s.restorePasses);
   const refill = useStore((s) => s.refill);
@@ -39,7 +40,9 @@ export default function Discover() {
   }, [refill]));
 
   const busyWith = new Set(me ? invites.filter(isLive).map((i) => otherId(i, me.id)) : []);
-  const queue = profiles.filter((p) => !passedIds.includes(p.id) && !busyWith.has(p.id));
+  // My duo partner, and everyone on a live double with me, are not people to discover.
+  const onPlans = new Set(me ? invites.filter(isLive).flatMap((i) => peopleOf(i)) : []);
+  const queue = profiles.filter((p) => !passedIds.includes(p.id) && !busyWith.has(p.id) && !onPlans.has(p.id) && p.id !== duoId);
   // Running low: ask for the next page before the last card.
   const low = queue.length < 3;
   useEffect(() => {
@@ -82,6 +85,12 @@ export default function Discover() {
               <Feather name="map-pin" size={14} color={color.textDim} />
               <T v="caption" c={color.textDim}>{person.area}{person.distanceKm > 0 ? `  /  ${person.distanceKm} km` : ''}{person.pronouns ? `  /  ${person.pronouns}` : ''}</T>
             </View>
+            {person.hasDuo ? (
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                <Feather name="users" size={14} color={color.textDim} />
+                <T v="caption" c={color.textDim}>{duoId ? 'Has a duo: ask them out on a double' : 'Has a duo: open to doubles'}</T>
+              </View>
+            ) : null}
             {answersIn(person.answerMinutes) ? (
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
                 <Feather name="clock" size={14} color={color.textDim} />

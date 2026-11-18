@@ -105,6 +105,16 @@ test('someone else: no contact, no edits', async () => {
   assert.equal(snap.myContact?.handle, '@e2e_yami_secret', 'the contact did not change');
 });
 
+test('duos: no direct writes, no one else\'s duo, no double without one (F3)', async () => {
+  const forged = await raw.from('duos').insert({ person: x.id, partner: y.id });
+  assert.ok(forged.error, 'a duo row cannot be written directly');
+  const theirs = await raw.from('duos').select('*').eq('person', y.id);
+  assert.deepEqual(theirs.data ?? [], [], 'nobody reads another person\'s duo');
+  await assert.rejects(x.backend.joinDuo('0123456789abcdef'), (e: unknown) => e instanceof AppError && e.code === 'PL089', 'a made-up duo link cannot be joined');
+  await assert.rejects(x.backend.sendInvite({ toId: y.id, ideaId: 'video_coffee', startsAt: Date.now() + 60 * MIN, place: '', note: '', double: true }),
+    (e: unknown) => e instanceof AppError && ['PL092', 'PL068'].includes(e.code), 'a double without a duo is refused');
+});
+
 test('the push function answers only Postgres', async () => {
   for (const auth of [undefined, `Bearer ${KEY}`, 'Bearer guess']) {
     const res = await fetch(`${URL!.replace(/\/$/, '')}/functions/v1/push`, { method: 'POST', headers: { apikey: KEY!, ...(auth ? { Authorization: auth } : {}) }, body: '{}' });

@@ -8,6 +8,7 @@ import type { Account, Invite, MyContact, NewInvite, NewReport, OnboardingInput,
 import { stopPush } from '../lib/push';
 import { backend, type Changes, type Notice, type Snapshot } from '../services';
 import { fail } from '../domain/errors';
+import { peopleOf } from '../domain/invites';
 import { shown } from '../lib/report';
 
 interface State {
@@ -18,6 +19,8 @@ interface State {
   profiles: Profile[];
   invites: Invite[];
   passedIds: string[];
+  /** My duo partner, or null (docs/build-plan.md F3). */
+  duoId: string | null;
   notice: Notice | null;
   /** How I sign in (anonymous until a phone is linked). Loaded by the Me tab. */
   account: Account | null;
@@ -30,6 +33,8 @@ interface State {
   saveAvailability(windows: string[]): Promise<void>;
   pass(profileId: string): Promise<void>;
   restorePasses(): Promise<void>;
+  joinDuo(token: string): Promise<void>;
+  leaveDuo(): Promise<void>;
   sendInvite(input: NewInvite): Promise<Invite>;
   offerPinky(inviteId: string): Promise<void>;
   declineInvite(inviteId: string): Promise<void>;
@@ -61,18 +66,20 @@ function merge(s: State, c: Changes): Partial<State> {
   const goneInvites = new Set(c.removed?.invites ?? []);
   const profiles = mergeById(s.profiles, c.profiles).filter((p) => !goneProfiles.has(p.id));
   const invites = mergeById(s.invites, c.invites)
-    .filter((i) => !goneInvites.has(i.id) && !goneProfiles.has(i.fromId) && !goneProfiles.has(i.toId));
+    .filter((i) => !goneInvites.has(i.id) && !peopleOf(i).some((p) => goneProfiles.has(p)));
   return {
     me: c.me ?? s.me,
     myContact: c.myContact ?? s.myContact,
     profiles,
     invites,
     passedIds: c.passedIds ?? s.passedIds,
+    duoId: c.duoId !== undefined ? c.duoId : s.duoId,
   };
 }
 
 const fromSnapshot = (snap: Snapshot): Partial<State> => ({
   me: snap.me, myContact: snap.myContact, profiles: snap.profiles, invites: snap.invites, passedIds: snap.passedIds,
+  duoId: snap.duoId ?? null,
 });
 
 let subscribed = false;
@@ -92,6 +99,7 @@ export const useStore = create<State>((set, get) => {
     profiles: [],
     invites: [],
     passedIds: [],
+    duoId: null,
     notice: null,
     account: null,
 
@@ -128,6 +136,12 @@ export const useStore = create<State>((set, get) => {
     },
     async restorePasses() {
       await apply(backend.restorePasses());
+    },
+    async joinDuo(token) {
+      await apply(backend.joinDuo(token));
+    },
+    async leaveDuo() {
+      await apply(backend.leaveDuo());
     },
     async sendInvite(input) {
       const changes = await apply(backend.sendInvite(input));

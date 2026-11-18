@@ -13,7 +13,7 @@ import { REPORT_DETAIL_MAX, REPORT_REASONS, REPORTS_PER_DAY } from '../../domain
 import type { BlockedPerson, CodeKind, Invite, MyContact, NewInvite, OnboardingInput, Profile, ReportReason, Reveal } from '../../domain/types';
 import { quiet } from '../../lib/log';
 import type { Backend, BackendEvent, Changes, ClientErrorReport, Notice, Snapshot } from '../backend';
-import { ALWAYS_PASSES, ME_ID, SEED_ME_RECORD, seedInvites, seedProfiles, seedReveals } from './seed';
+import { ALWAYS_PASSES, ME_ID, SEED_DUOS, SEED_ME_RECORD, seedFriend, seedInvites, seedProfiles, seedReveals } from './seed';
 import { checkAsk, checkContact, checkProfile } from '../../domain/profile';
 import { venueOf, venuePlace } from '../../domain/venues';
 import { ALL_CONSENTS } from '../../domain/countries';
@@ -25,6 +25,8 @@ const LATENCY = 280;
 const THEY_ANSWER_AFTER = 7000;
 const THEY_SEAL_AFTER = 2400;
 const THEY_CHECK_IN_AFTER = 1800;
+/** How long the made-up friend takes to join my duo after I make a link. */
+const FRIEND_JOINS_AFTER = 3000;
 /** The mock "sends" every sign-in code as this. The phone screen says so in mock mode. */
 export const MOCK_CODE = '123456';
 /** A signed-out account waits here, under its phone number and its email, until someone signs back in. */
@@ -45,6 +47,8 @@ interface Db {
   reports?: { profileId: string; reason: ReportReason; detail: string; inviteId: string | null; at: number }[];
   phone?: string | null;
   email?: string | null;
+  /** My duo partner (docs/build-plan.md F3). */
+  duoId?: string | null;
 }
 
 const wait = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
@@ -58,6 +62,7 @@ export function createMockBackend(): Backend {
   const changed: { name?: number; tagline?: number } = {};
   const ratings = new Map<string, boolean>();
   const vouchLinks = new Map<string, number>();
+  const duoLinks: { token: string; at: number }[] = [];
   let db: Db | null = null;
   const reveals = seedReveals();
   const listeners = new Set<(e: BackendEvent) => void>();
@@ -84,9 +89,9 @@ export function createMockBackend(): Backend {
   const isBlocked = (d: Db, id: string) => !!d.blocked?.some((b) => b.id === id);
   const visible = (d: Db) => ({
     profiles: d.profiles.filter((p) => !isBlocked(d, p.id)),
-    invites: d.invites.filter((i) => !isBlocked(d, rules.otherId(i, ME_ID))),
+    invites: d.invites.filter((i) => !rules.peopleOf(i).some((id) => isBlocked(d, id))),
   });
-  const snapshot = (d: Db): Snapshot => ({ me: d.me, myContact: d.myContact, ...visible(d), passedIds: d.passedIds });
+  const snapshot = (d: Db): Snapshot => ({ me: d.me, myContact: d.myContact, ...visible(d), passedIds: d.passedIds, duoId: d.duoId ?? null });
   const emit = (changes: Changes, notice?: Notice) => listeners.forEach((l) => l({ changes, notice }));
   const nameOf = (d: Db, id: string) => d.profiles.find((p) => p.id === id)?.name ?? 'They';
 
@@ -113,12 +118,16 @@ export function createMockBackend(): Backend {
         changes.profiles = d.profiles.filter((p) => p.id === id);
       }
     };
+    // On a double, everyone who did not check in when the window closed is a no-show of their own.
+    const missing = rules.isDouble(i) && !(i.status === 'flaked' && i.flakedBy) ? rules.peopleOf(i).filter((id) => !i.checkIns.includes(id)) : [];
     if (i.status === 'kept') {
-      bump(i.fromId, 'kept');
-      bump(i.toId, 'kept');
-      changes.profiles = d.profiles.filter((p) => p.id === i.fromId || p.id === i.toId);
+      i.checkIns.forEach((id) => bump(id, 'kept'));
+      missing.forEach((id) => bump(id, 'flaked'));
+      changes.profiles = d.profiles.filter((p) => rules.peopleOf(i).includes(p.id));
     } else if (i.status === 'flaked' && i.flakedBy) {
       bump(i.flakedBy, 'flaked');
+    } else if (i.status === 'flaked') {
+      missing.forEach((id) => bump(id, 'flaked'));
     }
     return changes;
   }
@@ -134,8 +143,36 @@ export function createMockBackend(): Backend {
       if (at > now) continue;
       delete d.due[id];
       dirty = true;
+      if (id.startsWith('duo:')) {
+        // The made-up friend opens my duo link.
+        if (d.duoId) continue;
+        const friend = seedFriend();
+        d.duoId = friend.id;
+        d.profiles = [...d.profiles.filter((p) => p.id !== friend.id), friend];
+        emit({ duoId: friend.id, profiles: [friend] }, { tone: 'volt', title: `${friend.name} joined your duo`, body: 'You can ask people who have a duo out on a double now.' });
+        continue;
+      }
       const i = d.invites.find((x) => x.id === id);
       if (!i) continue;
+      if (rules.isDouble(i)) {
+        try {
+          if (rules.isOpen(i) && i.fromId === ME_ID) {
+            // The other three put their pinky out together; then it is mine to seal.
+            let next = i;
+            for (const who of rules.peopleOf(i).filter((p) => p !== ME_ID)) next = rules.offerPinky(next, who, now);
+            put(d, next);
+            emit({ invites: [next] }, { tone: 'pink', title: 'All three pinkies are out', body: `${ideaOf(i.ideaId).title}. Slide in to seal it.`, inviteId: id });
+          } else if (i.status === 'locked' && i.checkIns.includes(ME_ID)) {
+            let next = i;
+            for (const who of rules.peopleOf(i).filter((p) => !next.checkIns.includes(p))) next = rules.checkIn(next, who, now);
+            put(d, next);
+            emit(settle(d, next), { tone: 'volt', title: 'Promise kept', body: 'All four showed. The reveal is open.', inviteId: id });
+          }
+        } catch {
+          // The plan moved on before they acted.
+        }
+        continue;
+      }
       const them = rules.otherId(i, ME_ID);
       const name = nameOf(d, them);
       try {
@@ -161,9 +198,10 @@ export function createMockBackend(): Backend {
 
     for (const i of d.invites) {
       // The mock person always turns up, so a missed window is mine.
+      const others = rules.peopleOf(i).filter((p) => p !== ME_ID && !i.checkIns.includes(p));
       const waiting =
-        i.status === 'locked' && now > i.startsAt + rules.CHECK_IN_CLOSES_AFTER && !i.checkIns.includes(rules.otherId(i, ME_ID))
-          ? { ...i, checkIns: [...i.checkIns, rules.otherId(i, ME_ID)] }
+        i.status === 'locked' && now > i.startsAt + rules.CHECK_IN_CLOSES_AFTER && others.length
+          ? { ...i, checkIns: [...i.checkIns, ...others] }
           : i;
       const next = rules.sweep(waiting, now);
       if (next.status === i.status) continue;
@@ -185,12 +223,18 @@ export function createMockBackend(): Backend {
     if (!d.me) fail('PL002');
     if (profileId === ME_ID) fail('PL010');
     if (!isBlocked(d, profileId)) d.blocked = [...(d.blocked ?? []), { id: profileId, at: now }];
-    const theirs = d.invites.filter((i) => rules.otherId(i, ME_ID) === profileId);
+    const theirs = d.invites.filter((i) => rules.peopleOf(i).includes(profileId));
     for (const i of theirs) {
       put(d, rules.endForBlock(i, now));
       delete d.due[i.id];
     }
-    return { removed: { profiles: [profileId], invites: theirs.map((i) => i.id) } };
+    const changes: Changes = { removed: { profiles: [profileId], invites: theirs.map((i) => i.id) } };
+    // A block between duo partners ends the duo.
+    if (d.duoId === profileId) {
+      d.duoId = null;
+      changes.duoId = null;
+    }
+    return changes;
   }
 
   function start() {
@@ -271,6 +315,35 @@ export function createMockBackend(): Backend {
       fail('PL086');
     },
 
+    // Duo links work inside this phone only: a made-up friend "opens" mine a few seconds later.
+    createDuoLink: async () => {
+      const d = await load();
+      if (!d.me) fail('PL002');
+      if (d.duoId) fail('PL088');
+      const now = Date.now();
+      if (duoLinks.filter((l) => l.at > now - rules.DAY).length >= 3) fail('PL084');
+      const token = Math.random().toString(16).slice(2, 10).padEnd(16, '0');
+      duoLinks.push({ token, at: now });
+      d.due[`duo:${token}`] = now + FRIEND_JOINS_AFTER;
+      save();
+      return token;
+    },
+    // The only links here are my own, and my own link shows me no name, as on the server.
+    async duoLinkName() {
+      return null;
+    },
+    joinDuo: (token) =>
+      mutate((d) => {
+        if (d.duoId) fail('PL088');
+        if (duoLinks.some((l) => l.token === token)) fail('PL091');
+        fail('PL089');
+      }),
+    leaveDuo: () =>
+      mutate((d) => {
+        d.duoId = null;
+        return { duoId: null };
+      }),
+
     saveAvailability: (windows) =>
       mutate((d) => {
         if (!d.me) fail('PL002');
@@ -343,11 +416,16 @@ export function createMockBackend(): Backend {
         const place = venue ? venuePlace(venue) : input.place.trim();
         if (input.note.trim() && !ASK_LINES.includes(input.note.trim())) fail('PL069');
         checkAsk(input.note, venue ? '' : place);
+        // A double: my duo partner comes, and so does theirs.
+        const toFriend = input.double ? SEED_DUOS[input.toId] : undefined;
+        if (input.double && !d.duoId) fail('PL092');
+        if (input.double && !toFriend) fail('PL093');
         const invite: Invite = {
           id: uid(), fromId: ME_ID, toId: input.toId, ideaId: input.ideaId, minutes: idea.minutes,
           startsAt: input.startsAt, place, note: input.note.trim().slice(0, rules.NOTE_MAX),
           status: 'sent', createdAt: now, expiresAt: rules.expiryFor(now, input.startsAt),
           firstPinkyBy: null, lockedAt: null, checkIns: [], flakedBy: null, declinedBy: null, resolvedAt: null,
+          ...(toFriend ? { fromFriendId: d.duoId, toFriendId: toFriend, pinkies: [] } : {}),
         };
         d.invites = [invite, ...d.invites];
         d.due[invite.id] = now + THEY_ANSWER_AFTER;
@@ -357,7 +435,7 @@ export function createMockBackend(): Backend {
     offerPinky: (inviteId) =>
       mutate((d, now) => {
         const next = put(d, rules.offerPinky(find(d, inviteId), ME_ID, now));
-        if (next.status === 'half_locked') d.due[inviteId] = now + THEY_SEAL_AFTER;
+        if (next.status === 'half_locked' && !rules.isDouble(next)) d.due[inviteId] = now + THEY_SEAL_AFTER;
         return { invites: [next] };
       }),
 
@@ -402,12 +480,13 @@ export function createMockBackend(): Backend {
         return settle(d, put(d, rules.bail(find(d, inviteId), ME_ID, now)));
       }),
 
-    async getReveal(inviteId): Promise<Reveal> {
+    async getReveal(inviteId, profileId): Promise<Reveal> {
       const d = await load();
       await wait(LATENCY);
       const i = find(d, inviteId);
-      if (i.status !== 'kept') fail('PC003');
-      return reveals[rules.otherId(i, ME_ID)];
+      const them = profileId ?? rules.otherId(i, ME_ID);
+      if (!rules.canReveal(i, ME_ID, them) || !reveals[them]) fail('PC003');
+      return reveals[them];
     },
 
     subscribe(listener) {
@@ -440,7 +519,7 @@ export function createMockBackend(): Backend {
     unblock: (profileId) =>
       mutate((d) => {
         d.blocked = (d.blocked ?? []).filter((b) => b.id !== profileId);
-        return { profiles: d.profiles.filter((p) => p.id === profileId), invites: d.invites.filter((i) => rules.otherId(i, ME_ID) === profileId) };
+        return { profiles: d.profiles.filter((p) => p.id === profileId), invites: d.invites.filter((i) => rules.peopleOf(i).includes(profileId)) };
       }),
 
     async blockedPeople(): Promise<BlockedPerson[]> {
@@ -470,8 +549,10 @@ export function createMockBackend(): Backend {
         account: { id: ME_ID, phone: d.phone ?? null, email: d.email ?? null, is_anonymous: !d.phone && !d.email, backend: 'mock' },
         profile: d.me,
         contact: d.myContact,
+        duo: d.duoId ? { partner: d.duoId } : null,
         invites: d.invites.map((i) => ({
           id: i.id, role: i.fromId === ME_ID ? 'asked' : 'was_asked', other_person: rules.otherId(i, ME_ID), idea: i.ideaId,
+          with: rules.isDouble(i) ? [i.fromFriendId, i.toFriendId] : undefined,
           starts_at: new Date(i.startsAt).toISOString(), place: i.place, note: i.note, status: i.status,
           my_check_in: i.checkIns.includes(ME_ID), flaked: i.flakedBy === ME_ID,
         })),

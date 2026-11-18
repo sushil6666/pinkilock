@@ -631,7 +631,13 @@ liveness provider (O11). Build it as part of WP7b, not before: the same camera s
 Privacy: a face scan is biometric data, so it needs explicit consent, must not be kept after the
 check, and must be named in the data map (WP8).
 
-### F3. Double micro-date: designed, build after WP4
+### F3. Double micro-date: built
+
+Built on 2026-11-18 after WP4 (decision D070; migration `20261118000002_double_dates.sql`). Friends
+pair up first as a **duo**, from a one-day link a friend opens in the app; the server seats both duos
+when a double is asked, so nobody types who their friend is. The design below held as written; the
+asker's pinky is the seal, as in a plan for two. **Left:** a double on the live two-user test (it
+needs four users), and a local's review of the wording.
 
 Two friends ask two friends: four people, one plan. What it changes:
 
@@ -660,7 +666,8 @@ plan `ended` by a block or deletion always refunds; and the Trust Score never de
 
 ### Also from the review, not large
 
-Built: share my date and the after-date check (on the phone only), the "usually answers in" badge and round two (with WP7). Also built: "when I'm free" windows and friend vouches. Still to build: an
-"usually answers in" badge (the worker already computes the figure); "round two" after a kept
-date; friend vouches. Recommended order when the owner wants them: share my date first.
+Built: share my date and the after-date check (on the phone only), the "usually answers in" badge,
+round two (with WP7), "when I'm free" windows, friend vouches and double micro-dates (F3). Of the
+nine features picked from the review, selfie verification (F2) and the refundable stake (F4) are
+left, both blocked on accounts and advice from outside.
 

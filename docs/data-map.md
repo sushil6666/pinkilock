@@ -11,7 +11,7 @@ a processor or a kind of data updates this file in the same pull request.
 | Account: id, email or phone, sign-in sessions | Supabase Auth (`auth.users`) | Until the account is deleted; unfinished accounts 30 days | The person; operators |
 | Card: first name, age, city, country, area, pronouns, line, tags, date ideas | `profiles` | Until deleted | The person; people they share a plan with; up to 200 people a day through Discover |
 | Contact handle (and later, private photos) | `profile_private` | Until deleted | The person; someone they kept a promise with |
-| Plans: who, idea, time, place, line, status, check-ins | `invites` | Place and line cleared 90 days after the plan ends | The two people on it |
+| Plans: who (two people, or four on a double), idea, time, place, line, status, pinkies, check-ins | `invites` | Place and line cleared 90 days after the plan ends | The two people on it |
 | Behaviour log (asks, locks, check-ins, bails) | `events` | Kept; a deleted account's rows lose its id | No client; the analytics worker |
 | Trust Score | `trust_scores` | Recomputed every 6 hours | The person; people they share a plan with; Discover |
 | Answers after a date | `date_ratings` | Until deleted | No client; the analytics worker |
@@ -21,6 +21,8 @@ a processor or a kind of data updates this file in the same pull request.
 | Requests and appeals | `privacy_requests` | Until deleted | Operators |
 | Push tokens and sent notifications | `push_tokens`, `notifications` | Notifications 30 days | No client |
 | Error reports: code, trace id, screen, build | `client_errors` | 30 days | Operators |
+| Friend vouches: who vouched, the phrases | `vouches` | Until either account is deleted | No client; the card shows a count and the top phrases |
+| Duo: who my duo partner is, and the links made to join | `duos`, `private.duo_links` | Until left, blocked or deleted | The two people in the duo; others see only that a card has one |
 | Check-in codes | `private.checkin_codes` | Deleted when the plan ends | The person (their own code) |
 
 Dating preferences can reveal sexual orientation (special-category data under GDPR, sensitive under

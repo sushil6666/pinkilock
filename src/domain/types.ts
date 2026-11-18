@@ -41,6 +41,8 @@ export interface Profile {
   /** Friends who vouched (market review), and the phrases they picked most. Never who. */
   vouchCount?: number;
   vouchPhrases?: string[];
+  /** Whether this person has a duo, so a double can be offered (never with whom). */
+  hasDuo?: boolean;
   /** How many extra photos exist. The photos themselves live behind the reveal. */
   photoCount: number;
 }
@@ -75,6 +77,13 @@ export interface Invite {
   flakedBy: string | null;
   declinedBy: string | null;
   resolvedAt: number | null;
+  /**
+   * A double (docs/build-plan.md F3): the asker's duo partner and the asked person's. Absent or
+   * null on a plan for two. `pinkies` is who has put a pinky out on a double; the asker seals last.
+   */
+  fromFriendId?: string | null;
+  toFriendId?: string | null;
+  pinkies?: string[];
 }
 
 export interface NewInvite {
@@ -85,6 +94,8 @@ export interface NewInvite {
   note: string;
   /** A picked venue (src/domain/venues.ts). When set, the server writes the place from it. */
   venueId?: string;
+  /** Ask as a double: my duo partner comes, and so does theirs. */
+  double?: boolean;
 }
 
 export interface OnboardingInput {
