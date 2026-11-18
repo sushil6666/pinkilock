@@ -23,6 +23,7 @@ import { useStore } from '@/state/store';
 import { color, radius, space } from '@/theme/tokens';
 import { answersIn } from '@/domain/answers';
 import { Vouches } from '@/components/Vouches';
+import { fmtDistance, t } from '@/i18n';
 
 export default function Discover() {
   const me = useStore((s) => s.me);
@@ -59,11 +60,11 @@ export default function Discover() {
     return (
       <Screen inTabs scroll={false} desk="form">
         <View style={{ flex: 1, justifyContent: 'center', gap: space.lg }}>
-          <T v="label" c={color.pink}>Discover</T>
-          <T v="display">That's{'\n'}everyone{'\n'}for now.</T>
-          <T c={color.textDim}>No infinite deck here. {busyWith.size > 0 ? `You have ${busyWith.size} ${busyWith.size === 1 ? 'plan' : 'plans'} in motion. Go keep those promises.` : 'New people appear here as they join near you.'}</T>
-          {passedIds.length > 0 && <Button kind="ghost" icon="rotate-ccw" label={`Look again at ${passedIds.length} you passed`} onPress={restore} />}
-          {busyWith.size > 0 && <Button label="See your asks" icon="send" onPress={() => router.push('/(tabs)/invites')} />}
+          <T v="label" c={color.pink}>{t('discover.title')}</T>
+          <T v="display">{t('discover.emptyTitle')}</T>
+          <T c={color.textDim}>{busyWith.size > 0 ? t('discover.emptyBusy', { count: busyWith.size }) : t('discover.emptyNew')}</T>
+          {passedIds.length > 0 && <Button kind="ghost" icon="rotate-ccw" label={t('discover.lookAgain', { count: passedIds.length })} onPress={restore} />}
+          {busyWith.size > 0 && <Button label={t('discover.seeAsks')} icon="send" onPress={() => router.push('/(tabs)/invites')} />}
         </View>
       </Screen>
     );
@@ -74,25 +75,25 @@ export default function Discover() {
   return (
     <Screen inTabs>
       <View style={styles.head}>
-        <T v="label" c={color.pink}>Discover</T>
-        <T v="label" c={color.textMute}>{queue.length} nearby</T>
+        <T v="label" c={color.pink}>{t('discover.title')}</T>
+        <T v="label" c={color.textMute}>{t('discover.nearby', { count: queue.length })}</T>
       </View>
 
       <Animated.View key={person.id} entering={FadeIn.duration(260)}>
         <Columns left={<>
-        <Pressable accessibilityRole="button" accessibilityLabel={`Open ${person.name}'s profile`} onPress={() => router.push(`/profile/${person.id}`)} style={[styles.card, desktop && { height: 560 }]}>
+        <Pressable accessibilityRole="button" accessibilityLabel={t('plan.openProfile', { name: person.name })} onPress={() => router.push(`/profile/${person.id}`)} style={[styles.card, desktop && { height: 560 }]}>
           <Portrait name={person.name} palette={person.palette} glyph={person.glyph} fill style={StyleSheet.absoluteFill} />
           <View style={styles.cardBody}>
             <TrustBadge person={person} />
-            <T v="display" numberOfLines={1} adjustsFontSizeToFit>{person.name}, {person.age}</T>
+            <T v="display" numberOfLines={1} adjustsFontSizeToFit>{t('profile.nameAge', { name: person.name, age: person.age })}</T>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
               <Feather name="map-pin" size={14} color={color.textDim} />
-              <T v="caption" c={color.textDim}>{person.area}{person.distanceKm > 0 ? `  /  ${person.distanceKm} km` : ''}{person.pronouns ? `  /  ${person.pronouns}` : ''}</T>
+              <T v="caption" c={color.textDim}>{[person.area, person.distanceKm > 0 ? fmtDistance(person.distanceKm) : '', person.pronouns].filter(Boolean).join('  /  ')}</T>
             </View>
             {person.hasDuo ? (
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
                 <Feather name="users" size={14} color={color.textDim} />
-                <T v="caption" c={color.textDim}>{duoId ? 'Has a duo: ask them out on a double' : 'Has a duo: open to doubles'}</T>
+                <T v="caption" c={color.textDim}>{t(duoId ? 'discover.duoAsk' : 'discover.duoOpen')}</T>
               </View>
             ) : null}
             {answersIn(person.answerMinutes) ? (
@@ -116,23 +117,23 @@ export default function Discover() {
         )}
 
         <View style={{ gap: space.sm }}>
-          <T v="label" c={color.textDim}>Up for  /  tap one to ask</T>
+          <T v="label" c={color.textDim}>{t('discover.upFor')}</T>
           {person.ideaIds.map((id, i) => {
             const idea = ideaOf(id);
             return (
               <Animated.View key={id} entering={FadeInDown.delay(i * 60).duration(320)}>
                 <Pressable
                   accessibilityRole="button"
-                  accessibilityLabel={`Ask ${person.name} to ${idea.title}, ${idea.minutes} minutes`}
+                  accessibilityLabel={t('discover.askTo', { name: person.name, idea: idea.title, minutes: idea.minutes })}
                   onPress={() => router.push({ pathname: '/invite/new', params: { to: person.id, idea: id } })}
                   style={({ pressed }) => [styles.idea, pressed && { backgroundColor: color.surfaceHi, borderColor: color.pink }]}
                 >
                   <T style={{ fontSize: 26, lineHeight: 34 }} maxFontSizeMultiplier={1}>{idea.emoji}</T>
                   <View style={{ flex: 1 }}>
                     <T v="bodyBold">{idea.title}</T>
-                    <T v="caption" c={color.textDim}>{idea.minutes} min  /  {idea.blurb}</T>
+                    <T v="caption" c={color.textDim}>{t('onboarding.ideaSub', { minutes: idea.minutes, blurb: idea.blurb })}</T>
                   </View>
-                  {shared.includes(id) ? <Tag label="You too" tone={color.gold} /> : <Feather name="arrow-up-right" size={18} color={color.textMute} />}
+                  {shared.includes(id) ? <Tag label={t('profile.youToo')} tone={color.gold} /> : <Feather name="arrow-up-right" size={18} color={color.textMute} />}
                 </Pressable>
               </Animated.View>
             );
@@ -140,8 +141,8 @@ export default function Discover() {
         </View>
 
         <View style={{ flexDirection: 'row', gap: space.md }}>
-          <Button kind="ghost" icon="x" label="Pass" onPress={() => pass(person.id)} style={{ flex: 1 }} />
-          <Button icon="send" label="Vibe check" onPress={() => router.push({ pathname: '/invite/new', params: { to: person.id } })} style={{ flex: 2 }} />
+          <Button kind="ghost" icon="x" label={t('ask.pass')} onPress={() => pass(person.id)} style={{ flex: 1 }} />
+          <Button icon="send" label={t('ask.title')} onPress={() => router.push({ pathname: '/invite/new', params: { to: person.id } })} style={{ flex: 2 }} />
         </View>
         </>} />
       </Animated.View>

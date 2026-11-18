@@ -11,7 +11,8 @@ export interface MicroDateIdea {
   blurb: string;
 }
 
-export type ContactKind = 'Instagram' | 'Snapchat' | 'WhatsApp';
+/** One of CONTACT_KINDS in src/domain/contacts.ts (which kinds a person sees depends on their country). */
+export type ContactKind = 'Instagram' | 'Snapchat' | 'WhatsApp' | 'Telegram' | 'Signal' | 'LINE' | 'KakaoTalk' | 'WeChat';
 
 /** The public card. Nothing here is gated. */
 export interface Profile {
@@ -110,6 +111,8 @@ export interface OnboardingInput {
   contactHandle: string;
   /** What the person agreed to on the last onboarding step (WP8). All four are needed. */
   consents?: ('adult' | 'terms' | 'privacy' | 'sensitive')[];
+  /** An open city (src/domain/countries.ts). The server works out the country from it. */
+  city?: string;
 }
 
 export interface MyContact {

@@ -78,6 +78,8 @@ export const ERRORS = {
   PL092: 'Make a duo with a friend first.',
   PL093: 'They do not have a duo right now.',
   PL094: 'Wait for the other three, then seal it.',
+  PL095: 'Pick your area from the list.',
+  PL096: 'Pick your pronouns from the list.',
 
   PA001: 'Phone sign-in is not switched on yet.',
   PA002: 'Email sign-in is not switched on yet.',

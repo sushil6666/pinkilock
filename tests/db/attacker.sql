@@ -44,8 +44,8 @@ insert into public.profile_private (profile_id, contact_kind, contact_handle) va
 select t.ok((select string_agg(table_schema || '.' || table_name || ':' || privs, ' ' order by table_schema, table_name) from (
     select table_schema, table_name, string_agg(privilege_type, ',' order by privilege_type) as privs
     from information_schema.role_table_grants where grantee = 'authenticated' and table_schema <> 't' group by 1, 2) g)
-  = 'public.ask_lines:SELECT public.cities:SELECT public.countries:SELECT public.duos:SELECT public.ideas:SELECT public.invites:SELECT public.passes:DELETE,INSERT,SELECT public.profile_cards:SELECT '
-    'public.profile_private:SELECT public.trust_scores:SELECT public.venues:SELECT public.vibes:SELECT',
+  = 'public.areas:SELECT public.ask_lines:SELECT public.cities:SELECT public.contact_kinds:SELECT public.countries:SELECT public.duos:SELECT public.ideas:SELECT public.invites:SELECT public.passes:DELETE,INSERT,SELECT public.profile_cards:SELECT '
+    'public.profile_private:SELECT public.pronoun_options:SELECT public.trust_scores:SELECT public.venues:SELECT public.vibes:SELECT',
   'a signed-in user holds exactly these table rights and no others');
 select t.ok(not exists (select 1 from information_schema.role_table_grants where grantee = 'anon'),
   'signed out, there is no right on any table in any schema');
@@ -165,15 +165,15 @@ select t.ok((select count(*) from profile_private where profile_id = :'y') = 0, 
 -- written only through save_profile, which checks every field. tests/db/profile_rules.sql has
 -- each rule; these are the attacker's versions.
 select t.ok(t.fails(format($$update profiles set tagline = 'dm me on insta @xavier.real' where id = %L$$, :'x'))
-  and t.fails($$select save_profile('Xavier', 25, 'Bandra', '', 'dm me on insta @xavier.real', '{}', array['boba_run','chai_walk','meme_duel'])$$),
+  and t.fails($$select save_profile('Xavier', 25, 'Bandra West', '', 'dm me on insta @xavier.real', '{}', array['boba_run','chai_walk','meme_duel'])$$),
   'G1 closed: a profile line cannot carry a handle, by the table or by the function');
-select t.ok(t.fails($$select save_profile('xavier.real_99', 25, 'Bandra', '', '', '{}', array['boba_run','chai_walk','meme_duel'])$$),
+select t.ok(t.fails($$select save_profile('xavier.real_99', 25, 'Bandra West', '', '', '{}', array['boba_run','chai_walk','meme_duel'])$$),
   'G1 closed: a name cannot be a handle');
 select t.ok(t.fails(format($$select send_invite(%L, 'boba_run', now() + interval '2 hours', 'wa.me/919876543210', '')$$, :'crowd1'))
   and t.fails(format($$select send_invite(%L, 'boba_run', now() + interval '2 hours', '', 'call me 98765 43210')$$, :'crowd1')),
   'G1 closed: an ask cannot carry a phone number in its note or a link in its place');
-select t.ok(t.fails($$select save_profile('Xavier', 25, 'Bandra', '', '', array_fill('any text at all'::text, array[50]), array['boba_run','chai_walk','meme_duel'])$$)
-  and t.fails($$select save_profile('Xavier', 25, 'Bandra', '', '', '{}', array['not_an_idea','boba_run','chai_walk'])$$)
+select t.ok(t.fails($$select save_profile('Xavier', 25, 'Bandra West', '', '', array_fill('any text at all'::text, array[50]), array['boba_run','chai_walk','meme_duel'])$$)
+  and t.fails($$select save_profile('Xavier', 25, 'Bandra West', '', '', '{}', array['not_an_idea','boba_run','chai_walk'])$$)
   and t.fails($$select save_profile('Xavier', 25, repeat('a', 5000), repeat('b', 5000), '', '{}', array['boba_run','chai_walk','meme_duel'])$$),
   'G2 closed: tags and ideas come from the catalogues, and every field has a length limit');
 select t.ok(t.fails(format($$update profiles set photo_count = 99, city = 'Anywhere', created_at = now() - interval '5 years' where id = %L$$, :'x')),
@@ -184,7 +184,7 @@ select t.ok(t.fails(format($$update profile_private set photos = (select jsonb_a
 -- G18: a pattern cannot see an invented code. With line review on ('human' or 'ai'), no line
 -- reaches anyone before it is reviewed: tests/db/review.sql checks that. With review off (the
 -- default until a reviewer exists), this one is stored and shown, so the gap stays marked.
-select t.gap(t.fails($$select save_profile('Xavier', 25, 'Bandra', '', 'shift each letter back by one: jotub tbn', '{}', array['boba_run','chai_walk','meme_duel'])$$), 'G18',
+select t.gap(t.fails($$select save_profile('Xavier', 25, 'Bandra West', '', 'shift each letter back by one: jotub tbn', '{}', array['boba_run','chai_walk','meme_duel'])$$), 'G18',
   'with line review off, a contact written in a made-up code is shown with no review');
 
 -- G4 closed: with the link gate on, an account with no email or phone cannot ask or lock.

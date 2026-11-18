@@ -13,6 +13,7 @@ import { Button } from './ui/Button';
 import { Chip } from './ui/Chip';
 import { ErrorText } from './ui/ErrorText';
 import { T } from './ui/T';
+import { t } from '../i18n';
 
 /** `double`: a four-person plan. The questions stay; round two, a thing between two people, does not apply. */
 export function DateFeedback({ inviteId, otherId, name, double }: { inviteId: string; otherId: string; name: string; double?: boolean }) {
@@ -48,31 +49,31 @@ export function DateFeedback({ inviteId, otherId, name, double }: { inviteId: st
   if (state.rated) {
     return state.roundTwo ? (
       <View style={{ gap: space.sm, borderWidth: 1, borderColor: color.gold, borderRadius: radius.card, backgroundColor: color.goldWash, padding: space.lg }}>
-        <T v="label" c={color.gold}>Round two</T>
-        <T v="heading">{`You and ${name} both want to meet again.`}</T>
-        <Button icon="repeat" label={`Plan round two with ${name}`} onPress={() => router.push({ pathname: '/invite/new', params: { to: otherId } })} />
+        <T v="label" c={color.gold}>{t('feedback.roundTwo')}</T>
+        <T v="heading">{t('feedback.bothAgain', { name })}</T>
+        <Button icon="repeat" label={t('feedback.planRoundTwo', { name })} onPress={() => router.push({ pathname: '/invite/new', params: { to: otherId } })} />
       </View>
     ) : (
-      <T v="caption" c={color.textDim}>Thanks. Only Pinkilock sees your answers.</T>
+      <T v="caption" c={color.textDim}>{t('feedback.thanks')}</T>
     );
   }
 
   return (
     <View style={{ gap: space.md }}>
-      <T v="label" c={color.textDim}>Worth showing up?</T>
+      <T v="label" c={color.textDim}>{t('feedback.worth')}</T>
       <View style={{ flexDirection: 'row', gap: space.sm }}>
-        <Chip label="Yes" selected={worth === true} onPress={() => setWorth(true)} />
-        <Chip label="No" selected={worth === false} onPress={() => setWorth(false)} />
+        <Chip label={t('common.yes')} selected={worth === true} onPress={() => setWorth(true)} />
+        <Chip label={t('common.no')} selected={worth === false} onPress={() => setWorth(false)} />
       </View>
-      <T v="label" c={color.textDim}>{`See ${name} again?`}</T>
+      <T v="label" c={color.textDim}>{t('feedback.seeAgain', { name })}</T>
       <View style={{ flexDirection: 'row', gap: space.sm }}>
-        <Chip label="Yes" selected={again === true} onPress={() => setAgain(true)} />
-        <Chip label="Not this time" selected={again === false} onPress={() => setAgain(false)} />
+        <Chip label={t('common.yes')} selected={again === true} onPress={() => setAgain(true)} />
+        <Chip label={t('feedback.notThisTime')} selected={again === false} onPress={() => setAgain(false)} />
       </View>
-      <T v="caption" c={color.textDim}>{double ? 'Nobody on the plan sees your answers. They help Pinkilock, and never touch a score.' : `${name} never sees this. If you both say yes to meeting again, you both find out.`}</T>
+      <T v="caption" c={color.textDim}>{double ? t('feedback.privateDouble') : t('feedback.privateOne', { name })}</T>
       <ErrorText text={error} />
-      <Button label="Send" onPress={() => send(false)} disabled={worth === null || again === null} busy={busy} />
-      <Button kind="quiet" label="I felt unsafe" onPress={() => send(true)} />
+      <Button label={t('common.send')} onPress={() => send(false)} disabled={worth === null || again === null} busy={busy} />
+      <Button kind="quiet" label={t('feedback.unsafe')} onPress={() => send(true)} />
     </View>
   );
 }

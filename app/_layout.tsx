@@ -11,7 +11,7 @@ import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import * as SystemUI from 'expo-system-ui';
 import { useEffect, useMemo } from 'react';
-import { Platform, StyleSheet, View } from 'react-native';
+import { I18nManager, Platform, StyleSheet, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { NoticeBanner } from '@/components/NoticeBanner';
@@ -26,8 +26,19 @@ import { shown } from '@/lib/report';
 import { needsProfile, titleFor } from '@/lib/routes';
 import { setPageTitle } from '@/lib/web';
 import { space } from '@/theme/tokens';
+import { isRtl, language, t } from '@/i18n';
 
 SplashScreen.preventAutoHideAsync().catch(quiet('/_layout'));
+
+// The writing direction follows the language (WP9). A browser page says it on <html>; a phone
+// flips its layout, which takes effect from the next start.
+if (Platform.OS === 'web') {
+  document.documentElement.lang = language();
+  document.documentElement.dir = isRtl() ? 'rtl' : 'ltr';
+} else if (I18nManager.isRTL !== isRtl()) {
+  I18nManager.allowRTL(isRtl());
+  I18nManager.forceRTL(isRtl());
+}
 
 /**
  * A crash in any screen lands here instead of a white screen: it is reported once, with a code
@@ -39,9 +50,9 @@ export function ErrorBoundary({ error, retry }: ErrorBoundaryProps) {
   const text = useMemo(() => shown(error, path.replace(/[0-9a-f]{8}-[0-9a-f-]{27}|inv_\w+/g, '[id]'), 'PC009'), [error, path]);
   return (
     <View style={{ flex: 1, backgroundColor: color.bg, justifyContent: 'center', padding: space.xl, gap: space.lg }}>
-      <T v="display">That{'\n'}broke.</T>
+      <T v="display">{t('crash.title')}</T>
       <ErrorText text={text} tone={color.textDim} />
-      <Button label="Try again" icon="rotate-ccw" onPress={retry} />
+      <Button label={t('common.tryAgain')} icon="rotate-ccw" onPress={retry} />
     </View>
   );
 }

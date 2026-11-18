@@ -14,6 +14,7 @@ import { VOUCH_MAX_PICKS, VOUCH_PHRASES } from '@/domain/vouches';
 import { shown } from '@/lib/report';
 import { backend } from '@/services';
 import { color, space } from '@/theme/tokens';
+import { t } from '@/i18n';
 
 export default function Vouch() {
   const { token } = useLocalSearchParams<{ token: string }>();
@@ -44,8 +45,8 @@ export default function Vouch() {
   if (name === null) {
     return (
       <Screen desk="form" back="close">
-        <T v="display">Link{'\n'}expired.</T>
-        <ErrorText text={error || 'Ask your friend for a new one.'} tone={color.textDim} />
+        <T v="display">{t('duo.expiredTitle')}</T>
+        <ErrorText text={error || t('vouch.expiredBody')} tone={color.textDim} />
       </Screen>
     );
   }
@@ -53,18 +54,18 @@ export default function Vouch() {
     return (
       <Screen desk="form" back="close">
         <View style={{ gap: space.lg }}>
-          <T v="display">Thanks.</T>
-          <T c={color.textDim}>{`${name} will see what you picked, not that it was you.`}</T>
-          <Button kind="ghost" label="What is Pinkilock?" onPress={() => router.replace('/')} />
+          <T v="display">{t('vouch.thanks')}</T>
+          <T c={color.textDim}>{t('vouch.thanksBody', { name })}</T>
+          <Button kind="ghost" label={t('vouch.what')} onPress={() => router.replace('/')} />
         </View>
       </Screen>
     );
   }
   return (
-    <Screen desk="form" back="close" footer={<><ErrorText text={error} /><Button label={`Vouch for ${name}`} onPress={send} disabled={!picked.length} busy={busy} /></>}>
+    <Screen desk="form" back="close" footer={<><ErrorText text={error} /><Button label={t('vouch.button', { name })} onPress={send} disabled={!picked.length} busy={busy} /></>}>
       <View style={{ gap: space.xl }}>
-        <T v="display">{`Vouch for${'\n'}${name}.`}</T>
-        <T c={color.textDim}>{`Pick up to ${VOUCH_MAX_PICKS}. Only what you pick is shown, never your name.`}</T>
+        <T v="display">{t('vouch.title', { name })}</T>
+        <T c={color.textDim}>{t('vouch.body', { max: VOUCH_MAX_PICKS })}</T>
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: space.sm }}>
           {VOUCH_PHRASES.map((p) => <Chip key={p} label={p} selected={picked.includes(p)} onPress={() => toggle(p)} />)}
         </View>

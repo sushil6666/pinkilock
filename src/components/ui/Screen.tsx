@@ -24,6 +24,7 @@ import { Logo } from '../Logo';
 import { Loop } from '../Loop';
 import { NightSky } from '../NightSky';
 import { T } from './T';
+import { t } from '../../i18n';
 
 export type Desk = 'page' | 'form' | 'read';
 
@@ -88,7 +89,7 @@ export function Screen({ children, title, back = false, onBack, right, footer, s
   const header = hasHeader && (
     <View style={[styles.header, desktop && !form && { maxWidth: maxWidth + gutter * 2 }, form && styles.headerWide]}>
       {back !== false ? (
-        <Pressable accessibilityRole="button" accessibilityLabel={back === 'close' ? 'Close' : 'Back'} hitSlop={12} onPress={onBack ?? goBack} style={styles.headerBtn}>
+        <Pressable accessibilityRole="button" accessibilityLabel={t(back === 'close' ? 'common.close' : 'common.back')} hitSlop={12} onPress={onBack ?? goBack} style={styles.headerBtn}>
           <Feather name={back === 'close' ? 'x' : 'arrow-left'} size={22} color={color.text} />
         </Pressable>
       ) : <View style={styles.headerBtn} />}

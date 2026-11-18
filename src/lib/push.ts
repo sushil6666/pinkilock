@@ -15,6 +15,7 @@ import { backend } from '../services';
 import { color } from '../theme/tokens';
 import { quiet } from './log';
 import { shown } from './report';
+import { t } from '../i18n';
 
 export type PushState = 'on' | 'denied' | 'unavailable' | 'error';
 export interface PushStatus { state: PushState; detail: string }
@@ -22,7 +23,7 @@ export interface PushStatus { state: PushState; detail: string }
 /** Must match `channelId` in supabase/functions/push/index.ts. */
 const CHANNEL = 'promises';
 
-let status: PushStatus = { state: 'unavailable', detail: 'Not set up yet.' };
+let status: PushStatus = { state: 'unavailable', detail: t('push.notSetUp') };
 let started: Promise<PushStatus> | null = null;
 /** The token this device registered, so that signing out can hand it back. */
 let registered: string | null = null;
@@ -41,10 +42,10 @@ export function watchPush(w: (s: PushStatus) => void): () => void {
 }
 
 function whyUnavailable(): string | null {
-  if (Platform.OS === 'web') return 'Push is for the phone app, not the web build.';
-  if (!Device.isDevice) return 'Push needs a real phone, not a simulator.';
+  if (Platform.OS === 'web') return t('push.web');
+  if (!Device.isDevice) return t('push.simulator');
   // Expo Go cannot receive remote pushes on Android, and cannot use this project's credentials.
-  if (Constants.executionEnvironment === ExecutionEnvironment.StoreClient) return 'Push needs a development or preview build, not Expo Go.';
+  if (Constants.executionEnvironment === ExecutionEnvironment.StoreClient) return t('push.expoGo');
   return null;
 }
 
@@ -91,10 +92,10 @@ async function start(): Promise<PushStatus> {
 
     let permission = await Notifications.getPermissionsAsync();
     if (!permission.granted && permission.canAskAgain) permission = await Notifications.requestPermissionsAsync();
-    if (!permission.granted) return set({ state: 'denied', detail: 'Notifications are off for Pinkilock in system settings.' });
+    if (!permission.granted) return set({ state: 'denied', detail: t('push.denied') });
 
     const projectId: string | undefined = Constants.expoConfig?.extra?.eas?.projectId ?? Constants.easConfig?.projectId;
-    if (!projectId) return set({ state: 'error', detail: 'This build has no EAS project id, so it cannot get a push token.' });
+    if (!projectId) return set({ state: 'error', detail: t('push.noProject') });
     const token = (await Notifications.getExpoPushTokenAsync({ projectId })).data;
     await backend.registerPushToken(token, Platform.OS === 'ios' ? 'ios' : 'android');
     registered = token;
@@ -108,7 +109,7 @@ async function start(): Promise<PushStatus> {
       }, quiet('push.token_rotate'));
     });
     listening = true;
-    return set({ state: 'on', detail: 'You will hear about asks, locks, check-in and bails.' });
+    return set({ state: 'on', detail: t('push.on') });
   } catch (e) {
     return set({ state: 'error', detail: shown(e, '/push') });
   }
@@ -128,5 +129,5 @@ export async function stopPush(): Promise<void> {
   registered = null;
   started = null;
   if (token) await backend.unregisterPushToken(token).catch(quiet('push.unregister'));
-  set({ state: 'unavailable', detail: 'Not set up yet.' });
+  set({ state: 'unavailable', detail: t('push.notSetUp') });
 }

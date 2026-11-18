@@ -14,45 +14,47 @@ import { color, radius, space } from '../theme/tokens';
 import { Portrait } from './Portrait';
 import { TrustBadge } from './TrustBadge';
 import { T } from './ui/T';
+import { t } from '../i18n';
 
 export function statusLine(i: Invite, meId: string, name: string, now: number): { text: string; tone: string } {
   const upper = name.toUpperCase();
+  const left = shortCountdown(i.expiresAt, now);
   if (isDouble(i)) {
     const out = i.pinkies?.length ?? 0;
     switch (i.status) {
       case 'sent':
       case 'half_locked':
-        if (i.fromId === meId) return out >= 3 ? { text: 'All 3 pinkies out', tone: color.pink } : { text: `Double  /  ${out} of 3 in`, tone: color.textDim };
+        if (i.fromId === meId) return out >= 3 ? { text: t('status.allPinkies'), tone: color.pink } : { text: t('status.doubleIn', { out }), tone: color.textDim };
         return i.pinkies?.includes(meId)
-          ? { text: `Pinky out  /  ${out} of 3`, tone: color.textDim }
-          : { text: `Double  /  ${shortCountdown(i.expiresAt, now)} left`, tone: color.pink };
+          ? { text: t('status.pinkyOutOf', { out }), tone: color.textDim }
+          : { text: t('status.doubleLeft', { left }), tone: color.pink };
       case 'flaked':
-        return { text: i.flakedBy === meId ? 'You flaked' : 'Fell through', tone: color.flare };
+        return { text: t(i.flakedBy === meId ? 'status.youFlaked' : 'status.fellThrough'), tone: color.flare };
       case 'declined':
-        return { text: i.declinedBy === meId ? 'You pulled out' : 'The double is off', tone: color.textMute };
+        return { text: t(i.declinedBy === meId ? 'status.youPulledOut' : 'status.doubleOff'), tone: color.textMute };
       case 'kept':
-        return i.checkIns.includes(meId) ? { text: 'Promise kept', tone: color.gold } : { text: 'You missed it', tone: color.flare };
+        return i.checkIns.includes(meId) ? { text: t('status.kept'), tone: color.gold } : { text: t('status.youMissed'), tone: color.flare };
     }
   }
   switch (i.status) {
     case 'sent':
       return i.toId === meId
-        ? { text: `Asked you  /  ${shortCountdown(i.expiresAt, now)} left`, tone: color.pink }
-        : { text: `Waiting on ${upper}  /  ${shortCountdown(i.expiresAt, now)} left`, tone: color.textDim };
+        ? { text: t('status.askedYou', { left }), tone: color.pink }
+        : { text: t('status.waitingOn', { name: upper, left }), tone: color.textDim };
     case 'half_locked':
-      return i.firstPinkyBy === meId ? { text: `Your pinky is out  /  waiting on ${upper}`, tone: color.textDim } : { text: `${upper}'s pinky is out`, tone: color.pink };
+      return i.firstPinkyBy === meId ? { text: t('status.yourPinkyOut', { name: upper }), tone: color.textDim } : { text: t('status.theirPinkyOut', { name: upper }), tone: color.pink };
     case 'locked':
-      return { text: 'Locked', tone: color.pink };
+      return { text: t('status.locked'), tone: color.pink };
     case 'kept':
-      return { text: 'Promise kept', tone: color.gold };
+      return { text: t('status.kept'), tone: color.gold };
     case 'flaked':
-      return { text: i.flakedBy === meId ? 'You flaked' : `${upper} flaked`, tone: color.flare };
+      return { text: i.flakedBy === meId ? t('status.youFlaked') : t('status.theyFlaked', { name: upper }), tone: color.flare };
     case 'declined':
-      return { text: i.declinedBy === meId ? (i.fromId === meId ? 'You took it back' : 'You passed') : `${upper} passed`, tone: color.textMute };
+      return { text: i.declinedBy === meId ? t(i.fromId === meId ? 'status.youTookBack' : 'status.youPassed') : t('status.theyPassed', { name: upper }), tone: color.textMute };
     case 'expired':
-      return { text: 'Expired unanswered', tone: color.textMute };
+      return { text: t('status.expired'), tone: color.textMute };
     case 'ended':
-      return { text: 'Ended  /  nobody flaked', tone: color.textMute };
+      return { text: t('status.ended'), tone: color.textMute };
   }
 }
 
@@ -67,12 +69,12 @@ interface Props {
 
 export function InviteCard({ invite, meId, other, now, onPress, compact }: Props) {
   const idea = ideaOf(invite.ideaId);
-  const name = other?.name ?? 'Someone';
+  const name = other?.name ?? t('common.someone');
   const double = isDouble(invite);
   const myFriend = usePerson(double ? friendOn(invite, meId) ?? undefined : undefined);
   const theirFriend = usePerson(double ? friendOn(invite, otherId(invite, meId)) ?? undefined : undefined);
-  const who = !double ? (invite.fromId === meId ? `You asked ${name}` : `${name} asked you`)
-    : `You + ${myFriend?.name ?? 'your duo'}, ${name} + ${theirFriend?.name ?? 'their duo'}`;
+  const who = !double ? t(invite.fromId === meId ? 'ticket.youAsked' : 'ticket.theyAsked', { name })
+    : t('ticket.doubleWho', { mine: myFriend?.name ?? t('ticket.yourDuo'), name, theirs: theirFriend?.name ?? t('ticket.theirDuo') });
   const status = statusLine(invite, meId, name, now);
   const closed = invite.status === 'declined' || invite.status === 'expired' || invite.status === 'ended';
   const hot = status.tone === color.pink;
@@ -80,14 +82,14 @@ export function InviteCard({ invite, meId, other, now, onPress, compact }: Props
   return (
     <Pressable
       accessibilityRole={onPress ? 'button' : undefined}
-      accessibilityLabel={`${idea.title}, ${double ? `a double: ${who}` : `with ${name}`}, ${whenLabel(invite.startsAt, now)}. ${status.text}`}
+      accessibilityLabel={t(double ? 'ticket.spokenDouble' : 'ticket.spoken', { idea: idea.title, who, name, when: whenLabel(invite.startsAt, now), status: status.text })}
       disabled={!onPress}
       onPress={onPress}
       style={({ pressed }) => [styles.card, hot && styles.hot, !compact && elevation('raised'), closed && { opacity: 0.55 }, pressed && { backgroundColor: color.surfaceHi }]}
     >
       <View style={styles.top}>
         <T v="label" c={status.tone} style={{ flex: 1 }} numberOfLines={1}>{status.text}</T>
-        <T v="label" c={color.textMute}>{compact ? `${invite.minutes} min` : `${KIND_LABEL[idea.kind]}  /  ${invite.minutes} min`}</T>
+        <T v="label" c={color.textMute}>{compact ? t('ticket.minutes', { minutes: invite.minutes }) : t('ticket.kindMinutes', { kind: KIND_LABEL[idea.kind], minutes: invite.minutes })}</T>
       </View>
 
       <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: space.md }}>
@@ -118,7 +120,7 @@ export function InviteCard({ invite, meId, other, now, onPress, compact }: Props
         {other && <Portrait name={other.name} palette={other.palette} glyph={other.glyph} size={compact ? 36 : 44} />}
         <View style={{ flex: 1 }}>
           <T v="bodyBold" numberOfLines={1}>{who}</T>
-          {!compact && other && <T v="caption" c={color.textDim}>{other.age}, {other.area}</T>}
+          {!compact && other && <T v="caption" c={color.textDim}>{t('common.ageArea', { age: other.age, area: other.area })}</T>}
         </View>
         {other && <TrustBadge person={other} brief />}
       </View>

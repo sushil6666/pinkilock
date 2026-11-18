@@ -16,9 +16,12 @@ import type { Backend, BackendEvent, Changes, ClientErrorReport, Notice, Snapsho
 import { ALWAYS_PASSES, ME_ID, SEED_DUOS, SEED_ME_RECORD, seedFriend, seedInvites, seedProfiles, seedReveals } from './seed';
 import { checkAsk, checkContact, checkProfile } from '../../domain/profile';
 import { venueOf, venuePlace } from '../../domain/venues';
-import { ALL_CONSENTS } from '../../domain/countries';
+import { ALL_CONSENTS, CITIES, openCities } from '../../domain/countries';
+
+const cityCountry = (city: string) => CITIES.find((c) => c.name === city)?.country ?? 'IN';
 import { FREE_WINDOWS } from '../../domain/freeWindows';
 import { VOUCH_MAX_PICKS, VOUCH_PHRASES } from '../../domain/vouches';
+import { t } from '../../i18n';
 
 const KEY = 'pinkilock.mock.v1';
 const LATENCY = 280;
@@ -93,7 +96,7 @@ export function createMockBackend(): Backend {
   });
   const snapshot = (d: Db): Snapshot => ({ me: d.me, myContact: d.myContact, ...visible(d), passedIds: d.passedIds, duoId: d.duoId ?? null });
   const emit = (changes: Changes, notice?: Notice) => listeners.forEach((l) => l({ changes, notice }));
-  const nameOf = (d: Db, id: string) => d.profiles.find((p) => p.id === id)?.name ?? 'They';
+  const nameOf = (d: Db, id: string) => d.profiles.find((p) => p.id === id)?.name ?? t('ask.they');
 
   function put(d: Db, next: Invite): Invite {
     d.invites = d.invites.map((i) => (i.id === next.id ? next : i));
@@ -149,7 +152,7 @@ export function createMockBackend(): Backend {
         const friend = seedFriend();
         d.duoId = friend.id;
         d.profiles = [...d.profiles.filter((p) => p.id !== friend.id), friend];
-        emit({ duoId: friend.id, profiles: [friend] }, { tone: 'volt', title: `${friend.name} joined your duo`, body: 'You can ask people who have a duo out on a double now.' });
+        emit({ duoId: friend.id, profiles: [friend] }, { tone: 'volt', title: t('notices.duoJoined', { name: friend.name }), body: t('notices.duoJoinedBody') });
         continue;
       }
       const i = d.invites.find((x) => x.id === id);
@@ -161,12 +164,12 @@ export function createMockBackend(): Backend {
             let next = i;
             for (const who of rules.peopleOf(i).filter((p) => p !== ME_ID)) next = rules.offerPinky(next, who, now);
             put(d, next);
-            emit({ invites: [next] }, { tone: 'pink', title: 'All three pinkies are out', body: `${ideaOf(i.ideaId).title}. Slide in to seal it.`, inviteId: id });
+            emit({ invites: [next] }, { tone: 'pink', title: t('lock.allThree'), body: t('notices.slideToSeal', { idea: ideaOf(i.ideaId).title }), inviteId: id });
           } else if (i.status === 'locked' && i.checkIns.includes(ME_ID)) {
             let next = i;
             for (const who of rules.peopleOf(i).filter((p) => !next.checkIns.includes(p))) next = rules.checkIn(next, who, now);
             put(d, next);
-            emit(settle(d, next), { tone: 'volt', title: 'Promise kept', body: 'All four showed. The reveal is open.', inviteId: id });
+            emit(settle(d, next), { tone: 'volt', title: t('status.kept'), body: t('notices.allFourBody'), inviteId: id });
           }
         } catch {
           // The plan moved on before they acted.
@@ -179,17 +182,17 @@ export function createMockBackend(): Backend {
         if (i.status === 'sent' && i.fromId === ME_ID) {
           if (them === ALWAYS_PASSES) {
             const next = put(d, rules.decline(i, them, now));
-            emit({ invites: [next] }, { tone: 'flare', title: `${name} passed`, body: 'No hard feelings. Your ask slot is free again.', inviteId: id });
+            emit({ invites: [next] }, { tone: 'flare', title: t('notices.passed', { name }), body: t('notices.passedBody'), inviteId: id });
           } else {
             const next = put(d, rules.offerPinky(i, them, now));
-            emit({ invites: [next] }, { tone: 'pink', title: `${name}'s pinky is out`, body: `${ideaOf(i.ideaId).title}. Slide in to seal it.`, inviteId: id });
+            emit({ invites: [next] }, { tone: 'pink', title: t('status.theirPinkyOut', { name }), body: t('notices.slideToSeal', { idea: ideaOf(i.ideaId).title }), inviteId: id });
           }
         } else if (i.status === 'half_locked' && i.firstPinkyBy === ME_ID) {
           const next = put(d, rules.offerPinky(i, them, now));
           emit({ invites: [next] });
         } else if (i.status === 'locked' && i.checkIns.includes(ME_ID) && !i.checkIns.includes(them)) {
           const next = put(d, rules.checkIn(i, them, now));
-          emit(settle(d, next), { tone: 'volt', title: 'Promise kept', body: `You and ${name} both showed. The reveal is open.`, inviteId: id });
+          emit(settle(d, next), { tone: 'volt', title: t('status.kept'), body: t('notices.keptBody', { name }), inviteId: id });
         }
       } catch {
         // The invite moved on before they acted (expired, bailed). Nothing to do.
@@ -209,7 +212,7 @@ export function createMockBackend(): Backend {
       dirty = true;
       const name = nameOf(d, rules.otherId(i, ME_ID));
       if (next.status === 'flaked') {
-        emit(settle(d, next), { tone: 'flare', title: 'Promise missed', body: `Check-in with ${name} closed without you. That is on your record.`, inviteId: i.id });
+        emit(settle(d, next), { tone: 'flare', title: t('notices.missed'), body: t('notices.missedBody', { name }), inviteId: i.id });
       } else {
         emit({ invites: [next] });
       }
@@ -243,7 +246,7 @@ export function createMockBackend(): Backend {
 
   function seedFor(d: Db, input: OnboardingInput): Profile {
     return {
-      id: ME_ID, name: input.name, age: input.age, city: 'Mumbai', area: input.area, pronouns: input.pronouns,
+      id: ME_ID, name: input.name, age: input.age, city: input.city ?? 'Mumbai', country: cityCountry(input.city ?? 'Mumbai'), area: input.area, pronouns: input.pronouns,
       tagline: input.tagline, vibes: input.vibes, ideaIds: input.ideaIds, palette: ['#A9D8F7', '#4169E1'], glyph: '🤙',
       distanceKm: 0, photoCount: 0, ...SEED_ME_RECORD,
     };
@@ -270,8 +273,11 @@ export function createMockBackend(): Backend {
 
     async completeOnboarding(input) {
       if (!ALL_CONSENTS.every((k) => input.consents?.includes(k))) fail('PL077');
-      checkProfile(input);
-      checkContact(input.contactKind, input.contactHandle);
+      // The same order of checks as save_profile: where, then the card, then the contact.
+      const city = input.city ?? 'Mumbai';
+      if (!openCities().some((c) => c.name === city)) fail('PL076');
+      checkProfile(input, city);
+      checkContact(input.contactKind, input.contactHandle, cityCountry(city));
       const d = await load();
       await wait(LATENCY);
       d.me = seedFor(d, input);
@@ -287,13 +293,13 @@ export function createMockBackend(): Backend {
         if (!d.me) fail('PL002');
         const { contactKind, contactHandle, ...card } = patch;
         const next = { ...d.me, ...card };
-        checkProfile(next);
+        checkProfile(next, d.me.city, { area: d.me.area, pronouns: d.me.pronouns });
         const now = Date.now();
         if (next.name !== d.me.name && (changed.name ?? 0) > now - 30 * rules.DAY) fail('PL070');
         if (next.tagline !== d.me.tagline && (changed.tagline ?? 0) > now - 7 * rules.DAY) fail('PL071');
         if (next.name !== d.me.name) changed.name = now;
         if (next.tagline !== d.me.tagline) changed.tagline = now;
-        if (contactKind && contactHandle) checkContact(contactKind, contactHandle);
+        if (contactKind && contactHandle) checkContact(contactKind, contactHandle, d.me.country ?? 'IN');
         d.me = next;
         if (contactKind && contactHandle) d.myContact = { kind: contactKind, handle: contactHandle };
         return { me: d.me, myContact: d.myContact ?? undefined };

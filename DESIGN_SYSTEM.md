@@ -237,3 +237,10 @@ exactly as a finger does.
 Short, lowercase-friendly, a little dry. Say the rule plainly: "No ghosting. If you lock it, you
 show." Buttons are verbs: Send vibe check, Lock it, Check in, Bail. Never guilt, never streak
 pressure: a flake is recorded, not shamed.
+
+Every word lives in `src/i18n/en.ts`, never in a screen. A translation keeps the meaning and the
+tone, not the words, and is written by a native speaker: a flirty line that works in English can
+fall flat or offend elsewhere. Lay text out to grow: a label may run a third longer in another
+language, so rows of chips wrap and one-line labels truncate rather than push off the screen.
+Open the web build with `?lang=en-XA` to see every screen a third longer before calling a layout
+done.

@@ -15,12 +15,13 @@ import { useDesktop } from '@/lib/desktop';
 import { aria } from '@/lib/web';
 import { useStore } from '@/state/store';
 import { color, radius, sideNav, space } from '@/theme/tokens';
+import { t } from '@/i18n';
 
-const TABS: Record<string, { label: string; icon: keyof typeof Feather.glyphMap }> = {
-  index: { label: 'Discover', icon: 'compass' },
-  invites: { label: 'Asks', icon: 'send' },
-  plans: { label: 'Plans', icon: 'lock' },
-  me: { label: 'Me', icon: 'user' },
+const TABS: Record<string, { label: 'tabs.discover' | 'tabs.asks' | 'tabs.plans' | 'tabs.me'; icon: keyof typeof Feather.glyphMap }> = {
+  index: { label: 'tabs.discover', icon: 'compass' },
+  invites: { label: 'tabs.asks', icon: 'send' },
+  plans: { label: 'tabs.plans', icon: 'lock' },
+  me: { label: 'tabs.me', icon: 'user' },
 };
 
 function TabBar({ state, navigation }: BottomTabBarProps) {
@@ -48,7 +49,7 @@ function TabBar({ state, navigation }: BottomTabBarProps) {
               accessibilityRole="tab"
               accessibilityState={{ selected: focused }}
               {...aria({ selected: focused })}
-              accessibilityLabel={count ? `${tab.label}, ${count}` : tab.label}
+              accessibilityLabel={count ? t('tabs.withCount', { tab: t(tab.label), count }) : t(tab.label)}
               onPress={() => {
                 const event = navigation.emit({ type: 'tabPress', target: route.key, canPreventDefault: true });
                 if (!focused && !event.defaultPrevented) navigation.navigate(route.name);
@@ -57,7 +58,7 @@ function TabBar({ state, navigation }: BottomTabBarProps) {
             >
               <View style={[styles.sideMarker, focused && { backgroundColor: color.pink }]} />
               <Feather name={tab.icon} size={20} color={tone} />
-              <T v="bodyBold" c={focused ? color.text : color.textDim} style={{ flex: 1 }}>{tab.label}</T>
+              <T v="bodyBold" c={focused ? color.text : color.textDim} style={{ flex: 1 }}>{t(tab.label)}</T>
               {count > 0 && <View style={styles.sideCount}><T v="label" c={color.onPink} style={{ fontSize: 11, lineHeight: 16, letterSpacing: 0 }}>{count}</T></View>}
             </Pressable>
           );
@@ -81,7 +82,7 @@ function TabBar({ state, navigation }: BottomTabBarProps) {
             accessibilityRole="tab"
             accessibilityState={{ selected: focused }}
             {...aria({ selected: focused })}
-            accessibilityLabel={count ? `${tab.label}, ${count}` : tab.label}
+            accessibilityLabel={count ? t('tabs.withCount', { tab: t(tab.label), count }) : t(tab.label)}
             onPress={() => {
               haptic.tick();
               const event = navigation.emit({ type: 'tabPress', target: route.key, canPreventDefault: true });
@@ -96,7 +97,7 @@ function TabBar({ state, navigation }: BottomTabBarProps) {
                 <View style={styles.count}><T v="label" c={color.onPink} style={{ fontSize: 10, lineHeight: 14, letterSpacing: 0 }}>{count}</T></View>
               )}
             </View>
-            <T v="label" c={tone} style={{ fontSize: 10, letterSpacing: 1 }}>{tab.label}</T>
+            <T v="label" c={tone} style={{ fontSize: 10, letterSpacing: 1 }}>{t(tab.label)}</T>
           </Pressable>
         );
       })}

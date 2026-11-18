@@ -14,6 +14,7 @@ import { shown } from '@/lib/report';
 import { backend } from '@/services';
 import { usePerson, useStore } from '@/state/store';
 import { color, space } from '@/theme/tokens';
+import { t } from '@/i18n';
 
 export default function JoinDuo() {
   const { token } = useLocalSearchParams<{ token: string }>();
@@ -45,9 +46,9 @@ export default function JoinDuo() {
     return (
       <Screen desk="form" back="close">
         <View style={{ gap: space.lg }}>
-          <T v="display">{`You and${'\n'}${name}.`}</T>
-          <T c={color.textDim}>You are a duo now. Either of you can ask someone with a duo out on a double, and you both come.</T>
-          <Button icon="compass" label="Find a double" onPress={() => router.replace('/(tabs)')} />
+          <T v="display">{t('duo.joinedTitle', { name: name ?? '' })}</T>
+          <T c={color.textDim}>{t('duo.joinedBody')}</T>
+          <Button icon="compass" label={t('duo.find')} onPress={() => router.replace('/(tabs)')} />
         </View>
       </Screen>
     );
@@ -56,23 +57,21 @@ export default function JoinDuo() {
     return (
       <Screen desk="form" back="close">
         <View style={{ gap: space.lg }}>
-          <T v="display">Link{'\n'}expired.</T>
-          <ErrorText text={error || 'This duo link cannot be joined. Ask your friend for a new one.'} tone={color.textDim} />
-          <Button kind="ghost" label="Back to Discover" onPress={() => router.replace('/(tabs)')} />
+          <T v="display">{t('duo.expiredTitle')}</T>
+          <ErrorText text={error || t('duo.expiredBody')} tone={color.textDim} />
+          <Button kind="ghost" label={t('ask.backToDiscover')} onPress={() => router.replace('/(tabs)')} />
         </View>
       </Screen>
     );
   }
   return (
-    <Screen desk="form" back="close" footer={<><ErrorText text={error} /><Button icon="users" label={`Join ${name}'s duo`} onPress={join} disabled={!!duo} busy={busy} /></>}>
+    <Screen desk="form" back="close" footer={<><ErrorText text={error} /><Button icon="users" label={t('duo.join', { name })} onPress={join} disabled={!!duo} busy={busy} /></>}>
       <View style={{ gap: space.xl }}>
-        <T v="display">{`${name} wants${'\n'}you as a duo.`}</T>
+        <T v="display">{t('duo.wantsTitle', { name })}</T>
         <T c={color.textDim}>
-          {duo
-            ? `You are already in a duo with ${duo.name}. Leave it in Me first.`
-            : `As a duo, you and ${name} can ask two other friends out on a double: four people, one plan, and everyone keeps their own promise.`}
+          {duo ? t('duo.already', { name: duo.name }) : t('duo.pitch', { name })}
         </T>
-        <T v="caption" c={color.textDim}>Only the two of you see who your duo is. Other people see that you have one.</T>
+        <T v="caption" c={color.textDim}>{t('duo.private')}</T>
       </View>
     </Screen>
   );

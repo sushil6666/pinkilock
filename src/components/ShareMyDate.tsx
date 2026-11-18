@@ -13,6 +13,7 @@ import { color, space } from '../theme/tokens';
 import { Button } from './ui/Button';
 import { ErrorText } from './ui/ErrorText';
 import { T } from './ui/T';
+import { t } from '../i18n';
 
 export function ShareMyDate({ invite, other, idea }: { invite: Invite; other: Profile; idea: string }) {
   const [checkSet, setCheckSet] = useState<boolean | null>(null);
@@ -30,13 +31,13 @@ export function ShareMyDate({ invite, other, idea }: { invite: Invite; other: Pr
 
   return (
     <View style={{ gap: space.sm }}>
-      <T v="label" c={color.textDim}>Stay safe</T>
-      <Button kind="ghost" icon="share-2" label="Share my date with a friend" onPress={share} />
+      <T v="label" c={color.textDim}>{t('shareDate.title')}</T>
+      <Button kind="ghost" icon="share-2" label={t('shareDate.share')} onPress={share} />
       {safetyCheckAvailable() ? (
-        checkSet ? <T v="caption" c={color.gold}>{`We will ask "Home safe?" at ${timeLabel(endsAt + 15 * 60_000)}.`}</T>
-          : <Button kind="ghost" icon="bell" label="Check on me after" onPress={check} />
+        checkSet ? <T v="caption" c={color.gold}>{t('shareDate.willAsk', { time: timeLabel(endsAt + 15 * 60_000) })}</T>
+          : <Button kind="ghost" icon="bell" label={t('shareDate.checkOn')} onPress={check} />
       ) : null}
-      {checkSet === false ? <T v="caption" c={color.textDim}>Turn on notifications for Pinkilock to get the check.</T> : null}
+      {checkSet === false ? <T v="caption" c={color.textDim}>{t('shareDate.needNotifications')}</T> : null}
       <ErrorText text={error} />
     </View>
   );

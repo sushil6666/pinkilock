@@ -10,7 +10,7 @@ insert into auth.users (id) values (:'h'), (:'k'), (:'j');
 set role authenticated;
 select t.as_user(:'h');
 select give_consents(array['adult', 'terms', 'privacy', 'sensitive']);
-select save_profile('Hana', 25, 'Bandra', '', 'Will judge your chai order.', '{}', array['boba_run','chai_walk','meme_duel'], 'Instagram', '@hana');
+select save_profile('Hana', 25, 'Bandra West', '', 'Will judge your chai order.', '{}', array['boba_run','chai_walk','meme_duel'], 'Instagram', '@hana');
 select t.as_user(:'k');
 select give_consents(array['adult', 'terms', 'privacy', 'sensitive']);
 select save_profile('Kian', 26, 'Khar', '', '', '{}', array['boba_run','chai_walk','meme_duel'], 'Instagram', '@kian');
@@ -27,10 +27,10 @@ select t.ok((select count(*) from ask_lines) = 40, 'the catalogue has all 40 lin
 
 -- Change limits: the first line and name are free; then a week for the line, a month for the name.
 select t.as_user(:'h');
-select t.ok(t.sqlstate($$select save_profile('Hana', 25, 'Bandra', '', 'my toxic trait: always early', '{}', array['boba_run','chai_walk','meme_duel'])$$) is null, 'the first change of the line after joining is free');
-select t.ok(t.sqlstate($$select save_profile('Hana', 25, 'Bandra', '', 'green flag: texts back', '{}', array['boba_run','chai_walk','meme_duel'])$$) = 'PL071', 'a second change within 7 days is refused (PL071)');
-select t.ok(t.sqlstate($$select save_profile('Hanna', 25, 'Bandra', '', 'my toxic trait: always early', '{}', array['boba_run','chai_walk','meme_duel'])$$) is null, 'the first name change is free');
-select t.ok(t.sqlstate($$select save_profile('Hani', 25, 'Bandra', '', 'my toxic trait: always early', '{}', array['boba_run','chai_walk','meme_duel'])$$) = 'PL070', 'a second name change within 30 days is refused (PL070)');
+select t.ok(t.sqlstate($$select save_profile('Hana', 25, 'Bandra West', '', 'my toxic trait: always early', '{}', array['boba_run','chai_walk','meme_duel'])$$) is null, 'the first change of the line after joining is free');
+select t.ok(t.sqlstate($$select save_profile('Hana', 25, 'Bandra West', '', 'green flag: texts back', '{}', array['boba_run','chai_walk','meme_duel'])$$) = 'PL071', 'a second change within 7 days is refused (PL071)');
+select t.ok(t.sqlstate($$select save_profile('Hanna', 25, 'Bandra West', '', 'my toxic trait: always early', '{}', array['boba_run','chai_walk','meme_duel'])$$) is null, 'the first name change is free');
+select t.ok(t.sqlstate($$select save_profile('Hani', 25, 'Bandra West', '', 'my toxic trait: always early', '{}', array['boba_run','chai_walk','meme_duel'])$$) = 'PL070', 'a second name change within 30 days is refused (PL070)');
 select t.ok(t.sqlstate($$select save_profile('Hanna', 26, 'Khar', '', 'my toxic trait: always early', '{}', array['boba_run','chai_walk','meme_duel'])$$) is null, 'other fields change freely');
 
 -- Review on: a new line waits, others keep seeing the old one.

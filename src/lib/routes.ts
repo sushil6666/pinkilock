@@ -6,29 +6,32 @@
  * Titles never carry a name, an idea or a place: a page title is kept in the browser's history
  * and shown on a shared screen.
  */
+import { t, type Key } from '../i18n';
+
 export const APP_NAME = 'Pinkilock';
 
-const TITLES: Record<string, string> = {
-  '': APP_NAME,
-  onboarding: 'Welcome',
-  '(tabs)': 'Discover',
-  '(tabs)/invites': 'Asks',
-  '(tabs)/plans': 'Plans',
-  '(tabs)/me': 'Me',
-  'profile/[id]': 'Profile',
-  'report/[id]': 'Report',
-  'invite/new': 'Vibe check',
-  'invite/[id]': 'Vibe check',
-  'lock/[id]': 'The Pinkilock',
-  'plan/[id]': 'Plan',
-  'account/sign-in': 'Sign in',
-  'account/blocked': 'Blocked',
-  'account/requests': 'Ask us',
-  'legal/[doc]': 'Terms and privacy',
-  safety: 'Safety',
-  'vouch/[token]': 'Vouch for a friend',
-  'duo/[token]': 'Join a duo',
-  '+not-found': 'Not found',
+/** Keys into src/i18n (`titles`); null is the app's name alone. */
+const TITLES: Record<string, Key | null> = {
+  '': null,
+  onboarding: 'titles.welcome',
+  '(tabs)': 'titles.discover',
+  '(tabs)/invites': 'titles.asks',
+  '(tabs)/plans': 'titles.plans',
+  '(tabs)/me': 'titles.me',
+  'profile/[id]': 'titles.profile',
+  'report/[id]': 'titles.report',
+  'invite/new': 'titles.vibeCheck',
+  'invite/[id]': 'titles.vibeCheck',
+  'lock/[id]': 'titles.thePinkilock',
+  'plan/[id]': 'titles.plan',
+  'account/sign-in': 'titles.signIn',
+  'account/blocked': 'titles.blocked',
+  'account/requests': 'titles.askUs',
+  'legal/[doc]': 'titles.termsAndPrivacy',
+  safety: 'titles.safety',
+  'vouch/[token]': 'titles.vouchForAFriend',
+  'duo/[token]': 'titles.joinADuo',
+  '+not-found': 'titles.notFound',
 };
 
 /**
@@ -44,7 +47,7 @@ const key = (segments: readonly string[]) => segments.join('/');
 /** "Plans · Pinkilock". A route that is not in the list gets the app's name alone. */
 export function titleFor(segments: readonly string[]): string {
   const title = TITLES[key(segments)];
-  return title && title !== APP_NAME ? `${title} · ${APP_NAME}` : APP_NAME;
+  return title ? t('titles.withApp', { title: t(title), app: APP_NAME }) : APP_NAME;
 }
 
 /** True for every screen that shows or changes something that belongs to a person. */

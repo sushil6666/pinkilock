@@ -5,6 +5,12 @@
  * Emergency numbers are for the safety page.
  */
 export interface Country { code: string; name: string; active: boolean; emergency: string; womenHelpline: string | null }
+
+/** International dialling codes, for phone sign-in and WhatsApp numbers (WP9). App-side only. */
+export const DIAL_CODES: Record<string, string> = { IN: '91', GB: '44', US: '1', IE: '353', DE: '49', AU: '61', CA: '1', BR: '55' };
+
+/** Open cities, with their country, for onboarding. */
+export const openCities = (): City[] => CITIES.filter((c) => c.active && COUNTRIES.some((k) => k.code === c.country && k.active));
 export interface City { name: string; country: string; active: boolean }
 
 export const COUNTRIES: Country[] = [

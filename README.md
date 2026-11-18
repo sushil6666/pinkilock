@@ -187,6 +187,7 @@ The same screens run in a browser; there is no second site.
 ```bash
 EXPO_PUBLIC_BACKEND= npx expo export -p web --output-dir dist/web   # mock data, no keys
 npx serve dist/web --single                                         # any server that answers every path with index.html
+# then open /?lang=en-XA (every word accented and a third longer) or /?lang=ar-XB (right to left)
 node scripts/make-icons.mjs                                         # redraw the icons and the share picture
 node scripts/make-loops.mjs                                         # redraw the clay animations (needs ffmpeg)
 ```
