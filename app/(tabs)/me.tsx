@@ -57,7 +57,7 @@ export default function Me() {
   const signOut = useStore((s) => s.signOut);
   const [sheet, setSheet] = useState<'delete' | 'sign_out' | null>(null);
   const [editVibes, setEditVibes] = useState(false);
-  // Moving city (D080): the new city and area wait here until saved together.
+  // Moving city (D083): the new city and area wait here until saved together.
   const [move, setMove] = useState<{ city: string; area: string } | null>(null);
   const [moveError, setMoveError] = useState('');
   const [moved, setMoved] = useState('');

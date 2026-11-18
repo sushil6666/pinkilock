@@ -399,7 +399,7 @@ select t.ok(not exists (select 1 from jsonb_array_elements(:'ex'::jsonb -> 'cont
   'X''s export does not say who flagged X''s handle');
 select t.ok((:'ex'::jsonb -> 'contact') ? 'verified_at' and (:'ex'::jsonb ->> 'format') = 'pinkilock-export-4', 'the export says when the handle was verified');
 
--- D080: moving city. X cannot take an area from the old city along, cannot hop cities more than
+-- D083: moving city. X cannot take an area from the old city along, cannot hop cities more than
 -- once a week (so nobody looks through every city's people), and cannot reset the clock.
 reset role;
 -- X's name and line as they stand, so that only the area and the city change.

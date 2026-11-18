@@ -1,6 +1,6 @@
 /**
  * Where someone is: an open city, then an area from that city's list (typed only where a city has
- * no list yet). Used at sign-up and on Me, where a person can move city (D080). The server checks
+ * no list yet). Used at sign-up and on Me, where a person can move city (D083). The server checks
  * the same things in save_profile.
  */
 import { useState } from 'react';

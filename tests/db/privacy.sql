@@ -9,7 +9,7 @@ insert into auth.users (id, created_at) values (:'q2', now() - interval '40 days
 set role authenticated;
 select t.as_user(:'p2');
 select t.ok((select count(*) from countries where active) = 1 and (select count(*) from cities where active) = 20
-  and not exists (select 1 from cities where active and country <> 'IN'), 'one country is open, India, with its twenty cities (D080)');
+  and not exists (select 1 from cities where active and country <> 'IN'), 'one country is open, India, with its twenty cities (D083)');
 select t.ok(t.fails($$update countries set active = true$$), 'a user cannot open a country');
 select t.ok(t.sqlstate($$select give_consents(array['adult', 'whatever'])$$) = 'PL079', 'only the four consents exist (PL079)');
 select give_consents(array['adult', 'terms', 'privacy']);
@@ -28,7 +28,7 @@ select t.ok(t.sqlstate($$select save_profile('Pari', 25, 'Khar', '', '', '{}', a
 select t.headers('');
 select t.ok((select (city, country) = ('Mumbai', 'IN') from profiles where id = :'p2'), 'the profile carries its city and country');
 
--- Moving city (D080): an area from the new city's list, and once in 7 days.
+-- Moving city (D083): an area from the new city's list, and once in 7 days.
 select t.ok(t.sqlstate($$select save_profile('Pari', 25, 'Khar', '', '', '{}', array['boba_run','chai_walk','meme_duel'], null, null, 'Delhi NCR')$$) = 'PL095', 'a move keeps no area from the old city (PL095)');
 select t.ok(t.sqlstate($$select save_profile('Pari', 25, 'Saket', '', '', '{}', array['boba_run','chai_walk','meme_duel'], null, null, 'Delhi NCR')$$) is null, 'the first move is free, with an area from the new city');
 select t.ok((select (city, area, country) = ('Delhi NCR', 'Saket', 'IN') from profiles where id = :'p2'), 'the profile now says Delhi NCR');

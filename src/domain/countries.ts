@@ -51,7 +51,7 @@ export const CITIES: City[] = [
 /** The time zone of a city, or undefined for one we do not know. */
 export const zoneOfCity = (city: string | undefined): string | undefined => CITIES.find((c) => c.name === city)?.zone;
 
-/** The eight metros (tier 1), first in the city picker; the rest follow A to Z (D080). */
+/** The eight metros (tier 1), first in the city picker; the rest follow A to Z (D083). */
 export const METROS = ['Mumbai', 'Delhi NCR', 'Bengaluru', 'Hyderabad', 'Chennai', 'Kolkata', 'Pune', 'Ahmedabad'];
 
 export const countryOf = (code: string | undefined): Country => COUNTRIES.find((c) => c.code === code) ?? COUNTRIES[0];

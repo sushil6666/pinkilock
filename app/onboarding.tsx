@@ -111,7 +111,12 @@ export default function Onboarding() {
               <TextInput value={age} onChangeText={(v) => setAge(v.replace(/[^0-9]/g, ''))} placeholder="21" placeholderTextColor={color.textMute} keyboardType="number-pad" maxLength={2} style={inputStyle} accessibilityLabel={t('onboarding.age')} />
             </View>
             {under18 && <T v="caption" c={color.flare}>{t('onboarding.adultsOnly')}</T>}
-            <WherePicker city={city} area={area} onCity={setCity} onArea={setArea} cityNote={t('onboarding.oneCity')} />
+            <WherePicker city={city} area={area} cityNote={t('onboarding.oneCity')} onArea={setArea} onCity={(name) => {
+              // Ideas are offered by country (WP9): keep only the picks the new city's country has.
+              const to = openCities().find((c) => c.name === name)?.country ?? '';
+              setCity(name);
+              setIdeaIds(ideaIds.filter((id) => ideasFor(to).some((i) => i.id === id)));
+            }} />
             <View style={{ gap: space.sm }}>
               <T v="label" c={color.textDim}>{t('onboarding.pronouns')}</T>
               <View style={styles.wrap}>

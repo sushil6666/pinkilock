@@ -297,7 +297,7 @@ export function createMockBackend(): Backend {
         if (!d.me) fail('PL002');
         const { contactKind, contactHandle, ...card } = patch;
         const next = { ...d.me, ...card };
-        // Moving city (D080): an open city, an area from its list, once a week.
+        // Moving city (D083): an open city, an area from its list, once a week.
         const moving = next.city !== d.me.city;
         if (moving && !openCities().some((c) => c.name === next.city)) fail('PL076');
         checkProfile(next, next.city, { area: moving ? '' : d.me.area, pronouns: d.me.pronouns, ideaIds: d.me.ideaIds });

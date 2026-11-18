@@ -209,7 +209,7 @@ if (process.env.E2E_MAILBOX) {
   });
 }
 
-// Last, because it moves X out of Y's city (D080).
+// Last, because it moves X out of Y's city (D083).
 test('moving city: an area from the new city, once a week, and no direct writes', async () => {
   await assert.rejects(x.backend.updateMe({ city: 'Delhi NCR' }), (e: unknown) => e instanceof AppError && e.code === 'PL095', 'a Mumbai area following X to Delhi NCR');
   const moved = await x.backend.updateMe({ city: 'Delhi NCR', area: 'Saket' });

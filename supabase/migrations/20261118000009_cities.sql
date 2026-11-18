@@ -1,4 +1,4 @@
--- Cities across India (decision D080). Pinkilock opens in the eight metros and twelve tier-2 cities,
+-- Cities across India (decision D083). Pinkilock opens in the eight metros and twelve tier-2 cities,
 -- each with its list of areas and a catalogue of busy, public places to meet. India stays the only
 -- open country (D006, D054); a city inside it needs no separate legal review.
 --

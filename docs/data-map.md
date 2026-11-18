@@ -9,7 +9,7 @@ a processor or a kind of data updates this file in the same pull request.
 | Data | Where | Kept | Who can read it |
 | --- | --- | --- | --- |
 | Account: id, email or phone, sign-in sessions | Supabase Auth (`auth.users`) | Until the account is deleted; unfinished accounts 30 days | The person; operators |
-| Card: first name, age, city, country, area, pronouns, line, tags, date ideas | `profiles` | Until deleted | The person; people they share a plan with; up to 200 people a day through Discover |
+| Card: first name, age, city, country, area, pronouns, line, tags, date ideas (and, for the server only, when the name, line and city last changed) | `profiles` | Until deleted | The person; people they share a plan with; up to 200 people a day through Discover |
 | Contact handle (and later, private photos) | `profile_private` | Until deleted | The person; someone they kept a promise with |
 | Plans: who (two people, or four on a double), idea, time, place, line, status, pinkies, check-ins | `invites` | Place and line cleared 90 days after the plan ends | The two people on it |
 | Behaviour log (asks, locks, check-ins, bails) | `events` | Kept; a deleted account's rows lose its id | No client; the analytics worker |

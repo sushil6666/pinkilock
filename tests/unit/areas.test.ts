@@ -49,7 +49,7 @@ test('the area and pronouns are picked; what was saved before the lists still pa
   assert.equal(code(() => checkProfile({ ...card, area: 'Bandra' })), 'PL095');
   assert.equal(code(() => checkProfile({ ...card, pronouns: 'xe/xem' })), 'PL096');
   assert.equal(code(() => checkProfile({ ...card, area: 'Bandra', pronouns: 'xe/xem' }, 'Mumbai', { area: 'Bandra', pronouns: 'xe/xem' })), null);
-  assert.equal(code(() => checkProfile({ ...card, area: 'Anywhere' }, 'Patna')), null, 'a city with no list yet takes a typed area');
+  assert.equal(code(() => checkProfile({ ...card, area: 'Anywhere' }, 'Patna', { area: '', pronouns: '', ideaIds: card.ideaIds })), null, 'a city with no list yet takes a typed area');
   assert.equal(code(() => checkProfile({ ...card, area: 'Bandra West' }, 'Delhi NCR')), 'PL095', 'an area from another city');
   assert.deepEqual(matchAreas('Mumbai', 'band'), ['Bandra East', 'Bandra West']);
 });
