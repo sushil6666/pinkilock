@@ -122,7 +122,14 @@ Font scaling is allowed up to 1.3x (`maxFontSizeMultiplier`) so layouts hold on 
   closing Start. Sections are a pink `label` over a `display` title; cards are `surface` with a
   `line` border; places are a pink left rule. Only tokens, so a theme change carries over.
 - **Tab bar**: 4 tabs, icon over label, active is pink with a 3px bar above the icon; counts sit in
-  a pink pill.
+  a pink pill. On desktop it is a menu down the left (`sideNav`, 232): icon beside label, the
+  active tab on `surface` with a pink bar at its left edge, counts in a pink pill.
+- **Desktop** (a browser window 960 or wider, `useDesktop`): every screen says what kind it is with
+  `Screen`'s `desk`. `page` runs up to `deskMax` (1080) and lays out two columns with `Columns`
+  (a picture or the next plan on the left, details on the right) or `Grid` (a list in two
+  columns). `form` puts the night sky and the pinkies on the left and the form, with its footer,
+  on the right at `columnMax`. `read` stops at `readMax` (760). The logo stays top centre. Phones
+  and narrow windows keep the phone layout.
 
 ## 5. Motion
 

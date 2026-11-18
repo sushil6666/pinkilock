@@ -7,6 +7,7 @@ import { Countdown } from '@/components/Countdown';
 import { statusLine } from '@/components/InviteCard';
 import { Portrait } from '@/components/Portrait';
 import { Button } from '@/components/ui/Button';
+import { Columns } from '@/components/ui/Columns';
 import { Screen } from '@/components/ui/Screen';
 import { T } from '@/components/ui/T';
 import { ideaOf } from '@/domain/ideas';
@@ -34,7 +35,7 @@ export default function Plans() {
     <Screen inTabs>
       <T v="display" style={{ marginBottom: space.lg }}>Locked{'\n'}plans</T>
 
-      {next ? (
+      <Columns gap={0} left={next ? (
         <Pressable accessibilityRole="button" accessibilityLabel={`Next: ${ideaOf(next.ideaId).title} with ${who(next)?.name}`} onPress={() => open(next)} style={[styles.hero, elevation('glow')]}>
           <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
             <T v="label" c={color.pink}>Next up</T>
@@ -56,7 +57,7 @@ export default function Plans() {
           <T c={color.textDim}>Plans appear here as soon as both pinkies lock. Answer an ask, or send one to get started.</T>
           <Button icon="send" label="See your asks" onPress={() => router.push('/(tabs)/invites')} />
         </View>
-      )}
+      )} right={<>
 
       {later.length > 0 && <T v="label" c={color.textDim} style={styles.section}>After that</T>}
       <View style={{ gap: space.sm }}>
@@ -78,6 +79,7 @@ export default function Plans() {
           );
         })}
       </View>
+      </>} />
     </Screen>
   );
 }

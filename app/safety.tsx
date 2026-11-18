@@ -21,7 +21,7 @@ export default function Safety() {
   const country = countryOf(useStore((s) => s.me?.country));
   const call = (n: string) => Linking.openURL(`tel:${n}`).catch(quiet('safety.call'));
   return (
-    <Screen back="back" title="Safety">
+    <Screen desk="read" back="back" title="Safety">
       <View style={{ gap: space.xl }}>
         <View style={{ gap: space.sm }}>
           <T v="label" c={color.flare}>In danger now</T>

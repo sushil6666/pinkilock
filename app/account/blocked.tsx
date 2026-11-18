@@ -35,7 +35,7 @@ export default function Blocked() {
   };
 
   return (
-    <Screen back="back" title="Blocked">
+    <Screen desk="read" back="back" title="Blocked">
       <View style={{ gap: space.lg }}>
         <T v="display">Blocked</T>
         <T c={color.textDim}>They cannot see you and you cannot see them. Unblocking brings their card back; plans that ended stay ended.</T>

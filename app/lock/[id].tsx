@@ -65,7 +65,7 @@ export default function LockScreen() {
   const usable = entry && (entry.role === 'first' || entry.role === 'seal' || entry.mineOut);
   if (!invite || !other || !usable) {
     return (
-      <Screen back="close" scroll={false}>
+      <Screen desk="form" back="close" scroll={false}>
         <View style={{ flex: 1, justifyContent: 'center', gap: space.md }}>
           <T v="display">Nothing{'\n'}to lock.</T>
           <T c={color.textDim}>This ask doesn't need your pinky right now.</T>
@@ -95,7 +95,7 @@ export default function LockScreen() {
     phase === 'sealing' ? 'Hold on' : '';
 
   return (
-    <Screen back={phase === 'sealing' || sealed ? false : 'close'} scroll={false} title={sealed ? undefined : 'The Pinkilock'}>
+    <Screen desk="form" back={phase === 'sealing' || sealed ? false : 'close'} scroll={false} title={sealed ? undefined : 'The Pinkilock'}>
       <View style={styles.top}>
         {sealed ? (
           <Animated.View entering={FadeInDown.springify().damping(motion.spring.snappy.damping).stiffness(motion.spring.snappy.stiffness)} accessibilityLiveRegion="assertive">

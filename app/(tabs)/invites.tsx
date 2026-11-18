@@ -5,6 +5,7 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { InviteCard } from '@/components/InviteCard';
 import { Button } from '@/components/ui/Button';
+import { Grid } from '@/components/ui/Columns';
 import { Screen } from '@/components/ui/Screen';
 import { T } from '@/components/ui/T';
 import { MAX_OPEN_ASKS, isOpen, otherId } from '@/domain/invites';
@@ -50,7 +51,7 @@ export default function Invites() {
 
       <View key={side} style={{ gap: space.md, marginTop: space.lg }}>
         {side === 'out' && <T v="caption" c={color.textDim}>{counts.out} of {MAX_OPEN_ASKS} asks open. Three at a time keeps every one of them meant.</T>}
-        {open.map(row)}
+        <Grid>{open.map(row)}</Grid>
         {open.length === 0 && (
           <View style={styles.empty}>
             <T v="title">{side === 'in' ? 'No asks waiting for you.' : 'No asks sent yet.'}</T>
@@ -59,7 +60,7 @@ export default function Invites() {
           </View>
         )}
         {closed.length > 0 && <T v="label" c={color.textMute} style={{ marginTop: space.lg }}>Closed</T>}
-        {closed.map(row)}
+        <Grid>{closed.map(row)}</Grid>
       </View>
     </Screen>
   );
