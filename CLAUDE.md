@@ -35,7 +35,8 @@ npm run test:app:local      # the real screens in two browser sessions
 - The invite state machine exists twice and must match: `src/domain/invites.ts` and the SQL in
   `supabase/migrations`. Change both together and rerun `tests/db`.
 - The micro-date catalogue also exists twice: `src/domain/ideas.ts` and the `ideas` table. A new idea
-  is a row in both (a new migration), and gets an opener in `OPENERS`.
+  is a row in both (a new migration), and gets an opener in `OPENERS`; a local one also gets its
+  `countries` in both, and every country keeps at least 20 ideas.
 - The profile tags also exist twice: `VIBE_GROUPS` in `src/domain/ideas.ts` and the `vibes` table. So do
   the profile and ask rules: `src/domain/profile.ts` and `save_profile` / `send_invite` /
   `private.looks_like_contact` in SQL. Change both together; `CONTACT_CASES` is the shared test table

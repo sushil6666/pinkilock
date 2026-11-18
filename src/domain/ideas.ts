@@ -9,10 +9,10 @@ export const IDEAS: MicroDateIdea[] = [
   { id: 'video_coffee', title: '10-min video coffee', emoji: '☕', minutes: 10, kind: 'video', blurb: 'Cameras on, one cup, hard stop at ten.' },
   { id: 'boba_run', title: 'Boba run', emoji: '🧋', minutes: 25, kind: 'irl', blurb: 'Order, walk one block, done.' },
   { id: 'coop_game', title: 'Co-op mobile game', emoji: '🎮', minutes: 20, kind: 'game', blurb: 'Two rounds, same team, voice on.' },
-  { id: 'chai_walk', title: 'Chai and a walk', emoji: '🍵', minutes: 20, kind: 'irl', blurb: 'Cutting chai, one lap of the block.' },
+  { id: 'chai_walk', title: 'Chai and a walk', emoji: '🍵', minutes: 20, kind: 'irl', blurb: 'Cutting chai, one lap of the block.', countries: ['IN'] },
   { id: 'playlist_swap', title: 'Playlist swap', emoji: '🎧', minutes: 15, kind: 'video', blurb: 'Three songs each. Defend your picks.' },
   { id: 'bookstore_lap', title: 'Bookstore lap', emoji: '📚', minutes: 30, kind: 'irl', blurb: 'Pick a book for each other. No buying required.' },
-  { id: 'momo_stop', title: 'Momo stop', emoji: '🥟', minutes: 20, kind: 'irl', blurb: 'One plate, split it, rate the chutney.' },
+  { id: 'momo_stop', title: 'Momo stop', emoji: '🥟', minutes: 20, kind: 'irl', blurb: 'One plate, split it, rate the chutney.', countries: ['IN'] },
   { id: 'sunset_spot', title: 'Sunset spot', emoji: '🌇', minutes: 30, kind: 'irl', blurb: 'Show up for golden hour, leave when it is dark.' },
   { id: 'meme_duel', title: 'Meme duel', emoji: '😂', minutes: 10, kind: 'game', blurb: 'Five memes each. Loser plans the real date.' },
   { id: 'bad_portraits', title: 'Draw each other badly', emoji: '✏️', minutes: 10, kind: 'video', blurb: 'Sixty seconds, wrong hand, reveal together.' },
@@ -20,7 +20,7 @@ export const IDEAS: MicroDateIdea[] = [
   { id: 'word_race', title: 'Word puzzle race', emoji: '🔤', minutes: 10, kind: 'game', blurb: 'Same puzzle, same time, first to solve wins.' },
   { id: 'photo_booth', title: 'Photo booth strip', emoji: '📸', minutes: 15, kind: 'irl', blurb: 'Four frames, one strip, no retakes.' },
   { id: 'thrift_dare', title: 'Thrift dare', emoji: '🛍️', minutes: 30, kind: 'irl', blurb: 'Pick one loud thing for each other. Trying it on is the deal.' },
-  { id: 'pani_puri_duel', title: 'Pani puri face-off', emoji: '🌶️', minutes: 15, kind: 'irl', blurb: 'Six each, spicy water, first to tap out pays.' },
+  { id: 'pani_puri_duel', title: 'Pani puri face-off', emoji: '🌶️', minutes: 15, kind: 'irl', blurb: 'Six each, spicy water, first to tap out pays.', countries: ['IN'] },
   { id: 'arcade_round', title: 'Arcade round', emoji: '🕹️', minutes: 25, kind: 'irl', blurb: 'Three games, best of three. Loser picks the next plan.' },
   { id: 'matcha_run', title: 'Matcha run', emoji: '🍃', minutes: 20, kind: 'irl', blurb: 'Iced or hot, oat or not. Judge quietly.' },
   { id: 'dog_park_lap', title: 'Dog park lap', emoji: '🐕', minutes: 20, kind: 'irl', blurb: 'Borrow joy from other people\'s dogs. One lap.' },
@@ -42,7 +42,7 @@ export const IDEAS: MicroDateIdea[] = [
   { id: 'after_hours', title: 'After-hours call', emoji: '🌙', minutes: 15, kind: 'video', blurb: 'After ten, lights low, fifteen minutes. Then sleep.' },
   { id: 'night_market', title: 'Night market lap', emoji: '🏮', minutes: 30, kind: 'irl', blurb: 'One lap, three stalls, share everything.' },
   { id: 'photo_walk', title: 'Golden hour photoshoot', emoji: '🤳', minutes: 20, kind: 'irl', blurb: 'Shoot each other\'s next profile picture. Hype is mandatory.' },
-  { id: 'kulfi_gossip', title: 'Kulfi and gossip', emoji: '🍡', minutes: 20, kind: 'irl', blurb: 'One kulfi each. Trade your best harmless gossip.' },
+  { id: 'kulfi_gossip', title: 'Kulfi and gossip', emoji: '🍡', minutes: 20, kind: 'irl', blurb: 'One kulfi each. Trade your best harmless gossip.', countries: ['IN'] },
   { id: 'dress_up_coffee', title: 'Overdressed coffee', emoji: '✨', minutes: 25, kind: 'irl', blurb: 'Both overdress for a very ordinary coffee. Commit to it.' },
 ];
 
@@ -53,6 +53,12 @@ export function ideaOf(id: string): MicroDateIdea {
 }
 
 /** The words come from src/i18n (`kinds`). */
+/** The ideas offered in a country, in catalogue order: everywhere ones and its own local ones (WP9). */
+export const ideasFor = (country: string | undefined): MicroDateIdea[] => IDEAS.filter((i) => !i.countries || (!!country && i.countries.includes(country)));
+
+/** True when an idea is offered in that country. */
+export const offeredIn = (id: string, country: string | undefined): boolean => ideasFor(country).some((i) => i.id === id);
+
 export const KIND_LABEL: Readonly<Record<MicroDateIdea['kind'], string>> = {
   get video() {
     return t('kinds.video');

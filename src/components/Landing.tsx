@@ -35,9 +35,9 @@ const FAQ = [
   ['landing.q4', 'landing.a4'],
 ] as const;
 
-/** One place per area, so the list shows how far the city reaches rather than one street. */
-const PLACES: Venue[] = VENUES.filter((v, i) => VENUES.findIndex((w) => w.area === v.area) === i).slice(0, 12);
+/** One place in each of the first twelve cities, so the list shows how far Pinkilock reaches. */
 const CITIES = [...new Set(VENUES.map((v) => v.city))];
+const PLACES: Venue[] = CITIES.slice(0, 12).map((c) => VENUES.find((v) => v.city === c)!);
 
 function Section({ eyebrow, title, children }: { eyebrow: string; title: string; children: React.ReactNode }) {
   return (
@@ -128,7 +128,7 @@ export function Landing({ onStart }: { onStart: () => void }) {
           </View>
         </Section>
 
-        {/* Doubles (D070, D080): four short lines, centred, then what a duo is in plain words. */}
+        {/* Doubles (D070, D084): four short lines, centred, then what a duo is in plain words. */}
         <View style={styles.doubles} {...webOnly({ role: 'region' as const, 'aria-label': t('landing.doublesEyebrow') })}>
           <T v="label" c={color.pink} center>{t('landing.doublesEyebrow')}</T>
           <View accessibilityRole="header">
@@ -172,13 +172,13 @@ export function Landing({ onStart }: { onStart: () => void }) {
                   <View key={v.id} style={styles.place}>
                     <T v="label" c={color.pink}>{t(`venueKinds.${v.kind}`)}</T>
                     <T v="bodyBold">{v.name}</T>
-                    <T v="caption" c={color.textMute}>{v.area}</T>
+                    <T v="caption" c={color.textMute}>{t('profile.areaCity', { area: v.area, city: v.city })}</T>
                   </View>
                 ))}
                 {Array.from({ length: 4 - row.length }, (_, i) => <View key={`gap${i}`} style={{ flex: 1 }} />)}
               </View>
             ))}
-            <T v="caption" c={color.textMute}>{t('landing.citiesNow', { cities: CITIES.join(', '), count: VENUES.length })}</T>
+            <T v="caption" c={color.textMute}>{t('landing.citiesNow', { cities: CITIES.join(', '), cityCount: CITIES.length, count: VENUES.length })}</T>
           </View>
         </Section>
 

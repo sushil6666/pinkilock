@@ -52,9 +52,9 @@ export function Notes() {
   );
 }
 
-/** A few of the real places plans happen at (the venue catalogue), so the city is in the picture. */
-const PLACE_IDS = ['mum_marine_drive', 'mum_carter_road', 'mum_prithvi', 'mum_juhu_beach', 'mum_kala_ghoda'];
-const PLACES = VENUES.filter((v) => PLACE_IDS.includes(v.id));
+/** A few of the real places plans happen at (the venue catalogue), one city each, so India is in the picture. */
+const PLACE_IDS = ['mum_marine_drive', 'del_lodhi_garden', 'blr_cubbon_park', 'hyd_necklace_road', 'che_elliots', 'kol_prinsep_ghat', 'pun_fc_road', 'jai_hawa_mahal'];
+const PLACES = PLACE_IDS.map((id) => VENUES.find((v) => v.id === id)!);
 const KIND_ICON: Record<VenueKind, keyof typeof Feather.glyphMap> = { promenade: 'sunset', park: 'feather', mall: 'shopping-bag', market: 'shopping-cart', landmark: 'star' };
 
 function Places() {
@@ -66,7 +66,7 @@ function Places() {
           <View key={v.id} style={styles.place}>
             <Feather name={KIND_ICON[v.kind]} size={20} color={color.gold} />
             <T v="bodyBold" numberOfLines={2}>{v.name}</T>
-            <T v="caption" c={color.textDim}>{v.area}</T>
+            <T v="caption" c={color.textDim}>{v.city}</T>
           </View>
         ))}
       </ScrollView>

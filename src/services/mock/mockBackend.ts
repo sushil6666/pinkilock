@@ -13,7 +13,7 @@ import { REPORT_DETAIL_MAX, REPORT_REASONS, REPORTS_PER_DAY } from '../../domain
 import type { BlockedPerson, CodeKind, Invite, MyContact, NewInvite, OnboardingInput, Profile, ReportReason, Reveal } from '../../domain/types';
 import { quiet } from '../../lib/log';
 import type { Backend, BackendEvent, Changes, ClientErrorReport, Notice, Snapshot } from '../backend';
-import { ALWAYS_PASSES, ME_ID, SEED_DUOS, SEED_ME_RECORD, seedFriend, seedInvites, seedProfiles, seedReveals } from './seed';
+import { ALWAYS_PASSES, ME_ID, SEED_DUOS, SEED_ME_RECORD, inCity, seedFriend, seedInvites, seedProfiles, seedReveals } from './seed';
 import { PROVABLE_KINDS, checkAsk, checkContact, checkProfile } from '../../domain/profile';
 import { venueOf, venuePlace } from '../../domain/venues';
 import { ALL_CONSENTS, CITIES, openCities } from '../../domain/countries';
@@ -62,7 +62,7 @@ export function createMockBackend(): Backend {
   let passTimes: number[] = [];
   const codeTries = new Map<string, { fails: number; until: number }>();
   /** When the name and the line last changed (the first ones after joining are free). */
-  const changed: { name?: number; tagline?: number } = {};
+  const changed: { name?: number; tagline?: number; city?: number } = {};
   const ratings = new Map<string, boolean>();
   const vouchLinks = new Map<string, number>();
   const duoLinks: { token: string; at: number }[] = [];
@@ -152,7 +152,7 @@ export function createMockBackend(): Backend {
       if (id.startsWith('duo:')) {
         // The made-up friend opens my duo link.
         if (d.duoId) continue;
-        const friend = seedFriend();
+        const friend = inCity(seedFriend(), d.me?.city ?? 'Mumbai', 3);
         d.duoId = friend.id;
         d.profiles = [...d.profiles.filter((p) => p.id !== friend.id), friend];
         emit({ duoId: friend.id, profiles: [friend] }, { tone: 'volt', title: t('notices.duoJoined', { name: friend.name }), body: t('notices.duoJoinedBody') });
@@ -284,6 +284,7 @@ export function createMockBackend(): Backend {
       const d = await load();
       await wait(LATENCY);
       d.me = seedFor(d, input);
+      d.profiles = d.profiles.map((p, i) => inCity(p, city, i));
       d.myContact = { kind: input.contactKind, handle, verified: false };
       d.invites = seedInvites(Date.now());
       save();
@@ -296,8 +297,16 @@ export function createMockBackend(): Backend {
         if (!d.me) fail('PL002');
         const { contactKind, contactHandle, ...card } = patch;
         const next = { ...d.me, ...card };
-        checkProfile(next, d.me.city, { area: d.me.area, pronouns: d.me.pronouns });
+        // Moving city (D083): an open city, an area from its list, once a week.
+        const moving = next.city !== d.me.city;
+        if (moving && !openCities().some((c) => c.name === next.city)) fail('PL076');
+        checkProfile(next, next.city, { area: moving ? '' : d.me.area, pronouns: d.me.pronouns, ideaIds: d.me.ideaIds });
         const now = Date.now();
+        if (moving && (changed.city ?? 0) > now - 7 * rules.DAY) fail('PL105');
+        if (moving) {
+          changed.city = now;
+          next.country = cityCountry(next.city);
+        }
         if (next.name !== d.me.name && (changed.name ?? 0) > now - 30 * rules.DAY) fail('PL070');
         if (next.tagline !== d.me.tagline && (changed.tagline ?? 0) > now - 7 * rules.DAY) fail('PL071');
         if (next.name !== d.me.name) changed.name = now;

@@ -371,3 +371,46 @@ select t.ok((select outcome from public.contact_reports where owner_id = :'y' an
 select t.ok((select bool_and(outcome = 'ignored') from public.contact_reports where reporter_id = :'crowd1')
   and (select count(*) from public.events where type = 'bad_contact' and actor_id = :'y') = 0,
   'flags from someone who flags more than half of their dates are ignored, and Y''s record is clean');
+
+-- WP9: a modified app cannot slip in an idea that is not offered where the person lives (PL104).
+update public.ideas set countries = array['GB'] where id = 'two_truths';
+set role authenticated;
+select t.as_user(:'x');
+select t.ok(t.sqlstate($$select save_profile('Xavier', 25, 'Bandra West', '', '', '{}', array['boba_run','chai_walk','two_truths'])$$) = 'PL104',
+  'X cannot pick an idea from another country''s list (PL104)');
+reset role;
+update public.ideas set countries = null where id = 'two_truths';
+
+-- The data download (format 4): Y's lists the two flags Y made on X's handle, by person and plan,
+-- without X's handle; X's says nothing about who flagged it.
+set role authenticated;
+select t.as_user(:'y');
+select export_my_data() as ey \gset
+select t.ok(jsonb_array_length(:'ey'::jsonb -> 'contact_flags_made') = 2
+  and (:'ey'::jsonb -> 'contact_flags_made' -> 0 ->> 'profile') = :'x'
+  and not (:'ey'::jsonb -> 'contact_flags_made')::text ilike '%' || (select contact_handle from profile_private where profile_id = :'x') || '%',
+  'Y''s export lists the flags Y made, and not X''s handle');
+select t.as_user(:'x');
+select export_my_data() as ex \gset
+-- Y appears in X's export as the other person on their plans, never as a flagger.
+select t.ok(not exists (select 1 from jsonb_array_elements(:'ex'::jsonb -> 'contact_flags_made') f where f ->> 'profile' = :'x')
+  and not exists (select 1 from jsonb_object_keys(:'ex'::jsonb) k where k ilike '%flag%' and k <> 'contact_flags_made')
+  and not exists (select 1 from jsonb_array_elements(:'ex'::jsonb -> 'events') e where e ->> 'type' = 'bad_contact'),
+  'X''s export does not say who flagged X''s handle');
+select t.ok((:'ex'::jsonb -> 'contact') ? 'verified_at' and (:'ex'::jsonb ->> 'format') = 'pinkilock-export-4', 'the export says when the handle was verified');
+
+-- D083: moving city. X cannot take an area from the old city along, cannot hop cities more than
+-- once a week (so nobody looks through every city's people), and cannot reset the clock.
+reset role;
+-- X's name and line as they stand, so that only the area and the city change.
+select name as x_name, coalesce((select r.text from private.line_reviews r where r.profile_id = p.id and r.status in ('pending', 'held')), tagline) as x_line
+  from public.profiles p where id = :'x' \gset
+set role authenticated;
+select t.as_user(:'x');
+\set move 'select save_profile(%L, 25, %L, '''', %L, ''{}'', array[''boba_run'',''chai_walk'',''meme_duel''], null, null, %L)'
+select t.ok(t.sqlstate(format(:'move', :'x_name', 'Bandra West', :'x_line', 'Delhi NCR')) = 'PL095', 'X cannot carry a Mumbai area to Delhi NCR (PL095)');
+select t.ok(t.sqlstate(format(:'move', :'x_name', 'Saket', :'x_line', 'Delhi NCR')) is null, 'X moves to Delhi NCR once, with an area there');
+select t.ok(t.sqlstate(format(:'move', :'x_name', 'Koregaon Park', :'x_line', 'Pune')) = 'PL105', 'X cannot hop to another city in the same week (PL105)');
+select t.ok(t.fails(format($$update profiles set city_changed_at = null, city = 'Pune' where id = %L$$, :'x')),
+  'X cannot reset their own move clock or set their city directly');
+reset role;

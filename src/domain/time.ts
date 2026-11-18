@@ -2,7 +2,7 @@
  * Time slots for the composer and the few date formats the app uses. Formats follow the phone's
  * locale through Intl (src/i18n); times are shown in the viewer's own time zone.
  */
-import { fmtDay, fmtDayMonth, fmtTime, fmtWeekday, t } from '../i18n';
+import { fmtDay, fmtDayMonth, fmtTime, fmtWeekday, t, zoneName } from '../i18n';
 import { DAY, HOUR, MIN } from './invites';
 
 const startOfDay = (t: number) => {
@@ -78,4 +78,29 @@ export function shortCountdown(target: number, now: number): string {
   if (p.days > 0) return t('countdown.shortDays', { days: p.days, hours: p.hours });
   if (p.hours > 0) return t('countdown.shortHours', { hours: p.hours, minutes: pad2(p.minutes) });
   return `${pad2(p.minutes)}:${pad2(p.seconds)}`;
+}
+
+/** The time zone this phone's clock is set to. A VPN does not change it; only the phone's settings do. */
+export function deviceZone(): string {
+  try {
+    return Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
+  } catch {
+    // No Intl: compare nothing, name nothing.
+    return 'UTC';
+  }
+}
+
+/** True when the same moment reads differently on the clock in the two zones. */
+export const zonesDiffer = (at: number, a: string, b: string): boolean =>
+  fmtDay(at, a) + fmtTime(at, a) !== fmtDay(at, b) + fmtTime(at, b);
+
+/**
+ * The plan's time on someone else's clock, named, when it is not the time on mine (WP9): on a
+ * video or game plan, the other person's city; on a plan in a place, that place's city, for a
+ * phone that is set to another zone. Null when both clocks agree, which is nearly always.
+ */
+export function zoneNote(at: number, zone: string | undefined, label: { name: string } | { city: string }, mine = deviceZone()): string | null {
+  if (!zone || !zonesDiffer(at, mine, zone)) return null;
+  const vars = { time: fmtTime(at, zone), zone: zoneName(zone, at) };
+  return 'name' in label ? t('zones.forThem', { ...vars, name: label.name }) : t('zones.inCity', { ...vars, city: label.city });
 }

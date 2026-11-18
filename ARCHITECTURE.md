@@ -195,8 +195,8 @@ the app and the mock, and one table of lines is run through both copies. The che
 cases only: a made-up code still gets through until lines are reviewed before anyone sees them
 (`docs/build-plan.md`, WP1).
 
-**Where, and with what consent.** `countries` and `cities` are an allow-list (India and Mumbai open);
-a profile's city must be open, and a first profile needs the request's country (`cf-ipcountry`, when
+**Where, and with what consent.** `countries` and `cities` are an allow-list (India open, with twenty cities: the eight metros and twelve tier-2 cities, D083);
+a profile's city must be open, and a move to another city needs an area from its list and comes at most once in 7 days (PL105; `profiles.city_changed_at`, server-only). Discover is per city, so it follows a move; so do the places offered in an ask. A first profile needs the request's country (`cf-ipcountry`, when
 present; the live test passes with a one-run token, D063) to be open and four consents at the current `legal_version`: 18+, terms, privacy, and the
 separate consent to use dating preferences. `privacy_requests` holds questions and appeals
 (`file_privacy_request`); `my_moderation` shows a person what was done to their account and why;
@@ -422,8 +422,9 @@ what the server did (`OPERATIONS.md`, "Trace a bug").
   for the app itself. The live backend maps on the code, never on message text; the mock and the
   shared rules in `src/domain/invites.ts` throw the same codes. A server error that is not one of
   ours is shown as `PC002` and its text is dropped, because it can quote row values.
-- **Trace ids.** The live backend sends a fresh 8-character id as `x-trace-id` with each call to
-  a database function. Triggers copy it onto every `events` row and every `notifications` row the
+- **Trace ids.** The live backend sends an 8-character id as `x-trace-id` with each call to a
+  database function. One tap calls one Backend method, and every call inside it shares one id
+  (`src/services/traceScope.ts`), so a lock that writes and then re-reads leaves one trail. Triggers copy it onto every `events` row and every `notifications` row the
   call causes, and the push function logs it. The header is accepted only in that exact shape.
 - **On screen.** `ErrorText` shows the words and, under them, `CODE · TRACE`. `src/lib/report.ts`
   is the one place a shown error goes: it is remembered for diagnostics and sent to
@@ -474,7 +475,9 @@ are words (report reasons, kinds of date, ask tones, free windows, tag groups) c
 from `src/i18n`; the English is `src/i18n/en.ts`, and a new language is a file of the same shape
 in which any key left out shows in English. Error messages are looked up by code, so the SQL
 keeps the English and the app shows the phone's language. Dates, times and numbers use the
-phone's locale through `Intl`, plan times are shown in the viewer's own time zone, and distance
+phone's locale through `Intl`, plan times are shown in the viewer's own time zone (when another
+clock reads differently, the plan names it too: the other person's on a call, the place's on a
+date in person, from the city's `time_zone`, never from where a phone seems to be), and distance
 is in miles where the locale's country uses them (US, UK, Liberia, Myanmar). The language comes
 from the phone, or `?lang=` in a browser. On a phone a right-to-left language flips the layout
 from the next start; in a browser `<html>` gets `lang` and `dir`. Two pseudo-languages exist only
@@ -484,7 +487,10 @@ words written straight into a screen.
 
 Catalogue content is not in the strings files: idea titles and openers, profile tags, ask lines
 and venues are rows in SQL tables, and are translated per region by a native speaker as each
-region opens (WP9). Stored values stay as they were written: the place on a remote ask, and the
+region opens (WP9). A local idea (cutting chai, pani puri) lists the countries it is offered in
+(`ideas.countries`, null for everywhere): onboarding and Me offer only what is on offer where the
+person lives, and `save_profile` refuses a newly picked one from elsewhere (PL104) while keeping
+any already saved. Stored values stay as they were written: the place on a remote ask, and the
 picked ask line, are read by the other person as sent.
 
 ### On the phone

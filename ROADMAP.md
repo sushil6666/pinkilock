@@ -75,6 +75,10 @@ someone, and delete their account, on both platforms, against the production pro
   from lists; contact apps by region; a country picker for phone sign-in; every word on screen in a
   strings file, with dates, times, numbers and distance in the phone's own format, and right to left
   wired. A real second language waits for a native speaker.
+- [x] **Twenty cities across India** (D083): the eight metros (Mumbai, Delhi NCR, Bengaluru,
+  Hyderabad, Chennai, Kolkata, Pune, Ahmedabad) and twelve tier-2 cities, each with its areas and
+  busy public places to meet (237 in all). People pick their city at sign-up and can move on Me,
+  once a week. The place lists should be checked by someone who lives in each city.
 
 - Photo upload to Supabase Storage, with extra photos still hidden until a kept promise.
 - The video room named in video plans.

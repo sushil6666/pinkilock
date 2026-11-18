@@ -17,6 +17,7 @@ import type { Account, BlockedPerson, CodeKind, ContactCheck, Invite, MyContact,
 import { log, quiet } from '../../lib/log';
 import type { Backend, BackendEvent, Changes, Notice, Snapshot } from '../backend';
 import { t } from '../../i18n';
+import { activeTrace, tracedAll } from '../traceScope';
 
 type Row = Record<string, any>;
 
@@ -106,17 +107,18 @@ export function createSupabaseBackend(url: string, anonKey: string, storage: Ses
   let meId = '';
   let live = false;
 
-  function check<T>(res: { data: T | null; error: { message: string; code?: string } | null }, trace: string = newTrace()): T {
+  function check<T>(res: { data: T | null; error: { message: string; code?: string } | null }, trace: string = activeTrace() ?? newTrace()): T {
     if (res.error) throw fromServer(res.error, trace);
     return res.data as T;
   }
 
   /**
-   * One call to a database function, with a fresh trace id in the `x-trace-id` header. The server
-   * stamps it on every event and push the call causes; a failure carries the same id.
+   * One call to a database function, with the tap's trace id in the `x-trace-id` header (a fresh one
+   * outside a tap). The server stamps it on every event and push the call causes; a failure carries
+   * the same id.
    */
   async function rpc<T = unknown>(fn: string, args?: Row): Promise<T> {
-    const trace = newTrace();
+    const trace = activeTrace() ?? newTrace();
     log.info('rpc', { fn, trace });
     const res = await db.rpc(fn, args).setHeader('x-trace-id', trace);
     return check(res as { data: T | null; error: { message: string; code?: string } | null }, trace);
@@ -383,7 +385,8 @@ export function createSupabaseBackend(url: string, anonKey: string, storage: Ses
     }
   }
 
-  return {
+  // Each method is one tap: every server call inside it shares one trace id.
+  return tracedAll({
     kind: 'supabase',
 
     boot: snapshot,
@@ -412,6 +415,7 @@ export function createSupabaseBackend(url: string, anonKey: string, storage: Ses
         p_pronouns: patch.pronouns ?? now.pronouns, p_tagline: patch.tagline ?? now.tagline,
         p_vibes: patch.vibes ?? now.vibes, p_idea_ids: patch.ideaIds ?? now.ideaIds,
         p_contact_kind: hasContact ? patch.contactKind : null, p_contact_handle: hasContact ? patch.contactHandle : null,
+        p_city: patch.city ?? null,
       });
       const changes: Changes = {};
       // The server stores the handle in its own form and clears the tick on a new one: read it back.
@@ -693,5 +697,5 @@ export function createSupabaseBackend(url: string, anonKey: string, storage: Ses
     async demoBringForward() {
       throw new AppError('PC004', 'Prototype tools only work on mock data.');
     },
-  };
+  });
 }

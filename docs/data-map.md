@@ -9,7 +9,7 @@ a processor or a kind of data updates this file in the same pull request.
 | Data | Where | Kept | Who can read it |
 | --- | --- | --- | --- |
 | Account: id, email or phone, sign-in sessions | Supabase Auth (`auth.users`) | Until the account is deleted; unfinished accounts 30 days | The person; operators |
-| Card: first name, age, city, country, area, pronouns, line, tags, date ideas | `profiles` | Until deleted | The person; people they share a plan with; up to 200 people a day through Discover |
+| Card: first name, age, city, country, area, pronouns, line, tags, date ideas (and, for the server only, when the name, line and city last changed) | `profiles` | Until deleted | The person; people they share a plan with; up to 200 people a day through Discover |
 | Contact handle (and later, private photos) | `profile_private` | Until deleted | The person; someone they kept a promise with |
 | Plans: who (two people, or four on a double), idea, time, place, line, status, pinkies, check-ins | `invites` | Place and line cleared 90 days after the plan ends | The two people on it |
 | Behaviour log (asks, locks, check-ins, bails) | `events` | Kept; a deleted account's rows lose its id | No client; the analytics worker |
@@ -24,6 +24,7 @@ a processor or a kind of data updates this file in the same pull request.
 | Friend vouches: who vouched, the phrases | `vouches` | Until either account is deleted | No client; the card shows a count and the top phrases |
 | Duo: who my duo partner is, and the links made to join | `duos`, `private.duo_links` | Until left, blocked or deleted | The two people in the duo; others see only that a card has one |
 | Check-in codes | `private.checkin_codes` | Deleted when the plan ends | The person (their own code) |
+| Flags on a contact handle: who flagged whose handle, on which plan, and when the handle was verified | `contact_reports`, `events` (`bad_contact`), `profile_private.contact_verified_at` | Until either account is deleted | The flagged person sees a count only (`my_contact_flags`). The flagger's export lists the flags they made; the flagged person's export leaves them out, since a plan names the flagger |
 
 Dating preferences can reveal sexual orientation (special-category data under GDPR, sensitive under
 other laws): they are processed only with the separate `sensitive` consent.

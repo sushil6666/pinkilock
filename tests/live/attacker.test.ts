@@ -208,3 +208,12 @@ if (process.env.E2E_MAILBOX) {
     assert.equal(res.error, null, `the answer gives it away: ${res.error?.message}`);
   });
 }
+
+// Last, because it moves X out of Y's city (D083).
+test('moving city: an area from the new city, once a week, and no direct writes', async () => {
+  await assert.rejects(x.backend.updateMe({ city: 'Delhi NCR' }), (e: unknown) => e instanceof AppError && e.code === 'PL095', 'a Mumbai area following X to Delhi NCR');
+  const moved = await x.backend.updateMe({ city: 'Delhi NCR', area: 'Saket' });
+  assert.equal(moved.me?.city, 'Delhi NCR', 'the first move is free');
+  await assert.rejects(x.backend.updateMe({ city: 'Pune', area: 'Koregaon Park' }), (e: unknown) => e instanceof AppError && e.code === 'PL105', 'a second move in the same week');
+  assert.ok((await raw.from('profiles').update({ city_changed_at: null }).eq('id', x.id).select('id')).error, 'a direct write to the move clock');
+});

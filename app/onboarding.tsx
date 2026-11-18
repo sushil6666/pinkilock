@@ -17,16 +17,16 @@ import { inputStyle } from '@/components/ui/input';
 import { HoldButton } from '@/components/ui/HoldButton';
 import { Screen } from '@/components/ui/Screen';
 import { T } from '@/components/ui/T';
-import { IDEAS, KIND_LABEL, KIND_ORDER, TAGLINE_PROMPTS, VIBE_GROUPS } from '@/domain/ideas';
+import { KIND_LABEL, KIND_ORDER, TAGLINE_PROMPTS, VIBE_GROUPS, ideasFor } from '@/domain/ideas';
 import type { ContactKind } from '@/domain/types';
 import { haptic } from '@/lib/haptics';
 import { useStore } from '@/state/store';
 import { color, space, type } from '@/theme/tokens';
 import { ErrorText } from '@/components/ui/ErrorText';
 import { shown } from '@/lib/report';
-import { AREA_MAX, NAME_MAX, PRONOUN_OPTIONS, handleOk, looksLikeContact, nameOk } from '@/domain/profile';
-import { ALL_CONSENTS, COUNTRIES, DIAL_CODES, openCities } from '@/domain/countries';
-import { areasIn, matchAreas } from '@/domain/areas';
+import { NAME_MAX, PRONOUN_OPTIONS, handleOk, looksLikeContact, nameOk } from '@/domain/profile';
+import { ALL_CONSENTS, DIAL_CODES, openCities } from '@/domain/countries';
+import { WherePicker, areaOk } from '@/components/WherePicker';
 import { contactKindOf, contactKindsFor } from '@/domain/contacts';
 import { t } from '@/i18n';
 
@@ -40,7 +40,6 @@ export default function Onboarding() {
   // Where: an open city, then an area picked from its list (typed only where a city has no list yet).
   const [city, setCity] = useState(openCities()[0]?.name ?? '');
   const [area, setArea] = useState('');
-  const [areaQuery, setAreaQuery] = useState('');
   const [pronouns, setPronouns] = useState('');
   const [ideaIds, setIdeaIds] = useState<string[]>([]);
   const [vibes, setVibes] = useState<string[]>([]);
@@ -56,16 +55,13 @@ export default function Onboarding() {
   const wide = step === 0 && width >= 960;
 
   const country = openCities().find((c) => c.name === city)?.country ?? '';
-  const listed = areasIn(city).length > 0;
-  const matches = matchAreas(city, areaQuery).slice(0, areaQuery.trim() ? 12 : 8);
-  const areaChips = area && listed && !matches.includes(area) ? [area, ...matches.slice(0, matches.length - 1)] : matches;
   const contactKinds = contactKindsFor(country);
   const phoneKind = !!contactKindOf(contactKind)?.phone;
   const ageNum = Number(age);
   const under18 = age.length >= 2 && ageNum < 18;
   const canNext = [
     true,
-    nameOk(name) && ageNum >= 18 && ageNum <= 99 && (listed ? areasIn(city).includes(area) : area.trim().length >= 2 && !looksLikeContact(area)),
+    nameOk(name) && ageNum >= 18 && ageNum <= 99 && areaOk(city, area),
     ideaIds.length >= 3,
     handleOk(contactKind, handle, country) && !looksLikeContact(tagline),
     true,
@@ -115,31 +111,12 @@ export default function Onboarding() {
               <TextInput value={age} onChangeText={(v) => setAge(v.replace(/[^0-9]/g, ''))} placeholder="21" placeholderTextColor={color.textMute} keyboardType="number-pad" maxLength={2} style={inputStyle} accessibilityLabel={t('onboarding.age')} />
             </View>
             {under18 && <T v="caption" c={color.flare}>{t('onboarding.adultsOnly')}</T>}
-            <View style={{ gap: space.sm }}>
-              <T v="label" c={color.textDim}>{t('onboarding.city')}</T>
-              <View style={styles.wrap}>
-                {openCities().map((c) => (
-                  <Chip key={c.name} label={c.name} sub={COUNTRIES.find((k) => k.code === c.country)?.name} selected={city === c.name}
-                    onPress={() => { setCity(c.name); setArea(''); setAreaQuery(''); }} />
-                ))}
-              </View>
-              <T v="caption" c={color.textDim}>{t('onboarding.oneCity')}</T>
-            </View>
-            <View style={{ gap: space.sm }}>
-              <T v="label" c={color.textDim}>{t('onboarding.area')}</T>
-              {listed ? (
-                <>
-                  <TextInput value={areaQuery} onChangeText={setAreaQuery} placeholder={t('onboarding.areaSearch')} placeholderTextColor={color.textMute} maxLength={AREA_MAX} autoCapitalize="words" autoCorrect={false} style={inputStyle} accessibilityLabel={t('onboarding.area')} />
-                  <View style={styles.wrap}>
-                    {areaChips.map((a) => <Chip key={a} label={a} selected={area === a} onPress={() => setArea(area === a ? '' : a)} />)}
-                  </View>
-                  {matches.length === 0 && <T v="caption" c={color.textDim}>{t('onboarding.noArea')}</T>}
-                </>
-              ) : (
-                <TextInput value={area} onChangeText={setArea} placeholder={t('onboarding.neighbourhood')} placeholderTextColor={color.textMute} maxLength={AREA_MAX} autoCapitalize="words" style={inputStyle} accessibilityLabel={t('onboarding.area')} />
-              )}
-              {!listed && looksLikeContact(area) && <T v="caption" c={color.flare}>{t('errors.PL065')}</T>}
-            </View>
+            <WherePicker city={city} area={area} cityNote={t('onboarding.oneCity')} onArea={setArea} onCity={(name) => {
+              // Ideas are offered by country (WP9): keep only the picks the new city's country has.
+              const to = openCities().find((c) => c.name === name)?.country ?? '';
+              setCity(name);
+              setIdeaIds(ideaIds.filter((id) => ideasFor(to).some((i) => i.id === id)));
+            }} />
             <View style={{ gap: space.sm }}>
               <T v="label" c={color.textDim}>{t('onboarding.pronouns')}</T>
               <View style={styles.wrap}>
@@ -158,7 +135,7 @@ export default function Onboarding() {
             {KIND_ORDER.map((kind) => (
               <View key={kind} style={{ gap: space.sm }}>
                 <T v="label" c={color.textDim}>{KIND_LABEL[kind]}</T>
-                {IDEAS.filter((idea) => idea.kind === kind).map((idea) => (
+                {ideasFor(country).filter((idea) => idea.kind === kind).map((idea) => (
                   <IdeaChip key={idea.id} idea={idea} selected={ideaIds.includes(idea.id)} onPress={() => toggle(ideaIds, setIdeaIds, idea.id, 6)} />
                 ))}
               </View>

@@ -185,6 +185,13 @@ export const en = {
     haveAccount: 'I already have an account',
   },
 
+  /** Picking a city and an area, at sign-up and on Me. */
+  where: {
+    metros: 'Metros',
+    more: 'More cities',
+    areaIn: 'Your area in {city}',
+  },
+
   pinky: {
     slide: 'Slide your pinky in to lock this plan',
     slideHint: 'Double tap to lock without sliding',
@@ -227,7 +234,7 @@ export const en = {
     placesEyebrow: 'Places',
     placesTitle: 'Meet somewhere busy and public.',
     placesBody: 'In-person plans are picked from a list of well-known spots: promenades, parks, markets and landmarks. Nobody has to suggest their place, and nobody can.',
-    citiesNow: { one: '{cities} for now, {count} place and growing.', other: '{cities} for now, {count} places and growing.' },
+    citiesNow: { one: '{count} place in {cityCount} cities across India, and growing: {cities}.', other: '{count} places in {cityCount} cities across India, and growing: {cities}.' },
     faqEyebrow: 'Questions',
     faqTitle: 'Fair questions.',
     q1: 'What is a micro-date?',
@@ -258,6 +265,11 @@ export const en = {
     lineRejected: '"{line}" was not accepted: it reads like a way to reach you outside the app.',
     lineChecking: '"{line}" is being checked before others see it.',
     changeTags: 'Change tags',
+    whereTitle: 'Where I am',
+    move: 'Move',
+    moveBody: 'Pick your new city and area. Discover and places to meet switch to it. You can move once a week.',
+    moveSave: 'Move to {city}',
+    moved: 'Moved. Discover now shows people in {city}.',
     upFor: 'I am up for  /  tap to change',
     askVouch: 'Ask a friend to vouch for you',
     vouchCopied: 'Link copied. Send it to a friend.',
@@ -323,9 +335,9 @@ export const en = {
     age: 'Age',
     adultsOnly: 'Pinkilock is for adults only. You need to be 18 or older.',
     city: 'Your city',
-    oneCity: 'Pinkilock opens one city at a time. More are coming.',
+    oneCity: 'Open in twenty cities across India. Discover and places to meet follow your city.',
     area: 'Your area',
-    areaSearch: 'Search, like Bandra',
+    areaSearch: 'Search your area',
     noArea: 'No area by that name. Pick the nearest one.',
     neighbourhood: 'Your neighbourhood',
     pronouns: 'Pronouns (optional)',
@@ -590,10 +602,10 @@ export const en = {
     title: 'Discover',
     emptyTitle: "That's\neveryone\nfor now.",
     emptyBusy: { one: 'No infinite deck here. You have {count} plan in motion. Go keep that promise.', other: 'No infinite deck here. You have {count} plans in motion. Go keep those promises.' },
-    emptyNew: 'No infinite deck here. New people appear here as they join near you.',
+    emptyNew: 'No infinite deck here. New people appear here as they join in {city}.',
     lookAgain: { one: 'Look again at {count} you passed', other: 'Look again at {count} you passed' },
     seeAsks: 'See your asks',
-    nearby: { one: '{count} nearby', other: '{count} nearby' },
+    nearby: { one: '{count} in {city}', other: '{count} in {city}' },
     duoAsk: 'Has a duo: ask them out on a double',
     duoOpen: 'Has a duo: open to doubles',
     upFor: 'Up for  /  tap one to ask',
@@ -912,5 +924,11 @@ export const en = {
     flagConfirm: 'Tell us {name}\'s handle did not work? They get 7 days to verify or fix it. If they do not, it counts against their Trust Score. They never learn who flagged it.',
     flagYes: 'Yes, it did not work',
     flagged: 'Thanks. We have noted it.',
+  },
+
+  /** A plan's time on another clock, when it differs from this phone's. */
+  zones: {
+    forThem: '{time} {zone} for {name}',
+    inCity: '{time} {zone} in {city}',
   },
 };

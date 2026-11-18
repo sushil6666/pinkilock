@@ -6,8 +6,9 @@ import { Feather } from '@expo/vector-icons';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { ideaOf, KIND_LABEL } from '../domain/ideas';
 import { friendOn, isDouble, otherId } from '../domain/invites';
-import { usePerson } from '../state/store';
-import { shortCountdown, whenLabel } from '../domain/time';
+import { usePerson, useStore } from '../state/store';
+import { shortCountdown, whenLabel, zoneNote } from '../domain/time';
+import { zoneOfCity } from '../domain/countries';
 import type { Invite, Profile } from '../domain/types';
 import { elevation } from '../theme/elevation';
 import { color, radius, space } from '../theme/tokens';
@@ -76,6 +77,10 @@ export function InviteCard({ invite, meId, other, now, onPress, compact }: Props
   const who = !double ? t(invite.fromId === meId ? 'ticket.youAsked' : 'ticket.theyAsked', { name })
     : t('ticket.doubleWho', { mine: myFriend?.name ?? t('ticket.yourDuo'), name, theirs: theirFriend?.name ?? t('ticket.theirDuo') });
   const status = statusLine(invite, meId, name, now);
+  const myCity = useStore((st) => st.me?.city);
+  const zoneLine = compact ? null : idea.kind === 'irl'
+    ? zoneNote(invite.startsAt, zoneOfCity(myCity), { city: myCity ?? '' })
+    : zoneNote(invite.startsAt, zoneOfCity(other?.city), { name });
   const closed = invite.status === 'declined' || invite.status === 'expired' || invite.status === 'ended';
   const hot = status.tone === color.pink;
 
@@ -100,6 +105,12 @@ export function InviteCard({ invite, meId, other, now, onPress, compact }: Props
             <Feather name="clock" size={14} color={color.textDim} />
             <T v="caption" c={color.textDim}>{whenLabel(invite.startsAt, now)}</T>
           </View>
+          {zoneLine ? (
+            <View style={styles.meta}>
+              <Feather name="globe" size={14} color={color.textDim} />
+              <T v="caption" c={color.textDim}>{zoneLine}</T>
+            </View>
+          ) : null}
           {!compact && (
             <View style={styles.meta}>
               <Feather name={idea.kind === 'irl' ? 'map-pin' : 'smartphone'} size={14} color={color.textDim} />

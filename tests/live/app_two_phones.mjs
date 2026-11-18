@@ -63,7 +63,7 @@ const hold = async (page, name) => {
 };
 
 async function onboard(browser, who) {
-  const ctx = await browser.newContext({ viewport: SIZES[who.size], hasTouch: false });
+  const ctx = await browser.newContext({ viewport: SIZES[who.size], hasTouch: false, timezoneId: who.zone, locale: 'en-US' });
   const page = await ctx.newPage();
   page.on('pageerror', (e) => console.log(`[${who.name}] page error: ${e.message}`));
   who.page = page;
@@ -110,8 +110,9 @@ for (const [aSize, bSize] of RUNS) {
   const stamp = Date.now().toString(36).slice(-4);
   // Names are one word of letters (the server refuses anything else), so the stamp is spelled in letters.
   const letters = [...stamp].map((c) => 'abcdefghijklmnopqrstuvwxyzabcdefghij'[parseInt(c, 36)]).join('');
-  const A = { name: `Asha${letters}`, handle: `@asha_${stamp}`, size: aSize };
-  const B = { name: `Bela${letters}`, handle: `@bela_${stamp}`, size: bSize };
+  // A's phone is on Mumbai time; B's is on London time, though B lives in Mumbai too (WP9).
+  const A = { name: `Asha${letters}`, handle: `@asha_${stamp}`, size: aSize, zone: 'Asia/Kolkata' };
+  const B = { name: `Bela${letters}`, handle: `@bela_${stamp}`, size: bSize, zone: 'Europe/London' };
   try {
     await flow(A, B);
   } catch (e) {
@@ -186,6 +187,14 @@ async function flow(A, B) {
   await A.page.getByLabel(/Contact locked/).waitFor();
   if (await A.page.getByText(B.handle).count()) throw new Error("B's handle is on A's screen before the promise is kept");
   ok('locked plan shows the contact as locked, and the handle is not on the page');
+  // Time zones (WP9): the plan is at a place in Mumbai. A's clock is Mumbai's, so nothing extra; B's
+  // phone is set to London, so B also sees the time in Mumbai, named, and it is the time A sees.
+  if (await A.page.getByText(/ in Mumbai$/).count()) throw new Error('A, on Mumbai time, was shown a second clock');
+  const mumbai = (await B.page.getByText(/ in Mumbai$/).first().textContent()) ?? '';
+  const startsAt = Number(sql(`select extract(epoch from starts_at) * 1000 from public.invites where from_id = '${aId}' and to_id = '${bId}'`));
+  const there = new Intl.DateTimeFormat('en-US', { hour: 'numeric', minute: '2-digit', timeZone: 'Asia/Kolkata' }).format(startsAt);
+  if (!mumbai.startsWith(there)) throw new Error(`B's Mumbai time reads "${mumbai}", expected it to start with ${there}`);
+  ok(`B, on London time, also sees the plan in Mumbai time: "${mumbai}"`);
   await fits(A, 'the plan');
   await fits(B, 'the plan');
 

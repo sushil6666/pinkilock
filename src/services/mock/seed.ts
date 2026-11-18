@@ -1,9 +1,11 @@
 /**
- * Seed data for the mock backend: ten made-up people in Mumbai, their private reveals, and a set
+ * Seed data for the mock backend: ten made-up people (in Mumbai, or moved to the city I pick at
+ * sign-up, so Discover is never empty in the prototype), their private reveals, and a set
  * of invites in every state so each screen has something real to show on first launch.
  * All times are relative to the moment of seeding.
  */
 import { DAY, HOUR, MIN, expiryFor } from '../../domain/invites';
+import { areasIn } from '../../domain/areas';
 import type { Invite, Profile, Reveal } from '../../domain/types';
 
 export const ME_ID = 'me';
@@ -98,6 +100,13 @@ export function seedFriend(): Profile {
     tagline: 'Your plus-one for anything with snacks.', vibes: ['foodie', 'yapper'], ideaIds: ['boba_run', 'momo_stop', 'karaoke_duet'],
     palette: ['#7FD3FF', '#123A5C'], glyph: '🫶', kept: 4, flaked: 0, photoCount: 1, hasDuo: true,
   };
+}
+
+/** A made-up person moved to another city, with an area from its list. Mumbai keeps their own. */
+export function inCity(p: Profile, city: string, i: number): Profile {
+  const areas = areasIn(city);
+  if (p.city === city || !areas.length) return { ...p, city };
+  return { ...p, city, area: areas[(i * 7) % areas.length] };
 }
 
 export function seedProfiles(): Profile[] {
