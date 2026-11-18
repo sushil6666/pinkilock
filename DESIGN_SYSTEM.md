@@ -122,6 +122,11 @@ Font scaling is allowed up to 1.3x (`maxFontSizeMultiplier`) so layouts hold on 
   cities" in a `textMute` caption, then the area search and area chips for the picked city. On Me,
   "Where I am" is a `panel` row (gold pin, "area, city", a gold Move tag) that opens the picker and a
   "Move to {city}" button.
+  On top sits a ghost "Use my location" button (crosshair icon) with a `textMute` note under it:
+  finding, found, "said no" with "Try my location again", or outside every open city, and always
+  that the location stays on the phone. Found areas show as "Nearest to you" chips. A typed name
+  with no match shows "Did you mean" chips and a gold `Tag` "Use "{area}" as my area"; a chosen
+  area of one's own shows as a chip marked "your own" (D087).
 - **Welcome**: the first screen. The pinkies, a scribbled note pointing at them, the promise in
   `mega`, and the three steps as notes on a `line` block, each tilted by a degree or so.
 - **Landing**: the same first screen in a window 960 or wider, as the website's front page, using

@@ -78,7 +78,7 @@ export const ERRORS = {
   PL092: 'Make a duo with a friend first.',
   PL093: 'They do not have a duo right now.',
   PL094: 'Wait for the other three, then seal it.',
-  PL095: 'Pick your area from the list.',
+  PL095: 'Pick an area in your new city.',
   PL096: 'Pick your pronouns from the list.',
   PL097: 'That is not an Instagram username: letters, numbers, dots and underscores, up to 30.',
   PL098: 'That is not a Snapchat username: 3 to 15, starting with a letter.',
@@ -89,6 +89,7 @@ export const ERRORS = {
   PL103: 'Their handle is verified: it was proved from that account.',
   PL104: 'Pick things that are on offer where you live.',
   PL105: 'You moved city this week. You can move again 7 days after.',
+  PL106: 'Name your area in letters: 3 to 30, up to 4 words.',
 
   PA001: 'Phone sign-in is not switched on yet.',
   PA002: 'Email sign-in is not switched on yet.',

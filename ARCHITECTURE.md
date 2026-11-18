@@ -196,7 +196,7 @@ cases only: a made-up code still gets through until lines are reviewed before an
 (`docs/build-plan.md`, WP1).
 
 **Where, and with what consent.** `countries` and `cities` are an allow-list (India open, with twenty cities: the eight metros and twelve tier-2 cities, D083);
-a profile's city must be open, and a move to another city needs an area from its list and comes at most once in 7 days (PL105; `profiles.city_changed_at`, server-only). Discover is per city, so it follows a move; so do the places offered in an ask. A first profile needs the request's country (`cf-ipcountry`, when
+a profile's city must be open, and a move to another city needs an area in the new city and comes at most once in 7 days (PL105; `profiles.city_changed_at`, server-only). Discover is per city, so it follows a move; so do the places offered in an ask. A first profile needs the request's country (`cf-ipcountry`, when
 present; the live test passes with a one-run token, D063) to be open and four consents at the current `legal_version`: 18+, terms, privacy, and the
 separate consent to use dating preferences. `privacy_requests` holds questions and appeals
 (`file_privacy_request`); `my_moderation` shows a person what was done to their account and why;
@@ -215,6 +215,20 @@ value saved before the lists existed stays valid until it changes. Onboarding as
 (an open one), and the server works out the country from it. Contact kinds are a catalogue by region
 (`contact_kinds`): a kind with no countries works everywhere, the others only where people use them.
 Phone sign-in takes the picked country's dialling code instead of assuming India.
+
+**Where I am, from the phone** (D087, migration `20261118000013_areas_by_location.sql`). Each city's
+list holds its common neighbourhoods (about 1,330 areas). "Use my location" (`src/lib/location.ts`,
+`expo-location`, once, balanced accuracy) reads the position on the device and `src/domain/nearby.ts`
+picks the nearest open city (an area within 25 km) and its nearest areas from approximate centres in
+`src/domain/areaCentres.ts`, which exist only in the app. The coordinates never leave the phone: not
+to the server, the logs or the store; only the city and area picked are saved. A denial, no location
+or a place outside every open city falls back to the lists, with a retry. Typing finds loose
+spellings and "Did you mean" names (`matchAreas`, `closeAreas`). An area off the list is allowed
+when it reads as a place (`customAreaOk` and `private.custom_area_ok`: 3 to 30 characters, a letter
+first, letters, digits and `.'-`, up to 4 words and 3 digits, nothing like a contact; PL106).
+`save_profile` counts each one by city and name only in `private.area_requests` (no person, no
+client access), so popular names can join the list in a later migration. A move cannot keep the
+old city's area (PL095).
 
 **Handles are checked, can be flagged, and can be proved** (D077, D078). `save_profile` stores a
 handle only through `private.normalize_contact` (each app's own format; `src/domain/profile.ts` is

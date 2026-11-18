@@ -79,6 +79,10 @@ someone, and delete their account, on both platforms, against the production pro
   Hyderabad, Chennai, Kolkata, Pune, Ahmedabad) and twelve tier-2 cities, each with its areas and
   busy public places to meet (237 in all). People pick their city at sign-up and can move on Me,
   once a week. The place lists should be checked by someone who lives in each city.
+- [x] **Where I am, from the phone** (D087): "Use my location" picks the city and nearest areas on
+  the device and keeps no coordinates; every city lists its common neighbourhoods (about 1,330),
+  typing suggests the nearest spellings, and anyone can name an area of their own within limits.
+  Needs a new Android build (`expo-location`).
 
 - Photo upload to Supabase Storage, with extra photos still hidden until a kept promise.
 - The video room named in video plans.
