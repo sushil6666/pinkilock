@@ -20,7 +20,8 @@ Trust Score (the behavioural version of src/domain/trust.ts):
 
     score = round(100 * (kept + 4) / (kept + penalty + 4))
     penalty = 1.0 * early bails + 1.25 * late bails (inside 2 hours of the start) + 1.5 * no-shows
-              + 1.0 * handles flagged as not working (`bad_contact`, one per person per kept plan, D077)
+              + 1.0 * handles flagged as not working (`bad_contact`, one per person per kept plan, D077;
+                written only when a flag still stands after 7 days, D079)
 
 The prior of 4 means a new person starts at 100 and one early bail costs 20 points. Not showing
 up costs more than cancelling late, which costs more than cancelling with notice.
