@@ -25,6 +25,7 @@ import { shown } from '@/lib/report';
 import { answersIn } from '@/domain/answers';
 import { Vouches } from '@/components/Vouches';
 import { fmtDistance, t } from '@/i18n';
+import { cardKm } from '@/domain/nearby';
 
 export default function ProfileScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -77,7 +78,7 @@ export default function ProfileScreen() {
         <Portrait name={person.name} palette={person.palette} glyph={person.glyph} fill style={StyleSheet.absoluteFill} />
         <View style={{ padding: space.lg, gap: 4 }}>
           <T v="display" numberOfLines={1} adjustsFontSizeToFit>{t('profile.nameAge', { name: person.name, age: person.age })}</T>
-          <T v="caption" c={color.textDim}>{[t('profile.areaCity', { area: person.area, city: person.city }), person.distanceKm > 0 ? fmtDistance(person.distanceKm, me.country) : '', person.pronouns].filter(Boolean).join('  /  ')}</T>
+          <T v="caption" c={color.textDim}>{[t('profile.areaCity', { area: person.area, city: person.city }), cardKm(me, person) ? fmtDistance(cardKm(me, person)!, me.country) : '', person.pronouns].filter(Boolean).join('  /  ')}</T>
         </View>
       </View>
       } right={

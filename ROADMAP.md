@@ -94,4 +94,6 @@ someone, and delete their account, on both platforms, against the production pro
 - [x] **Calendar export**: "Add to calendar" on a locked plan makes an `.ics` file on the phone and
   hands it over (a download in a browser, the share sheet on a phone). It reaches phones with the next
   binary, since it adds `expo-sharing`; older builds hide the button.
-- Distance in live mode.
+- [x] **Distance in live mode** (D089): a card shows how far apart two people's areas are, in whole
+  kilometres (or miles by the profile's country), from the area centres that "Use my location"
+  brought. Nothing is shown for another city, the same area, or an area of someone's own.

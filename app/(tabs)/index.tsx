@@ -26,6 +26,7 @@ import { color, radius, space } from '@/theme/tokens';
 import { answersIn } from '@/domain/answers';
 import { Vouches } from '@/components/Vouches';
 import { fmtDistance, t } from '@/i18n';
+import { cardKm } from '@/domain/nearby';
 
 export default function Discover() {
   const me = useStore((s) => s.me);
@@ -99,7 +100,7 @@ export default function Discover() {
             <T v="display" numberOfLines={1} adjustsFontSizeToFit>{t('profile.nameAge', { name: person.name, age: person.age })}</T>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
               <Feather name="map-pin" size={14} color={color.textDim} />
-              <T v="caption" c={color.textDim}>{[person.area, person.distanceKm > 0 ? fmtDistance(person.distanceKm, me.country) : '', person.pronouns].filter(Boolean).join('  /  ')}</T>
+              <T v="caption" c={color.textDim}>{[person.area, cardKm(me, person) ? fmtDistance(cardKm(me, person)!, me.country) : '', person.pronouns].filter(Boolean).join('  /  ')}</T>
             </View>
             {person.hasDuo ? (
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>

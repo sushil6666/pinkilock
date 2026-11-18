@@ -38,3 +38,22 @@ export function nearestCity(here: Spot): string | null {
 export function nearestAreas(city: string, here: Spot, n = 4): string[] {
   return areasOf(city).map((a) => ({ name: a.name, d: km(here, a) })).sort((x, y) => x.d - y.d).slice(0, n).map((x) => x.name);
 }
+
+/**
+ * How far apart two people's areas are, in whole kilometres, for a card ("Distance in live mode").
+ * From the areas' rough centres, so it is never finer than a kilometre and never says where anyone
+ * actually is. Null when the two are in different cities, in the same area, or either named an
+ * area of their own that has no centre: then a card shows no distance at all rather than a guess.
+ */
+export function areaKm(a: { city?: string | null; area: string }, b: { city?: string | null; area: string }): number | null {
+  if (!a.city || a.city !== b.city || a.area === b.area) return null;
+  const from = AREA_CENTRES[a.city]?.[a.area];
+  const to = AREA_CENTRES[b.city]?.[b.area];
+  if (!from || !to) return null;
+  return Math.max(1, Math.round(km({ lat: from[0], lng: from[1] }, { lat: to[0], lng: to[1] })));
+}
+
+/** The distance a card shows: from the areas when both are known, else what the backend gave (the mock's made-up people). */
+export function cardKm(me: { city?: string | null; area: string }, person: { city?: string | null; area: string; distanceKm: number }): number | null {
+  return areaKm(me, person) ?? (person.distanceKm > 0 ? person.distanceKm : null);
+}
