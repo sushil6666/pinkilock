@@ -216,6 +216,16 @@ value saved before the lists existed stays valid until it changes. Onboarding as
 (`contact_kinds`): a kind with no countries works everywhere, the others only where people use them.
 Phone sign-in takes the picked country's dialling code instead of assuming India.
 
+**Handles are checked, can be flagged, and can be proved** (D077, D078). `save_profile` stores a
+handle only through `private.normalize_contact` (each app's own format; `src/domain/profile.ts` is
+the app's copy, `HANDLE_CASES` the shared test table). After a kept plan, `report_bad_contact`
+lets someone the handle was revealed to flag it within a week, once per plan, into
+`contact_reports` (no client reads it) and as a `bad_contact` event that the trust pipeline counts
+like an early bail; `my_contact_flags` tells the owner how many, never who. A proof is a code from
+`start_contact_check` sent from that account to Pinkilock on WhatsApp or Instagram: Meta calls the
+`contact-verify` Edge Function (signature checked), which asks `confirm_contact_code` (service role
+only) to set `profile_private.contact_verified_at`. A new handle clears it.
+
 **Lines are picked or reviewed.** An ask's line must be one of `ask_lines` (the app's ready-made
 lines) or none. The one free text, the profile line, can change once a week (the name once a
 month), and with review on it waits in `private.line_reviews` while the card keeps the last

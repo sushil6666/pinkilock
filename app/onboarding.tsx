@@ -12,6 +12,7 @@ import { Welcome } from '@/components/Welcome';
 import { Button } from '@/components/ui/Button';
 import { Chip, Tag } from '@/components/ui/Chip';
 import { IdeaChip } from '@/components/IdeaChip';
+import { HandlePreview } from '@/components/ContactCheck';
 import { inputStyle } from '@/components/ui/input';
 import { HoldButton } from '@/components/ui/HoldButton';
 import { Screen } from '@/components/ui/Screen';
@@ -23,7 +24,7 @@ import { useStore } from '@/state/store';
 import { color, space, type } from '@/theme/tokens';
 import { ErrorText } from '@/components/ui/ErrorText';
 import { shown } from '@/lib/report';
-import { AREA_MAX, NAME_MAX, PRONOUN_OPTIONS, looksLikeContact, nameOk } from '@/domain/profile';
+import { AREA_MAX, NAME_MAX, PRONOUN_OPTIONS, handleOk, looksLikeContact, nameOk } from '@/domain/profile';
 import { ALL_CONSENTS, COUNTRIES, DIAL_CODES, openCities } from '@/domain/countries';
 import { areasIn, matchAreas } from '@/domain/areas';
 import { contactKindOf, contactKindsFor } from '@/domain/contacts';
@@ -66,7 +67,7 @@ export default function Onboarding() {
     true,
     nameOk(name) && ageNum >= 18 && ageNum <= 99 && (listed ? areasIn(city).includes(area) : area.trim().length >= 2 && !looksLikeContact(area)),
     ideaIds.length >= 3,
-    handle.trim().length >= 2 && !looksLikeContact(tagline),
+    handleOk(contactKind, handle, country) && !looksLikeContact(tagline),
     true,
   ][step];
 
@@ -192,6 +193,7 @@ export default function Onboarding() {
                 {contactKinds.map((k) => <Chip key={k.kind} label={k.kind} selected={contactKind === k.kind} onPress={() => setContactKind(k.kind as ContactKind)} />)}
               </View>
               <TextInput value={handle} onChangeText={setHandle} placeholder={phoneKind ? t('onboarding.phonePlaceholder', { dial: DIAL_CODES[country] ?? '' }) : t('onboarding.handlePlaceholder')} placeholderTextColor={color.textMute} maxLength={40} autoCapitalize="none" autoCorrect={false} keyboardType={phoneKind ? 'phone-pad' : 'default'} style={inputStyle} accessibilityLabel={t('onboarding.handleLabel', { kind: contactKind })} />
+              <HandlePreview kind={contactKind} handle={handle} country={country} />
               <T v="caption" c={color.textDim}>{t('onboarding.handleHidden')}</T>
             </View>
           </>

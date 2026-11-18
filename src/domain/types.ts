@@ -53,6 +53,8 @@ export interface Reveal {
   profileId: string;
   contactKind: ContactKind;
   contactHandle: string;
+  /** They proved the handle is theirs by sending a code from it (D078). */
+  contactVerified?: boolean;
   /** Captions stand in for photos in the prototype. */
   photos: { caption: string; palette: [string, string]; glyph: string }[];
 }
@@ -118,6 +120,8 @@ export interface OnboardingInput {
 export interface MyContact {
   kind: ContactKind;
   handle: string;
+  /** Proved by sending a code from it (D078). A new handle starts unproved. */
+  verified?: boolean;
 }
 
 /** Someone I blocked, for the unblock list. Who blocked me is never known to the app. */
@@ -156,3 +160,12 @@ export interface Account {
 export type CodeKind = 'phone' | 'email';
 /** `link` adds the address to the person signed in; `sign_in` gets back into an existing account. */
 export type CodeMode = 'link' | 'sign_in';
+
+/** A code to send from my own account to prove my handle (D078), and where to send it. */
+export interface ContactCheck {
+  code: string;
+  kind: ContactKind;
+  /** Pinkilock's WhatsApp number (digits) or Instagram username. */
+  to: string;
+  verified: boolean;
+}

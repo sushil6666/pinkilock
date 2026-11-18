@@ -79,7 +79,7 @@ export function checkProfile(
 }
 
 /**
- * A contact handle in its stored form, or the coded error the server gives (D076). The same rules
+ * A contact handle in its stored form, or the coded error the server gives (D077). The same rules
  * as private.normalize_contact in supabase/migrations/20261118000004_contact_checks.sql; HANDLE_CASES
  * below runs through both.
  *   Instagram  1 to 30 of a-z 0-9 . _ ; no dot first or last, no two dots together. "@name".
@@ -129,6 +129,16 @@ export function checkContact(kind: string, handle: string, country = 'IN'): stri
   return normalizeContact(kind, handle);
 }
 
+/** True when this handle would be saved (the form's Next button). */
+export function handleOk(kind: string, handle: string, country = 'IN'): boolean {
+  try {
+    checkContact(kind, handle, country);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 /** Where "Check it" opens, so the person sees the account others will get. Null for apps with no web link. */
 export function contactLink(kind: string, stored: string): string | null {
   if (kind === 'Instagram') return `https://instagram.com/${stored.replace(/^@/, '')}`;
@@ -138,7 +148,7 @@ export function contactLink(kind: string, stored: string): string | null {
   return null;
 }
 
-/** The kinds a handle can be proved for (D077): the ones Meta sends us messages from. */
+/** The kinds a handle can be proved for (D078): the ones Meta sends us messages from. */
 export const PROVABLE_KINDS = ['WhatsApp', 'Instagram'];
 
 /** Where a proof code goes: a WhatsApp chat with the code typed in, or the Instagram account's DMs. */

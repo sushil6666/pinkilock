@@ -14,7 +14,7 @@ import type { BlockedPerson, CodeKind, Invite, MyContact, NewInvite, OnboardingI
 import { quiet } from '../../lib/log';
 import type { Backend, BackendEvent, Changes, ClientErrorReport, Notice, Snapshot } from '../backend';
 import { ALWAYS_PASSES, ME_ID, SEED_DUOS, SEED_ME_RECORD, seedFriend, seedInvites, seedProfiles, seedReveals } from './seed';
-import { checkAsk, checkContact, checkProfile } from '../../domain/profile';
+import { PROVABLE_KINDS, checkAsk, checkContact, checkProfile } from '../../domain/profile';
 import { venueOf, venuePlace } from '../../domain/venues';
 import { ALL_CONSENTS, CITIES, openCities } from '../../domain/countries';
 
@@ -68,6 +68,9 @@ export function createMockBackend(): Backend {
   const duoLinks: { token: string; at: number }[] = [];
   let db: Db | null = null;
   const reveals = seedReveals();
+  /** Flags I raised, by invite and person. The made-up people never flag my handle. */
+  const flagged = new Set<string>();
+  let proofTimer: ReturnType<typeof setTimeout> | null = null;
   const listeners = new Set<(e: BackendEvent) => void>();
   let timer: ReturnType<typeof setInterval> | null = null;
 
@@ -277,11 +280,11 @@ export function createMockBackend(): Backend {
       const city = input.city ?? 'Mumbai';
       if (!openCities().some((c) => c.name === city)) fail('PL076');
       checkProfile(input, city);
-      checkContact(input.contactKind, input.contactHandle, cityCountry(city));
+      const handle = checkContact(input.contactKind, input.contactHandle, cityCountry(city));
       const d = await load();
       await wait(LATENCY);
       d.me = seedFor(d, input);
-      d.myContact = { kind: input.contactKind, handle: input.contactHandle };
+      d.myContact = { kind: input.contactKind, handle, verified: false };
       d.invites = seedInvites(Date.now());
       save();
       start();
@@ -299,9 +302,12 @@ export function createMockBackend(): Backend {
         if (next.tagline !== d.me.tagline && (changed.tagline ?? 0) > now - 7 * rules.DAY) fail('PL071');
         if (next.name !== d.me.name) changed.name = now;
         if (next.tagline !== d.me.tagline) changed.tagline = now;
-        if (contactKind && contactHandle) checkContact(contactKind, contactHandle, d.me.country ?? 'IN');
+        const handle = contactKind && contactHandle ? checkContact(contactKind, contactHandle, d.me.country ?? 'IN') : null;
         d.me = next;
-        if (contactKind && contactHandle) d.myContact = { kind: contactKind, handle: contactHandle };
+        if (contactKind && handle) {
+          const same = d.myContact?.kind === contactKind && d.myContact.handle === handle;
+          d.myContact = { kind: contactKind, handle, verified: same ? !!d.myContact?.verified : false };
+        }
         return { me: d.me, myContact: d.myContact ?? undefined };
       }),
 
@@ -493,6 +499,42 @@ export function createMockBackend(): Backend {
       const them = profileId ?? rules.otherId(i, ME_ID);
       if (!rules.canReveal(i, ME_ID, them) || !reveals[them]) fail('PC003');
       return reveals[them];
+    },
+
+    async reportBadContact(inviteId, ownerId) {
+      const d = await load();
+      await wait(LATENCY);
+      const i = d.invites.find((x) => x.id === inviteId);
+      if (!i || ownerId === ME_ID || !rules.canReveal(i, ME_ID, ownerId) || (i.resolvedAt ?? 0) < Date.now() - 7 * rules.DAY) fail('PL100');
+      flagged.add(`${inviteId}/${ownerId}`);
+    },
+
+    async myContactFlags() {
+      return 0;
+    },
+
+    // There is no WhatsApp here: the mock plays the person sending the code a few seconds later.
+    async startContactCheck() {
+      const d = await load();
+      await wait(LATENCY);
+      const mine = d.myContact;
+      if (!mine) fail('PL066');
+      if (!PROVABLE_KINDS.includes(mine.kind)) fail('PL101');
+      const check = { code: 'PINKY-4F2A9C', kind: mine.kind, to: mine.kind === 'WhatsApp' ? '919800000000' : 'pinkilock', verified: !!mine.verified };
+      if (!mine.verified) {
+        if (proofTimer) clearTimeout(proofTimer);
+        proofTimer = setTimeout(() => {
+          if (!d.myContact || d.myContact.handle !== mine.handle) return;
+          d.myContact = { ...d.myContact, verified: true };
+          save();
+          emit({ myContact: d.myContact }, { tone: 'volt', title: t('contact.verifiedTitle'), body: t('contact.verifiedBody', { kind: mine.kind }) });
+        }, 6000);
+      }
+      return check;
+    },
+
+    async myContactStatus() {
+      return (await load()).myContact;
     },
 
     subscribe(listener) {

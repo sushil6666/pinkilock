@@ -1,4 +1,4 @@
--- Contact handles (D076): each app has its own format rule, and a handle that did not work can be
+-- Contact handles (D077): each app has its own format rule, and a handle that did not work can be
 -- flagged after the reveal and counts against the owner's trust score.
 --
 -- 1. private.normalize_contact: the one place a handle is checked and put in its stored form.
@@ -16,7 +16,7 @@
 --    the handle was revealed to (the same rule as the private_after_kept policy), within 7 days.
 --    Each flag is a `bad_contact` event with the owner as the actor, which the trust pipeline counts.
 -- 4. my_contact_flags: how many flags the handle I have now has, so the app can tell me to fix it.
--- 5. Proving a handle is yours (D077): start_contact_check gives a code such as PINKY-4F2A9C and
+-- 5. Proving a handle is yours (D078): start_contact_check gives a code such as PINKY-4F2A9C and
 --    where to send it (Pinkilock's WhatsApp number or Instagram account, from private.config). The
 --    person sends it from the account they gave; the contact-verify Edge Function receives the
 --    message from Meta, and confirm_contact_code (service role only) marks the handle verified when

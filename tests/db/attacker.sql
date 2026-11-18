@@ -312,7 +312,7 @@ select t.ok(t.fails(format($$update invites set from_friend = %L where from_id =
 reset role;
 
 -- ---------------------------------------------------------------------------------------------
--- 7. Contact handles (D074, D075): a flag only from someone the handle was shown to, once per
+-- 7. Contact handles (D077, D078): a flag only from someone the handle was shown to, once per
 --    plan; no one reads the flags; only the server confirms a proof.
 -- ---------------------------------------------------------------------------------------------
 

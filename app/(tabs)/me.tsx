@@ -3,6 +3,7 @@
  * blocked people, export, delete) and the prototype tools.
  */
 import { Feather } from '@expo/vector-icons';
+import { ContactPanel } from '@/components/ContactCheck';
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Platform, Share, StyleSheet, View } from 'react-native';
@@ -36,7 +37,6 @@ import { t } from '@/i18n';
 
 export default function Me() {
   const me = useStore((s) => s.me);
-  const contact = useStore((s) => s.myContact);
   const updateMe = useStore((s) => s.updateMe);
   const saveAvailability = useStore((s) => s.saveAvailability);
   const duo = usePerson(useStore((s) => s.duoId) ?? undefined);
@@ -248,13 +248,7 @@ export default function Me() {
       <T v="caption" c={color.textDim} style={{ marginTop: space.sm }}>{t('me.freeBody')}</T>
 
       <T v="label" c={color.textDim} style={styles.section}>{t('me.unlocksTitle')}</T>
-      <View style={styles.panel}>
-        <Feather name="lock" size={18} color={color.pink} />
-        <View style={{ flex: 1 }}>
-          <T v="label" c={color.textMute}>{contact?.kind ?? t('reveal.contact')}</T>
-          <T v="heading">{contact?.handle ?? t('me.notSet')}</T>
-        </View>
-      </View>
+      <ContactPanel />
 
       <T v="label" c={color.textDim} style={styles.section}>{t('me.account')}</T>
       <View style={styles.panel}>

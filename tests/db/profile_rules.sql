@@ -118,7 +118,7 @@ set role anon;
 select t.ok(t.fails($$select save_profile('Anon', 25, '', '', '', '{}', array['boba_run','chai_walk','meme_duel'], 'Instagram', '@anon')$$), 'signed out, no profile can be saved');
 reset role;
 
--- Proving a handle is yours (D077). Off until the deploy says where codes go.
+-- Proving a handle is yours (D078). Off until the deploy says where codes go.
 update public.profile_private set contact_kind = 'WhatsApp', contact_handle = '+91 98765 00001' where profile_id = :'r';
 set role authenticated;
 select t.as_user(:'s');

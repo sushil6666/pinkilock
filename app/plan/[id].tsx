@@ -76,6 +76,8 @@ export default function PlanScreen() {
   const theyAreIn = invite.checkIns.includes(other.id);
   const locked = invite.status === 'locked';
   const kept = invite.status === 'kept';
+  // A handle that did not work can be flagged for a week after the plan was kept (D077).
+  const flaggable = kept && (invite.resolvedAt ?? 0) > now - 7 * 24 * 3600_000;
   const flaked = invite.status === 'flaked';
   const double = isDouble(invite);
   // On a double that was kept without me, I am the one who missed it.
@@ -193,13 +195,13 @@ export default function PlanScreen() {
         {!flaked && !double && (
           <View style={{ gap: space.sm }}>
             <T v="label" c={color.textDim}>{kept ? t('plan.unlocked', { name }) : t('plan.whatUnlocks')}</T>
-            <LockedReveal person={other} reveal={reveal} hint={t('plan.revealHint', { name })} />
+            <LockedReveal person={other} reveal={reveal} hint={t('plan.revealHint', { name })} onFlag={flaggable ? () => backend.reportBadContact(invite.id, other.id) : undefined} />
           </View>
         )}
         {!flaked && double && [other, theirFriend].map((p, k) => p ? (
           <View key={p.id} style={{ gap: space.sm }}>
             <T v="label" c={color.textDim}>{kept && showable(p.id) ? t('plan.unlocked', { name: p.name }) : t('plan.whatUnlocksFrom', { name: p.name })}</T>
-            <LockedReveal person={p} reveal={k === 0 ? reveal : friendReveal}
+            <LockedReveal person={p} reveal={k === 0 ? reveal : friendReveal} onFlag={flaggable ? () => backend.reportBadContact(invite.id, p.id) : undefined}
               hint={kept ? t('plan.staysLocked') : t('plan.revealHintDouble', { name: p.name })} />
           </View>
         ) : null)}

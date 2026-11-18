@@ -1,5 +1,5 @@
 /**
- * contact-verify: proves a contact handle belongs to the person who gave it (D075).
+ * contact-verify: proves a contact handle belongs to the person who gave it (D078).
  *
  * The app gives a code (public.start_contact_check) and opens a chat with Pinkilock's WhatsApp
  * number or Instagram account. The person sends the code from the account they gave. Meta calls

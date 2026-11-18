@@ -5,7 +5,7 @@
  * seeded data, latency and a simulated other person; a Supabase implementation maps each method
  * to one rpc() or select() (ARCHITECTURE.md section 8) and `subscribe` to a Realtime channel.
  */
-import type { Account, BlockedPerson, Invite, MyContact, NewInvite, NewReport, OnboardingInput, CodeKind, CodeMode, Profile, Reveal } from '../domain/types';
+import type { Account, BlockedPerson, ContactCheck, Invite, MyContact, NewInvite, NewReport, OnboardingInput, CodeKind, CodeMode, Profile, Reveal } from '../domain/types';
 
 export interface Snapshot {
   me: Profile | null;
@@ -120,6 +120,17 @@ export interface Backend {
    * double, `profileId` picks whom (someone on the other side; both of us must have checked in).
    */
   getReveal(inviteId: string, profileId?: string): Promise<Reveal>;
+
+  /**
+   * Contact handles (D077, D078). After a kept plan, either person can say the other's handle did
+   * not work (within a week, once per plan); it counts against the owner's Trust Score. I learn how
+   * many flags my current handle has, never from whom. A proof is a code I send from my own account
+   * to Pinkilock; `boot` and `myContactStatus` say when it has arrived.
+   */
+  reportBadContact(inviteId: string, ownerId: string): Promise<void>;
+  myContactFlags(): Promise<number>;
+  startContactCheck(): Promise<ContactCheck>;
+  myContactStatus(): Promise<MyContact | null>;
 
   subscribe(listener: (e: BackendEvent) => void): () => void;
 

@@ -13,7 +13,7 @@ import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import { AppError, RESYNC_CODES, isErrorCode, newTrace } from '../../domain/errors';
 import { ideaOf } from '../../domain/ideas';
 import { CHECK_IN_CLOSES_AFTER, isDouble, otherId, peopleOf } from '../../domain/invites';
-import type { Account, BlockedPerson, CodeKind, Invite, MyContact, Profile, Reveal } from '../../domain/types';
+import type { Account, BlockedPerson, CodeKind, ContactCheck, Invite, MyContact, Profile, Reveal } from '../../domain/types';
 import { log, quiet } from '../../lib/log';
 import type { Backend, BackendEvent, Changes, Notice, Snapshot } from '../backend';
 import { t } from '../../i18n';
@@ -338,7 +338,7 @@ export function createSupabaseBackend(url: string, anonKey: string, storage: Ses
       db.from('profile_cards').select('*'),
       db.from('invites').select('*').order('created_at', { ascending: false }),
       db.from('passes').select('passed_id'),
-      db.from('profile_private').select('contact_kind, contact_handle').eq('profile_id', id).maybeSingle(),
+      db.from('profile_private').select('contact_kind, contact_handle, contact_verified_at').eq('profile_id', id).maybeSingle(),
       readDuo(),
     ]);
     const all = check(cards).map(toProfile);
@@ -350,13 +350,19 @@ export function createSupabaseBackend(url: string, anonKey: string, storage: Ses
     const list = check(invites).map(toInvite);
     list.forEach((i) => known.set(i.id, i));
     const p = check(priv) as Row | null;
-    const myContact: MyContact | null = p ? { kind: p.contact_kind, handle: p.contact_handle } : null;
+    const myContact: MyContact | null = p ? { kind: p.contact_kind, handle: p.contact_handle, verified: !!p.contact_verified_at } : null;
     const me = all.find((x) => x.id === id) ?? null;
     if (me) {
       listen();
       rpc('log_event', { p_type: 'app_open' }).catch(quiet('log_event'));
     }
     return { me, myContact, profiles: all.filter((x) => x.id !== id), invites: list, passedIds: check(passes).map((r: Row) => r.passed_id), duoId };
+  }
+
+  async function contactStatus(): Promise<MyContact | null> {
+    const id = await uid();
+    const p = check(await db.from('profile_private').select('contact_kind, contact_handle, contact_verified_at').eq('profile_id', id).maybeSingle()) as Row | null;
+    return p ? { kind: p.contact_kind, handle: p.contact_handle, verified: !!p.contact_verified_at } : null;
   }
 
   async function rpcInvite(fn: string, args: Row): Promise<Changes> {
@@ -408,7 +414,8 @@ export function createSupabaseBackend(url: string, anonKey: string, storage: Ses
         p_contact_kind: hasContact ? patch.contactKind : null, p_contact_handle: hasContact ? patch.contactHandle : null,
       });
       const changes: Changes = {};
-      if (hasContact) changes.myContact = { kind: patch.contactKind!, handle: patch.contactHandle! };
+      // The server stores the handle in its own form and clears the tick on a new one: read it back.
+      if (hasContact) changes.myContact = (await contactStatus()) ?? undefined;
       const card = check(await db.from('profile_cards').select('*').eq('id', id).single());
       return { ...changes, me: toProfile(card as unknown as Row) };
     },
@@ -529,8 +536,22 @@ export function createSupabaseBackend(url: string, anonKey: string, storage: Ses
       // No status check here on purpose: the private_after_kept policy returns no row until it is kept.
       const row = check(await db.from('profile_private').select('*').eq('profile_id', them).maybeSingle()) as Row | null;
       if (!row) throw new AppError('PC003');
-      return { profileId: them, contactKind: row.contact_kind, contactHandle: row.contact_handle, photos: row.photos ?? [] };
+      return { profileId: them, contactKind: row.contact_kind, contactHandle: row.contact_handle, contactVerified: !!row.contact_verified_at, photos: row.photos ?? [] };
     },
+
+    async reportBadContact(inviteId, ownerId) {
+      await rpc('report_bad_contact', { p_invite: inviteId, p_owner: ownerId });
+    },
+
+    async myContactFlags() {
+      return Number(await rpc<number>('my_contact_flags')) || 0;
+    },
+
+    async startContactCheck(): Promise<ContactCheck> {
+      return await rpc<ContactCheck>('start_contact_check');
+    },
+
+    myContactStatus: contactStatus,
 
     subscribe(listener) {
       listeners.add(listener);

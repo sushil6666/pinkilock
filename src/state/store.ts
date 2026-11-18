@@ -28,6 +28,8 @@ interface State {
   boot(): Promise<void>;
   completeOnboarding(input: OnboardingInput): Promise<void>;
   updateMe(patch: Partial<OnboardingInput>): Promise<void>;
+  /** Read my contact again: whether a proof code has arrived (D078). */
+  refreshContact(): Promise<void>;
   /** Ask for more people for Discover (opening Discover, a timer, a short queue). */
   refill(): Promise<void>;
   saveAvailability(windows: string[]): Promise<void>;
@@ -130,6 +132,10 @@ export const useStore = create<State>((set, get) => {
 
     async updateMe(patch) {
       await apply(backend.updateMe(patch));
+    },
+    async refreshContact() {
+      const c = await backend.myContactStatus();
+      if (c) set({ myContact: c });
     },
     async pass(profileId) {
       await apply(backend.pass(profileId));
