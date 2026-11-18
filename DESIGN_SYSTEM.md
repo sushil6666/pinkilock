@@ -112,8 +112,13 @@ Font scaling is allowed up to 1.3x (`maxFontSizeMultiplier`) so layouts hold on 
   desktop front page (`wide`) the sky spans the whole window, the moon sits above the pinkies, and
   the city carries on past the landmarks with more towers, cropped at the sides, never the top.
 - **Places**: on the phone's first screen, a sideways row of real venues from `VENUES` ("Where
-  plans happen"): a gold kind icon, the name and the area on a `surface` card with a `goldDeep`
-  border.
+  plans happen"), one city each, so the row shows India rather than one city: a gold kind icon, the
+  name and the city on a `surface` card with a `goldDeep` border. On the desktop front page, one
+  place in each of the first twelve cities, with "area, city" under it. The skyline stays Mumbai's.
+- **Where picker** (`WherePicker`, sign-up and Me): city chips in two groups, "Metros" then "More
+  cities" in a `textMute` caption, then the area search and area chips for the picked city. On Me,
+  "Where I am" is a `panel` row (gold pin, "area, city", a gold Move tag) that opens the picker and a
+  "Move to {city}" button.
 - **Welcome**: the first screen. The pinkies, a scribbled note pointing at them, the promise in
   `mega`, and the three steps as notes on a `line` block, each tilted by a degree or so.
 - **Landing**: the same first screen in a window 960 or wider, as the website's front page, using

@@ -195,8 +195,8 @@ the app and the mock, and one table of lines is run through both copies. The che
 cases only: a made-up code still gets through until lines are reviewed before anyone sees them
 (`docs/build-plan.md`, WP1).
 
-**Where, and with what consent.** `countries` and `cities` are an allow-list (India and Mumbai open);
-a profile's city must be open, and a first profile needs the request's country (`cf-ipcountry`, when
+**Where, and with what consent.** `countries` and `cities` are an allow-list (India open, with twenty cities: the eight metros and twelve tier-2 cities, D083);
+a profile's city must be open, and a move to another city needs an area from its list and comes at most once in 7 days (PL105; `profiles.city_changed_at`, server-only). Discover is per city, so it follows a move; so do the places offered in an ask. A first profile needs the request's country (`cf-ipcountry`, when
 present; the live test passes with a one-run token, D063) to be open and four consents at the current `legal_version`: 18+, terms, privacy, and the
 separate consent to use dating preferences. `privacy_requests` holds questions and appeals
 (`file_privacy_request`); `my_moderation` shows a person what was done to their account and why;

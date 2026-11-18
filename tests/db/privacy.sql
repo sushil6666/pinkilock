@@ -8,7 +8,8 @@ insert into auth.users (id, created_at) values (:'q2', now() - interval '40 days
 
 set role authenticated;
 select t.as_user(:'p2');
-select t.ok((select count(*) from countries where active) = 1 and (select count(*) from cities where active) = 1, 'one country and one city are open: India, Mumbai');
+select t.ok((select count(*) from countries where active) = 1 and (select count(*) from cities where active) = 20
+  and not exists (select 1 from cities where active and country <> 'IN'), 'one country is open, India, with its twenty cities (D083)');
 select t.ok(t.fails($$update countries set active = true$$), 'a user cannot open a country');
 select t.ok(t.sqlstate($$select give_consents(array['adult', 'whatever'])$$) = 'PL079', 'only the four consents exist (PL079)');
 select give_consents(array['adult', 'terms', 'privacy']);
@@ -17,7 +18,7 @@ select give_consents(array['sensitive']);
 select t.ok((select count(*) from my_consents()) = 4, 'my consents are recorded with their version');
 
 -- Where.
-select t.ok(t.sqlstate($$select save_profile('Pari', 25, 'Koregaon Park', '', '', '{}', array['boba_run','chai_walk','meme_duel'], 'Instagram', '@pari', 'Pune')$$) = 'PL076', 'a city that is not open is refused (PL076)');
+select t.ok(t.sqlstate($$select save_profile('Pari', 25, 'Boring Road', '', '', '{}', array['boba_run','chai_walk','meme_duel'], 'Instagram', '@pari', 'Patna')$$) = 'PL076', 'a city that is not open is refused (PL076)');
 select t.headers('{"cf-ipcountry": "US"}');
 select t.ok(t.sqlstate($$select save_profile('Pari', 25, 'Bandra West', '', '', '{}', array['boba_run','chai_walk','meme_duel'], 'Instagram', '@pari')$$) = 'PL078', 'a first profile from a country that is not open is refused (PL078)');
 select t.headers('{"cf-ipcountry": "IN"}');
@@ -26,6 +27,18 @@ select t.headers('{"cf-ipcountry": "US"}');
 select t.ok(t.sqlstate($$select save_profile('Pari', 25, 'Khar', '', '', '{}', array['boba_run','chai_walk','meme_duel'])$$) is null, 'once set up, travelling does not lock a person out');
 select t.headers('');
 select t.ok((select (city, country) = ('Mumbai', 'IN') from profiles where id = :'p2'), 'the profile carries its city and country');
+
+-- Moving city (D083): an area from the new city's list, and once in 7 days.
+select t.ok(t.sqlstate($$select save_profile('Pari', 25, 'Khar', '', '', '{}', array['boba_run','chai_walk','meme_duel'], null, null, 'Delhi NCR')$$) = 'PL095', 'a move keeps no area from the old city (PL095)');
+select t.ok(t.sqlstate($$select save_profile('Pari', 25, 'Saket', '', '', '{}', array['boba_run','chai_walk','meme_duel'], null, null, 'Delhi NCR')$$) is null, 'the first move is free, with an area from the new city');
+select t.ok((select (city, area, country) = ('Delhi NCR', 'Saket', 'IN') from profiles where id = :'p2'), 'the profile now says Delhi NCR');
+select t.ok(t.sqlstate($$select save_profile('Pari', 25, 'Khar', '', '', '{}', array['boba_run','chai_walk','meme_duel'], null, null, 'Mumbai')$$) = 'PL105', 'a second move in the same week is refused (PL105)');
+select t.ok(t.sqlstate($$select save_profile('Pari', 25, 'Hauz Khas', '', '', '{}', array['boba_run','chai_walk','meme_duel'])$$) is null, 'a new area in the same city is not a move');
+reset role;
+update profiles set city_changed_at = now() - interval '8 days' where id = :'p2';
+set role authenticated;
+select t.as_user(:'p2');
+select t.ok(t.sqlstate($$select save_profile('Pari', 25, 'Khar', '', '', '{}', array['boba_run','chai_walk','meme_duel'], null, null, 'Mumbai')$$) is null, 'a week later, the move back is fine');
 
 -- The live test's one-run token (D063): only the current, long token skips the network check, and
 -- never the city check. Only the database owner can set it.
@@ -46,7 +59,7 @@ select t.as_user(:'p3');
 select t.headers(json_build_object('cf-ipcountry', 'US', 'x-pinkilock-test-token', repeat('c', 64))::text);
 select t.ok(t.sqlstate($$select save_profile('Tara', 25, 'Bandra West', '', '', '{}', array['boba_run','chai_walk','meme_duel'], 'Instagram', '@tara')$$) = 'PL078', 'a wrong token is no pass (PL078)');
 select t.headers(json_build_object('cf-ipcountry', 'US', 'x-pinkilock-test-token', repeat('b', 64))::text);
-select t.ok(t.sqlstate($$select save_profile('Tara', 25, 'Koregaon Park', '', '', '{}', array['boba_run','chai_walk','meme_duel'], 'Instagram', '@tara', 'Pune')$$) = 'PL076', 'with the token, a closed city is still refused (PL076)');
+select t.ok(t.sqlstate($$select save_profile('Tara', 25, 'Boring Road', '', '', '{}', array['boba_run','chai_walk','meme_duel'], 'Instagram', '@tara', 'Patna')$$) = 'PL076', 'with the token, a closed city is still refused (PL076)');
 select t.ok(t.sqlstate($$select save_profile('Tara', 25, 'Bandra West', '', '', '{}', array['boba_run','chai_walk','meme_duel'], 'Instagram', '@tara')$$) is null, 'with the current token, a first profile from any network is let in');
 select t.headers('');
 reset role;

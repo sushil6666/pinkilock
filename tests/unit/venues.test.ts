@@ -33,6 +33,7 @@ test('venues are offered nearest first: their area, then mine, then the rest', (
   assert.deepEqual(list.slice(0, 2).map((v) => v.area), ['Juhu', 'Juhu']);
   assert.equal(list[2].area, 'Bandra East');
   assert.equal(list[3].area, 'Bandra West', 'Bandra West counts as near Bandra East');
-  assert.equal(list.length, VENUES.length);
-  assert.deepEqual(venuesFor('Pune', 'Juhu', 'Juhu'), [], 'another city gets none until it has a list');
+  assert.equal(list.length, VENUES.filter((v) => v.city === 'Mumbai').length, 'only Mumbai\'s places for Mumbai');
+  assert.deepEqual(venuesFor('Patna', 'Juhu', 'Juhu'), [], 'a city with no list gets none');
+  assert.equal(venuesFor('Delhi NCR', 'Saket', 'Hauz Khas')[0].area, 'Saket', 'Delhi NCR starts with their area');
 });

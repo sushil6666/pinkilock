@@ -415,6 +415,7 @@ export function createSupabaseBackend(url: string, anonKey: string, storage: Ses
         p_pronouns: patch.pronouns ?? now.pronouns, p_tagline: patch.tagline ?? now.tagline,
         p_vibes: patch.vibes ?? now.vibes, p_idea_ids: patch.ideaIds ?? now.ideaIds,
         p_contact_kind: hasContact ? patch.contactKind : null, p_contact_handle: hasContact ? patch.contactHandle : null,
+        p_city: patch.city ?? null,
       });
       const changes: Changes = {};
       // The server stores the handle in its own form and clears the tick on a new one: read it back.

@@ -31,6 +31,7 @@ import { buildLabel } from '@/lib/build';
 import { diagnostics } from '@/lib/report';
 import { FREE_WINDOWS } from '@/domain/freeWindows';
 import { Vouches } from '@/components/Vouches';
+import { WherePicker, areaOk } from '@/components/WherePicker';
 import { shareOrCopy } from '@/lib/shareOrCopy';
 import * as Linking from 'expo-linking';
 import { t } from '@/i18n';
@@ -56,6 +57,10 @@ export default function Me() {
   const signOut = useStore((s) => s.signOut);
   const [sheet, setSheet] = useState<'delete' | 'sign_out' | null>(null);
   const [editVibes, setEditVibes] = useState(false);
+  // Moving city (D083): the new city and area wait here until saved together.
+  const [move, setMove] = useState<{ city: string; area: string } | null>(null);
+  const [moveError, setMoveError] = useState('');
+  const [moved, setMoved] = useState('');
   // A new profile line may be waiting for review (or was not accepted): say so, since the card
   // keeps showing the last approved one.
   const [lineReview, setLineReview] = useState<{ text: string; status: 'pending' | 'held' | 'rejected' } | null>(null);
@@ -134,6 +139,20 @@ export default function Me() {
     router.replace('/onboarding');
   });
 
+  const saveMove = async () => {
+    if (!move) return;
+    setBusy('move');
+    setMoveError('');
+    try {
+      await updateMe({ city: move.city, area: move.area });
+      setMoved(t('me.moved', { city: move.city }));
+      setMove(null);
+    } catch (e) {
+      setMoveError(shown(e, '/me'));
+    }
+    setBusy('');
+  };
+
   const toggleIdea = async (id: string) => {
     const has = me.ideaIds.includes(id);
     if (has && me.ideaIds.length <= 3) return setError(t('me.keepThree'));
@@ -172,7 +191,7 @@ export default function Me() {
         <Portrait name={me.name} palette={me.palette} glyph={me.glyph} size={84} />
         <View style={{ flex: 1 }}>
           <T v="display" numberOfLines={1} adjustsFontSizeToFit>{me.name}</T>
-          <T v="caption" c={color.textDim}>{[me.age, me.area, me.pronouns].filter(Boolean).join('  /  ')}</T>
+          <T v="caption" c={color.textDim}>{[me.age, me.area ? t('profile.areaCity', { area: me.area, city: me.city }) : me.city, me.pronouns].filter(Boolean).join('  /  ')}</T>
         </View>
       </View>
 
@@ -211,6 +230,26 @@ export default function Me() {
         </View>
       ))}
       {error ? <ErrorText text={error} style={{ marginTop: space.sm }} /> : null}
+
+      <T v="label" c={color.textDim} style={styles.section}>{t('me.whereTitle')}</T>
+      <View style={styles.panel}>
+        <Feather name="map-pin" size={18} color={color.gold} />
+        <View style={{ flex: 1 }}>
+          <T v="bodyBold">{me.area ? t('profile.areaCity', { area: me.area, city: me.city }) : me.city}</T>
+          {moved && !move ? <T v="caption" c={color.gold}>{moved}</T> : null}
+        </View>
+        <Tag label={t(move ? 'common.cancel' : 'me.move')} tone={move ? color.textDim : color.gold}
+          onPress={() => { setMoved(''); setMoveError(''); setMove(move ? null : { city: me.city, area: me.area }); }} />
+      </View>
+      {move ? (
+        <View style={{ gap: space.lg, marginTop: space.lg }}>
+          <T v="caption" c={color.textDim}>{t('me.moveBody')}</T>
+          <WherePicker city={move.city} area={move.area} onCity={(city) => setMove((m) => m && { ...m, city })} onArea={(area) => setMove((m) => m && { ...m, area })} />
+          {moveError ? <ErrorText text={moveError} /> : null}
+          <Button icon="map-pin" label={t('me.moveSave', { city: move.city })} onPress={saveMove} busy={busy === 'move'}
+            disabled={(move.city === me.city && move.area === me.area) || !areaOk(move.city, move.area)} />
+        </View>
+      ) : null}
 
       </>} right={<>
       <View style={{ marginTop: space.lg, gap: space.sm }}>
