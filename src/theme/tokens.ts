@@ -49,10 +49,12 @@ export const depth = 5;
 export const radius = { chip: 6, card: 14, sheet: 28, pill: 999 } as const;
 
 export const font = {
-  display: 'Sora_800ExtraBold',
-  regular: 'PlusJakartaSans_400Regular',
-  medium: 'PlusJakartaSans_500Medium',
-  bold: 'PlusJakartaSans_700Bold',
+  display: 'InterTight_800ExtraBold',
+  /** The wordmark only: the logo's "pinkilock" in a true italic. */
+  displayItalic: 'InterTight_800ExtraBold_Italic',
+  regular: 'InterTight_400Regular',
+  medium: 'InterTight_500Medium',
+  bold: 'InterTight_700Bold',
   hand: 'CaveatBrush_400Regular',
 } as const;
 
