@@ -5,12 +5,23 @@
 \set r '00000000-0000-0000-0000-0000000000a1'
 \set s '00000000-0000-0000-0000-0000000000a2'
 \ir contact_cases.sql
+\ir handle_cases.sql
 
 insert into auth.users (id) values (:'r'), (:'s');
 
 -- The contact check agrees with the app's copy on every line of the shared table.
 select t.ok(bad is null and n >= 40, 'the contact check gives the expected answer for all ' || n || ' shared lines' || coalesce('; WRONG: ' || bad, ''))
 from (select count(*) as n, string_agg(line, ' | ') filter (where private.looks_like_contact(line) <> refused) as bad from contact_cases) c;
+-- The handle rule agrees with the app's copy on every line of its shared table.
+create function pg_temp.handle_result(k text, h text) returns text language plpgsql as $f$
+begin
+  return private.normalize_contact(k, h);
+exception when others then
+  return sqlstate;
+end $f$;
+select t.ok(bad is null and n >= 40, 'the handle rule gives the expected answer for all ' || n || ' shared handles' || coalesce('; WRONG: ' || bad, ''))
+from (select count(*) as n, string_agg(kind || ' ' || typed || ' -> ' || pg_temp.handle_result(kind, typed), ' | ')
+             filter (where pg_temp.handle_result(kind, typed) <> want) as bad from handle_cases) c;
 select t.ok(private.looks_like_contact(null) is false and private.looks_like_contact('') is false, 'an empty line is not a contact');
 
 -- The tag catalogue is the app's list, and read-only.
@@ -36,8 +47,8 @@ select t.ok((select palette <> '{#F6F6F1,#3A3A44}' and cardinality(palette) = 2 
 select save_profile('Riya', 25, 'Khar', '', '', '{}', array['boba_run','chai_walk','meme_duel','hot_takes']);
 select t.ok((select (age, area, cardinality(vibes)) = (25, 'Khar', 0) from profiles where id = :'r')
   and (select contact_handle from profile_private where profile_id = :'r') = '@riya', 'a save without a contact keeps the contact');
-select save_profile('Riya', 25, 'Khar', '', '', '{}', array['boba_run','chai_walk','meme_duel'], 'WhatsApp', '+91 00000 00001');
-select t.ok((select contact_kind from profile_private where profile_id = :'r') = 'WhatsApp', 'a save with a contact changes it');
+select save_profile('Riya', 25, 'Khar', '', '', '{}', array['boba_run','chai_walk','meme_duel'], 'WhatsApp', '919876500001');
+select t.ok((select (contact_kind, contact_handle) = ('WhatsApp', '+91 98765 00001') from profile_private where profile_id = :'r'), 'a save with a contact changes it, in its stored form');
 
 -- Each rule, with its code. `ok` is a profile that passes; each line breaks one thing.
 create temp table bad_profiles (code text, why text, stmt text);
@@ -64,10 +75,14 @@ insert into bad_profiles values
   ('PL065', 'a number in the area', $$select save_profile('Riya', 25, '98765 43210', '', '', '{}', array['boba_run','chai_walk','meme_duel'])$$),
   ('PL065', 'a handle in the pronouns', $$select save_profile('Riya', 25, 'Khar', '@riya', '', '{}', array['boba_run','chai_walk','meme_duel'])$$),
   ('PL066', 'a contact kind that does not exist', $$select save_profile('Riya', 25, 'Khar', '', '', '{}', array['boba_run','chai_walk','meme_duel'], 'Email', 'riya')$$),
-  ('PL066', 'a one-character handle', $$select save_profile('Riya', 25, 'Khar', '', '', '{}', array['boba_run','chai_walk','meme_duel'], 'Instagram', 'r')$$),
   ('PL066', 'a contact kind from another region', $$select save_profile('Riya', 25, 'Khar', '', '', '{}', array['boba_run','chai_walk','meme_duel'], 'KakaoTalk', 'riya')$$),
   ('PL095', 'an area that is not on the city''s list', $$select save_profile('Riya', 25, 'Bandra', '', '', '{}', array['boba_run','chai_walk','meme_duel'])$$),
-  ('PL096', 'typed pronouns', $$select save_profile('Riya', 25, 'Khar', 'xe/xem', '', '{}', array['boba_run','chai_walk','meme_duel'])$$);
+  ('PL096', 'typed pronouns', $$select save_profile('Riya', 25, 'Khar', 'xe/xem', '', '{}', array['boba_run','chai_walk','meme_duel'])$$),
+  ('PL066', 'an empty handle', $$select save_profile('Riya', 25, 'Khar', '', '', '{}', array['boba_run','chai_walk','meme_duel'], 'Instagram', '  ')$$),
+  ('PL066', 'a one-character Telegram handle', $$select save_profile('Riya', 25, 'Khar', '', '', '{}', array['boba_run','chai_walk','meme_duel'], 'Telegram', 'r')$$),
+  ('PL097', 'an Instagram handle with two dots together', $$select save_profile('Riya', 25, 'Khar', '', '', '{}', array['boba_run','chai_walk','meme_duel'], 'Instagram', 'r..x')$$),
+  ('PL098', 'a Snapchat handle starting with a digit', $$select save_profile('Riya', 25, 'Khar', '', '', '{}', array['boba_run','chai_walk','meme_duel'], 'Snapchat', '9sana')$$),
+  ('PL099', 'an Indian WhatsApp number of 9 digits', $$select save_profile('Riya', 25, 'Khar', '', '', '{}', array['boba_run','chai_walk','meme_duel'], 'WhatsApp', '98765 4321')$$);
 select t.ok(t.sqlstate(stmt) = code, 'refused: ' || why || ' (' || code || ')') from bad_profiles order by code, why;
 select t.ok((select (name, age, area) = ('Riya', 25, 'Khar') from profiles where id = :'r'), 'none of the refused saves changed the profile');
 
@@ -101,4 +116,33 @@ select t.ok((send_invite(:'r', 'boba_run', now() + interval '1 hour', 'Boba coun
 
 set role anon;
 select t.ok(t.fails($$select save_profile('Anon', 25, '', '', '', '{}', array['boba_run','chai_walk','meme_duel'], 'Instagram', '@anon')$$), 'signed out, no profile can be saved');
+reset role;
+
+-- Proving a handle is yours (D077). Off until the deploy says where codes go.
+update public.profile_private set contact_kind = 'WhatsApp', contact_handle = '+91 98765 00001' where profile_id = :'r';
+set role authenticated;
+select t.as_user(:'s');
+select t.ok(t.sqlstate('select start_contact_check()') = 'PL101', 'a Snapchat handle cannot be proved (PL101)');
+select t.as_user(:'r');
+select t.ok(t.sqlstate('select start_contact_check()') = 'PL102', 'with nowhere to send codes, checking is off (PL102)');
+reset role;
+select private.set_config('verify_whatsapp', '919800000000');
+set role authenticated;
+select t.as_user(:'r');
+select start_contact_check() ->> 'code' as rcode \gset
+select t.ok(:'rcode' ~ '^PINKY-[0-9A-F]{6}$' and (start_contact_check() ->> 'code') = :'rcode'
+  and (start_contact_check() ->> 'to') = '919800000000', 'R gets a code, the same one on a second tap, and where to send it');
+reset role;
+select t.ok(confirm_contact_code('WhatsApp', '919876500002', 'hi ' || :'rcode') = 'mismatch', 'the code from another number does not prove R''s');
+select t.ok(confirm_contact_code('WhatsApp', '919876500001', 'hello') = 'no_code', 'a message with no code proves nothing');
+select t.ok(confirm_contact_code('WhatsApp', '919876500001', 'PINKY-000000') = 'expired', 'a code nobody was given proves nothing');
+select t.ok(confirm_contact_code('WhatsApp', '919876500001', lower(:'rcode') || ' thanks') = 'verified', 'the code from R''s own number proves it');
+select t.ok((select contact_verified_at is not null from profile_private where profile_id = :'r'), 'R''s handle is now verified');
+select t.ok(confirm_contact_code('WhatsApp', '919876500001', :'rcode') = 'expired', 'a code works once');
+set role authenticated;
+select t.as_user(:'r');
+select save_profile('Riya', 25, 'Khar', '', '', '{}', array['boba_run','chai_walk','meme_duel']);
+select t.ok((select contact_verified_at is not null from profile_private where profile_id = :'r'), 'saving without a new handle keeps the tick');
+select save_profile('Riya', 25, 'Khar', '', '', '{}', array['boba_run','chai_walk','meme_duel'], 'WhatsApp', '9876500003');
+select t.ok((select contact_verified_at is null from profile_private where profile_id = :'r'), 'a new handle loses the tick');
 reset role;

@@ -9,7 +9,7 @@ import { join } from 'node:path';
 import { test } from 'node:test';
 import { AppError } from '../../src/domain/errors';
 import { IDEAS, VIBES, noteStarters, openerOf, NOTE_TONES, TAGLINE_PROMPTS } from '../../src/domain/ideas';
-import { CONTACT_CASES, checkAsk, checkProfile, looksLikeContact, nameOk } from '../../src/domain/profile';
+import { CONTACT_CASES, HANDLE_CASES, checkAsk, checkContact, checkProfile, contactLink, looksLikeContact, nameOk, proofLink } from '../../src/domain/profile';
 
 const ROOT = join(__dirname, '..', '..');
 const q = (s: string) => `'${s.replace(/'/g, "''")}'`;
@@ -31,6 +31,39 @@ test('the SQL copy of the shared lines is up to date', () => {
   if (process.env.UPDATE_CASES) writeFileSync(file, want);
   assert.ok(existsSync(file), 'tests/db/contact_cases.sql is missing: UPDATE_CASES=1 npm run test:unit');
   assert.equal(readFileSync(file, 'utf8'), want, 'tests/db/contact_cases.sql is stale: UPDATE_CASES=1 npm run test:unit');
+});
+
+test('each contact handle is stored, or refused with its code, as the shared table says', () => {
+  assert.ok(HANDLE_CASES.length >= 40);
+  for (const [kind, typed, want] of HANDLE_CASES) {
+    let got: string;
+    try { got = checkContact(kind, typed); } catch (e) { got = e instanceof AppError ? e.code : String(e); }
+    assert.equal(got, want, `${kind} "${typed}"`);
+  }
+  // Storing is stable: the stored form goes through again unchanged.
+  for (const [kind, , want] of HANDLE_CASES) if (!/^PL\d{3}$/.test(want)) assert.equal(checkContact(kind, want), want);
+});
+
+test('the SQL copy of the handle table is up to date', () => {
+  const file = join(ROOT, 'tests', 'db', 'handle_cases.sql');
+  const want = [
+    '-- Generated from HANDLE_CASES in src/domain/profile.ts. Do not edit: UPDATE_CASES=1 npm run test:unit',
+    'create temp table handle_cases (kind text, typed text, want text);',
+    'insert into handle_cases (kind, typed, want) values',
+    HANDLE_CASES.map(([kind, typed, w]) => `  (${q(kind)}, ${q(typed)}, ${q(w)})`).join(',\n') + ';',
+    '',
+  ].join('\n');
+  if (process.env.UPDATE_CASES) writeFileSync(file, want);
+  assert.ok(existsSync(file), 'tests/db/handle_cases.sql is missing: UPDATE_CASES=1 npm run test:unit');
+  assert.equal(readFileSync(file, 'utf8'), want, 'tests/db/handle_cases.sql is stale: UPDATE_CASES=1 npm run test:unit');
+});
+
+test('"Check it" opens the account others will get, and a proof goes to Pinkilock with the code', () => {
+  assert.equal(contactLink('Instagram', '@riya.frames'), 'https://instagram.com/riya.frames');
+  assert.equal(contactLink('Snapchat', 'sana_k'), 'https://snapchat.com/add/sana_k');
+  assert.equal(contactLink('WhatsApp', '+91 98765 43210'), 'https://wa.me/919876543210');
+  assert.equal(proofLink('WhatsApp', '919800000000', 'PINKY-4F2A9C'), 'https://wa.me/919800000000?text=PINKY-4F2A9C');
+  assert.equal(proofLink('Instagram', 'pinkilock', 'PINKY-4F2A9C'), 'https://ig.me/m/pinkilock');
 });
 
 test('nothing the app itself offers is refused as a contact', () => {

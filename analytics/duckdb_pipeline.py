@@ -20,6 +20,7 @@ Trust Score (the behavioural version of src/domain/trust.ts):
 
     score = round(100 * (kept + 4) / (kept + penalty + 4))
     penalty = 1.0 * early bails + 1.25 * late bails (inside 2 hours of the start) + 1.5 * no-shows
+              + 1.0 * handles flagged as not working (`bad_contact`, one per person per kept plan, D074)
 
 The prior of 4 means a new person starts at 100 and one early bail costs 20 points. Not showing
 up costs more than cancelling late, which costs more than cancelling with notice.
@@ -33,7 +34,7 @@ import sys
 import duckdb
 
 PRIOR = 4
-W_EARLY, W_LATE, W_NO_SHOW = 1.0, 1.25, 1.5
+W_EARLY, W_LATE, W_NO_SHOW, W_BAD_CONTACT = 1.0, 1.25, 1.5, 1.0
 
 EXTRACT = """
 create or replace table invites as
@@ -77,9 +78,10 @@ flakes as (
   select actor_id as person,
          count(*) filter (where type = 'bailed' and coalesce(json_extract_string(props, '$.late'), 'false') <> 'true') as early_bails,
          count(*) filter (where type = 'bailed' and json_extract_string(props, '$.late') = 'true') as late_bails,
-         count(*) filter (where type = 'no_show') as no_shows
+         count(*) filter (where type = 'no_show') as no_shows,
+         count(*) filter (where type = 'bad_contact') as bad_contacts
   from events
-  where type in ('bailed', 'no_show') and actor_id is not null
+  where type in ('bailed', 'no_show', 'bad_contact') and actor_id is not null
   group by actor_id
 ),
 -- How fast someone answers an ask sent to them: ask_sent -> their first pinky_out or declined.
@@ -100,9 +102,10 @@ select p.id as profile_id,
                + {W_EARLY} * coalesce(f.early_bails, 0)
                + {W_LATE} * coalesce(f.late_bails, 0)
                + {W_NO_SHOW} * coalesce(f.no_shows, 0)
+               + {W_BAD_CONTACT} * coalesce(f.bad_contacts, 0)
                + {PRIOR})) as integer) as score,
        cast(coalesce(k.kept, 0) as integer) as kept,
-       cast(coalesce(f.early_bails, 0) + coalesce(f.late_bails, 0) + coalesce(f.no_shows, 0) as integer) as flaked,
+       cast(coalesce(f.early_bails, 0) + coalesce(f.late_bails, 0) + coalesce(f.no_shows, 0) + coalesce(f.bad_contacts, 0) as integer) as flaked,
        cast(coalesce(f.late_bails, 0) as integer) as late_bails,
        cast(coalesce(f.no_shows, 0) as integer) as no_shows,
        round(a.median_answer_minutes, 1) as median_answer_minutes
