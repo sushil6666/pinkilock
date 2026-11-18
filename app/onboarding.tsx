@@ -11,6 +11,7 @@ import { Landing } from '@/components/Landing';
 import { Welcome } from '@/components/Welcome';
 import { Button } from '@/components/ui/Button';
 import { Chip, Tag } from '@/components/ui/Chip';
+import { IdeaChip } from '@/components/IdeaChip';
 import { inputStyle } from '@/components/ui/input';
 import { HoldButton } from '@/components/ui/HoldButton';
 import { Screen } from '@/components/ui/Screen';
@@ -157,7 +158,7 @@ export default function Onboarding() {
               <View key={kind} style={{ gap: space.sm }}>
                 <T v="label" c={color.textDim}>{KIND_LABEL[kind]}</T>
                 {IDEAS.filter((idea) => idea.kind === kind).map((idea) => (
-                  <Chip key={idea.id} label={`${idea.emoji}  ${idea.title}`} sub={t('onboarding.ideaSub', { minutes: idea.minutes, blurb: idea.blurb })} selected={ideaIds.includes(idea.id)} onPress={() => toggle(ideaIds, setIdeaIds, idea.id, 6)} />
+                  <IdeaChip key={idea.id} idea={idea} selected={ideaIds.includes(idea.id)} onPress={() => toggle(ideaIds, setIdeaIds, idea.id, 6)} />
                 ))}
               </View>
             ))}

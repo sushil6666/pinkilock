@@ -33,12 +33,13 @@ startFocusRing();
  * not tell the chosen chip, tab or reason from the rest. Spread next to `accessibilityState`:
  * `pressed` for a toggle button, `selected` for a tab, `checked` for a radio.
  */
-export function aria(state: { pressed?: boolean; selected?: boolean; checked?: boolean }): object {
+export function aria(state: { pressed?: boolean; selected?: boolean; checked?: boolean; expanded?: boolean }): object {
   if (!isWeb) return {};
   const out: Record<string, boolean> = {};
   if (state.pressed !== undefined) out['aria-pressed'] = state.pressed;
   if (state.selected !== undefined) out['aria-selected'] = state.selected;
   if (state.checked !== undefined) out['aria-checked'] = state.checked;
+  if (state.expanded !== undefined) out['aria-expanded'] = state.expanded;
   return out;
 }
 
