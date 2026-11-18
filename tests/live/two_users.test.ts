@@ -78,7 +78,7 @@ test('onboard: two people sign in anonymously and see each other', async () => {
   const snapA = await a.backend.completeOnboarding(profile(a.name, '@e2e_asha'));
   a.id = snapA.me!.id;
   assert.equal(snapA.me!.name, a.name);
-  assert.deepEqual(snapA.myContact, { kind: 'Instagram', handle: '@e2e_asha' });
+  assert.deepEqual(snapA.myContact, { kind: 'Instagram', handle: '@e2e_asha', verified: false });
   assert.equal(snapA.me!.trustScore, 100, 'a new person starts at 100');
 
   // B onboards while A is already in the app. New people are fetched, not pushed (no one can read

@@ -105,6 +105,15 @@ test('someone else: no contact, no edits', async () => {
   assert.equal(snap.myContact?.handle, '@e2e_yami_secret', 'the contact did not change');
 });
 
+test('contact handles: no flag without a kept plan, no reading flags or codes, no self-verifying (D077, D078)', async () => {
+  await assert.rejects(x.backend.reportBadContact('00000000-0000-0000-0000-000000000000', y.id), (e: unknown) => e instanceof AppError && e.code === 'PL100', 'a flag needs a kept plan with them');
+  assert.ok((await raw.from('contact_reports').select('*')).error, 'the flags cannot be read');
+  assert.ok((await raw.rpc('confirm_contact_code', { p_kind: 'Instagram', p_sender: 'e2e_xavier', p_text: 'PINKY-000000' })).error, 'only the server confirms a proof');
+  await raw.from('profile_private').update({ contact_verified_at: new Date().toISOString() }).eq('profile_id', x.id);
+  assert.equal((await x.backend.myContactStatus())?.verified, false, 'nobody marks their own handle verified');
+  await assert.rejects(x.backend.updateMe({ contactKind: 'Instagram', contactHandle: 'not..valid' }), (e: unknown) => e instanceof AppError && e.code === 'PL097', 'an Instagram handle in the wrong format');
+});
+
 test('duos: no direct writes, no one else\'s duo, no double without one (F3)', async () => {
   const forged = await raw.from('duos').insert({ person: x.id, partner: y.id });
   assert.ok(forged.error, 'a duo row cannot be written directly');
