@@ -353,6 +353,26 @@ Actions: `dismiss`, `hide_line` (removes the line, no new line for 30 days, one 
 strike suspends), `suspend`, `unsuspend`, `approve_line`, `reject_line`. A suspended account is out
 of Discover and cannot ask, lock or edit.
 
+### Check photos
+
+Every new photo waits for a person (D087): nobody else sees it until it is approved. Work through
+them at least daily; a person sees "Checking" on their own photo until then.
+
+```bash
+scripts/moderate.sh "$DB" photos                                  # waiting photos: id, owner, path
+scripts/moderate.sh "$DB" photo <id> approve_photo "ordinary"     # show it after a kept promise
+scripts/moderate.sh "$DB" photo <id> hold_photo "blurry, no face"  # show it to nobody
+scripts/moderate.sh "$DB" photo <id> hold_photo_contact "handle on a card"  # nobody, and a strike
+```
+
+Look at each file in the dashboard (Storage, bucket `photos`, the path from the list). Hold
+anything with readable text, a handle, a number, a QR code or a barcode as `hold_photo_contact`;
+hold nudity, violence, other people's faces, or a photo of a photo as `hold_photo`. The files there
+carry no metadata: the `photo` function strips it before storing. A held photo stays on the
+owner's Me as "Not approved" until they remove it. Removed photos and deleted accounts leave their
+paths in `photo_trash`, which the push function empties within five minutes; if it grows,
+check the push function's log for `photo_trash_failed`.
+
 **Line review mode** (`private.config` key `line_review`): `off` shows a line after the pattern
 check only (the default); `ai` sends new lines to the `review-line` Edge Function, which asks
 Claude and holds anything unsure for a person; `human` holds every new line for a person. The deploy

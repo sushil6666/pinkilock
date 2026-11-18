@@ -43,17 +43,25 @@ insert into public.profile_private (profile_id, contact_kind, contact_handle) va
 
 select t.ok((select string_agg(table_schema || '.' || table_name || ':' || privs, ' ' order by table_schema, table_name) from (
     select table_schema, table_name, string_agg(privilege_type, ',' order by privilege_type) as privs
-    from information_schema.role_table_grants where grantee = 'authenticated' and table_schema <> 't' group by 1, 2) g)
+    from information_schema.role_table_grants where grantee = 'authenticated' and table_schema not in ('t', 'storage') group by 1, 2) g)
   = 'public.areas:SELECT public.ask_lines:SELECT public.cities:SELECT public.contact_kinds:SELECT public.countries:SELECT public.duos:SELECT public.ideas:SELECT public.invites:SELECT public.passes:SELECT public.profile_cards:SELECT '
     'public.profile_private:SELECT public.pronoun_options:SELECT public.trust_scores:SELECT public.venues:SELECT public.vibes:SELECT',
   'a signed-in user holds exactly these table rights and no others');
-select t.ok(not exists (select 1 from information_schema.role_table_grants where grantee = 'anon'),
+select t.ok(not exists (select 1 from information_schema.role_table_grants where grantee = 'anon' and table_schema <> 'storage'),
   'signed out, there is no right on any table in any schema');
+-- Supabase grants the API roles every right on storage.objects and lets RLS decide, so in storage
+-- the policies are what is pinned: one, reading a photo whose row the reader may read.
+select t.ok((select string_agg(policyname || ':' || cmd || ':' || array_to_string(roles, ','), ' ' order by policyname)
+    from pg_policies where schemaname = 'storage') = 'photos_read:SELECT:authenticated',
+  'storage has one policy: a signed-in reader may read a photo file whose row they may read, and nobody may write');
+select t.ok((select string_agg(column_name, ',' order by column_name) from information_schema.role_column_grants
+    where grantee = 'authenticated' and table_name = 'photos') = 'created_at,id,path,profile_id,status',
+  'a signed-in user may read these photo columns, and write none');
 select t.ok((select string_agg(n.nspname || '.' || p.proname, ' ' order by n.nspname, p.proname)
     from pg_proc p join pg_namespace n on n.oid = p.pronamespace
     where n.nspname in ('public', 'private', 'analytics') and has_function_privilege('authenticated', p.oid, 'execute'))
-  = 'private.blocked_pair private.has_duo private.on_invite private.shares_invite private.vouch_summary public.bail public.block_user public.check_in public.create_duo_link public.create_vouch_link public.date_feedback public.decline_invite '
-    'public.delete_my_account public.discover public.duo_link_name public.export_my_data public.file_privacy_request public.give_consents public.join_duo public.leave_duo public.log_client_error public.log_event public.my_blocks public.my_checkin_code public.my_consents public.my_contact_flags public.my_line_review public.my_moderation public.offer_pinky public.pass_profile public.rate_date public.register_push_token public.report_bad_contact public.report_user public.restore_passes '
+  = 'private.blocked_pair private.has_duo private.on_invite private.revealed_to private.shares_invite private.vouch_summary public.bail public.block_user public.check_in public.create_duo_link public.create_vouch_link public.date_feedback public.decline_invite '
+    'public.delete_my_account public.discover public.duo_link_name public.export_my_data public.file_privacy_request public.give_consents public.join_duo public.leave_duo public.log_client_error public.log_event public.my_blocks public.my_checkin_code public.my_consents public.my_contact_flags public.my_line_review public.my_moderation public.offer_pinky public.pass_profile public.rate_date public.register_push_token public.remove_photo public.report_bad_contact public.report_user public.restore_passes '
     'public.save_availability public.save_profile public.send_invite public.start_contact_check public.unblock_user public.unregister_push_token public.vouch public.vouch_link_name',
   'a signed-in user can call exactly these functions and no others');
 select t.ok(not exists (select 1 from pg_proc p join pg_namespace n on n.oid = p.pronamespace
@@ -399,7 +407,7 @@ select t.ok(not exists (select 1 from jsonb_array_elements(:'ex'::jsonb -> 'cont
   and not exists (select 1 from jsonb_object_keys(:'ex'::jsonb) k where k ilike '%flag%' and k <> 'contact_flags_made')
   and not exists (select 1 from jsonb_array_elements(:'ex'::jsonb -> 'events') e where e ->> 'type' = 'bad_contact'),
   'X''s export does not say who flagged X''s handle');
-select t.ok((:'ex'::jsonb -> 'contact') ? 'verified_at' and (:'ex'::jsonb ->> 'format') = 'pinkilock-export-4', 'the export says when the handle was verified');
+select t.ok((:'ex'::jsonb -> 'contact') ? 'verified_at' and split_part(:'ex'::jsonb ->> 'format', '-', 3)::int >= 4, 'the export says when the handle was verified');
 
 -- D083: moving city. X cannot take an area from the old city along, cannot hop cities more than
 -- once a week (so nobody looks through every city's people), and cannot reset the clock.

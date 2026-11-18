@@ -57,8 +57,33 @@ export interface Reveal {
   contactHandle: string;
   /** They proved the handle is theirs by sending a code from it (D078). */
   contactVerified?: boolean;
-  /** Captions stand in for photos in the prototype. */
-  photos: { caption: string; palette: [string, string]; glyph: string }[];
+  /**
+   * Their approved photos (D087), each a short-lived signed link the server gave because RLS let
+   * this person read it. The mock's made-up people have a caption, colours and a glyph instead.
+   */
+  photos: RevealPhoto[];
+}
+
+export interface RevealPhoto {
+  url?: string;
+  caption?: string;
+  palette?: [string, string];
+  glyph?: string;
+}
+
+/**
+ * One of my own photos behind the lock (D087): waiting for a person to check it, approved (shown
+ * after a kept promise), or held (shown to nobody). `url` is a short-lived link to my own file.
+ */
+export interface MyPhoto {
+  id: string;
+  status: 'pending' | 'approved' | 'held';
+  url: string | null;
+}
+
+/** A photo picked on this phone, made into a JPEG of at most 1280 px by src/lib/photoPick.ts. */
+export interface PickedPhoto {
+  uri: string;
 }
 
 /** `ended`: closed by a block or an account deletion. Nobody's flake. */

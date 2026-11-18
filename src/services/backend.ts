@@ -5,7 +5,7 @@
  * seeded data, latency and a simulated other person; a Supabase implementation maps each method
  * to one rpc() or select() (ARCHITECTURE.md section 8) and `subscribe` to a Realtime channel.
  */
-import type { Account, BlockedPerson, ContactCheck, Invite, MyContact, NewInvite, NewReport, OnboardingInput, CodeKind, CodeMode, Profile, Reveal } from '../domain/types';
+import type { Account, BlockedPerson, ContactCheck, Invite, MyContact, MyPhoto, NewInvite, NewReport, OnboardingInput, CodeKind, CodeMode, PickedPhoto, Profile, Reveal } from '../domain/types';
 
 export interface Snapshot {
   me: Profile | null;
@@ -114,6 +114,15 @@ export interface Backend {
   /** Mock only: the code the made-up other person would read out to me, so the flow can be tried alone. */
   demoTheirCode?(inviteId: string): string;
   bail(inviteId: string): Promise<Changes>;
+
+  /**
+   * Photos behind the lock (D087): up to three, each checked by a person before anyone sees it,
+   * and then shown only where the reveal is (after a kept promise). Live, a photo goes through
+   * the `photo` Edge Function, which strips its metadata; no client writes to storage.
+   */
+  myPhotos(): Promise<MyPhoto[]>;
+  addPhoto(photo: PickedPhoto): Promise<MyPhoto[]>;
+  removePhoto(id: string): Promise<MyPhoto[]>;
 
   /**
    * Refuses unless the invite is kept: the reveal is gated on the server, not by a blur. On a

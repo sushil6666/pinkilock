@@ -78,12 +78,12 @@ jobs:
           cache: npm
       - run: npm ci
       - name: Start Supabase locally
-        run: npx supabase start -x studio,imgproxy,vector,logflare,storage-api,postgres-meta,supavisor
+        run: npx supabase start -x studio,imgproxy,vector,logflare,postgres-meta,supavisor
       - name: Point the push function at the fake Expo
         run: |
           EXPO_PUSH_URL=http://host.docker.internal:54399 scripts/push-config.sh local
           npx supabase stop
-          npx supabase start -x studio,imgproxy,vector,logflare,storage-api,postgres-meta,supavisor
+          npx supabase start -x studio,imgproxy,vector,logflare,postgres-meta,supavisor
       - name: Lint the database functions
         # Report only for now: it has not had a first clean run. Once it has, change none to error.
         run: npx supabase db lint --schema public,private --level warning --fail-on none || echo "::warning::The database lint could not run."

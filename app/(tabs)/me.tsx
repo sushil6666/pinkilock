@@ -4,6 +4,7 @@
  */
 import { Feather } from '@expo/vector-icons';
 import { ContactPanel } from '@/components/ContactCheck';
+import { MyPhotos } from '@/components/MyPhotos';
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Platform, Share, StyleSheet, View } from 'react-native';
@@ -288,6 +289,7 @@ export default function Me() {
 
       <T v="label" c={color.textDim} style={styles.section}>{t('me.unlocksTitle')}</T>
       <ContactPanel />
+      <MyPhotos />
 
       <T v="label" c={color.textDim} style={styles.section}>{t('me.account')}</T>
       <View style={styles.panel}>

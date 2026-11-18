@@ -13,7 +13,7 @@ import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import { AppError, RESYNC_CODES, isErrorCode, newTrace } from '../../domain/errors';
 import { ideaOf } from '../../domain/ideas';
 import { CHECK_IN_CLOSES_AFTER, isDouble, otherId, peopleOf } from '../../domain/invites';
-import type { Account, BlockedPerson, CodeKind, ContactCheck, Invite, MyContact, Profile, Reveal } from '../../domain/types';
+import type { Account, BlockedPerson, CodeKind, ContactCheck, Invite, MyContact, MyPhoto, Profile, Reveal } from '../../domain/types';
 import { log, quiet } from '../../lib/log';
 import type { Backend, BackendEvent, Changes, Notice, Snapshot } from '../backend';
 import { t } from '../../i18n';
@@ -122,6 +122,20 @@ export function createSupabaseBackend(url: string, anonKey: string, storage: Ses
     log.info('rpc', { fn, trace });
     const res = await db.rpc(fn, args).setHeader('x-trace-id', trace);
     return check(res as { data: T | null; error: { message: string; code?: string } | null }, trace);
+  }
+
+  /**
+   * Photos (D087). Rows come back only where RLS allows (mine; theirs once approved and revealed),
+   * and Storage signs a file only where its row is readable. Links last ten minutes and are never
+   * kept: each screen asks again.
+   */
+  async function photosOf(owner: string): Promise<MyPhoto[]> {
+    const rows = check(await db.from('photos').select('id, path, status, created_at').eq('profile_id', owner).order('created_at')) as Row[];
+    if (!rows.length) return [];
+    const res = await db.storage.from('photos').createSignedUrls(rows.map((r) => r.path as string), 600);
+    if (res.error) throw new AppError('PC002', undefined, activeTrace() ?? newTrace());
+    const links = new Map((res.data ?? []).filter((d) => d.path && d.signedUrl).map((d) => [d.path as string, d.signedUrl]));
+    return rows.map((r) => ({ id: r.id, status: r.status, url: links.get(r.path) ?? null }));
   }
 
   async function uid(): Promise<string> {
@@ -540,7 +554,41 @@ export function createSupabaseBackend(url: string, anonKey: string, storage: Ses
       // No status check here on purpose: the private_after_kept policy returns no row until it is kept.
       const row = check(await db.from('profile_private').select('*').eq('profile_id', them).maybeSingle()) as Row | null;
       if (!row) throw new AppError('PC003');
-      return { profileId: them, contactKind: row.contact_kind, contactHandle: row.contact_handle, contactVerified: !!row.contact_verified_at, photos: row.photos ?? [] };
+      // Photos are extra: if they cannot be fetched now, the handle still shows.
+      const photos = (await photosOf(them).catch((e) => { quiet('reveal.photos')(e); return []; }))
+        .filter((p) => p.status === 'approved' && p.url).map((p) => ({ url: p.url as string }));
+      return { profileId: them, contactKind: row.contact_kind, contactHandle: row.contact_handle, contactVerified: !!row.contact_verified_at, photos };
+    },
+
+    myPhotos: async () => photosOf(await uid()),
+
+    async addPhoto(photo) {
+      const trace = activeTrace() ?? newTrace();
+      const { data } = await db.auth.getSession();
+      if (!data.session) throw new AppError('PL001', undefined, trace);
+      log.info('photo.add', { trace });
+      let res: Response;
+      try {
+        const file = await (await fetch(photo.uri)).blob();
+        res = await fetch(`${url.replace(/\/$/, '')}/functions/v1/photo`, {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${data.session.access_token}`, apikey: anonKey, 'Content-Type': 'image/jpeg', 'x-trace-id': trace },
+          body: file,
+        });
+      } catch {
+        // Not reached: the phone is offline, or the file could not be read.
+        throw new AppError('PC001', undefined, trace);
+      }
+      if (!res.ok) {
+        const body = (await res.json().catch(() => ({}))) as { code?: string; message?: string };
+        throw fromServer({ code: body.code ?? 'PC002', message: body.message ?? '' }, trace);
+      }
+      return photosOf(await uid());
+    },
+
+    async removePhoto(id) {
+      await rpc('remove_photo', { p_id: id });
+      return photosOf(await uid());
     },
 
     async reportBadContact(inviteId, ownerId) {

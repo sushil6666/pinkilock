@@ -13,6 +13,9 @@
  * device that turned out to be gone loses its token, and any other failure is written on the
  * notification as receipt_error.
  *
+ * And it deletes the photo files the database has put in photo_trash (a removed photo, a deleted
+ * account), since Storage deletes files only through its API and this function holds the key.
+ *
  * Secrets (supabase secrets set ...):
  *   PUSH_HOOK_SECRET    shared with Postgres (Vault: push_function_secret). Required.
  *   EXPO_ACCESS_TOKEN   only if "enhanced push security" is on for the Expo account.
@@ -34,6 +37,7 @@ const RECEIPT_KEPT_MS = 24 * 60 * 60_000;
 const HOOK_SECRET = Deno.env.get('PUSH_HOOK_SECRET') ?? '';
 const EXPO_ACCESS_TOKEN = Deno.env.get('EXPO_ACCESS_TOKEN');
 const REST = `${Deno.env.get('SUPABASE_URL')}/rest/v1`;
+const STORAGE = `${Deno.env.get('SUPABASE_URL')}/storage/v1`;
 const SERVICE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
 /** Expo accepts at most 100 messages per request. */
 const BATCH = 100;
@@ -41,7 +45,7 @@ const BATCH = 100;
 interface Row { id: number; recipient_id: string; invite_id: string; kind: string; title: string; body: string; trace: string | null }
 interface Ticket { status: 'ok' | 'error'; id?: string; message?: string; details?: { error?: string } }
 interface Receipt { status: 'ok' | 'error'; message?: string; details?: { error?: string } }
-interface Totals { claimed: number; sent: number; no_device: number; failed: number; tokens_removed: number; receipts: number; receipt_errors: number }
+interface Totals { claimed: number; sent: number; no_device: number; failed: number; tokens_removed: number; receipts: number; receipt_errors: number; photos_deleted: number }
 
 const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } });
 
@@ -199,16 +203,40 @@ async function checkReceipts(totals: Totals): Promise<void> {
   await rest('DELETE', `push_tickets?sent_at=lt.${encodeURIComponent(old)}`);
 }
 
+/**
+ * Photo files whose row is gone (removed, or the account deleted; D087). Storage deletes files
+ * through its API only, so the database lists them in photo_trash and this run, which holds the
+ * service key already, deletes them and then their entries.
+ */
+async function emptyPhotoTrash(totals: Totals): Promise<void> {
+  for (let round = 0; round < 10; round++) {
+    const rows = (await rest<{ path: string }[]>('GET', 'photo_trash?select=path&order=at&limit=100')) ?? [];
+    if (!rows.length) return;
+    const paths = rows.map((r) => r.path);
+    const res = await fetch(`${STORAGE}/object/photos`, {
+      method: 'DELETE',
+      headers: { apikey: SERVICE_KEY, Authorization: `Bearer ${SERVICE_KEY}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ prefixes: paths }),
+    });
+    // A file that is already gone is not an error here: Storage answers 200 with what it removed.
+    if (!res.ok) throw new Error(`photo trash: ${res.status}`);
+    await rest('DELETE', `photo_trash?path=${inList(paths)}`);
+    totals.photos_deleted += paths.length;
+    if (rows.length < 100) return;
+  }
+}
+
 Deno.serve(async (req) => {
   if (req.method !== 'POST') return json({ error: 'POST only' }, 405);
   const given = (req.headers.get('Authorization') ?? '').replace(/^Bearer /, '');
   if (!HOOK_SECRET || !sameSecret(given, HOOK_SECRET)) return json({ error: 'Not allowed' }, 401);
 
-  const totals: Totals = { claimed: 0, sent: 0, no_device: 0, failed: 0, tokens_removed: 0, receipts: 0, receipt_errors: 0 };
+  const totals: Totals = { claimed: 0, sent: 0, no_device: 0, failed: 0, tokens_removed: 0, receipts: 0, receipt_errors: 0, photos_deleted: 0 };
   try {
     // Receipts first, so a device that is gone is not sent to again in this run. A failure here
     // never stops sending: the tickets wait for the next run.
     await checkReceipts(totals).catch((e) => console.log(JSON.stringify({ event: 'push_receipts_failed', error: e instanceof Error ? e.message : 'failed' })));
+    await emptyPhotoTrash(totals).catch((e) => console.log(JSON.stringify({ event: 'photo_trash_failed', error: e instanceof Error ? e.message : 'failed' })));
     // Keep going until the outbox is empty, so that one wake-up covers a burst.
     for (let round = 0; round < 10; round++) {
       // Claiming is atomic in Postgres: two overlapping runs can never take the same row.

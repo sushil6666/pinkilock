@@ -89,6 +89,10 @@ export const ERRORS = {
   PL103: 'Their handle is verified: it was proved from that account.',
   PL104: 'Pick things that are on offer where you live.',
   PL105: 'You moved city this week. You can move again 7 days after.',
+  PL106: 'That photo could not be used. Pick another one.',
+  PL107: 'You have three photos. Remove one first.',
+  PL108: 'That is enough new photos for this week. Try again in a few days.',
+  PL109: 'That photo is not there any more.',
 
   PA001: 'Phone sign-in is not switched on yet.',
   PA002: 'Email sign-in is not switched on yet.',

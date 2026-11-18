@@ -16,6 +16,17 @@ alter default privileges in schema public grant all on tables to anon, authentic
 alter default privileges in schema public grant all on functions to anon, authenticated, service_role;
 alter default privileges in schema public grant all on sequences to anon, authenticated, service_role;
 
+-- Supabase Storage, as far as the migrations use it: buckets, objects with RLS on, and the API
+-- roles' grants (RLS decides). Files themselves are not stored here.
+create schema storage;
+create table storage.buckets (id text primary key, name text not null, public boolean not null default false,
+  file_size_limit bigint, allowed_mime_types text[]);
+create table storage.objects (id uuid primary key default gen_random_uuid(), bucket_id text references storage.buckets (id),
+  name text not null, owner uuid, created_at timestamptz not null default now(), unique (bucket_id, name));
+alter table storage.objects enable row level security;
+grant usage on schema storage to anon, authenticated, service_role;
+grant all on storage.objects, storage.buckets to anon, authenticated, service_role;
+
 -- pg_cron stand-in: records the job so that the tests can check what was scheduled.
 create schema cron;
 create table cron.job (jobid bigint generated always as identity primary key, jobname text unique, schedule text not null, command text not null);

@@ -161,7 +161,10 @@ Full DDL is `supabase/migrations`. Tables:
 | Table | What it holds | Who can touch it |
 | --- | --- | --- |
 | `profiles` | The public card: name, age (18+ check), area, tagline, vibes, `idea_ids` | Read: me, and people I share an invite with (any status, never across a block); everyone else only through `discover()`. **No direct writes**: only through `save_profile` |
-| `profile_private` | Contact handle and extra photos | Read: you, and anyone with a `kept` invite with you. **No direct writes**: the contact through `save_profile`, photos by the server only |
+| `profile_private` | Contact handle | Read: you, and anyone with a `kept` invite with you (`private.revealed_to`). **No direct writes**: the contact through `save_profile` |
+| `photos` | Up to three photos behind the lock: path in Storage, `pending` / `approved` / `held`, size | Read: your own; someone else's only when approved and `private.revealed_to` allows. **No client writes**: added by the `photo` Edge Function (`add_photo`, service role), removed with `remove_photo`, decided by a moderator |
+| `photo_trash` | Paths of photo files whose row is gone | No client access. Filled by a trigger, emptied by the push function through the Storage API |
+| Storage bucket `photos` | The photo files, JPEG with no metadata, 2 MB at most | Private. A file is readable (as a ten-minute signed link) only where its `photos` row is; no client can write |
 | `ideas` | The micro-date catalogue | Read only |
 | `vibes` | The profile tag catalogue (the same list as `VIBE_GROUPS` in `src/domain/ideas.ts`) | Read only |
 | `ask_lines` | The lines an ask can carry (the same list as `ASK_LINES` in `src/domain/ideas.ts`) | Read only |
@@ -266,7 +269,8 @@ by default. The first migration takes all of that back and grants exactly what t
 RLS is the second lock rather than the only one. `anon` (signed out) can read and call nothing.
 
 **The accountable reveal is an RLS policy, not a blur.** `private_after_kept` on `profile_private`
-returns a row only when a `kept` invite exists between the reader and the owner. The app never
+returns a row only when a `kept` invite exists between the reader and the owner (the rule is
+`private.revealed_to(owner, reader)`, shared with photos). The app never
 holds a contact handle it is not yet allowed to show; `getReveal` simply selects and gets nothing
 back until both people have checked in.
 
@@ -353,6 +357,9 @@ promise function / sweep -> invites row changes -> trigger invites_notify -> not
   (`receipt_error`), and answered tickets are dropped (unanswered ones after a day, as Expo keeps
   receipts that long). A cron job wakes the function every 15 minutes while any are due, so a
   quiet hour does not let them lapse; a receipts failure never stops sending.
+- **Photo files to delete.** The same run deletes the files listed in `photo_trash` (removed
+  photos, deleted accounts) through the Storage API, which is the only way Storage deletes a file;
+  a job wakes it every five minutes while any are listed (D087).
 
 ## 7. Analytics and the trust engine (DuckDB)
 
@@ -471,6 +478,28 @@ A locked plan offers "Add to calendar": `src/domain/calendar.ts` writes an `.ics
 first name, the place, the time in UTC, a reminder; never a contact handle) and
 `src/lib/calendarFile.ts` hands it over, as a download in a browser or through the share sheet on
 a phone. Pinkilock sends it to no calendar service; where it goes is the person's choice.
+
+### Photos behind the lock
+
+Up to three photos (D087), each shown to nobody else until a moderator has approved it, and then
+only where the handle is shown: after a kept promise, never across a block. On Me,
+`src/components/MyPhotos.tsx` picks one (`src/lib/photoPick.ts`: `expo-image-picker`, then
+`expo-image-manipulator` to a JPEG of at most 1280 px, which drops the file's metadata) and the
+backend POSTs it with the person's own token to the `photo` Edge Function. The function checks the
+token with Auth, strips the file again (`supabase/functions/photo/jpeg.ts`: EXIF, XMP, ICC,
+comments and anything after the image; a file that is not a whole JPEG is refused), asks
+`add_photo` for the rules (three photos, six uploads a week, 2 MB, not paused) and stores the file
+in the private `photos` bucket. No client can write to the bucket, so a modified app cannot skip
+any of that.
+
+A moderator works through `scripts/moderate.sh photos` and decides with `photo <id> approve_photo |
+hold_photo | hold_photo_contact`; the last is a strike, as for a line. Reading is RLS twice over:
+`photos` returns my own rows and someone else's approved rows where `private.revealed_to` allows,
+and the Storage policy signs a file only when its row is readable. Links last ten minutes and the
+app keeps none. Removing a photo, or deleting the account, deletes the row at once (and with it
+every way to read the file) and leaves the path in `photo_trash`; the push function, woken by a
+five-minute job, deletes the files through the Storage API. A phone build from before this change
+has no picker, so Me says photos need the new version.
 
 ### Share my date and the after-date check
 

@@ -119,6 +119,7 @@ export const en = {
     contactSpoken: '{kind}: {handle}',
     contactLocked: 'Contact locked. {hint}',
     lockedPhoto: 'Locked photo',
+    photoOf: 'Photo of {name}',
   },
 
   checkIn: {
@@ -937,6 +938,20 @@ export const en = {
   },
 
   /** The calendar file for a locked plan. It goes only where the person sends it. */
+  photos: {
+    title: 'Photos',
+    add: 'Add photo',
+    adding: 'Adding…',
+    remove: 'Remove this photo',
+    body: 'Up to three. Shown only to someone you kept a promise with, after a person here has checked each one. No handles, numbers or codes in a photo.',
+    needsUpdate: 'Photos need the latest version of the app.',
+    state: {
+      pending: 'Checking',
+      approved: 'Approved',
+      held: 'Not approved',
+    },
+  },
+
   calendar: {
     add: 'Add to calendar',
     title: '{idea} with {who} (Pinkilock)',

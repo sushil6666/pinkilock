@@ -56,7 +56,8 @@ Supabase stack and in CI; it reaches the real project when the PR merges.
 - [ ] iOS: Apple developer account, the first iOS build, and APNs push. (Skipped for now.)
 - [ ] Store readiness: privacy policy, age rating, data-safety forms, TestFlight and Play internal
   testing. (Skipped for now.)
-- [ ] A way to review reports other than the SQL editor.
+- [x] A way to review reports other than the SQL editor: `scripts/moderate.sh` (reports, lines,
+  photos, appeals), with the database role and a reason for every action.
 - [x] **Contact handles that work** (D077): each app's format checked in the app and on the
   server, a "Check it" link, and a flag after a kept plan when a handle did not work, which counts
   against the owner's Trust Score unless they verify or fix it within 7 days (D079).
@@ -80,7 +81,11 @@ someone, and delete their account, on both platforms, against the production pro
   busy public places to meet (237 in all). People pick their city at sign-up and can move on Me,
   once a week. The place lists should be checked by someone who lives in each city.
 
-- Photo upload to Supabase Storage, with extra photos still hidden until a kept promise.
+- [x] **Photos behind the lock** (D087): up to three photos on Me, stored in a private Supabase
+  Storage bucket by the `photo` Edge Function, which strips their metadata. A person checks each one
+  before anyone sees it (`scripts/moderate.sh photos`); then it shows only after a kept promise, like
+  the handle. Picking needs the next binary. AI review (O04) and the public photo taken with the
+  camera (WP7b) come later.
 - The video room named in video plans.
 - [x] **Calendar export**: "Add to calendar" on a locked plan makes an `.ics` file on the phone and
   hands it over (a download in a browser, the share sheet on a phone). It reaches phones with the next
