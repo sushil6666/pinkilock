@@ -18,6 +18,7 @@ import { checkAsk, checkContact, checkProfile } from '../../domain/profile';
 import { venueOf, venuePlace } from '../../domain/venues';
 import { ALL_CONSENTS } from '../../domain/countries';
 import { FREE_WINDOWS } from '../../domain/freeWindows';
+import { VOUCH_MAX_PICKS, VOUCH_PHRASES } from '../../domain/vouches';
 
 const KEY = 'pinkilock.mock.v1';
 const LATENCY = 280;
@@ -56,6 +57,7 @@ export function createMockBackend(): Backend {
   /** When the name and the line last changed (the first ones after joining are free). */
   const changed: { name?: number; tagline?: number } = {};
   const ratings = new Map<string, boolean>();
+  const vouchLinks = new Map<string, number>();
   let db: Db | null = null;
   const reveals = seedReveals();
   const listeners = new Set<(e: BackendEvent) => void>();
@@ -252,6 +254,22 @@ export function createMockBackend(): Backend {
         if (contactKind && contactHandle) d.myContact = { kind: contactKind, handle: contactHandle };
         return { me: d.me, myContact: d.myContact ?? undefined };
       }),
+
+    // Links work inside this phone only: there is no one else to open them.
+    async createVouchLink() {
+      const token = Math.random().toString(16).slice(2, 10).padEnd(16, '0');
+      vouchLinks.set(token, 0);
+      return token;
+    },
+    async vouchFor(token) {
+      const d = await load();
+      return vouchLinks.has(token) ? d.me?.name ?? null : null;
+    },
+    async vouch(token, phrases) {
+      if (!vouchLinks.has(token)) fail('PL085');
+      if (phrases.length < 1 || phrases.length > VOUCH_MAX_PICKS || phrases.some((p) => !(VOUCH_PHRASES as readonly string[]).includes(p))) fail('PL087');
+      fail('PL086');
+    },
 
     saveAvailability: (windows) =>
       mutate((d) => {

@@ -28,6 +28,8 @@ import { quiet } from '@/lib/log';
 import { buildLabel } from '@/lib/build';
 import { diagnostics } from '@/lib/report';
 import { FREE_WINDOWS } from '@/domain/freeWindows';
+import { Vouches } from '@/components/Vouches';
+import * as Linking from 'expo-linking';
 
 export default function Me() {
   const me = useStore((s) => s.me);
@@ -81,6 +83,12 @@ export default function Me() {
     } else {
       await Share.share({ title: 'My Pinkilock data', message: json });
     }
+  });
+
+  const askVouch = () => run('vouch', async () => {
+    const token = await backend.createVouchLink();
+    const link = Platform.OS === 'web' ? `${window.location.origin}/vouch/${token}` : Linking.createURL(`/vouch/${token}`);
+    await Share.share({ message: `Vouch for me on Pinkilock? Pick up to three words, takes ten seconds: ${link}` });
   });
 
   const shareDiagnostics = () => run('diagnostics', async () => {
@@ -181,6 +189,11 @@ export default function Me() {
         </View>
       ))}
       {error ? <ErrorText text={error} style={{ marginTop: space.sm }} /> : null}
+
+      <View style={{ marginTop: space.lg, gap: space.sm }}>
+        <Vouches person={me} />
+        <Button kind="ghost" icon="users" label="Ask a friend to vouch for you" onPress={askVouch} />
+      </View>
 
       <T v="label" c={color.textDim} style={styles.section}>When I am usually free  /  tap to change</T>
       <View style={styles.wrap}>

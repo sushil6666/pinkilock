@@ -21,6 +21,7 @@ import { color, radius, space } from '@/theme/tokens';
 import { ErrorText } from '@/components/ui/ErrorText';
 import { shown } from '@/lib/report';
 import { answersIn } from '@/domain/answers';
+import { Vouches } from '@/components/Vouches';
 
 export default function ProfileScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -81,6 +82,7 @@ export default function ProfileScreen() {
 
         {person.tagline ? <T v="heading">{person.tagline}</T> : null}
         {me && me.id !== person.id ? <Spark me={me} person={person} /> : null}
+        <Vouches person={person} />
         {person.vibes.length > 0 && <View style={styles.wrap}>{person.vibes.map((v) => <Chip key={v} label={v} />)}</View>}
 
         <View style={{ gap: space.sm }}>

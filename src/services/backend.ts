@@ -73,6 +73,12 @@ export interface Backend {
   fileRequest(kind: PrivacyRequestKind, detail: string, actionId?: number): Promise<void>;
   /** What moderators did about my account, and why. */
   myModeration(): Promise<{ id: number; action: string; reason: string; at: number }[]>;
+  /** A link a friend can open to vouch for me (three a day; each good for 7 days and three friends). */
+  createVouchLink(): Promise<string>;
+  /** Whose link this is (first name), or null when it has expired. */
+  vouchFor(token: string): Promise<string | null>;
+  /** Vouch for a friend: one to three phrases from the list. Anyone can, signed in or not. */
+  vouch(token: string, phrases: string[]): Promise<void>;
   /** When I am usually free (market review). Any time when empty. */
   saveAvailability(windows: string[]): Promise<Changes>;
   /** My own profile line, if a new one is waiting for review or was not accepted. Null when the card shows what I wrote. */

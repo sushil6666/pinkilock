@@ -38,6 +38,8 @@ function toProfile(r: Row): Profile {
     photoCount: r.photo_count ?? 0,
     answerMinutes: r.median_answer_minutes == null ? null : Number(r.median_answer_minutes),
     freeWindows: r.free_windows ?? [],
+    vouchCount: r.vouch_count ?? 0,
+    vouchPhrases: r.vouch_phrases ?? [],
   };
 }
 
@@ -395,6 +397,21 @@ export function createSupabaseBackend(url: string, anonKey: string, storage: Ses
       await uid();
       const rows = await rpc<{ id: number; action: string; reason: string; at: string }[]>('my_moderation');
       return (rows ?? []).map((r) => ({ id: r.id, action: r.action, reason: r.reason, at: ms(r.at)! }));
+    },
+
+    async createVouchLink() {
+      await uid();
+      return rpc<string>('create_vouch_link');
+    },
+
+    async vouchFor(token) {
+      await uid();
+      return (await rpc<string | null>('vouch_link_name', { p_token: token })) ?? null;
+    },
+
+    async vouch(token, phrases) {
+      await uid();
+      await rpc('vouch', { p_token: token, p_phrases: phrases });
     },
 
     async saveAvailability(windows) {

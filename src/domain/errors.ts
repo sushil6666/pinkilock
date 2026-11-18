@@ -67,6 +67,10 @@ export const ERRORS = {
   PL081: 'That decision is not about you.',
   PL082: 'You have sent a lot of requests today. We will answer the ones we have.',
   PL083: 'Pick times from the list.',
+  PL084: 'You have made a few links today. Share the ones you have.',
+  PL085: 'This link has expired. Ask your friend for a new one.',
+  PL086: 'You cannot vouch here.',
+  PL087: 'Pick one to three from the list.',
   PL090: 'That moderation step is not valid.',
 
   PA001: 'Phone sign-in is not switched on yet.',
