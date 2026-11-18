@@ -3,18 +3,28 @@
  * ask can still pick any time; the composer marks the times inside the other person's windows, so
  * the easy yes is the obvious choice. The same ids are checked by save_availability in SQL.
  */
+import { t } from '../i18n';
 export type FreeWindow = 'wkd_morning' | 'wkd_lunch' | 'wkd_evening' | 'wkd_late' | 'wke_morning' | 'wke_afternoon' | 'wke_evening' | 'wke_late';
 
-export const FREE_WINDOWS: { id: FreeWindow; label: string; weekend: boolean; from: number; to: number }[] = [
-  { id: 'wkd_morning', label: 'Weekday mornings', weekend: false, from: 7, to: 11 },
-  { id: 'wkd_lunch', label: 'Weekday lunch', weekend: false, from: 12, to: 15 },
-  { id: 'wkd_evening', label: 'Weekday evenings', weekend: false, from: 17, to: 21 },
-  { id: 'wkd_late', label: 'Weekday late', weekend: false, from: 21, to: 24 },
-  { id: 'wke_morning', label: 'Weekend mornings', weekend: true, from: 7, to: 12 },
-  { id: 'wke_afternoon', label: 'Weekend afternoons', weekend: true, from: 12, to: 17 },
-  { id: 'wke_evening', label: 'Weekend evenings', weekend: true, from: 17, to: 21 },
-  { id: 'wke_late', label: 'Weekend late', weekend: true, from: 21, to: 24 },
-];
+/** The words come from src/i18n (`freeWindows`). */
+export const FREE_WINDOWS: { id: FreeWindow; readonly label: string; weekend: boolean; from: number; to: number }[] = ([
+  ['wkd_morning', false, 7, 11],
+  ['wkd_lunch', false, 12, 15],
+  ['wkd_evening', false, 17, 21],
+  ['wkd_late', false, 21, 24],
+  ['wke_morning', true, 7, 12],
+  ['wke_afternoon', true, 12, 17],
+  ['wke_evening', true, 17, 21],
+  ['wke_late', true, 21, 24],
+] as const).map(([id, weekend, from, to]) => ({
+  id,
+  get label() {
+    return t(`freeWindows.${id}`);
+  },
+  weekend,
+  from,
+  to,
+}));
 
 /** Which window a start time falls in, in the phone's own time zone. */
 export function windowOf(at: number): FreeWindow | null {
@@ -32,4 +42,4 @@ export function suits(at: number, windows: readonly string[] | undefined): boole
 }
 
 export const windowsLabel = (windows: readonly string[]): string =>
-  FREE_WINDOWS.filter((w) => windows.includes(w.id)).map((w) => w.label.toLowerCase()).join(', ');
+  FREE_WINDOWS.filter((w) => windows.includes(w.id)).map((w) => t(`freeWindowsInLine.${w.id}`)).join(', ');

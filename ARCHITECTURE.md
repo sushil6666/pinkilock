@@ -64,6 +64,9 @@ src/
     index.ts                 Picks mock or Supabase from the environment
     mock/                    seed.ts, mockBackend.ts (latency + a simulated other person)
     supabase/                supabaseBackend.ts (Auth, rpc, RLS reads, Realtime)
+  i18n/                      Every word on screen: en.ts (the English, and the shape other languages
+                             follow), t() with plurals, dates, times, numbers and distance by locale,
+                             and two pseudo-languages for tests
   state/store.ts             Zustand: cache of backend rows + actions
   lib/                       haptics, useNow, useReveal, push (register this device, route taps),
                              web (the few things only a browser needs)
@@ -452,6 +455,26 @@ contact handle) and "Check on me after" (a local notification 15 minutes after t
 the Safety screen). Both stay on the phone: Pinkilock keeps no trusted contact and cannot alert
 anyone by itself.
 
+### Words and languages
+
+Nothing on screen is written into a screen. Screens, components and the few domain labels that
+are words (report reasons, kinds of date, ask tones, free windows, tag groups) call `t('group.key')`
+from `src/i18n`; the English is `src/i18n/en.ts`, and a new language is a file of the same shape
+in which any key left out shows in English. Error messages are looked up by code, so the SQL
+keeps the English and the app shows the phone's language. Dates, times and numbers use the
+phone's locale through `Intl`, plan times are shown in the viewer's own time zone, and distance
+is in miles where the locale's country uses them (US, UK, Liberia, Myanmar). The language comes
+from the phone, or `?lang=` in a browser. On a phone a right-to-left language flips the layout
+from the next start; in a browser `<html>` gets `lang` and `dir`. Two pseudo-languages exist only
+for testing: `en-XA` (accented and a third longer) shows any text that skipped `t()` and any label
+that will not fit, and `ar-XB` checks the mirrored layout. `tests/unit/strings.test.ts` fails on
+words written straight into a screen.
+
+Catalogue content is not in the strings files: idea titles and openers, profile tags, ask lines
+and venues are rows in SQL tables, and are translated per region by a native speaker as each
+region opens (WP9). Stored values stay as they were written: the place on a remote ask, and the
+picked ask line, are read by the other person as sent.
+
 ### On the phone
 
 The session is stored encrypted: a fresh key per item in the keystore (`expo-secure-store`), the
@@ -556,7 +579,8 @@ a query filter. None of this is a defence on its own: every rule that matters is
 
 - `npm run typecheck`: TypeScript strict over the app.
 - `npm run test:unit`: the error catalogue matches the SQL in both directions, the logger keeps no
-  content, the on-screen reference round-trips, and no catch in `src` or `app` is empty.
+  content, the on-screen reference round-trips, no catch in `src` or `app` is empty, and no screen
+  or component has words written into it (every word goes through `src/i18n`).
 - `python tests/db/run.py`: starts a throwaway Postgres (pgserver), applies a small Supabase shim
   (roles, their default privileges, `auth.uid()`, a pg_cron stand-in), runs every file in
   `supabase/migrations`, walks three users through the state machine as the `authenticated` role

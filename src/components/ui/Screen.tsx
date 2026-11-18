@@ -17,6 +17,7 @@ import { webOnly } from '../../lib/web';
 import { color, columnMax, gutter, space } from '../../theme/tokens';
 import { Logo } from '../Logo';
 import { T } from './T';
+import { t } from '../../i18n';
 
 interface Props {
   children: ReactNode;
@@ -66,7 +67,7 @@ export function Screen({ children, title, back = false, onBack, right, footer, s
       {hasHeader && (
         <View style={styles.header}>
           {back !== false ? (
-            <Pressable accessibilityRole="button" accessibilityLabel={back === 'close' ? 'Close' : 'Back'} hitSlop={12} onPress={onBack ?? goBack} style={styles.headerBtn}>
+            <Pressable accessibilityRole="button" accessibilityLabel={t(back === 'close' ? 'common.close' : 'common.back')} hitSlop={12} onPress={onBack ?? goBack} style={styles.headerBtn}>
               <Feather name={back === 'close' ? 'x' : 'arrow-left'} size={22} color={color.text} />
             </Pressable>
           ) : <View style={styles.headerBtn} />}

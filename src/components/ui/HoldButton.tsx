@@ -14,6 +14,7 @@ import { haptic } from '../../lib/haptics';
 import { isWeb, swallowReleaseClick } from '../../lib/web';
 import { color, radius, space, depth } from '../../theme/tokens';
 import { T } from './T';
+import { t } from '../../i18n';
 
 interface Props {
   label: string;
@@ -55,7 +56,7 @@ export function HoldButton({ label, onComplete, tone = 'pink', disabled, busy }:
     <Pressable
       accessibilityRole="button"
       accessibilityLabel={label}
-      accessibilityHint="Press and hold for one second"
+      accessibilityHint={t('common.holdHint')}
       accessibilityState={{ disabled: !!off }}
       accessibilityActions={[{ name: 'activate' }]}
       onAccessibilityAction={() => !off && done()}

@@ -14,6 +14,7 @@ import { useNow } from '@/lib/useNow';
 import { aria } from '@/lib/web';
 import { useStore } from '@/state/store';
 import { color, radius, space } from '@/theme/tokens';
+import { t } from '@/i18n';
 
 type Side = 'in' | 'out';
 
@@ -38,27 +39,27 @@ export default function Invites() {
 
   return (
     <Screen inTabs>
-      <T v="display" style={{ marginBottom: space.lg }}>Vibe{'\n'}checks</T>
+      <T v="display" style={{ marginBottom: space.lg }}>{t('asks.title')}</T>
 
       <View style={styles.seg} accessibilityRole="tablist">
         {(['in', 'out'] as Side[]).map((s) => (
           <Pressable key={s} accessibilityRole="tab" accessibilityState={{ selected: side === s }} {...aria({ selected: side === s })} onPress={() => { haptic.tick(); setSide(s); }} style={[styles.segBtn, side === s && styles.segOn]}>
-            <T v="label" c={side === s ? color.onPink : color.textDim}>{s === 'in' ? 'For you' : 'Sent'}  {counts[s]}</T>
+            <T v="label" c={side === s ? color.onPink : color.textDim}>{t(s === 'in' ? 'asks.forYou' : 'asks.sent', { count: counts[s] })}</T>
           </Pressable>
         ))}
       </View>
 
       <View key={side} style={{ gap: space.md, marginTop: space.lg }}>
-        {side === 'out' && <T v="caption" c={color.textDim}>{counts.out} of {MAX_OPEN_ASKS} asks open. Three at a time keeps every one of them meant.</T>}
+        {side === 'out' && <T v="caption" c={color.textDim}>{t('asks.openOf', { count: counts.out, max: MAX_OPEN_ASKS })}</T>}
         {open.map(row)}
         {open.length === 0 && (
           <View style={styles.empty}>
-            <T v="title">{side === 'in' ? 'No asks waiting for you.' : 'No asks sent yet.'}</T>
-            <T c={color.textDim}>{side === 'in' ? 'When someone asks you out, it appears here with a countdown.' : 'Pick a person, choose one small plan and set a time.'}</T>
-            <Button kind="ghost" icon="compass" label="Go to Discover" onPress={() => router.push('/(tabs)')} />
+            <T v="title">{t(side === 'in' ? 'asks.noneIn' : 'asks.noneOut')}</T>
+            <T c={color.textDim}>{t(side === 'in' ? 'asks.noneInBody' : 'asks.noneOutBody')}</T>
+            <Button kind="ghost" icon="compass" label={t('asks.goDiscover')} onPress={() => router.push('/(tabs)')} />
           </View>
         )}
-        {closed.length > 0 && <T v="label" c={color.textMute} style={{ marginTop: space.lg }}>Closed</T>}
+        {closed.length > 0 && <T v="label" c={color.textMute} style={{ marginTop: space.lg }}>{t('asks.closed')}</T>}
         {closed.map(row)}
       </View>
     </Screen>

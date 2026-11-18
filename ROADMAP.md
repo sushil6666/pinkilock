@@ -65,6 +65,10 @@ someone, and delete their account, on both platforms, against the production pro
 
 - [x] **Double micro-dates** (market review, F3): duos made from a link, four people on one plan,
   check-in across sides, a flake only on whoever did not show, the reveal between people who met.
+- [x] **Ready for a second country** (build plan WP9, first parts): area, pronouns and city picked
+  from lists; contact apps by region; a country picker for phone sign-in; every word on screen in a
+  strings file, with dates, times, numbers and distance in the phone's own format, and right to left
+  wired. A real second language waits for a native speaker.
 
 - Photo upload to Supabase Storage, with extra photos still hidden until a kept promise.
 - The video room named in video plans.

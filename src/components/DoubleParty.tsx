@@ -12,6 +12,7 @@ import { usePerson } from '../state/store';
 import { color, radius, space } from '../theme/tokens';
 import { Portrait } from './Portrait';
 import { T } from './ui/T';
+import { t } from '../i18n';
 
 interface Props {
   invite: Invite;
@@ -26,9 +27,9 @@ export function DoubleParty({ invite, meId, show }: Props) {
   const askers = onAskersSide(invite, meId);
   return (
     <View style={styles.box}>
-      <Side label={askers ? 'Your side, asking' : 'Your side'} ids={mine} invite={invite} meId={meId} show={show} />
+      <Side label={t(askers ? 'party.yourSideAsking' : 'party.yourSide')} ids={mine} invite={invite} meId={meId} show={show} />
       <View style={styles.cross}><T v="label" c={color.pink}>×</T></View>
-      <Side label={askers ? 'Asked' : 'Asking'} ids={theirs} invite={invite} meId={meId} show={show} />
+      <Side label={t(askers ? 'party.asked' : 'party.asking')} ids={theirs} invite={invite} meId={meId} show={show} />
     </View>
   );
 }
@@ -45,19 +46,19 @@ function Side({ label, ids, invite, meId, show }: { label: string; ids: string[]
 function Person({ id, invite, meId, show }: { id: string; invite: Invite; meId: string; show: Props['show'] }) {
   const person = usePerson(id);
   const me = id === meId;
-  const name = me ? 'You' : person?.name ?? 'Someone';
+  const name = me ? t('common.you') : person?.name ?? t('common.someone');
   // The asker's pinky is the seal: it is out exactly when the plan is locked.
   const pinky = (invite.pinkies ?? []).includes(id) || (id === invite.fromId && invite.status !== 'sent' && invite.status !== 'half_locked');
   const done = show === 'pinkies' ? pinky : show === 'checkins' ? invite.checkIns.includes(id) : false;
   // Short, to fit half a phone's width; the full words go to screen readers.
-  const what = show === 'pinkies' ? (done ? 'pinky out' : id === invite.fromId ? 'seals last' : 'not yet')
-    : show === 'checkins' ? (done ? 'checked in' : 'not yet') : '';
-  const said = show === 'pinkies' ? (done ? 'pinky out' : id === invite.fromId ? 'seals it last' : 'pinky not out yet')
-    : show === 'checkins' ? (done ? 'checked in' : 'not checked in yet') : '';
+  const what = show === 'pinkies' ? t(done ? 'party.pinkyOut' : id === invite.fromId ? 'party.sealsLast' : 'party.notYet')
+    : show === 'checkins' ? t(done ? 'party.checkedIn' : 'party.notYet') : '';
+  const said = show === 'pinkies' ? t(done ? 'party.pinkyOut' : id === invite.fromId ? 'party.sealsLastSpoken' : 'party.pinkyNotOutSpoken')
+    : show === 'checkins' ? t(done ? 'party.checkedIn' : 'party.notCheckedInSpoken') : '';
   return (
     <Pressable
       accessibilityRole={!me && person ? 'button' : undefined}
-      accessibilityLabel={said ? `${name}: ${said}` : name}
+      accessibilityLabel={said ? t('party.personSpoken', { name, said }) : name}
       disabled={me || !person}
       onPress={() => router.push(`/profile/${id}`)}
       style={styles.person}

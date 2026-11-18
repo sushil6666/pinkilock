@@ -17,6 +17,7 @@ import { useNow } from '@/lib/useNow';
 import { useStore } from '@/state/store';
 import { elevation } from '@/theme/elevation';
 import { color, radius, space } from '@/theme/tokens';
+import { t } from '@/i18n';
 
 export default function Plans() {
   const meId = useStore((s) => s.me?.id ?? '');
@@ -32,48 +33,48 @@ export default function Plans() {
 
   return (
     <Screen inTabs>
-      <T v="display" style={{ marginBottom: space.lg }}>Locked{'\n'}plans</T>
+      <T v="display" style={{ marginBottom: space.lg }}>{t('plans.title')}</T>
 
       {next ? (
-        <Pressable accessibilityRole="button" accessibilityLabel={`Next: ${ideaOf(next.ideaId).title} with ${who(next)?.name}`} onPress={() => open(next)} style={[styles.hero, elevation('glow')]}>
+        <Pressable accessibilityRole="button" accessibilityLabel={t('plans.nextSpoken', { idea: ideaOf(next.ideaId).title, name: who(next)?.name ?? t('common.someone') })} onPress={() => open(next)} style={[styles.hero, elevation('glow')]}>
           <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-            <T v="label" c={color.pink}>Next up</T>
-            {checkInPhase(next, now) === 'open' && <T v="label" c={color.gold}>{next.checkIns.includes(meId) ? 'You are checked in' : 'Check-in is open'}</T>}
+            <T v="label" c={color.pink}>{t('plans.next')}</T>
+            {checkInPhase(next, now) === 'open' && <T v="label" c={color.gold}>{t(next.checkIns.includes(meId) ? 'plans.checkedIn' : 'plans.checkInOpen')}</T>}
           </View>
           <Countdown target={next.startsAt} now={now} tone={now >= next.startsAt ? color.gold : color.text} />
           <View style={styles.heroFoot}>
             <T style={{ fontSize: 30, lineHeight: 38 }} maxFontSizeMultiplier={1}>{ideaOf(next.ideaId).emoji}</T>
             <View style={{ flex: 1 }}>
               <T v="heading" numberOfLines={1}>{ideaOf(next.ideaId).title}</T>
-              <T v="caption" c={color.textDim}>with {who(next)?.name}  /  {whenLabel(next.startsAt, now)}</T>
+              <T v="caption" c={color.textDim}>{t('lock.withWhen', { who: who(next)?.name ?? t('common.someone'), when: whenLabel(next.startsAt, now) })}</T>
             </View>
             <Feather name="arrow-right" size={20} color={color.pink} />
           </View>
         </Pressable>
       ) : (
         <View style={styles.empty}>
-          <T v="title">Nothing locked.</T>
-          <T c={color.textDim}>Plans appear here as soon as both pinkies lock. Answer an ask, or send one to get started.</T>
-          <Button icon="send" label="See your asks" onPress={() => router.push('/(tabs)/invites')} />
+          <T v="title">{t('plans.emptyTitle')}</T>
+          <T c={color.textDim}>{t('plans.emptyBody')}</T>
+          <Button icon="send" label={t('discover.seeAsks')} onPress={() => router.push('/(tabs)/invites')} />
         </View>
       )}
 
-      {later.length > 0 && <T v="label" c={color.textDim} style={styles.section}>After that</T>}
+      {later.length > 0 && <T v="label" c={color.textDim} style={styles.section}>{t('plans.later')}</T>}
       <View style={{ gap: space.sm }}>
         {later.map((i, k) => (
           <Animated.View key={i.id} entering={FadeInDown.delay(k * 60).duration(320)}>
-            <Row invite={i} name={who(i)?.name ?? 'Someone'} portrait={who(i)} right={shortCountdown(i.startsAt, now)} tone={color.pink} sub={whenLabel(i.startsAt, now)} onPress={() => open(i)} />
+            <Row invite={i} name={who(i)?.name ?? t('common.someone')} portrait={who(i)} right={shortCountdown(i.startsAt, now)} tone={color.pink} sub={whenLabel(i.startsAt, now)} onPress={() => open(i)} />
           </Animated.View>
         ))}
       </View>
 
-      {history.length > 0 && <T v="label" c={color.textDim} style={styles.section}>Your record</T>}
+      {history.length > 0 && <T v="label" c={color.textDim} style={styles.section}>{t('plans.record')}</T>}
       <View style={{ gap: space.sm }}>
         {history.map((i, k) => {
           const s = statusLine(i, meId, who(i)?.name ?? 'They', now);
           return (
             <Animated.View key={i.id} entering={FadeInDown.delay(k * 60).duration(320)}>
-              <Row invite={i} name={who(i)?.name ?? 'Someone'} portrait={who(i)} right={s.text} tone={s.tone} sub={whenLabel(i.startsAt, now)} onPress={() => open(i)} />
+              <Row invite={i} name={who(i)?.name ?? t('common.someone')} portrait={who(i)} right={s.text} tone={s.tone} sub={whenLabel(i.startsAt, now)} onPress={() => open(i)} />
             </Animated.View>
           );
         })}
@@ -85,11 +86,11 @@ export default function Plans() {
 function Row({ invite, name, portrait, right, tone, sub, onPress }: { invite: Invite; name: string; portrait?: { name: string; palette: [string, string]; glyph: string }; right: string; tone: string; sub: string; onPress: () => void }) {
   const idea = ideaOf(invite.ideaId);
   return (
-    <Pressable accessibilityRole="button" accessibilityLabel={`${idea.title} with ${name}, ${sub}. ${right}`} onPress={onPress} style={({ pressed }) => [styles.row, pressed && { backgroundColor: color.surfaceHi }]}>
+    <Pressable accessibilityRole="button" accessibilityLabel={t('plans.rowSpoken', { idea: idea.title, name, when: sub, status: right })} onPress={onPress} style={({ pressed }) => [styles.row, pressed && { backgroundColor: color.surfaceHi }]}>
       {portrait && <Portrait {...portrait} size={44} />}
       <View style={{ flex: 1 }}>
-        <T v="bodyBold" numberOfLines={1}>{idea.emoji}  {idea.title}</T>
-        <T v="caption" c={color.textDim} numberOfLines={1}>{name}  /  {sub}</T>
+        <T v="bodyBold" numberOfLines={1}>{`${idea.emoji}  ${idea.title}`}</T>
+        <T v="caption" c={color.textDim} numberOfLines={1}>{`${name}  /  ${sub}`}</T>
       </View>
       <T v="label" c={tone} style={{ fontVariant: ['tabular-nums'], maxWidth: 120, textAlign: 'right' }}>{right}</T>
     </Pressable>

@@ -33,6 +33,7 @@ import { useInvite, usePerson, useStore } from '@/state/store';
 import { color, radius, space } from '@/theme/tokens';
 import { ErrorText } from '@/components/ui/ErrorText';
 import { shown } from '@/lib/report';
+import { t } from '@/i18n';
 
 export default function PlanScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -59,8 +60,8 @@ export default function PlanScreen() {
     return (
       <Screen back="back" scroll={false}>
         <View style={{ flex: 1, justifyContent: 'center', gap: space.md }}>
-          <T v="display">No plan{'\n'}here.</T>
-          <T c={color.textDim}>This plan is no longer available.</T>
+          <T v="display">{t('plan.goneTitle')}</T>
+          <T c={color.textDim}>{t('plan.goneBody')}</T>
         </View>
       </Screen>
     );
@@ -78,7 +79,7 @@ export default function PlanScreen() {
   const double = isDouble(invite);
   // On a double that was kept without me, I am the one who missed it.
   const myFlake = (flaked && (invite.flakedBy === me.id || (double && !invite.flakedBy && !iAmIn))) || (kept && double && !iAmIn);
-  const both = double ? `${name} and ${theirFriend?.name ?? 'their duo'}` : name;
+  const both = double ? t('checkIn.both', { a: name, b: theirFriend?.name ?? t('ticket.theirDuo') }) : name;
 
   const run = async (work: () => Promise<void>, ok: () => void) => {
     setBusy(true);
@@ -94,21 +95,21 @@ export default function PlanScreen() {
   };
 
   let footer = null;
-  if (!locked) footer = <Button kind="ghost" icon="user" label={`${name}'s profile`} onPress={() => router.push(`/profile/${other.id}`)} />;
+  if (!locked) footer = <Button kind="ghost" icon="user" label={t('plan.profileOf', { name })} onPress={() => router.push(`/profile/${other.id}`)} />;
 
   return (
-    <Screen back="back" title={kept && !myFlake ? 'Promise kept' : flaked || myFlake ? 'Promise broken' : 'Locked plan'} footer={footer}>
+    <Screen back="back" title={t(kept && !myFlake ? 'status.kept' : flaked || myFlake ? 'plan.broken' : 'plan.lockedPlan')} footer={footer}>
       <Animated.View entering={FadeInDown.duration(360)} style={{ gap: space.xl }}>
         <View style={{ gap: space.sm }}>
           <T v="label" c={kept && !myFlake ? color.gold : flaked || myFlake ? color.flare : color.pink}>
-            {myFlake ? (kept || !invite.flakedBy ? 'You missed it' : 'You flaked')
-              : kept ? (double ? 'Both sides showed' : 'You both showed')
-              : flaked ? (double ? (invite.flakedBy ? `${flaker?.name ?? 'Someone'} flaked` : 'Not enough people showed') : `${name} flaked`)
-              : now >= invite.startsAt ? 'Happening now' : 'Starts in'}
+            {myFlake ? t(kept || !invite.flakedBy ? 'status.youMissed' : 'status.youFlaked')
+              : kept ? t(double ? 'plan.bothSides' : 'plan.bothShowed')
+              : flaked ? (double ? (invite.flakedBy ? t('status.theyFlaked', { name: flaker?.name ?? t('common.someone') }) : t('plan.notEnough')) : t('status.theyFlaked', { name }))
+              : t(now >= invite.startsAt ? 'plan.now' : 'plan.startsIn')}
           </T>
           {locked && <Countdown target={invite.startsAt} now={now} tone={phase === 'open' ? color.gold : color.text} />}
-          {kept && !myFlake && <T v="mega" c={color.gold}>Kept.</T>}
-          {(flaked || myFlake) && <T v="mega" c={color.flare}>{myFlake ? 'Missed.' : 'Stood up.'}</T>}
+          {kept && !myFlake && <T v="mega" c={color.gold}>{t('plan.keptBig')}</T>}
+          {(flaked || myFlake) && <T v="mega" c={color.flare}>{t(myFlake ? 'plan.missedBig' : 'plan.stoodUpBig')}</T>}
         </View>
 
         <View style={styles.card}>
@@ -116,16 +117,16 @@ export default function PlanScreen() {
             <T style={{ fontSize: 40, lineHeight: 50 }} maxFontSizeMultiplier={1}>{idea.emoji}</T>
             <View style={{ flex: 1, gap: 4 }}>
               <T v="title">{idea.title}</T>
-              <Meta icon="clock" text={`${whenLabel(invite.startsAt, now)}  /  ${invite.minutes} min`} />
+              <Meta icon="clock" text={t('plan.whenFor', { when: whenLabel(invite.startsAt, now), minutes: invite.minutes })} />
               <Meta icon={idea.kind === 'irl' ? 'map-pin' : 'smartphone'} text={invite.place} />
             </View>
           </View>
-          {invite.note ? <T style={styles.note}>"{invite.note}"</T> : null}
-          {double ? null : <Pressable accessibilityRole="button" accessibilityLabel={`Open ${name}'s profile`} onPress={() => router.push(`/profile/${other.id}`)} style={styles.who}>
+          {invite.note ? <T style={styles.note}>{t('common.quoted', { text: invite.note })}</T> : null}
+          {double ? null : <Pressable accessibilityRole="button" accessibilityLabel={t('plan.openProfile', { name })} onPress={() => router.push(`/profile/${other.id}`)} style={styles.who}>
             <Portrait name={name} palette={other.palette} glyph={other.glyph} size={44} />
             <View style={{ flex: 1 }}>
-              <T v="bodyBold">with {name}</T>
-              <T v="caption" c={color.textDim}>{other.age}, {other.area}</T>
+              <T v="bodyBold">{t('plan.withName', { name })}</T>
+              <T v="caption" c={color.textDim}>{t('common.ageArea', { age: other.age, area: other.area })}</T>
             </View>
             <TrustBadge person={other} brief />
           </Pressable>}
@@ -134,50 +135,50 @@ export default function PlanScreen() {
 
         {locked && (
           <View style={{ gap: space.md }}>
-            <T v="label" c={color.textDim}>Check-in</T>
+            <T v="label" c={color.textDim}>{t('plan.checkIn')}</T>
             {double ? null : (
               <View style={styles.checks}>
-                <Check label="You" done={iAmIn} />
+                <Check label={t('common.you')} done={iAmIn} />
                 <View style={styles.link} />
                 <Check label={name} done={theyAreIn} />
               </View>
             )}
             <T c={color.textDim}>
-              {phase === 'early' ? `Check-in opens at ${timeLabel(invite.startsAt - CHECK_IN_OPENS_BEFORE)}, ten minutes before. ${double ? 'Each of you enters a code from someone on the other side.' : 'When you both check in, the promise is kept.'}`
-                : iAmIn ? `You're checked in. Waiting for ${double ? 'the others' : name}.`
-                : `Check-in is open for another ${shortCountdown(invite.startsAt + CHECK_IN_CLOSES_AFTER, now)}. Missing it counts as a flake.`}
+              {phase === 'early' ? t(double ? 'plan.opensAtDouble' : 'plan.opensAt', { time: timeLabel(invite.startsAt - CHECK_IN_OPENS_BEFORE) })
+                : iAmIn ? t('plan.waitingFor', { who: double ? t('plan.theOthers') : name })
+                : t('plan.openFor', { left: shortCountdown(invite.startsAt + CHECK_IN_CLOSES_AFTER, now) })}
             </T>
             {phase === 'open' && !(iAmIn && theyAreIn && (!double || invite.checkIns.length === 4)) && (
-              <CheckInCodes inviteId={invite.id} name={name} theirNames={double ? [name, theirFriend?.name ?? 'their duo'] : undefined} remote={idea.kind !== 'irl'} done={iAmIn}
+              <CheckInCodes inviteId={invite.id} name={name} theirNames={double ? [name, theirFriend?.name ?? t('ticket.theirDuo')] : undefined} remote={idea.kind !== 'irl'} done={iAmIn}
                 onCheckIn={async (code) => { await checkIn(invite.id, code); haptic.success(); }} />
             )}
-            {idea.kind === 'irl' && <Meta icon="shield" text="Meet somewhere public and tell a friend where you are." />}
+            {idea.kind === 'irl' && <Meta icon="shield" text={t('plan.meetPublic')} />}
           </View>
         )}
 
         {locked && (
           <View style={{ gap: space.sm }}>
-            <T v="label" c={color.textDim}>Break the ice</T>
+            <T v="label" c={color.textDim}>{t('plan.iceTitle')}</T>
             <T v="heading">{openerOf(idea.id)}</T>
-            <T v="caption" c={color.textDim}>There's no chat before the date, so here's an opener.</T>
+            <T v="caption" c={color.textDim}>{t('plan.iceBody')}</T>
           </View>
         )}
 
         {locked && (
           <View style={{ gap: space.sm }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-              <T v="label" c={color.pink}>Dare, if you are brave</T>
-              <Tag label="Another" tone={color.textDim} onPress={() => setDare((n) => n + 1)} />
+              <T v="label" c={color.pink}>{t('plan.dareTitle')}</T>
+              <Tag label={t('plan.another')} tone={color.textDim} onPress={() => setDare((n) => n + 1)} />
             </View>
             <T v="heading">{dares[dare % dares.length]}</T>
-            <T v="caption" c={color.textDim}>Optional. Only you see this one, and either of you can say no.</T>
+            <T v="caption" c={color.textDim}>{t('plan.dareBody')}</T>
           </View>
         )}
 
         {(flaked || myFlake) && (
           <View style={[styles.banner, { borderColor: color.flare, backgroundColor: color.flareWash }]}>
-            <T v="bodyBold">{myFlake ? 'This one is on your record.' : double ? 'Only the people who did not show take the hit.' : `This is on ${name}'s record, not yours.`}</T>
-            <T c={color.textDim}>{myFlake ? `Your score is now ${trustOf(me).score}. Keep your next few promises to bring it back up.` : "You showed up, so your score didn't change."}</T>
+            <T v="bodyBold">{myFlake ? t('plan.onYourRecord') : double ? t('plan.onTheirsDouble') : t('plan.onTheirs', { name })}</T>
+            <T c={color.textDim}>{myFlake ? t('plan.scoreNow', { score: trustOf(me).score }) : t('plan.scoreSame')}</T>
           </View>
         )}
 
@@ -188,23 +189,23 @@ export default function PlanScreen() {
 
         {!flaked && !double && (
           <View style={{ gap: space.sm }}>
-            <T v="label" c={color.textDim}>{kept ? `${name}, unlocked` : 'What you unlock'}</T>
-            <LockedReveal person={other} reveal={reveal} hint={`Opens when you and ${name} have both checked in.`} />
+            <T v="label" c={color.textDim}>{kept ? t('plan.unlocked', { name }) : t('plan.whatUnlocks')}</T>
+            <LockedReveal person={other} reveal={reveal} hint={t('plan.revealHint', { name })} />
           </View>
         )}
         {!flaked && double && [other, theirFriend].map((p, k) => p ? (
           <View key={p.id} style={{ gap: space.sm }}>
-            <T v="label" c={color.textDim}>{kept && showable(p.id) ? `${p.name}, unlocked` : `What you unlock: ${p.name}`}</T>
+            <T v="label" c={color.textDim}>{kept && showable(p.id) ? t('plan.unlocked', { name: p.name }) : t('plan.whatUnlocksFrom', { name: p.name })}</T>
             <LockedReveal person={p} reveal={k === 0 ? reveal : friendReveal}
-              hint={kept ? `Stays locked: it opens only between people from each side who both checked in.` : `Opens if you and ${p.name} both check in.`} />
+              hint={kept ? t('plan.staysLocked') : t('plan.revealHintDouble', { name: p.name })} />
           </View>
         ) : null)}
 
         {locked && !iAmIn && (
           <View style={{ gap: space.sm, marginTop: space.md }}>
-            <Button kind="quiet" label="Can't make it" onPress={() => setSheet(true)} />
+            <Button kind="quiet" label={t('plan.cantMake')} onPress={() => setSheet(true)} />
             {backend.kind === 'mock' && phase === 'early' && (
-              <Button kind="ghost" icon="fast-forward" label="Prototype: move this to 3 minutes from now" onPress={() => run(() => bringForward(invite.id), haptic.tick)} />
+              <Button kind="ghost" icon="fast-forward" label={t('plan.demoSoon')} onPress={() => run(() => bringForward(invite.id), haptic.tick)} />
             )}
           </View>
         )}
@@ -213,12 +214,12 @@ export default function PlanScreen() {
       <Sheet
         visible={sheet}
         onClose={() => setSheet(false)}
-        eyebrow="Breaking a promise"
-        title={double ? 'Bail on the double?' : `Bail on ${name}?`}
-        body={`You locked this. Bailing tells ${double ? 'the other three' : name} now, which beats not showing, but it still counts as a flake. Your trust score goes from ${trustOf(me).score} to ${me.trustScore === undefined ? trustScore(me.kept, me.flaked + 1) : 'lower'}.`}
+        eyebrow={t('plan.bailEyebrow')}
+        title={double ? t('plan.bailDouble') : t('plan.bailOn', { name })}
+        body={t('plan.bailBody', { who: double ? t('plan.otherThree') : name, from: trustOf(me).score, to: me.trustScore === undefined ? trustScore(me.kept, me.flaked + 1) : t('plan.lower') })}
       >
-        <HoldButton tone="flare" label="Hold to bail" busy={busy} onComplete={() => run(() => bail(invite.id), () => setSheet(false))} />
-        <Button kind="ghost" label="I'll be there" onPress={() => setSheet(false)} />
+        <HoldButton tone="flare" label={t('plan.holdBail')} busy={busy} onComplete={() => run(() => bail(invite.id), () => setSheet(false))} />
+        <Button kind="ghost" label={t('plan.illBeThere')} onPress={() => setSheet(false)} />
       </Sheet>
     </Screen>
   );
@@ -235,7 +236,7 @@ function Meta({ icon, text }: { icon: keyof typeof Feather.glyphMap; text: strin
 
 function Check({ label, done }: { label: string; done: boolean }) {
   return (
-    <View style={{ alignItems: 'center', gap: 6, width: 96 }} accessible accessibilityLabel={`${label}: ${done ? 'checked in' : 'not checked in yet'}`}>
+    <View style={{ alignItems: 'center', gap: 6, width: 96 }} accessible accessibilityLabel={t('party.personSpoken', { name: label, said: t(done ? 'party.checkedIn' : 'party.notCheckedInSpoken') })}>
       <View style={[styles.dot, done && { backgroundColor: color.gold, borderColor: color.gold }]}>
         <Feather name={done ? 'check' : 'clock'} size={18} color={done ? color.bg : color.textMute} />
       </View>

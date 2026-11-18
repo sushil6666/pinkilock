@@ -25,6 +25,7 @@ import { haptic } from '../lib/haptics';
 import { focusRing, isWeb, webOnly } from '../lib/web';
 import { color, motion } from '../theme/tokens';
 import { FINGER, MyPinky, TheirPinky, TheirTip } from './PinkyFinger';
+import { t } from '../i18n';
 
 export type LockPhase = 'idle' | 'committed' | 'sealing' | 'sealed';
 
@@ -239,14 +240,14 @@ export function PinkyLock({ mode, startCommitted, locked, resetKey, commitKey, o
       onLayout={onLayout}
       accessible
       accessibilityRole="adjustable"
-      accessibilityLabel="Slide your pinky in to lock this plan"
-      accessibilityHint="Double tap to lock without sliding"
+      accessibilityLabel={t('pinky.slide')}
+      accessibilityHint={t('pinky.slideHint')}
       accessibilityActions={[{ name: 'activate' }, { name: 'increment' }]}
       onAccessibilityAction={commit}
       aria-valuemin={0}
       aria-valuemax={100}
       aria-valuenow={phase === 'idle' ? Math.round((keyStep / KEY_STEPS) * 100) : 100}
-      aria-valuetext={phase === 'idle' ? 'Not locked yet' : phase === 'sealed' ? 'Locked' : 'Your pinky is in'}
+      aria-valuetext={t(phase === 'idle' ? 'pinky.notYet' : phase === 'sealed' ? 'pinky.locked' : 'pinky.yoursIn')}
       {...webOnly({ tabIndex: phase === 'idle' ? 0 : -1, onKeyDown })}
     >
       <Animated.View style={[StyleSheet.absoluteFill, { backgroundColor: color.pinkWash }, flashStyle]} pointerEvents="none" />

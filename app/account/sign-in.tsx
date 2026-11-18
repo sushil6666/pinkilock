@@ -15,6 +15,7 @@ import { T } from '@/components/ui/T';
 import { maskEmail, normaliseEmail } from '@/domain/email';
 import { CODE_LENGTH, maskPhone, normalisePhone } from '@/domain/phone';
 import { COUNTRIES, DIAL_CODES } from '@/domain/countries';
+import { countryName, t } from '@/i18n';
 import { Chip } from '@/components/ui/Chip';
 import type { CodeKind, CodeMode } from '@/domain/types';
 import { haptic } from '@/lib/haptics';
@@ -38,14 +39,14 @@ export default function SignInCodeScreen() {
   const [raw, setRaw] = useState('');
   // Which country a number written the local way belongs to (WP9). Starts from my own country.
   const myCountry = useStore((s) => s.me?.country);
-  const [dialFrom, setDialFrom] = useState(myCountry ?? COUNTRIES.find((c) => c.active)?.code ?? 'IN');
+  const [dialFrom, setDialFrom] = useState(myCountry ?? COUNTRIES.find((c) => c.active)?.code ?? '');
   const [sentTo, setSentTo] = useState<string | null>(null);
   const [code, setCode] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
 
   const isPhone = kind === 'phone';
-  const typed = isPhone ? normalisePhone(raw, DIAL_CODES[dialFrom] ?? '91') : normaliseEmail(raw);
+  const typed = isPhone ? normalisePhone(raw, DIAL_CODES[dialFrom] ?? '') : normaliseEmail(raw);
   const off = account && !(isPhone ? account.phoneAvailable : account.emailAvailable);
 
   const switchKind = () => {
@@ -87,58 +88,56 @@ export default function SignInCodeScreen() {
   const footer = sentTo
     ? <>
         {error ? <ErrorText text={error} /> : null}
-        <Button label={mode === 'link' ? (isPhone ? 'Add number' : 'Add email') : 'Verify and sign in'} icon="check" busy={busy} disabled={code.length !== CODE_LENGTH} onPress={confirm} />
-        <Button kind="quiet" label={isPhone ? 'Change number' : 'Change email'} onPress={() => { setSentTo(null); setError(''); }} />
+        <Button label={t(mode === 'link' ? (isPhone ? 'signIn.addNumber' : 'signIn.addEmail') : 'signIn.verify')} icon="check" busy={busy} disabled={code.length !== CODE_LENGTH} onPress={confirm} />
+        <Button kind="quiet" label={t(isPhone ? 'signIn.changeNumber' : 'signIn.changeEmail')} onPress={() => { setSentTo(null); setError(''); }} />
       </>
     : <>
         {error ? <ErrorText text={error} /> : null}
-        <Button label="Send code" icon={isPhone ? 'message-square' : 'mail'} busy={busy} disabled={!typed} onPress={send} />
-        <Button kind="quiet" label={isPhone ? 'Sign in with email instead' : 'Sign in with phone instead'} onPress={switchKind} />
+        <Button label={t('signIn.sendCode')} icon={isPhone ? 'message-square' : 'mail'} busy={busy} disabled={!typed} onPress={send} />
+        <Button kind="quiet" label={t(isPhone ? 'signIn.useEmail' : 'signIn.usePhone')} onPress={switchKind} />
       </>;
 
-  const title = mode === 'link' ? (isPhone ? 'Your number' : 'Your email') : 'Sign in';
+  const title = t(mode === 'link' ? (isPhone ? 'signIn.yourNumber' : 'signIn.yourEmail') : 'landing.signIn');
   return (
     <Screen back="back" title={title} footer={footer}>
       <Animated.View key={sentTo ? 'code' : kind} entering={FadeInRight.duration(260)} style={{ gap: space.xl }}>
         {!sentTo ? (
           <>
-            {off ? <T v="caption" c={color.flare}>{isPhone ? 'Phone' : 'Email'} sign-in isn't available yet. Please try again soon.</T> : null}
-            <T v="display">{mode === 'link' ? 'Keep your\nrecord.' : 'Welcome\nback.'}</T>
+            {off ? <T v="caption" c={color.flare}>{t(isPhone ? 'signIn.phoneOff' : 'signIn.emailOff')}</T> : null}
+            <T v="display">{t(mode === 'link' ? 'signIn.keepTitle' : 'signIn.backTitle')}</T>
             <T c={color.textDim}>
-              {mode === 'link'
-                ? `Add your ${isPhone ? 'phone number' : 'email address'} so you can sign in on any device and keep your promises and your score. Only you can see it.`
-                : `Enter the ${isPhone ? 'phone number' : 'email address'} linked to your Pinkilock account and we'll ${isPhone ? 'text' : 'email'} you a one-time code. No password needed.`}
+              {t(mode === 'link' ? (isPhone ? 'signIn.linkPhone' : 'signIn.linkEmail') : (isPhone ? 'signIn.enterPhone' : 'signIn.enterEmail'))}
             </T>
             {isPhone ? (
               <View style={{ gap: space.sm }}>
-                <T v="label" c={color.textDim}>Country</T>
+                <T v="label" c={color.textDim}>{t('signIn.country')}</T>
                 <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: space.sm }}>
                   {COUNTRIES.filter((c) => c.active || c.code === dialFrom).map((c) => (
-                    <Chip key={c.code} label={`${c.name}  +${DIAL_CODES[c.code]}`} selected={dialFrom === c.code} onPress={() => setDialFrom(c.code)} />
+                    <Chip key={c.code} label={t('signIn.countryDial', { country: countryName(c.code, c.name), dial: DIAL_CODES[c.code] ?? '' })} selected={dialFrom === c.code} onPress={() => setDialFrom(c.code)} />
                   ))}
                 </View>
-                <T v="label" c={color.textDim} style={{ marginTop: space.md }}>Phone number</T>
+                <T v="label" c={color.textDim} style={{ marginTop: space.md }}>{t('signIn.phone')}</T>
                 <TextInput
                   value={raw}
                   onChangeText={setRaw}
-                  placeholder={`+${DIAL_CODES[dialFrom] ?? ''} number`}
+                  placeholder={t('onboarding.phonePlaceholder', { dial: DIAL_CODES[dialFrom] ?? '' })}
                   placeholderTextColor={color.textMute}
                   keyboardType="phone-pad"
                   textContentType="telephoneNumber"
                   autoComplete="tel"
                   maxLength={20}
                   style={inputStyle}
-                  accessibilityLabel="Phone number"
+                  accessibilityLabel={t('signIn.phone')}
                 />
-                <T v="caption" c={color.textMute}>Type it the way you would at home. A number from another country: start with + and its code.</T>
+                <T v="caption" c={color.textMute}>{t('signIn.phoneHint')}</T>
               </View>
             ) : (
               <View style={{ gap: space.sm }}>
-                <T v="label" c={color.textDim}>Email address</T>
+                <T v="label" c={color.textDim}>{t('signIn.email')}</T>
                 <TextInput
                   value={raw}
                   onChangeText={setRaw}
-                  placeholder="you@example.com"
+                  placeholder={t('signIn.emailPlaceholder')}
                   placeholderTextColor={color.textMute}
                   keyboardType="email-address"
                   textContentType="emailAddress"
@@ -147,20 +146,20 @@ export default function SignInCodeScreen() {
                   autoCorrect={false}
                   maxLength={254}
                   style={inputStyle}
-                  accessibilityLabel="Email"
+                  accessibilityLabel={t('signIn.email')}
                 />
               </View>
             )}
           </>
         ) : (
           <>
-            <T v="display">Check{'\n'}your {isPhone ? 'texts' : 'inbox'}.</T>
-            <T c={color.textDim}>We've sent a {CODE_LENGTH}-digit code to {isPhone ? maskPhone(sentTo) : maskEmail(sentTo)}.{isPhone ? ' It usually arrives within a minute.' : ' It usually arrives within a minute. If you can\'t find it, check your spam folder.'}</T>
+            <T v="display">{t(isPhone ? 'signIn.checkTexts' : 'signIn.checkInbox')}</T>
+            <T c={color.textDim}>{t(isPhone ? 'signIn.sentText' : 'signIn.sentEmail', { digits: CODE_LENGTH, to: isPhone ? maskPhone(sentTo) : maskEmail(sentTo) })}</T>
             <View style={{ gap: space.sm }}>
-              <T v="label" c={color.textDim}>One-time code</T>
+              <T v="label" c={color.textDim}>{t('signIn.code')}</T>
               <TextInput
                 value={code}
-                onChangeText={(t) => setCode(t.replace(/[^0-9]/g, ''))}
+                onChangeText={(v) => setCode(v.replace(/[^0-9]/g, ''))}
                 placeholder={'0'.repeat(CODE_LENGTH)}
                 placeholderTextColor={color.textMute}
                 keyboardType="number-pad"
@@ -168,12 +167,12 @@ export default function SignInCodeScreen() {
                 autoComplete={isPhone ? 'sms-otp' : 'one-time-code'}
                 maxLength={CODE_LENGTH}
                 style={[inputStyle, { letterSpacing: 8 }]}
-                accessibilityLabel="Code"
+                accessibilityLabel={t('signIn.codeShort')}
                 autoFocus
               />
-              {account?.mockCode ? <T v="caption" c={color.textMute}>Mock data: the code is always {account.mockCode}.</T> : null}
+              {account?.mockCode ? <T v="caption" c={color.textMute}>{t('signIn.mockCode', { code: account.mockCode })}</T> : null}
             </View>
-            <Button kind="quiet" label="Resend code" disabled={busy} onPress={send} />
+            <Button kind="quiet" label={t('signIn.resend')} disabled={busy} onPress={send} />
           </>
         )}
       </Animated.View>

@@ -20,6 +20,7 @@ import { useInvite, usePerson, useStore } from '@/state/store';
 import { color, gutter, motion, radius, space } from '@/theme/tokens';
 import { shown } from '@/lib/report';
 import { splitRef } from '@/domain/errors';
+import { t } from '@/i18n';
 
 export default function LockScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -67,9 +68,9 @@ export default function LockScreen() {
     return (
       <Screen back="close" scroll={false}>
         <View style={{ flex: 1, justifyContent: 'center', gap: space.md }}>
-          <T v="display">Nothing{'\n'}to lock.</T>
-          <T c={color.textDim}>This ask doesn't need your pinky right now.</T>
-          <Button kind="ghost" label="Back" onPress={goBack} />
+          <T v="display">{t('lock.nothingTitle')}</T>
+          <T c={color.textDim}>{t('lock.nothingBody')}</T>
+          <Button kind="ghost" label={t('common.back')} onPress={goBack} />
         </View>
       </Screen>
     );
@@ -79,8 +80,9 @@ export default function LockScreen() {
   const double = isDouble(invite);
   const name = other.name;
   // Who the lock is waiting on, in words: one person, or the rest of a double.
-  const waitingOn = double ? 'the others' : name;
-  const withWhom = double ? `${name} + ${theirFriend?.name ?? 'their duo'}` : name;
+  const waitingOn = double ? t('plan.theOthers') : name;
+  const withWhom = double ? t('lock.pair', { a: name, b: theirFriend?.name ?? t('ticket.theirDuo') }) : name;
+  const askerName = asker?.name ?? t('ask.theAsker');
   const mode = entry.role === 'seal' ? 'seal' : 'first';
   const locked = invite.status === 'locked';
   const closed = invite.status === 'declined' || invite.status === 'expired' || invite.status === 'ended';
@@ -88,26 +90,26 @@ export default function LockScreen() {
 
   const errorRef = error ? splitRef(error).ref : null;
   const prompt =
-    closed ? (double ? 'The double is off' : `${name} pulled out`) :
-    error ? "That didn't go through" :
-    phase === 'idle' ? (missed ? 'Almost. Slide all the way in.' : 'Slide your pinky in') :
-    phase === 'committed' ? (locked ? 'Hold on' : `Pinky out. Waiting on ${waitingOn}`) :
-    phase === 'sealing' ? 'Hold on' : '';
+    closed ? (double ? t('status.doubleOff') : t('lock.pulledOut', { name })) :
+    error ? t('lock.failed') :
+    phase === 'idle' ? t(missed ? 'lock.almost' : 'lock.slide') :
+    phase === 'committed' ? (locked ? t('lock.holdOn') : t('lock.pinkyOutWaiting', { who: waitingOn })) :
+    phase === 'sealing' ? t('lock.holdOn') : '';
 
   return (
-    <Screen back={phase === 'sealing' || sealed ? false : 'close'} scroll={false} title={sealed ? undefined : 'The Pinkilock'}>
+    <Screen back={phase === 'sealing' || sealed ? false : 'close'} scroll={false} title={sealed ? undefined : t('lock.title')}>
       <View style={styles.top}>
         {sealed ? (
           <Animated.View entering={FadeInDown.springify().damping(motion.spring.snappy.damping).stiffness(motion.spring.snappy.stiffness)} accessibilityLiveRegion="assertive">
-            <T v="mega" c={color.pink}>Locked.</T>
+            <T v="mega" c={color.pink}>{t('lock.lockedBig')}</T>
           </Animated.View>
         ) : (
           <>
-            <T v="label" c={color.textDim}>{double ? (mode === 'seal' ? 'All three pinkies are out' : `Your pinky, then ${asker?.name ?? 'the asker'} seals it`) : mode === 'seal' ? `${name}'s pinky is out` : `You first, then ${name}`}</T>
-            <T v="display" numberOfLines={2} adjustsFontSizeToFit>{idea.emoji} {idea.title}</T>
+            <T v="label" c={color.textDim}>{double ? (mode === 'seal' ? t('lock.allThree') : t('lock.yoursThenSeal', { name: askerName })) : mode === 'seal' ? t('status.theirPinkyOut', { name }) : t('lock.youFirst', { name })}</T>
+            <T v="display" numberOfLines={2} adjustsFontSizeToFit>{`${idea.emoji} ${idea.title}`}</T>
           </>
         )}
-        <T c={color.textDim}>with {withWhom}  /  {whenLabel(invite.startsAt, now)}</T>
+        <T c={color.textDim}>{t('lock.withWhen', { who: withWhom, when: whenLabel(invite.startsAt, now) })}</T>
       </View>
 
       <View style={{ marginHorizontal: -gutter }}>
@@ -126,28 +128,26 @@ export default function LockScreen() {
       {sealed ? (
         <Animated.View entering={FadeIn.delay(160).duration(motion.base)} style={styles.bottom}>
           <View style={styles.promise}>
-            <T v="label" c={color.pink}>The anti-ghosting promise</T>
-            <T>{double ? 'All four of you show up, or say so early.' : `You and ${name} both show up, or say so early.`} A flake goes on the record of whoever flaked.</T>
+            <T v="label" c={color.pink}>{t('onboarding.promise')}</T>
+            <T>{double ? t('lock.promiseDouble') : t('lock.promiseOne', { name })}</T>
             <View style={{ marginTop: space.sm }}><Countdown target={invite.startsAt} now={now} /></View>
           </View>
-          <Button icon="lock" label="See the plan" onPress={() => router.replace(`/plan/${invite.id}`)} />
-          <Button kind="quiet" label="Done" onPress={goBack} />
+          <Button icon="lock" label={t('lock.seePlan')} onPress={() => router.replace(`/plan/${invite.id}`)} />
+          <Button kind="quiet" label={t('common.done')} onPress={goBack} />
         </Animated.View>
       ) : (
         <View style={styles.bottom}>
           <T v="heading" center c={error || closed ? color.flare : color.text} accessibilityLiveRegion="polite">{prompt}</T>
-          {errorRef ? <T v="caption" center c={color.textMute} selectable accessibilityLabel={`Error reference ${errorRef}`}>{errorRef}</T> : null}
+          {errorRef ? <T v="caption" center c={color.textMute} selectable accessibilityLabel={t('common.errorRef', { ref: errorRef })}>{errorRef}</T> : null}
           <T v="caption" center c={color.textDim}>
-            {closed ? 'Nothing was promised, so nothing goes on anyone\'s record.'
+            {closed ? t('lock.nothingPromised')
               : error ? error
-              : phase === 'idle' ? 'Locking means: I show up on time, or I bail early and own it.'
-              : mode === 'first' && !locked ? (double
-                ? `Your pinky is in. It locks once everyone is in and ${asker?.name ?? 'the asker'} seals it. You can leave this screen.`
-                : `Your pinky is in. It locks as soon as ${name} adds theirs. You can leave this screen and it will still lock.`)
-              : double ? 'All four pinkies are in.' : 'Both pinkies are in.'}
+              : phase === 'idle' ? t('lock.means')
+              : mode === 'first' && !locked ? (double ? t('lock.inDouble', { name: askerName }) : t('lock.inOne', { name }))
+              : t(double ? 'lock.allFourIn' : 'lock.bothIn')}
           </T>
-          {closed ? <Button kind="ghost" label="Back" onPress={goBack} />
-            : phase === 'idle' ? <Button kind="quiet" label="Lock without sliding" onPress={() => setCommitKey((k) => k + 1)} />
+          {closed ? <Button kind="ghost" label={t('common.back')} onPress={goBack} />
+            : phase === 'idle' ? <Button kind="quiet" label={t('lock.noSlide')} onPress={() => setCommitKey((k) => k + 1)} />
             : null}
         </View>
       )}

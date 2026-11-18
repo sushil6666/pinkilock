@@ -7,6 +7,7 @@
  */
 import { Platform } from 'react-native';
 import { log, quiet } from './log';
+import { t } from '../i18n';
 
 const key = (inviteId: string) => `safety-${inviteId}`;
 
@@ -32,7 +33,7 @@ export async function scheduleSafetyCheck(inviteId: string, name: string, endsAt
   await N.cancelScheduledNotificationAsync(key(inviteId)).catch(quiet('safety_check.cancel'));
   await N.scheduleNotificationAsync({
     identifier: key(inviteId),
-    content: { title: 'Home safe?', body: `Your plan with ${name} ended. Tap if you need help.`, data: { kind: 'safety_check', inviteId } },
+    content: { title: t('safetyCheck.title'), body: t('safetyCheck.body', { name }), data: { kind: 'safety_check', inviteId } },
     trigger: { type: N.SchedulableTriggerInputTypes.DATE, date: new Date(endsAt + 15 * 60_000) },
   });
   return true;

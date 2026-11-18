@@ -16,6 +16,7 @@ import { CHECK_IN_CLOSES_AFTER, isDouble, otherId, peopleOf } from '../../domain
 import type { Account, BlockedPerson, CodeKind, Invite, MyContact, Profile, Reveal } from '../../domain/types';
 import { log, quiet } from '../../lib/log';
 import type { Backend, BackendEvent, Changes, Notice, Snapshot } from '../backend';
+import { t } from '../../i18n';
 
 type Row = Record<string, any>;
 
@@ -133,52 +134,52 @@ export function createSupabaseBackend(url: string, anonKey: string, storage: Ses
   /** What changed for me, in words, when the other person (or the clock) moves an invite. */
   function noticeFor(prev: Invite | undefined, next: Invite): Notice | undefined {
     if (isDouble(next)) return doubleNotice(prev, next);
-    const name = names.get(otherId(next, meId)) ?? 'They';
+    const name = names.get(otherId(next, meId)) ?? t('ask.they');
     const idea = ideaOf(next.ideaId).title;
     if (!prev) {
       return next.status === 'sent' && next.toId === meId
-        ? { tone: 'pink', title: `${name} asked you`, body: `${idea}. Lock it or pass.`, inviteId: next.id }
+        ? { tone: 'pink', title: t('notices.askedYou', { name }), body: t('notices.lockOrPass', { idea }), inviteId: next.id }
         : undefined;
     }
     if (prev.status === next.status) return undefined;
-    if (next.status === 'half_locked' && next.firstPinkyBy !== meId) return { tone: 'pink', title: `${name}'s pinky is out`, body: `${idea}. Slide in to seal it.`, inviteId: next.id };
-    if (next.status === 'declined' && next.declinedBy !== meId) return { tone: 'flare', title: `${name} passed`, body: 'No hard feelings. Your ask slot is free again.', inviteId: next.id };
-    if (next.status === 'kept') return { tone: 'volt', title: 'Promise kept', body: `You and ${name} both showed. The reveal is open.`, inviteId: next.id };
+    if (next.status === 'half_locked' && next.firstPinkyBy !== meId) return { tone: 'pink', title: t('status.theirPinkyOut', { name }), body: t('notices.slideToSeal', { idea }), inviteId: next.id };
+    if (next.status === 'declined' && next.declinedBy !== meId) return { tone: 'flare', title: t('notices.passed', { name }), body: t('notices.passedBody'), inviteId: next.id };
+    if (next.status === 'kept') return { tone: 'volt', title: t('status.kept'), body: t('notices.keptBody', { name }), inviteId: next.id };
     if (next.status === 'flaked') {
       // Resolved inside the window means someone bailed; after it, the clock closed it.
       const bailed = (next.resolvedAt ?? 0) <= next.startsAt + CHECK_IN_CLOSES_AFTER;
       if (next.flakedBy === meId) {
         // My own bail needs no banner: I just did it.
-        return bailed ? undefined : { tone: 'flare', title: 'Promise missed', body: `Check-in with ${name} closed without you. That is on your record.`, inviteId: next.id };
+        return bailed ? undefined : { tone: 'flare', title: t('notices.missed'), body: t('notices.missedBody', { name }), inviteId: next.id };
       }
-      if (!next.flakedBy) return { tone: 'flare', title: 'Promise missed', body: `Neither of you checked in for ${idea}.`, inviteId: next.id };
-      return { tone: 'flare', title: bailed ? `${name} bailed` : `${name} flaked`, body: 'Their score takes the hit, not yours.', inviteId: next.id };
+      if (!next.flakedBy) return { tone: 'flare', title: t('notices.missed'), body: t('notices.neitherBody', { idea }), inviteId: next.id };
+      return { tone: 'flare', title: t(bailed ? 'notices.bailed' : 'status.theyFlaked', { name }), body: t('notices.theirHit'), inviteId: next.id };
     }
     return undefined;
   }
 
   /** The same news for a double, where four people move it. Names only, never what anyone chose. */
   function doubleNotice(prev: Invite | undefined, next: Invite): Notice | undefined {
-    const nameOf = (id: string | null | undefined) => (id && names.get(id)) || 'Someone';
+    const nameOf = (id: string | null | undefined) => (id && names.get(id)) || t('common.someone');
     const idea = ideaOf(next.ideaId).title;
     const id = next.id;
     if (!prev) {
       return next.status === 'sent' && next.fromId !== meId
-        ? { tone: 'pink', title: `${nameOf(next.fromId)} asked you on a double`, body: `${idea}. Lock it or pass.`, inviteId: id }
+        ? { tone: 'pink', title: t('notices.askedDouble', { name: nameOf(next.fromId) }), body: t('notices.lockOrPass', { idea }), inviteId: id }
         : undefined;
     }
     if (next.fromId === meId && (prev.pinkies?.length ?? 0) < 3 && (next.pinkies?.length ?? 0) >= 3 && next.status === 'half_locked') {
-      return { tone: 'pink', title: 'All three pinkies are out', body: `${idea}. Slide in to seal it.`, inviteId: id };
+      return { tone: 'pink', title: t('lock.allThree'), body: t('notices.slideToSeal', { idea }), inviteId: id };
     }
     if (prev.status === next.status) return undefined;
-    if (next.status === 'locked' && next.fromId !== meId) return { tone: 'pink', title: 'The double is locked', body: `${idea} is a promise now. Be there.`, inviteId: id };
-    if (next.status === 'declined' && next.declinedBy !== meId) return { tone: 'flare', title: `${nameOf(next.declinedBy)} passed`, body: 'The double is off. No hard feelings.', inviteId: id };
-    if (next.status === 'kept') return { tone: 'volt', title: 'Promise kept', body: 'The reveal is open between the people who showed.', inviteId: id };
+    if (next.status === 'locked' && next.fromId !== meId) return { tone: 'pink', title: t('notices.doubleLocked'), body: t('notices.doubleLockedBody', { idea }), inviteId: id };
+    if (next.status === 'declined' && next.declinedBy !== meId) return { tone: 'flare', title: t('notices.passed', { name: nameOf(next.declinedBy) }), body: t('notices.doubleOffBody'), inviteId: id };
+    if (next.status === 'kept') return { tone: 'volt', title: t('status.kept'), body: t('notices.keptDoubleBody'), inviteId: id };
     if (next.status === 'flaked') {
       const bailed = (next.resolvedAt ?? 0) <= next.startsAt + CHECK_IN_CLOSES_AFTER;
-      if (bailed) return next.flakedBy === meId ? undefined : { tone: 'flare', title: `${nameOf(next.flakedBy)} bailed`, body: 'Their score takes the hit, not yours.', inviteId: id };
-      if (!next.checkIns.includes(meId)) return { tone: 'flare', title: 'Promise missed', body: `Check-in for ${idea} closed without you. That is on your record.`, inviteId: id };
-      return { tone: 'flare', title: 'The double fell through', body: 'Not enough people showed. Your score is fine.', inviteId: id };
+      if (bailed) return next.flakedBy === meId ? undefined : { tone: 'flare', title: t('notices.bailed', { name: nameOf(next.flakedBy) }), body: t('notices.theirHit'), inviteId: id };
+      if (!next.checkIns.includes(meId)) return { tone: 'flare', title: t('notices.missed'), body: t('notices.missedDoubleBody', { idea }), inviteId: id };
+      return { tone: 'flare', title: t('notices.fellThrough'), body: t('notices.fellThroughBody'), inviteId: id };
     }
     return undefined;
   }

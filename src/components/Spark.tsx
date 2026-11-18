@@ -13,6 +13,7 @@ import { haptic } from '../lib/haptics';
 import { color, radius, space } from '../theme/tokens';
 import { Tag } from './ui/Chip';
 import { T } from './ui/T';
+import { t } from '../i18n';
 
 export function Spark({ me, person }: { me: Profile; person: Profile }) {
   const spark = sparkOf(me, person);
@@ -27,7 +28,7 @@ export function Spark({ me, person }: { me: Profile; person: Profile }) {
   const summary = [
     ...spark.vibes,
     ...spark.ideaIds.map((id) => ideaOf(id).title),
-    ...spark.opposites.map(([mine, theirs]) => `opposites: you are ${mine}, ${person.name} is ${theirs}`),
+    ...spark.opposites.map(([mine, theirs]) => t('spark.oppositeSpoken', { mine, name: person.name, theirs })),
   ].join(', ');
 
   return (
@@ -35,12 +36,12 @@ export function Spark({ me, person }: { me: Profile; person: Profile }) {
       entering={ZoomIn.duration(320)}
       style={styles.card}
       accessible
-      accessibilityLabel={`${spark.title}. ${spark.count} ${spark.count === 1 ? 'thing lines' : 'things line'} up with ${person.name}: ${summary}`}
+      accessibilityLabel={t('spark.spoken', { title: spark.title, count: spark.count, name: person.name, summary })}
     >
       <View style={styles.head}>
         <Feather name="zap" size={16} color={color.gold} />
         <T v="label" c={color.gold} style={{ flex: 1 }}>{spark.title}</T>
-        <T v="label" c={color.textDim}>{spark.count} {spark.count === 1 ? 'lines up' : 'line up'}</T>
+        <T v="label" c={color.textDim}>{t('spark.linesUp', { count: spark.count })}</T>
       </View>
       {spark.vibes.length + spark.ideaIds.length > 0 && (
         <View style={styles.wrap}>
@@ -49,7 +50,7 @@ export function Spark({ me, person }: { me: Profile; person: Profile }) {
         </View>
       )}
       {spark.opposites.map(([mine, theirs]) => (
-        <T key={mine} v="caption" c={color.textDim}>Opposites attract: you are {mine}, {person.name} is {theirs}.</T>
+        <T key={mine} v="caption" c={color.textDim}>{t('spark.opposite', { mine, name: person.name, theirs })}</T>
       ))}
     </Animated.View>
   );

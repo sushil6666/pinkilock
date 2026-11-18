@@ -6,6 +6,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 import { color, font, radius } from '../theme/tokens';
 import { T } from './ui/T';
+import { t } from '../i18n';
 
 interface Props {
   name: string;
@@ -21,7 +22,7 @@ export function Portrait({ name, palette, glyph, size = 56, fill, style }: Props
   const initial = name.trim().charAt(0).toUpperCase() || '?';
   if (fill) {
     return (
-      <View style={[styles.fill, style]} accessible accessibilityRole="image" accessibilityLabel={`${name}'s card`}>
+      <View style={[styles.fill, style]} accessible accessibilityRole="image" accessibilityLabel={t('common.cardOf', { name })}>
         <LinearGradient colors={palette} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={StyleSheet.absoluteFill} />
         <T style={styles.bigInitial} c="rgba(20,14,60,0.22)" maxFontSizeMultiplier={1}>{initial}</T>
         <T style={styles.bigGlyph} maxFontSizeMultiplier={1}>{glyph}</T>

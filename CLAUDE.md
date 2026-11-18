@@ -44,6 +44,9 @@ npm run test:app:local      # the real screens in two browser sessions
   venue is a row in both (a new migration); to retire one, set `active` to false, never delete it.
 - The ask lines also exist twice: `ASK_LINES` (built from the starters in `src/domain/ideas.ts`) and the
   `ask_lines` table. A new line is a row in both. Asks never carry typed text.
+- Words on screen go through `t('group.key')` with the English in `src/i18n/en.ts`, never written
+  into a screen or component (`tests/unit/strings.test.ts` checks). Catalogue rows (ideas, tags, ask
+  lines, venues) stay in their tables. Look at a changed screen with `?lang=en-XA` too.
 - Profiles are written only through `save_profile`. No direct writes to `profiles` or `profile_private`.
 - Schema changes are new migrations (`npx supabase migration new <name>`). Never edit a migration
   that has been applied.

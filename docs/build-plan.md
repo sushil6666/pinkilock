@@ -533,9 +533,18 @@ deletion waits for the lawyer's number.
 **Status, 2026-11-18: first part built** (decision D071). Onboarding asks for country and city from
 the open list, and the area is picked from that city's list. Contact kinds are a catalogue by region
 (Telegram and Signal everywhere; LINE, KakaoTalk and WeChat where they are used). Phone sign-in has a
-country picker and assumes no country. **Left:** the strings files and a second language; time
-zones named on cross-zone plans; distance in miles by locale; ideas by region; area lists for each
-city as it opens.
+country picker and assumes no country.
+
+**Status, 2026-11-18: strings built** (decision D072). Every word on screen is in `src/i18n/en.ts`
+behind `t()`, with plurals; error messages are shown by code in the phone's language; dates,
+times and numbers follow the phone's locale through `Intl`, and distance shows in miles where the
+locale uses them. Right-to-left is wired (layout direction on a phone, `dir` and `lang` in a
+browser). Two pseudo-languages stand in for the second language until a translator writes one:
+`en-XA` (a third longer) and `ar-XB` (right to left), and a unit test fails on words written into a
+screen. No screen names a country. **Left:** a real second language from a native speaker, with its
+catalogue rows (ideas, tags, ask lines); the app tests run in it; time zones named on cross-zone
+plans (needs each person's zone on the server); ideas by region; area lists for each city as it
+opens.
 
 **Done when:** the app runs fully in a second language in the app tests, a user in a second time
 zone sees correct plan times in the live test, and no screen contains a hard-coded country.

@@ -4,6 +4,7 @@
  * and it is a reason to ask, not a score: nothing is stored and nobody is ranked by it.
  */
 import type { Profile } from './types';
+import { t } from '../i18n';
 
 /** Tags that are fun because they do not match. Either person can hold either side. */
 const OPPOSITES: [string, string][] = [
@@ -43,5 +44,5 @@ export function sparkOf(me: Card, them: Card): Spark | null {
   }
   const count = vibes.length + ideaIds.length + opposites.length;
   if (count === 0) return null;
-  return { vibes, ideaIds, opposites, count, title: count >= 4 ? 'Rare one' : count >= 2 ? 'You two click' : 'A spark' };
+  return { vibes, ideaIds, opposites, count, title: t(count >= 4 ? 'spark.rare' : count >= 2 ? 'spark.click' : 'spark.one') };
 }

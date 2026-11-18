@@ -11,12 +11,13 @@ import { haptic } from '@/lib/haptics';
 import { aria } from '@/lib/web';
 import { useStore } from '@/state/store';
 import { color, space } from '@/theme/tokens';
+import { t } from '@/i18n';
 
-const TABS: Record<string, { label: string; icon: keyof typeof Feather.glyphMap }> = {
-  index: { label: 'Discover', icon: 'compass' },
-  invites: { label: 'Asks', icon: 'send' },
-  plans: { label: 'Plans', icon: 'lock' },
-  me: { label: 'Me', icon: 'user' },
+const TABS: Record<string, { label: 'tabs.discover' | 'tabs.asks' | 'tabs.plans' | 'tabs.me'; icon: keyof typeof Feather.glyphMap }> = {
+  index: { label: 'tabs.discover', icon: 'compass' },
+  invites: { label: 'tabs.asks', icon: 'send' },
+  plans: { label: 'tabs.plans', icon: 'lock' },
+  me: { label: 'tabs.me', icon: 'user' },
 };
 
 function TabBar({ state, navigation }: BottomTabBarProps) {
@@ -43,7 +44,7 @@ function TabBar({ state, navigation }: BottomTabBarProps) {
             accessibilityRole="tab"
             accessibilityState={{ selected: focused }}
             {...aria({ selected: focused })}
-            accessibilityLabel={count ? `${tab.label}, ${count}` : tab.label}
+            accessibilityLabel={count ? t('tabs.withCount', { tab: t(tab.label), count }) : t(tab.label)}
             onPress={() => {
               haptic.tick();
               const event = navigation.emit({ type: 'tabPress', target: route.key, canPreventDefault: true });
@@ -58,7 +59,7 @@ function TabBar({ state, navigation }: BottomTabBarProps) {
                 <View style={styles.count}><T v="label" c={color.onPink} style={{ fontSize: 10, lineHeight: 14, letterSpacing: 0 }}>{count}</T></View>
               )}
             </View>
-            <T v="label" c={tone} style={{ fontSize: 10, letterSpacing: 1 }}>{tab.label}</T>
+            <T v="label" c={tone} style={{ fontSize: 10, letterSpacing: 1 }}>{t(tab.label)}</T>
           </Pressable>
         );
       })}

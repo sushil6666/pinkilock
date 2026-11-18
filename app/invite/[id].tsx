@@ -16,6 +16,7 @@ import { useInvite, usePerson, useStore } from '@/state/store';
 import { color, space } from '@/theme/tokens';
 import { ErrorText } from '@/components/ui/ErrorText';
 import { shown } from '@/lib/report';
+import { t } from '@/i18n';
 
 export default function InviteScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -35,20 +36,20 @@ export default function InviteScreen() {
     return (
       <Screen back="back" scroll={false}>
         <View style={{ flex: 1, justifyContent: 'center', gap: space.md }}>
-          <T v="display">Gone.</T>
-          <T c={color.textDim}>This ask is no longer available.</T>
+          <T v="display">{t('ask.goneTitle')}</T>
+          <T c={color.textDim}>{t('ask.goneBody')}</T>
         </View>
       </Screen>
     );
   }
 
-  const name = other?.name ?? 'They';
+  const name = other?.name ?? t('ask.they');
   const role = lockRole(invite, meId);
   const iSent = invite.fromId === meId;
   const myPinkyOut = invite.status === 'half_locked' && invite.firstPinkyBy === meId;
   // Replace, so the plan that follows a lock does not sit on top of this now-stale ask.
   const toLock = () => router.replace(`/lock/${invite.id}`);
-  const toDiscover = <Button kind="ghost" icon="compass" label="Back to Discover" onPress={() => router.replace('/(tabs)')} />;
+  const toDiscover = <Button kind="ghost" icon="compass" label={t('ask.backToDiscover')} onPress={() => router.replace('/(tabs)')} />;
 
   const pass = async () => {
     setBusy(true);
@@ -64,54 +65,55 @@ export default function InviteScreen() {
 
   const double = isDouble(invite);
   const out = invite.pinkies?.length ?? 0;
-  const theirs = `${name} and ${theirFriend?.name ?? 'their duo'}`;
+  const theirs = t('checkIn.both', { a: name, b: theirFriend?.name ?? t('ticket.theirDuo') });
+  const askerName = asker?.name ?? t('ask.theAsker');
 
   let head: [string, string];
   let footer: ReactNode;
   if (double && role === 'first') {
-    head = [`A double with ${theirs}.`, `All four put a pinky out, in any order; ${iSent ? 'you seal' : `${asker?.name ?? 'the asker'} seals`} it last. Until all four are in, nothing is promised.`];
-    footer = <><Button icon="lock" label="Pinky out" onPress={toLock} /><Button kind="ghost" label="Pass" onPress={() => setSheet(true)} /></>;
+    head = [t('ask.doubleWith', { who: theirs }), iSent ? t('ask.doubleFirstYouSeal') : t('ask.doubleFirstTheySeal', { name: askerName })];
+    footer = <><Button icon="lock" label={t('ask.pinkyOut')} onPress={toLock} /><Button kind="ghost" label={t('ask.pass')} onPress={() => setSheet(true)} /></>;
   } else if (double && role === 'seal') {
-    head = ['All three pinkies are out.', 'Add yours to seal it and make it a promise for all four of you.'];
-    footer = <><Button icon="lock" label="Seal it" onPress={toLock} /><Button kind="ghost" label="Take it back" onPress={() => setSheet(true)} /></>;
+    head = [t('ask.allThreeOut'), t('ask.sealDouble')];
+    footer = <><Button icon="lock" label={t('ask.sealIt')} onPress={toLock} /><Button kind="ghost" label={t('ask.takeBack')} onPress={() => setSheet(true)} /></>;
   } else if (double && (invite.status === 'sent' || invite.status === 'half_locked')) {
     head = iSent
-      ? ['Waiting on the others.', `${out} of 3 pinkies are out. It expires in ${shortCountdown(invite.expiresAt, now)} if not everyone answers.`]
-      : ['Your pinky is out.', `It locks once everyone is in and ${asker?.name ?? 'the asker'} seals it.`];
-    footer = <Button kind="ghost" label={iSent ? 'Take it back' : 'Pull it back'} onPress={() => setSheet(true)} />;
+      ? [t('ask.waitingOthers'), t('ask.outOfThree', { out, left: shortCountdown(invite.expiresAt, now) })]
+      : [t('ask.yourPinkyOut'), t('ask.locksWhenSealed', { name: askerName })];
+    footer = <Button kind="ghost" label={t(iSent ? 'ask.takeBack' : 'ask.pullBack')} onPress={() => setSheet(true)} />;
   } else if (double && invite.status === 'declined' && invite.declinedBy !== meId) {
-    head = [`${decliner?.name ?? 'Someone'} passed.`, 'The double is off for all four. No promise was made, so nothing goes on anyone\'s record.'];
+    head = [t('ask.namePassed', { name: decliner?.name ?? t('common.someone') }), t('ask.doubleOffBody')];
     footer = toDiscover;
   } else if (role === 'first') {
-    head = [`${name} wants to lock this in.`, `You go first: slide your pinky in, then ${name} seals it. Until both are in, nothing is promised.`];
-    footer = <><Button icon="lock" label="Lock it" onPress={toLock} /><Button kind="ghost" label="Pass" onPress={() => setSheet(true)} /></>;
+    head = [t('ask.wantsToLock', { name }), t('ask.youGoFirst', { name })];
+    footer = <><Button icon="lock" label={t('ask.lockIt')} onPress={toLock} /><Button kind="ghost" label={t('ask.pass')} onPress={() => setSheet(true)} /></>;
   } else if (role === 'seal') {
-    head = [`${name}'s pinky is out.`, 'They said yes. Add your pinky to seal it and make it a promise.'];
-    footer = <><Button icon="lock" label="Seal it" onPress={toLock} /><Button kind="ghost" label="Take it back" onPress={() => setSheet(true)} /></>;
+    head = [t('ask.theirPinkyOut', { name }), t('ask.theySaidYes')];
+    footer = <><Button icon="lock" label={t('ask.sealIt')} onPress={toLock} /><Button kind="ghost" label={t('ask.takeBack')} onPress={() => setSheet(true)} /></>;
   } else if (invite.status === 'sent') {
-    head = [`Waiting on ${name}.`, `Your ask has been sent. It expires in ${shortCountdown(invite.expiresAt, now)} if they don't reply.`];
-    footer = <Button kind="ghost" label="Take it back" onPress={() => setSheet(true)} />;
+    head = [t('ask.waitingOn', { name }), t('ask.sent', { left: shortCountdown(invite.expiresAt, now) })];
+    footer = <Button kind="ghost" label={t('ask.takeBack')} onPress={() => setSheet(true)} />;
   } else if (myPinkyOut) {
-    head = ['Your pinky is out.', `${name} still has to seal it. You will see it lock the moment they do.`];
-    footer = <><Button icon="eye" label="Watch the lock" onPress={toLock} /><Button kind="ghost" label="Pull it back" onPress={() => setSheet(true)} /></>;
+    head = [t('ask.yourPinkyOut'), t('ask.stillToSeal', { name })];
+    footer = <><Button icon="eye" label={t('ask.watchLock')} onPress={toLock} /><Button kind="ghost" label={t('ask.pullBack')} onPress={() => setSheet(true)} /></>;
   } else if (invite.status === 'locked' || invite.status === 'kept' || invite.status === 'flaked') {
-    head = ['This one is locked.', "It's now in your plans."];
-    footer = <Button icon="lock" label="Open the plan" onPress={() => router.replace(`/plan/${invite.id}`)} />;
+    head = [t('ask.isLocked'), t('ask.inPlans')];
+    footer = <Button icon="lock" label={t('ask.openPlan')} onPress={() => router.replace(`/plan/${invite.id}`)} />;
   } else if (invite.status === 'declined') {
     head = invite.declinedBy === meId
-      ? ['You closed this one.', 'No promise was made, so nothing goes on anyone\'s record.']
-      : [`${name} passed.`, 'No promise was made, so nothing goes on anyone\'s record. Your ask slot is free again.'];
+      ? [t('ask.youClosed'), t('ask.noPromise')]
+      : [t('ask.namePassed', { name }), t('ask.noPromiseSlot')];
     footer = toDiscover;
   } else if (invite.status === 'ended') {
-    head = ['This one ended.', 'It closed without anyone flaking, so nothing goes on anyone\'s record.'];
+    head = [t('ask.ended'), t('ask.endedBody')];
     footer = toDiscover;
   } else {
-    head = ['This ask ran out.', `No one replied in time. ${iSent ? 'Your ask slot is free again.' : 'Nothing goes on your record.'}`];
+    head = [t('ask.ranOut'), t(iSent ? 'ask.ranOutMine' : 'ask.ranOutTheirs')];
     footer = toDiscover;
   }
 
   return (
-    <Screen back="back" title="Vibe check" footer={footer}>
+    <Screen back="back" title={t('ask.title')} footer={footer}>
       <Animated.View entering={FadeInDown.duration(360)} style={{ gap: space.xl }}>
         <InviteCard invite={invite} meId={meId} other={other} now={now} onPress={other ? () => router.push(`/profile/${other.id}`) : undefined} />
         {double ? <DoubleParty invite={invite} meId={meId} show={invite.status === 'sent' || invite.status === 'half_locked' ? 'pinkies' : 'none'} /> : null}
@@ -125,16 +127,12 @@ export default function InviteScreen() {
       <Sheet
         visible={sheet}
         onClose={() => setSheet(false)}
-        eyebrow={iSent ? 'Take it back' : 'Pass'}
-        title={double ? 'Call off this double?' : iSent ? 'Withdraw this ask?' : `Pass on ${name}?`}
-        body={double
-          ? 'It ends for all four of you, and the others will see it is off. Nothing was promised, so nobody\'s score changes.'
-          : iSent
-          ? `${name} will see that you took it back. Nothing was promised, so no record changes.`
-          : `${name} will be told you passed. Nothing was promised, so nobody's score changes. A clear no beats a slow fade.`}
+        eyebrow={t(iSent ? 'ask.takeBack' : 'ask.pass')}
+        title={double ? t('ask.callOffDouble') : iSent ? t('ask.withdraw') : t('ask.passOn', { name })}
+        body={double ? t('ask.callOffBody') : t(iSent ? 'ask.withdrawBody' : 'ask.passBody', { name })}
       >
-        <Button kind="danger" label={iSent ? 'Yes, take it back' : 'Yes, pass'} onPress={pass} busy={busy} />
-        <Button kind="ghost" label="Keep it open" onPress={() => setSheet(false)} />
+        <Button kind="danger" label={t(iSent ? 'ask.yesTakeBack' : 'ask.yesPass')} onPress={pass} busy={busy} />
+        <Button kind="ghost" label={t('ask.keepOpen')} onPress={() => setSheet(false)} />
       </Sheet>
     </Screen>
   );

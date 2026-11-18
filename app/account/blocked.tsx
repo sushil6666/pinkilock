@@ -10,6 +10,7 @@ import { useStore } from '@/state/store';
 import { color, radius, space } from '@/theme/tokens';
 import { ErrorText } from '@/components/ui/ErrorText';
 import { shown } from '@/lib/report';
+import { fmtDate, t } from '@/i18n';
 
 export default function Blocked() {
   const unblock = useStore((s) => s.unblock);
@@ -35,19 +36,19 @@ export default function Blocked() {
   };
 
   return (
-    <Screen back="back" title="Blocked">
+    <Screen back="back" title={t('blocked.title')}>
       <View style={{ gap: space.lg }}>
-        <T v="display">Blocked</T>
-        <T c={color.textDim}>They cannot see you and you cannot see them. Unblocking brings their card back; plans that ended stay ended.</T>
+        <T v="display">{t('blocked.title')}</T>
+        <T c={color.textDim}>{t('blocked.body')}</T>
         {error ? <ErrorText text={error} /> : null}
-        {list?.length === 0 ? <T c={color.textMute}>You haven't blocked anyone.</T> : null}
+        {list?.length === 0 ? <T c={color.textMute}>{t('blocked.none')}</T> : null}
         {list?.map((p) => (
           <View key={p.profileId} style={{ flexDirection: 'row', alignItems: 'center', gap: space.md, borderWidth: 1, borderColor: color.line, borderRadius: radius.card, backgroundColor: color.surface, padding: space.md }}>
             <View style={{ flex: 1 }}>
               <T v="bodyBold">{p.name}</T>
-              <T v="caption" c={color.textDim}>Blocked {new Date(p.blockedAt).toLocaleDateString()}</T>
+              <T v="caption" c={color.textDim}>{t('blocked.on', { date: fmtDate(p.blockedAt) })}</T>
             </View>
-            <Button kind="ghost" label="Unblock" busy={busy === p.profileId} onPress={() => lift(p.profileId)} />
+            <Button kind="ghost" label={t('blocked.unblock')} busy={busy === p.profileId} onPress={() => lift(p.profileId)} />
           </View>
         ))}
       </View>

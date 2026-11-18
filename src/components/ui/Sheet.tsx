@@ -7,6 +7,7 @@ import { elevation } from '../../theme/elevation';
 import { color, gutter, motion, radius, space } from '../../theme/tokens';
 import { column } from './Screen';
 import { T } from './T';
+import { t } from '../../i18n';
 
 interface Props {
   visible: boolean;
@@ -22,7 +23,7 @@ export function Sheet({ visible, onClose, eyebrow, title, body, children }: Prop
   return (
     <Modal visible={visible} transparent animationType="none" statusBarTranslucent onRequestClose={onClose}>
       <Animated.View entering={FadeIn.duration(motion.base)} style={styles.scrim}>
-        <Pressable style={StyleSheet.absoluteFill} onPress={onClose} accessibilityLabel="Close" accessibilityRole="button" />
+        <Pressable style={StyleSheet.absoluteFill} onPress={onClose} accessibilityLabel={t('common.close')} accessibilityRole="button" />
         <Animated.View
           entering={SlideInDown.duration(280).easing(motion.ease)}
           style={[styles.sheet, elevation('raised'), { paddingBottom: Math.max(insets.bottom, space.lg) + space.sm }]}

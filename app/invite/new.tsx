@@ -24,8 +24,10 @@ import { ErrorText } from '@/components/ui/ErrorText';
 import { PLACE_MAX, looksLikeContact } from '@/domain/profile';
 import { venueOf, venuePlace, venuesFor } from '@/domain/venues';
 import { suits, windowsLabel } from '@/domain/freeWindows';
+import { t } from '@/i18n';
 
-const REMOTE_PLACE = { video: 'Pinkilock video room', game: 'Voice chat in the app' } as const;
+// The place stored on a remote ask; the other person reads it as written. i18n: data
+const REMOTE_PLACE = { video: 'Pinkilock video room', game: 'Voice chat in the app' } as const; // i18n: data
 
 export default function NewInvite() {
   const params = useLocalSearchParams<{ to: string; idea?: string; double?: string }>();
@@ -54,7 +56,7 @@ export default function NewInvite() {
   if (!person || !me) {
     return (
       <Screen back="close" scroll={false}>
-        <View style={{ flex: 1, justifyContent: 'center' }}><T v="display">Nobody{'\n'}to ask.</T></View>
+        <View style={{ flex: 1, justifyContent: 'center' }}><T v="display">{t('compose.nobody')}</T></View>
       </Screen>
     );
   }
@@ -65,15 +67,15 @@ export default function NewInvite() {
   const slots = day ? slotOptions(day.start, now) : [];
   const full = openAsks >= MAX_OPEN_ASKS;
   const asDouble = double && !!friend && !!person.hasDuo;
-  const whom = asDouble ? `${person.name} and their duo` : person.name;
+  
   const venues = remotePlace ? [] : venuesFor(me.city, person.area, me.area);
   // With no list for this city yet, the place is typed, as before.
   const typing = !remotePlace && (venueId === 'other' || venues.length === 0);
   const venue = !remotePlace && !typing ? venueOf(venueId) : undefined;
   const leaks = looksLikeContact(note) || (typing && looksLikeContact(place));
-  const missing = !startsAt ? 'Pick a time.' : !remotePlace && !venue && !typing ? 'Pick where to meet.'
-    : typing && place.trim().length < 3 ? 'Add a public place to meet.'
-    : leaks ? 'Contacts unlock after a kept promise. Take that out.' : '';
+  const missing = !startsAt ? t('compose.pickTime') : !remotePlace && !venue && !typing ? t('compose.pickWhere')
+    : typing && place.trim().length < 3 ? t('compose.addPlace')
+    : leaks ? t('errors.PL065') : '';
 
   const submit = async () => {
     if (!startsAt) return;
@@ -91,65 +93,65 @@ export default function NewInvite() {
   };
 
   const hint = error || full
-    ? <ErrorText text={error || `You have ${MAX_OPEN_ASKS} asks open. Wait for a reply or withdraw one.`} />
-    : <T v="caption" c={color.textDim}>{missing || `${whom} ${asDouble ? 'get' : 'gets'} 24 hours to answer. Ask ${openAsks + 1} of ${MAX_OPEN_ASKS}.`}</T>;
+    ? <ErrorText text={error || t('compose.full', { max: MAX_OPEN_ASKS })} />
+    : <T v="caption" c={color.textDim}>{missing || t(asDouble ? 'compose.hoursDouble' : 'compose.hours', { name: person.name, n: openAsks + 1, max: MAX_OPEN_ASKS })}</T>;
 
   return (
     <Screen
       back="close"
-      title="Vibe check"
-      footer={<>{hint}<HoldButton label={asDouble ? `Hold to ask ${person.name} + duo` : `Hold to ask ${person.name}`} onComplete={submit} disabled={!!missing || full} busy={busy} /></>}
+      title={t('ask.title')}
+      footer={<>{hint}<HoldButton label={t(asDouble ? 'compose.holdDouble' : 'compose.hold', { name: person.name })} onComplete={submit} disabled={!!missing || full} busy={busy} /></>}
     >
       <View style={styles.to}>
         <Portrait name={person.name} palette={person.palette} glyph={person.glyph} size={52} />
         <View style={{ flex: 1, gap: 4 }}>
-          <T v="title" numberOfLines={1}>Ask {person.name}</T>
+          <T v="title" numberOfLines={1}>{t('compose.askName', { name: person.name })}</T>
           <TrustBadge person={person} />
         </View>
       </View>
 
       {person.hasDuo ? (
-        <Section n="00" label="Who comes">
+        <Section n="00" label={t('compose.whoComes')}>
           {friend ? (
             <View style={styles.wrap}>
-              <Chip label="Just us two" selected={!asDouble} onPress={() => setDouble(false)} />
-              <Chip label={`Double, with ${friend.name}`} sub={`${person.name}'s duo comes too`} selected={asDouble} onPress={() => setDouble(true)} />
+              <Chip label={t('compose.justUs')} selected={!asDouble} onPress={() => setDouble(false)} />
+              <Chip label={t('compose.doubleWith', { name: friend.name })} sub={t('compose.theirDuoToo', { name: person.name })} selected={asDouble} onPress={() => setDouble(true)} />
             </View>
           ) : (
-            <T v="caption" c={color.textDim}>{`${person.name} has a duo. Make one with a friend in Me to ask them out on a double.`}</T>
+            <T v="caption" c={color.textDim}>{t('compose.hasDuo', { name: person.name })}</T>
           )}
         </Section>
       ) : null}
 
-      <Section n="01" label="To what">
+      <Section n="01" label={t('compose.toWhat')}>
         <View style={{ gap: space.sm }}>
           {person.ideaIds.map((id) => {
             const option = ideaOf(id);
-            return <Chip key={id} label={`${option.emoji}  ${option.title}`} sub={`${option.minutes} min  /  ${option.blurb}`} selected={id === ideaId} onPress={() => setIdeaId(id)} />;
+            return <Chip key={id} label={`${option.emoji}  ${option.title}`} sub={t('onboarding.ideaSub', { minutes: option.minutes, blurb: option.blurb })} selected={id === ideaId} onPress={() => setIdeaId(id)} />;
           })}
         </View>
       </Section>
 
-      <Section n="02" label="When">
+      <Section n="02" label={t('compose.when')}>
         <View style={styles.wrap}>
           {days.map((option) => (
             <Chip key={option.id} label={option.label} sub={option.sub} selected={option.id === dayId} onPress={() => { setDayId(option.id); setStartsAt(null); }} />
           ))}
         </View>
-        {person.freeWindows?.length ? <T v="caption" c={color.textDim}>{`${person.name} is usually free: ${windowsLabel(person.freeWindows)}.`}</T> : null}
+        {person.freeWindows?.length ? <T v="caption" c={color.textDim}>{t('compose.usuallyFreeAt', { name: person.name, when: windowsLabel(person.freeWindows) })}</T> : null}
         <View style={styles.wrap}>
-          {slots.map((t) => (
-            <Chip key={t} label={timeLabel(t)} sub={person.freeWindows?.length && suits(t, person.freeWindows) ? `${person.name} is usually free` : undefined}
-              selected={t === startsAt} onPress={() => setStartsAt(t)} />
+          {slots.map((at) => (
+            <Chip key={at} label={timeLabel(at)} sub={person.freeWindows?.length && suits(at, person.freeWindows) ? t('compose.usuallyFree', { name: person.name }) : undefined}
+              selected={at === startsAt} onPress={() => setStartsAt(at)} />
           ))}
         </View>
       </Section>
 
-      <Section n="03" label="Where">
+      <Section n="03" label={t('compose.where')}>
         {remotePlace ? (
           <View style={{ flexDirection: 'row', gap: space.sm, alignItems: 'center' }}>
             <Feather name="smartphone" size={16} color={color.textDim} />
-            <T c={color.textDim} style={{ flex: 1 }}>{remotePlace}. No numbers swapped.</T>
+            <T c={color.textDim} style={{ flex: 1 }}>{t(idea.kind === 'game' ? 'compose.remoteGame' : 'compose.remoteVideo')}</T>
           </View>
         ) : (
           <>
@@ -162,29 +164,29 @@ export default function NewInvite() {
             )}
             {venues.length > 0 && (
               <View style={styles.wrap}>
-                {!showAllVenues && venues.length > 6 && <Tag label={`${venues.length - 6} more places`} onPress={() => setShowAllVenues(true)} />}
-                <Tag label="Somewhere else" tone={venueId === 'other' ? color.gold : color.textDim} selected={venueId === 'other'} onPress={() => setVenueId(venueId === 'other' ? null : 'other')} />
+                {!showAllVenues && venues.length > 6 && <Tag label={t('compose.morePlaces', { count: venues.length - 6 })} onPress={() => setShowAllVenues(true)} />}
+                <Tag label={t('compose.elsewhere')} tone={venueId === 'other' ? color.gold : color.textDim} selected={venueId === 'other'} onPress={() => setVenueId(venueId === 'other' ? null : 'other')} />
               </View>
             )}
-            {typing && <TextInput value={place} onChangeText={setPlace} placeholder="Boba counter, Linking Road" placeholderTextColor={color.textMute} maxLength={PLACE_MAX} style={[inputStyle, type.body]} accessibilityLabel="Where to meet" />}
+            {typing && <TextInput value={place} onChangeText={setPlace} placeholder={t('compose.placePlaceholder')} placeholderTextColor={color.textMute} maxLength={PLACE_MAX} style={[inputStyle, type.body]} accessibilityLabel={t('compose.whereLabel')} />}
             <View style={{ flexDirection: 'row', gap: space.sm }}>
               <Feather name="shield" size={14} color={color.textDim} style={{ marginTop: 2 }} />
-              <T v="caption" c={color.textDim} style={{ flex: 1 }}>Somewhere public and busy. Tell a friend where you will be.</T>
+              <T v="caption" c={color.textDim} style={{ flex: 1 }}>{t('compose.publicBusy')}</T>
             </View>
           </>
         )}
       </Section>
 
-      <Section n="04" label="One line (optional)">
+      <Section n="04" label={t('compose.line')}>
         <View style={styles.wrap}>
-          {NOTE_TONES.map((t) => <Tag key={t.id} label={t.label} tone={tone === t.id ? color.gold : color.textDim} selected={tone === t.id} onPress={() => setTone(t.id)} />)}
+          {NOTE_TONES.map((nt) => <Tag key={nt.id} label={nt.label} tone={tone === nt.id ? color.gold : color.textDim} selected={tone === nt.id} onPress={() => setTone(nt.id)} />)}
         </View>
         <View style={styles.wrap}>
           {noteStarters(idea.kind, tone).map((line) => (
             <Chip key={line} label={line} selected={note === line} onPress={() => setNote(note === line ? '' : line)} />
           ))}
         </View>
-        <T v="caption" c={color.textDim}>Pick one if you like. Lines are chosen from a list, never typed, so asks stay safe.</T>
+        <T v="caption" c={color.textDim}>{t('compose.lineBody')}</T>
       </Section>
     </Screen>
   );
