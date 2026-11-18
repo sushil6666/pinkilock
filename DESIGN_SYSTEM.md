@@ -111,6 +111,9 @@ Font scaling is allowed up to 1.3x (`maxFontSizeMultiplier`) so layouts hold on 
   the screen's edges. The pinkies float in it. Decoration only, still with reduced motion. On the
   desktop front page (`wide`) the sky spans the whole window, the moon sits above the pinkies, and
   the city carries on past the landmarks with more towers, cropped at the sides, never the top.
+  Signed in, the landmarks show only for someone in Mumbai; every other city gets plain towers in
+  their place (`landmarks={false}`). On a desktop `form` screen the sky fills the left side with
+  no dividing line, and the city (`City`) runs along the bottom of the whole window (D086).
 - **Places**: on the phone's first screen, a sideways row of real venues from `VENUES` ("Where
   plans happen"), one city each, so the row shows India rather than one city: a gold kind icon, the
   name and the city on a `surface` card with a `goldDeep` border. On the desktop front page, one

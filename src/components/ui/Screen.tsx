@@ -8,7 +8,8 @@
  * desktop window (`useDesktop`) each screen says what kind it is with `desk`:
  * - `page` (the default): up to `deskMax`, for screens that lay out two columns (`Columns`, `Grid`).
  * - `form`: one thing to fill in or decide. The night sky and the pinkies fill the left of the
- *   window; the form sits on the right at `columnMax`, with its footer under it.
+ *   window; the form sits on the right at `columnMax`, with its footer under it; the city runs
+ *   along the bottom of both, edge to edge (D086).
  * - `read`: long text, up to `readMax`.
  * Things drawn outside a Screen (sheets, the notice banner) use `column` from here.
  */
@@ -22,7 +23,8 @@ import { webOnly } from '../../lib/web';
 import { color, columnMax, deskMax, gutter, readMax, space } from '../../theme/tokens';
 import { Logo } from '../Logo';
 import { Loop } from '../Loop';
-import { NightSky } from '../NightSky';
+import { City, NightSky } from '../NightSky';
+import { useStore } from '../../state/store';
 import { T } from './T';
 import { t } from '../../i18n';
 
@@ -70,7 +72,7 @@ export const column = { width: '100%', maxWidth: columnMax, alignSelf: 'center' 
 function SkyAside() {
   return (
     <View style={styles.aside}>
-      <NightSky wide moon={styles.asideMoon}>
+      <NightSky wide city={false} moon={styles.asideMoon}>
         <View style={{ width: '100%', maxWidth: 520, alignSelf: 'center' }}><Loop name="pinkyLock" /></View>
       </NightSky>
     </View>
@@ -85,6 +87,9 @@ export function Screen({ children, title, back = false, onBack, right, footer, s
   const insets = useSafeAreaInsets();
   const bottom = inTabs ? space.xxl : Math.max(insets.bottom, space.lg) + space.sm;
   const hasHeader = logo || back !== false || !!title || !!right;
+  // Mumbai's landmarks only over Mumbai, or before anyone has a city (sign-up).
+  const myCity = useStore((s) => s.me?.city);
+  const landmarks = !myCity || myCity === 'Mumbai';
 
   const header = hasHeader && (
     <View style={[styles.header, desktop && !form && { maxWidth: maxWidth + gutter * 2 }, form && styles.headerWide]}>
@@ -122,13 +127,16 @@ export function Screen({ children, title, back = false, onBack, right, footer, s
       {!wide && !desktop && <View style={styles.rail} pointerEvents="none"><View style={styles.railLines} /></View>}
       {header}
       {form ? (
-        <View style={styles.split}>
-          {aside ?? <SkyAside />}
-          <View style={styles.formSide}>
-            {body}
-            {foot}
+        <>
+          <View style={styles.split}>
+            {aside ?? <SkyAside />}
+            <View style={styles.formSide}>
+              {body}
+              {foot}
+            </View>
           </View>
-        </View>
+          {!aside && <City wide landmarks={landmarks} />}
+        </>
       ) : (
         <>
           {body}
@@ -154,5 +162,6 @@ const styles = StyleSheet.create({
   split: { flex: 1, flexDirection: 'row' },
   aside: { flex: 1.2, justifyContent: 'center', overflow: 'hidden', paddingHorizontal: gutter },
   asideMoon: { right: '12%', top: 0 },
-  formSide: { flex: 1, minWidth: columnMax + gutter * 2, borderLeftWidth: StyleSheet.hairlineWidth, borderLeftColor: color.line },
+  // No line between the two sides: the sky runs into the form, and the city runs under both.
+  formSide: { flex: 1, minWidth: columnMax + gutter * 2 },
 });

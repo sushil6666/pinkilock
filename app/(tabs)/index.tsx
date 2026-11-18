@@ -4,8 +4,9 @@
  */
 import { Feather } from '@expo/vector-icons';
 import { Redirect, router, useFocusEffect } from 'expo-router';
-import { useCallback, useEffect } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { useCallback, useEffect, useState } from 'react';
+import { Platform, Pressable, StyleSheet, View } from 'react-native';
+import * as Linking from 'expo-linking';
 import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
 import { Portrait } from '@/components/Portrait';
 import { Spark } from '@/components/Spark';
@@ -19,6 +20,7 @@ import { T } from '@/components/ui/T';
 import { ideaOf } from '@/domain/ideas';
 import { isLive, otherId, peopleOf } from '@/domain/invites';
 import { quiet } from '@/lib/log';
+import { shareOrCopy } from '@/lib/shareOrCopy';
 import { useStore } from '@/state/store';
 import { color, radius, space } from '@/theme/tokens';
 import { answersIn } from '@/domain/answers';
@@ -53,6 +55,12 @@ export default function Discover() {
   }, [low, me, refill]);
 
   const desktop = useDesktop();
+  const [copied, setCopied] = useState(false);
+  // Nobody left to see: the one thing that brings more people is a friend telling a friend (D086).
+  const inviteFriend = async () => {
+    const link = Platform.OS === 'web' ? window.location.origin : Linking.createURL('/');
+    setCopied((await shareOrCopy(t('discover.inviteShare', { link }))) === 'copied');
+  };
   if (!me) return <Redirect href="/onboarding" />;
   const person = queue[0];
 
@@ -65,6 +73,9 @@ export default function Discover() {
           <T c={color.textDim}>{busyWith.size > 0 ? t('discover.emptyBusy', { count: busyWith.size }) : t('discover.emptyNew', { city: me.city })}</T>
           {passedIds.length > 0 && <Button kind="ghost" icon="rotate-ccw" label={t('discover.lookAgain', { count: passedIds.length })} onPress={restore} />}
           {busyWith.size > 0 && <Button label={t('discover.seeAsks')} icon="send" onPress={() => router.push('/(tabs)/invites')} />}
+          <Button kind={busyWith.size > 0 ? 'ghost' : 'primary'} label={t('discover.inviteFriend')} icon="user-plus" onPress={() => inviteFriend().catch(quiet('discover.invite'))} />
+          {copied && <T v="caption" c={color.gold}>{t('discover.inviteCopied')}</T>}
+          <Button kind="quiet" label={t('discover.moved')} icon="map-pin" onPress={() => router.push('/(tabs)/me')} />
         </View>
       </Screen>
     );

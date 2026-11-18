@@ -3,6 +3,9 @@
  * twinkle, and the skyline along the sea (the Gateway arch, towers, the Sea Link's cables) with the
  * moon's light on the water. Whatever is passed as children (the clay pinkies) floats in the sky.
  *
+ * Mumbai's landmarks show only where the city is Mumbai (or not known yet, as on the first screen);
+ * anywhere else the skyline is plain towers, so Bhubaneswar does not get the Gateway (D086).
+ *
  * Decoration only: hidden from screen readers, and still with reduced motion. Colours come from
  * the tokens, so the sky is the screen's own `bg` and the pinkies' GIF sits on it with no edge.
  */
@@ -66,8 +69,11 @@ const SIDE_TOWERS: [number, number, number][] = (() => {
   return out;
 })();
 
-/** The city along the water: towers, the Gateway's arch, the Sea Link's tower and cables. */
-function Skyline({ wide }: { wide?: boolean }) {
+/** Plain towers where the Gateway and the Sea Link stand, for any city that is not Mumbai. */
+const MIDDLE_TOWERS: [number, number, number][] = [[100, 26, 50], [128, 30, 34], [160, 22, 62], [184, 34, 40], [220, 26, 56], [248, 30, 30], [280, 18, 48]];
+
+/** The city along the water: towers, and in Mumbai the Gateway's arch and the Sea Link's tower and cables. */
+function Skyline({ wide, landmarks = true }: { wide?: boolean; landmarks?: boolean }) {
   const windows = [14, 46, 54, 76, 132, 166, 300, 334, 348, 372];
   // Wide: the same landmarks in the middle of a longer city, drawn a little bigger, cropped at the
   // sides rather than the top, so the towers keep their tops on any window.
@@ -84,20 +90,26 @@ function Skyline({ wide }: { wide?: boolean }) {
         <Rect x={0} y={34} width={40} height={42} />
         <Rect x={38} y={16} width={26} height={60} />
         <Rect x={66} y={40} width={30} height={36} />
-        <Path d="M108 76 V30 h72 v46 h-19 v-24 a17 17 0 0 0 -34 0 v24 z" />
-        <Rect x={102} y={22} width={84} height={10} />
-        <Rect x={110} y={8} width={10} height={16} />
-        <Rect x={168} y={8} width={10} height={16} />
+        {landmarks ? (
+          <>
+            <Path d="M108 76 V30 h72 v46 h-19 v-24 a17 17 0 0 0 -34 0 v24 z" />
+            <Rect x={102} y={22} width={84} height={10} />
+            <Rect x={110} y={8} width={10} height={16} />
+            <Rect x={168} y={8} width={10} height={16} />
+          </>
+        ) : MIDDLE_TOWERS.map(([x, w, h]) => <Rect key={x} x={x} y={76 - h} width={w} height={h} />)}
         <Rect x={300} y={10} width={22} height={66} />
         <Rect x={326} y={30} width={34} height={46} />
         <Rect x={362} y={46} width={28} height={30} />
         {wide && SIDE_TOWERS.map(([x, w, h]) => <Rect key={x} x={x} y={76 - h} width={w} height={h} />)}
       </G>
-      <G stroke={color.gold} strokeWidth={1.4} fill="none" opacity={0.85}>
-        <Path d="M190 70 H298" />
-        <Path d="M245 70 V6" />
-        <Path d="M245 10 L200 70 M245 10 L215 70 M245 10 L230 70 M245 10 L290 70 M245 10 L275 70 M245 10 L260 70" />
-      </G>
+      {landmarks && (
+        <G stroke={color.gold} strokeWidth={1.4} fill="none" opacity={0.85}>
+          <Path d="M190 70 H298" />
+          <Path d="M245 70 V6" />
+          <Path d="M245 10 L200 70 M245 10 L215 70 M245 10 L230 70 M245 10 L290 70 M245 10 L275 70 M245 10 L260 70" />
+        </G>
+      )}
       <G fill={color.moon}>
         {windows.map((x, i) => <Rect key={x} x={x} y={46 + (i % 3) * 8} width={4} height={4} />)}
         {wide && SIDE_TOWERS.filter((_, i) => i % 2 === 0).map(([x, w, h], i) => <Rect key={x} x={x + Math.round(w / 3)} y={76 - h + 8 + (i % 3) * 8} width={4} height={4} />)}
@@ -107,8 +119,20 @@ function Skyline({ wide }: { wide?: boolean }) {
   );
 }
 
-/** For a sky wider than a phone: `moon` moves the moon (top right by default), `wide` lengthens the city. */
-export function NightSky({ children, moon, wide }: { children?: ReactNode; moon?: StyleProp<ViewStyle>; wide?: boolean }) {
+/** Just the skyline, for a layout that runs the city along the bottom of the whole window. */
+export function City({ wide, landmarks }: { wide?: boolean; landmarks?: boolean }) {
+  return (
+    <View accessible={false} importantForAccessibility="no-hide-descendants" accessibilityElementsHidden pointerEvents="none" {...webOnly({ 'aria-hidden': true })}>
+      <Skyline wide={wide} landmarks={landmarks} />
+    </View>
+  );
+}
+
+/**
+ * For a sky wider than a phone: `moon` moves the moon (top right by default), `wide` lengthens the
+ * city, `landmarks` turns Mumbai's off, and `city={false}` leaves the skyline out (drawn elsewhere).
+ */
+export function NightSky({ children, moon, wide, landmarks, city = true }: { children?: ReactNode; moon?: StyleProp<ViewStyle>; wide?: boolean; landmarks?: boolean; city?: boolean }) {
   const still = useReducedMotion();
   return (
     <View accessible={false} importantForAccessibility="no-hide-descendants" accessibilityElementsHidden {...webOnly({ 'aria-hidden': true })}>
@@ -117,7 +141,7 @@ export function NightSky({ children, moon, wide }: { children?: ReactNode; moon?
         <Moon still={still} at={moon} />
         <View style={styles.float}>{children}</View>
       </View>
-      <View style={styles.city}><Skyline wide={wide} /></View>
+      {city && <View style={styles.city}><Skyline wide={wide} landmarks={landmarks} /></View>}
     </View>
   );
 }
