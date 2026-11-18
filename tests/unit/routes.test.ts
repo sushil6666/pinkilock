@@ -32,9 +32,9 @@ test('titles name the screen and never the person', () => {
   assert.equal(titleFor(['something', 'new']), APP_NAME);
 });
 
-test('only the gate, onboarding, sign-in, not-found, the terms and a friend\'s vouch link open without a profile', () => {
+test('only the gate, onboarding, sign-in, not-found, the terms, a friend\'s vouch link and the safety page open without a profile', () => {
   const open = KNOWN_ROUTES.filter((r) => !needsProfile(r.split('/')));
-  assert.deepEqual(open.sort(), ['', '+not-found', 'account/sign-in', 'legal/[doc]', 'onboarding', 'vouch/[token]']);
+  assert.deepEqual(open.sort(), ['', '+not-found', 'account/sign-in', 'legal/[doc]', 'onboarding', 'safety', 'vouch/[token]']);
   // A route nobody has listed is shut, not open.
   assert.equal(needsProfile(['something', 'new']), true);
 });

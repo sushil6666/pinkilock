@@ -234,6 +234,7 @@ export const en = {
     finalBody: 'Make a profile, pick three plans, send your first vibe check. Adults only, 18 and over.',
     terms: 'Terms',
     privacy: 'Privacy',
+    safety: 'Safety',
   },
 
   me: {
@@ -704,7 +705,7 @@ export const en = {
 
   gate: { noConnect: 'Could not connect', noSignal: 'No signal, no promises.' },
   crash: { title: 'That\nbroke.' },
-  legal: { version: 'Version {version}' },
+  legal: { version: 'Version {version}', safetyCall: 'Safety page: call {numbers}', or: '{a} or {b}' },
 
   safety: {
     danger: 'In danger now',

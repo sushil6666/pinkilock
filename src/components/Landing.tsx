@@ -192,6 +192,7 @@ export function Landing({ onStart }: { onStart: () => void }) {
           <View style={styles.navRight}>
             <Button kind="quiet" label={t('landing.terms')} onPress={() => router.push('/legal/terms')} />
             <Button kind="quiet" label={t('landing.privacy')} onPress={() => router.push('/legal/privacy')} />
+            <Button kind="quiet" label={t('landing.safety')} onPress={() => router.push('/safety')} />
           </View>
         </View>
       </View>
