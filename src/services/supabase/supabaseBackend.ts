@@ -390,6 +390,7 @@ export function createSupabaseBackend(url: string, anonKey: string, storage: Ses
       await rpc('save_profile', {
         p_name: input.name, p_age: input.age, p_area: input.area, p_pronouns: input.pronouns, p_tagline: input.tagline,
         p_vibes: input.vibes, p_idea_ids: input.ideaIds, p_contact_kind: input.contactKind, p_contact_handle: input.contactHandle,
+        p_city: input.city ?? null,
       });
       return snapshot();
     },

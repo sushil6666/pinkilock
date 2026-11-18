@@ -14,6 +14,8 @@ import { Screen, goBack } from '@/components/ui/Screen';
 import { T } from '@/components/ui/T';
 import { maskEmail, normaliseEmail } from '@/domain/email';
 import { CODE_LENGTH, maskPhone, normalisePhone } from '@/domain/phone';
+import { COUNTRIES, DIAL_CODES } from '@/domain/countries';
+import { Chip } from '@/components/ui/Chip';
 import type { CodeKind, CodeMode } from '@/domain/types';
 import { haptic } from '@/lib/haptics';
 import { useStore } from '@/state/store';
@@ -34,13 +36,16 @@ export default function SignInCodeScreen() {
     loadAccount().catch(quiet('/account/sign-in'));
   }, [loadAccount]);
   const [raw, setRaw] = useState('');
+  // Which country a number written the local way belongs to (WP9). Starts from my own country.
+  const myCountry = useStore((s) => s.me?.country);
+  const [dialFrom, setDialFrom] = useState(myCountry ?? COUNTRIES.find((c) => c.active)?.code ?? 'IN');
   const [sentTo, setSentTo] = useState<string | null>(null);
   const [code, setCode] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
 
   const isPhone = kind === 'phone';
-  const typed = isPhone ? normalisePhone(raw) : normaliseEmail(raw);
+  const typed = isPhone ? normalisePhone(raw, DIAL_CODES[dialFrom] ?? '91') : normaliseEmail(raw);
   const off = account && !(isPhone ? account.phoneAvailable : account.emailAvailable);
 
   const switchKind = () => {
@@ -106,11 +111,17 @@ export default function SignInCodeScreen() {
             </T>
             {isPhone ? (
               <View style={{ gap: space.sm }}>
-                <T v="label" c={color.textDim}>Phone number</T>
+                <T v="label" c={color.textDim}>Country</T>
+                <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: space.sm }}>
+                  {COUNTRIES.filter((c) => c.active || c.code === dialFrom).map((c) => (
+                    <Chip key={c.code} label={`${c.name}  +${DIAL_CODES[c.code]}`} selected={dialFrom === c.code} onPress={() => setDialFrom(c.code)} />
+                  ))}
+                </View>
+                <T v="label" c={color.textDim} style={{ marginTop: space.md }}>Phone number</T>
                 <TextInput
                   value={raw}
                   onChangeText={setRaw}
-                  placeholder="98765 43210"
+                  placeholder={`+${DIAL_CODES[dialFrom] ?? ''} number`}
                   placeholderTextColor={color.textMute}
                   keyboardType="phone-pad"
                   textContentType="telephoneNumber"
@@ -119,7 +130,7 @@ export default function SignInCodeScreen() {
                   style={inputStyle}
                   accessibilityLabel="Phone number"
                 />
-                <T v="caption" c={color.textMute}>Indian numbers can be entered as 10 digits. For other countries, start with + and the country code.</T>
+                <T v="caption" c={color.textMute}>Type it the way you would at home. A number from another country: start with + and its code.</T>
               </View>
             ) : (
               <View style={{ gap: space.sm }}>

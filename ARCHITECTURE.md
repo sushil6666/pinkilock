@@ -206,6 +206,13 @@ whether I answered and whether both of us want round two. The worker writes the 
 answer time for a "usually answers in" line. Clients read only the card's columns of `profiles`;
 moderation columns stay server-side.
 
+**The area, pronouns and contact kind are picked too** (migration `20261118000003_picked_fields.sql`).
+The area comes from the city's list (`areas`, PL095) and pronouns from `pronoun_options` (PL096); a
+value saved before the lists existed stays valid until it changes. Onboarding asks for the city
+(an open one), and the server works out the country from it. Contact kinds are a catalogue by region
+(`contact_kinds`): a kind with no countries works everywhere, the others only where people use them.
+Phone sign-in takes the picked country's dialling code instead of assuming India.
+
 **Lines are picked or reviewed.** An ask's line must be one of `ask_lines` (the app's ready-made
 lines) or none. The one free text, the profile line, can change once a week (the name once a
 month), and with review on it waits in `private.line_reviews` while the card keeps the last

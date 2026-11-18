@@ -61,7 +61,7 @@ test('names: one word of letters, 2 to 16', () => {
 });
 
 test('a profile is refused with the code the server would use', () => {
-  const ok = { name: 'Riya', age: 24, area: 'Bandra', pronouns: '', tagline: '', vibes: ['foodie'], ideaIds: ['boba_run', 'chai_walk', 'meme_duel'] };
+  const ok = { name: 'Riya', age: 24, area: 'Bandra West', pronouns: '', tagline: '', vibes: ['foodie'], ideaIds: ['boba_run', 'chai_walk', 'meme_duel'] };
   const code = (p: Partial<typeof ok>) => {
     try { checkProfile({ ...ok, ...p }); return null; } catch (e) { return (e as AppError).code; }
   };

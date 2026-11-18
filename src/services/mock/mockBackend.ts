@@ -16,7 +16,9 @@ import type { Backend, BackendEvent, Changes, ClientErrorReport, Notice, Snapsho
 import { ALWAYS_PASSES, ME_ID, SEED_DUOS, SEED_ME_RECORD, seedFriend, seedInvites, seedProfiles, seedReveals } from './seed';
 import { checkAsk, checkContact, checkProfile } from '../../domain/profile';
 import { venueOf, venuePlace } from '../../domain/venues';
-import { ALL_CONSENTS } from '../../domain/countries';
+import { ALL_CONSENTS, CITIES, openCities } from '../../domain/countries';
+
+const cityCountry = (city: string) => CITIES.find((c) => c.name === city)?.country ?? 'IN';
 import { FREE_WINDOWS } from '../../domain/freeWindows';
 import { VOUCH_MAX_PICKS, VOUCH_PHRASES } from '../../domain/vouches';
 
@@ -243,7 +245,7 @@ export function createMockBackend(): Backend {
 
   function seedFor(d: Db, input: OnboardingInput): Profile {
     return {
-      id: ME_ID, name: input.name, age: input.age, city: 'Mumbai', area: input.area, pronouns: input.pronouns,
+      id: ME_ID, name: input.name, age: input.age, city: input.city ?? 'Mumbai', country: cityCountry(input.city ?? 'Mumbai'), area: input.area, pronouns: input.pronouns,
       tagline: input.tagline, vibes: input.vibes, ideaIds: input.ideaIds, palette: ['#A9D8F7', '#4169E1'], glyph: '🤙',
       distanceKm: 0, photoCount: 0, ...SEED_ME_RECORD,
     };
@@ -270,8 +272,11 @@ export function createMockBackend(): Backend {
 
     async completeOnboarding(input) {
       if (!ALL_CONSENTS.every((k) => input.consents?.includes(k))) fail('PL077');
-      checkProfile(input);
-      checkContact(input.contactKind, input.contactHandle);
+      // The same order of checks as save_profile: where, then the card, then the contact.
+      const city = input.city ?? 'Mumbai';
+      if (!openCities().some((c) => c.name === city)) fail('PL076');
+      checkProfile(input, city);
+      checkContact(input.contactKind, input.contactHandle, cityCountry(city));
       const d = await load();
       await wait(LATENCY);
       d.me = seedFor(d, input);
@@ -287,13 +292,13 @@ export function createMockBackend(): Backend {
         if (!d.me) fail('PL002');
         const { contactKind, contactHandle, ...card } = patch;
         const next = { ...d.me, ...card };
-        checkProfile(next);
+        checkProfile(next, d.me.city, { area: d.me.area, pronouns: d.me.pronouns });
         const now = Date.now();
         if (next.name !== d.me.name && (changed.name ?? 0) > now - 30 * rules.DAY) fail('PL070');
         if (next.tagline !== d.me.tagline && (changed.tagline ?? 0) > now - 7 * rules.DAY) fail('PL071');
         if (next.name !== d.me.name) changed.name = now;
         if (next.tagline !== d.me.tagline) changed.tagline = now;
-        if (contactKind && contactHandle) checkContact(contactKind, contactHandle);
+        if (contactKind && contactHandle) checkContact(contactKind, contactHandle, d.me.country ?? 'IN');
         d.me = next;
         if (contactKind && contactHandle) d.myContact = { kind: contactKind, handle: contactHandle };
         return { me: d.me, myContact: d.myContact ?? undefined };

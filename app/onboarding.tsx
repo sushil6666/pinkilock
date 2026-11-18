@@ -22,11 +22,11 @@ import { useStore } from '@/state/store';
 import { color, space, type } from '@/theme/tokens';
 import { ErrorText } from '@/components/ui/ErrorText';
 import { shown } from '@/lib/report';
-import { AREA_MAX, NAME_MAX, looksLikeContact, nameOk } from '@/domain/profile';
-import { ALL_CONSENTS } from '@/domain/countries';
+import { AREA_MAX, NAME_MAX, PRONOUN_OPTIONS, looksLikeContact, nameOk } from '@/domain/profile';
+import { ALL_CONSENTS, COUNTRIES, DIAL_CODES, openCities } from '@/domain/countries';
+import { areasIn, matchAreas } from '@/domain/areas';
+import { contactKindOf, contactKindsFor } from '@/domain/contacts';
 
-const PRONOUNS = ['she/her', 'he/him', 'they/them'];
-const CONTACTS: ContactKind[] = ['Instagram', 'Snapchat', 'WhatsApp'];
 const STEPS = 5;
 
 export default function Onboarding() {
@@ -34,7 +34,10 @@ export default function Onboarding() {
   const [step, setStep] = useState(0);
   const [name, setName] = useState('');
   const [age, setAge] = useState('');
+  // Where: an open city, then an area picked from its list (typed only where a city has no list yet).
+  const [city, setCity] = useState(openCities()[0]?.name ?? 'Mumbai');
   const [area, setArea] = useState('');
+  const [areaQuery, setAreaQuery] = useState('');
   const [pronouns, setPronouns] = useState('');
   const [ideaIds, setIdeaIds] = useState<string[]>([]);
   const [vibes, setVibes] = useState<string[]>([]);
@@ -49,11 +52,17 @@ export default function Onboarding() {
   const { width } = useWindowDimensions();
   const wide = step === 0 && width >= 960;
 
+  const country = openCities().find((c) => c.name === city)?.country ?? 'IN';
+  const listed = areasIn(city).length > 0;
+  const matches = matchAreas(city, areaQuery).slice(0, areaQuery.trim() ? 12 : 8);
+  const areaChips = area && listed && !matches.includes(area) ? [area, ...matches.slice(0, matches.length - 1)] : matches;
+  const contactKinds = contactKindsFor(country);
+  const phoneKind = !!contactKindOf(contactKind)?.phone;
   const ageNum = Number(age);
   const under18 = age.length >= 2 && ageNum < 18;
   const canNext = [
     true,
-    nameOk(name) && ageNum >= 18 && ageNum <= 99 && area.trim().length >= 2 && !looksLikeContact(area),
+    nameOk(name) && ageNum >= 18 && ageNum <= 99 && (listed ? areasIn(city).includes(area) : area.trim().length >= 2 && !looksLikeContact(area)),
     ideaIds.length >= 3,
     handle.trim().length >= 2 && !looksLikeContact(tagline),
     true,
@@ -66,7 +75,7 @@ export default function Onboarding() {
     setBusy(true);
     setError('');
     try {
-      await complete({ name: name.trim(), age: ageNum, area: area.trim(), pronouns, tagline: tagline.trim(), vibes, ideaIds, contactKind, contactHandle: handle.trim(), consents: [...ALL_CONSENTS] });
+      await complete({ name: name.trim(), age: ageNum, area: area.trim(), pronouns, tagline: tagline.trim(), vibes, ideaIds, contactKind, contactHandle: handle.trim(), consents: [...ALL_CONSENTS], city });
       haptic.success();
       router.replace('/(tabs)');
     } catch (e) {
@@ -98,22 +107,40 @@ export default function Onboarding() {
               <TextInput value={name} onChangeText={setName} placeholder="Riya" placeholderTextColor={color.textMute} maxLength={NAME_MAX} autoCapitalize="words" autoCorrect={false} style={inputStyle} accessibilityLabel="First name" returnKeyType="next" />
               {name.trim().length >= 2 && !nameOk(name) && <T v="caption" c={color.flare}>First name only, in letters. No numbers, spaces or symbols.</T>}
             </View>
-            <View style={{ flexDirection: 'row', gap: space.md }}>
-              <View style={{ gap: space.sm, width: 104 }}>
-                <T v="label" c={color.textDim}>Age</T>
-                <TextInput value={age} onChangeText={(t) => setAge(t.replace(/[^0-9]/g, ''))} placeholder="21" placeholderTextColor={color.textMute} keyboardType="number-pad" maxLength={2} style={inputStyle} accessibilityLabel="Age" />
-              </View>
-              <View style={{ gap: space.sm, flex: 1 }}>
-                <T v="label" c={color.textDim}>Your area</T>
-                <TextInput value={area} onChangeText={setArea} placeholder="Bandra West" placeholderTextColor={color.textMute} maxLength={AREA_MAX} autoCapitalize="words" style={inputStyle} accessibilityLabel="Your area" />
-              </View>
+            <View style={{ gap: space.sm, width: 104 }}>
+              <T v="label" c={color.textDim}>Age</T>
+              <TextInput value={age} onChangeText={(t) => setAge(t.replace(/[^0-9]/g, ''))} placeholder="21" placeholderTextColor={color.textMute} keyboardType="number-pad" maxLength={2} style={inputStyle} accessibilityLabel="Age" />
             </View>
-            {looksLikeContact(area) && <T v="caption" c={color.flare}>Contacts unlock after a kept promise. Take that out.</T>}
             {under18 && <T v="caption" c={color.flare}>Pinkilock is for adults only. You need to be 18 or older.</T>}
+            <View style={{ gap: space.sm }}>
+              <T v="label" c={color.textDim}>Your city</T>
+              <View style={styles.wrap}>
+                {openCities().map((c) => (
+                  <Chip key={c.name} label={c.name} sub={COUNTRIES.find((k) => k.code === c.country)?.name} selected={city === c.name}
+                    onPress={() => { setCity(c.name); setArea(''); setAreaQuery(''); }} />
+                ))}
+              </View>
+              <T v="caption" c={color.textDim}>Pinkilock opens one city at a time. More are coming.</T>
+            </View>
+            <View style={{ gap: space.sm }}>
+              <T v="label" c={color.textDim}>Your area</T>
+              {listed ? (
+                <>
+                  <TextInput value={areaQuery} onChangeText={setAreaQuery} placeholder="Search, like Bandra" placeholderTextColor={color.textMute} maxLength={AREA_MAX} autoCapitalize="words" autoCorrect={false} style={inputStyle} accessibilityLabel="Your area" />
+                  <View style={styles.wrap}>
+                    {areaChips.map((a) => <Chip key={a} label={a} selected={area === a} onPress={() => setArea(area === a ? '' : a)} />)}
+                  </View>
+                  {matches.length === 0 && <T v="caption" c={color.textDim}>No area by that name. Pick the nearest one.</T>}
+                </>
+              ) : (
+                <TextInput value={area} onChangeText={setArea} placeholder="Your neighbourhood" placeholderTextColor={color.textMute} maxLength={AREA_MAX} autoCapitalize="words" style={inputStyle} accessibilityLabel="Your area" />
+              )}
+              {!listed && looksLikeContact(area) && <T v="caption" c={color.flare}>Contacts unlock after a kept promise. Take that out.</T>}
+            </View>
             <View style={{ gap: space.sm }}>
               <T v="label" c={color.textDim}>Pronouns (optional)</T>
               <View style={styles.wrap}>
-                {PRONOUNS.map((p) => <Chip key={p} label={p} selected={pronouns === p} onPress={() => setPronouns(pronouns === p ? '' : p)} />)}
+                {PRONOUN_OPTIONS.map((p) => <Chip key={p} label={p} selected={pronouns === p} onPress={() => setPronouns(pronouns === p ? '' : p)} />)}
               </View>
             </View>
           </>
@@ -160,9 +187,9 @@ export default function Onboarding() {
             <View style={{ gap: space.sm }}>
               <T v="label" c={color.pink}>What unlocks when you both show</T>
               <View style={styles.wrap}>
-                {CONTACTS.map((k) => <Chip key={k} label={k} selected={contactKind === k} onPress={() => setContactKind(k)} />)}
+                {contactKinds.map((k) => <Chip key={k.kind} label={k.kind} selected={contactKind === k.kind} onPress={() => setContactKind(k.kind as ContactKind)} />)}
               </View>
-              <TextInput value={handle} onChangeText={setHandle} placeholder={contactKind === 'WhatsApp' ? '+91 number' : '@yourhandle'} placeholderTextColor={color.textMute} maxLength={40} autoCapitalize="none" autoCorrect={false} keyboardType={contactKind === 'WhatsApp' ? 'phone-pad' : 'default'} style={inputStyle} accessibilityLabel={`${contactKind} handle`} />
+              <TextInput value={handle} onChangeText={setHandle} placeholder={phoneKind ? `+${DIAL_CODES[country] ?? ''} number` : '@yourhandle'} placeholderTextColor={color.textMute} maxLength={40} autoCapitalize="none" autoCorrect={false} keyboardType={phoneKind ? 'phone-pad' : 'default'} style={inputStyle} accessibilityLabel={`${contactKind} handle`} />
               <T v="caption" c={color.textDim}>Nobody sees this until you both keep a promise. Not when you match, and not when you lock a plan.</T>
             </View>
           </>
