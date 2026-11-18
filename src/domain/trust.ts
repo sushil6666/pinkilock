@@ -7,6 +7,7 @@
  * everything. The raw counts are always shown beside the score, so the number never hides a record.
  */
 import { color } from '../theme/tokens';
+import { t } from '../i18n';
 
 const PRIOR = 4;
 const MIN_FINISHED_FOR_TIER = 3;
@@ -29,9 +30,9 @@ export function trustScore(kept: number, flaked: number): number {
 export function trustOf(p: { kept: number; flaked: number; trustScore?: number }): Trust {
   const score = p.trustScore ?? trustScore(p.kept, p.flaked);
   const base = { score, kept: p.kept, flaked: p.flaked };
-  if (p.kept + p.flaked < MIN_FINISHED_FOR_TIER) return { ...base, tier: 'new', label: 'New here', tone: color.text };
-  if (score >= 90) return { ...base, tier: 'keeper', label: 'Promise Keeper', tone: color.gold };
-  if (score >= 75) return { ...base, tier: 'solid', label: 'Mostly solid', tone: color.text };
-  if (score >= 55) return { ...base, tier: 'shaky', label: 'Shaky', tone: color.flare };
-  return { ...base, tier: 'risk', label: 'Flake risk', tone: color.flare };
+  if (p.kept + p.flaked < MIN_FINISHED_FOR_TIER) return { ...base, tier: 'new', label: t('trust.tiers.new'), tone: color.text };
+  if (score >= 90) return { ...base, tier: 'keeper', label: t('trust.tiers.keeper'), tone: color.gold };
+  if (score >= 75) return { ...base, tier: 'solid', label: t('trust.tiers.solid'), tone: color.text };
+  if (score >= 55) return { ...base, tier: 'shaky', label: t('trust.tiers.shaky'), tone: color.flare };
+  return { ...base, tier: 'risk', label: t('trust.tiers.risk'), tone: color.flare };
 }

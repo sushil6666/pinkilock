@@ -21,10 +21,10 @@ select t.as_user(:'r');
 select t.ok(t.fails($$insert into vibes values ('custom tag')$$) and t.fails($$delete from vibes$$), 'a user cannot change the tag catalogue');
 
 -- Creating a profile: consent first (WP8), then the contact is needed the first time.
-select t.ok(t.sqlstate($$select save_profile('Riya', 24, 'Bandra', '', '', '{}', array['boba_run','chai_walk','meme_duel'], 'Instagram', '@riya')$$) = 'PL077',
+select t.ok(t.sqlstate($$select save_profile('Riya', 24, 'Bandra West', '', '', '{}', array['boba_run','chai_walk','meme_duel'], 'Instagram', '@riya')$$) = 'PL077',
   'a first profile without the four consents is refused (PL077)');
 select give_consents(array['adult', 'terms', 'privacy', 'sensitive']);
-select t.ok(t.sqlstate($$select save_profile('Riya', 24, 'Bandra', 'she/her', 'Will judge your chai order.', array['foodie'], array['boba_run','chai_walk','meme_duel'])$$) = 'PL066',
+select t.ok(t.sqlstate($$select save_profile('Riya', 24, 'Bandra West', 'she/her', 'Will judge your chai order.', array['foodie'], array['boba_run','chai_walk','meme_duel'])$$) = 'PL066',
   'a first profile with no contact is refused (PL066)');
 select save_profile('Riya', 24, ' Bandra West ', 'she/her', 'Will judge your chai order.', array['foodie', 'slow burn'], array['boba_run','chai_walk','meme_duel'], 'Instagram', ' @riya ');
 select t.ok((select (name, age, area, vibes, idea_ids) = ('Riya', 24, 'Bandra West', array['foodie','slow burn'], array['boba_run','chai_walk','meme_duel']) from profiles where id = :'r'),
@@ -64,9 +64,25 @@ insert into bad_profiles values
   ('PL065', 'a number in the area', $$select save_profile('Riya', 25, '98765 43210', '', '', '{}', array['boba_run','chai_walk','meme_duel'])$$),
   ('PL065', 'a handle in the pronouns', $$select save_profile('Riya', 25, 'Khar', '@riya', '', '{}', array['boba_run','chai_walk','meme_duel'])$$),
   ('PL066', 'a contact kind that does not exist', $$select save_profile('Riya', 25, 'Khar', '', '', '{}', array['boba_run','chai_walk','meme_duel'], 'Email', 'riya')$$),
-  ('PL066', 'a one-character handle', $$select save_profile('Riya', 25, 'Khar', '', '', '{}', array['boba_run','chai_walk','meme_duel'], 'Instagram', 'r')$$);
+  ('PL066', 'a one-character handle', $$select save_profile('Riya', 25, 'Khar', '', '', '{}', array['boba_run','chai_walk','meme_duel'], 'Instagram', 'r')$$),
+  ('PL066', 'a contact kind from another region', $$select save_profile('Riya', 25, 'Khar', '', '', '{}', array['boba_run','chai_walk','meme_duel'], 'KakaoTalk', 'riya')$$),
+  ('PL095', 'an area that is not on the city''s list', $$select save_profile('Riya', 25, 'Bandra', '', '', '{}', array['boba_run','chai_walk','meme_duel'])$$),
+  ('PL096', 'typed pronouns', $$select save_profile('Riya', 25, 'Khar', 'xe/xem', '', '{}', array['boba_run','chai_walk','meme_duel'])$$);
 select t.ok(t.sqlstate(stmt) = code, 'refused: ' || why || ' (' || code || ')') from bad_profiles order by code, why;
 select t.ok((select (name, age, area) = ('Riya', 25, 'Khar') from profiles where id = :'r'), 'none of the refused saves changed the profile');
+
+-- Picked fields (WP1, migration 20261118000003): a contact kind used everywhere saves; an area
+-- typed before the lists existed stays valid until it is changed.
+select save_profile('Riya', 25, 'Khar', 'any pronouns', '', '{}', array['boba_run','chai_walk','meme_duel'], 'Telegram', '@riya_t');
+select t.ok((select contact_kind from profile_private where profile_id = :'r') = 'Telegram' and (select pronouns from profiles where id = :'r') = 'any pronouns',
+  'Telegram and picked pronouns save');
+reset role;
+update public.profiles set area = 'Old Typed Lane', pronouns = 'xe/xem' where id = :'r';
+set role authenticated;
+select t.as_user(:'r');
+select save_profile('Riya', 25, 'Old Typed Lane', 'xe/xem', '', '{}', array['boba_run','chai_walk','meme_duel']);
+select t.ok((select (area, pronouns) = ('Old Typed Lane', 'xe/xem') from profiles where id = :'r'), 'a profile from before the lists still saves with what it has');
+select save_profile('Riya', 25, 'Khar', '', '', '{}', array['boba_run','chai_walk','meme_duel'], 'Instagram', '@riya');
 
 -- The tables themselves take no direct writes any more.
 select t.ok(t.fails(format($$update profiles set photo_count = 99 where id = %L$$, :'r')), 'a user cannot update their profile row directly');

@@ -5,6 +5,7 @@ import { T } from '@/components/ui/T';
 import { useStore } from '@/state/store';
 import { color, gutter, space } from '@/theme/tokens';
 import { ErrorText } from '@/components/ui/ErrorText';
+import { t } from '@/i18n';
 
 /** The gate: no profile yet goes to onboarding, everyone else to the tabs. */
 export default function Gate() {
@@ -15,10 +16,10 @@ export default function Gate() {
   if (bootError) {
     return (
       <View style={{ flex: 1, backgroundColor: color.bg, justifyContent: 'center', padding: gutter, gap: space.lg }}>
-        <T v="label" c={color.flare}>Could not connect</T>
-        <T v="display">No signal, no promises.</T>
+        <T v="label" c={color.flare}>{t('gate.noConnect')}</T>
+        <T v="display">{t('gate.noSignal')}</T>
         <ErrorText text={bootError} tone={color.textDim} />
-        <Button label="Try again" icon="refresh-cw" onPress={boot} />
+        <Button label={t('common.tryAgain')} icon="refresh-cw" onPress={boot} />
       </View>
     );
   }

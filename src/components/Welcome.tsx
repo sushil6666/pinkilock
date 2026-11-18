@@ -16,12 +16,13 @@ import { Loop } from './Loop';
 import { NightSky } from './NightSky';
 import { Button } from './ui/Button';
 import { T } from './ui/T';
+import { t } from '../i18n';
 
-const STEPS: [string, string, string][] = [
-  ['1', 'Send a vibe check: a real plan with a time on it.', '-1.6deg'],
-  ['2', 'Lock pinkies. Now it is a promise.', '1.1deg'],
-  ['3', 'Show up. Unlock each other. Build your record.', '-0.7deg'],
-];
+const STEPS = [
+  ['1', 'welcome.step1', '-1.6deg'],
+  ['2', 'welcome.step2', '1.1deg'],
+  ['3', 'welcome.step3', '-0.7deg'],
+] as const;
 
 /** A note scribbled beside the pinkies, with an arrow that is not quite straight. */
 export function Scribble({ wide }: { wide: boolean }) {
@@ -31,7 +32,7 @@ export function Scribble({ wide }: { wide: boolean }) {
         <Path d="M54 40 C 40 42, 18 36, 9 10" stroke={color.pink} strokeWidth={2.6} fill="none" strokeLinecap="round" />
         <Path d="M3 17 L 9 8 L 17 15" stroke={color.pink} strokeWidth={2.6} fill="none" strokeLinecap="round" strokeLinejoin="round" />
       </Svg>
-      <T v="hand" c={color.pink} style={styles.scribbleText}>this is the{'\n'}whole app.</T>
+      <T v="hand" c={color.pink} style={styles.scribbleText}>{t('welcome.scribble')}</T>
     </View>
   );
 }
@@ -43,7 +44,7 @@ export function Notes() {
         <View key={n} style={[styles.under, { transform: [{ rotate: tilt }] }]}>
           <View style={styles.note}>
             <T v="hand" c={color.pink} style={styles.number} maxFontSizeMultiplier={1}>{n}</T>
-            <T style={{ flex: 1 }}>{line}</T>
+            <T style={{ flex: 1 }}>{t(line)}</T>
           </View>
         </View>
       ))}
@@ -59,7 +60,7 @@ const KIND_ICON: Record<VenueKind, keyof typeof Feather.glyphMap> = { promenade:
 function Places() {
   return (
     <View style={{ gap: space.md }}>
-      <T v="label" c={color.gold}>Where plans happen</T>
+      <T v="label" c={color.gold}>{t('welcome.wherePlans')}</T>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: space.md, paddingRight: space.lg }} style={{ marginRight: -space.xl }}>
         {PLACES.map((v) => (
           <View key={v.id} style={styles.place}>
@@ -80,11 +81,11 @@ export function Welcome() {
         <Loop name="pinkyLock" />
         <Scribble wide={false} />
       </NightSky>
-      <T v="mega" style={styles.headline}>No ghosting.{'\n'}No endless{'\n'}swiping.</T>
-      <T v="heading" c={color.textDim}>One person. One tiny plan. One pinky promise that you both show up.</T>
+      <T v="mega" style={styles.headline}>{t('welcome.headline')}</T>
+      <T v="heading" c={color.textDim}>{t('welcome.sub')}</T>
       <View style={{ marginTop: space.md }}><Notes /></View>
       <Places />
-      <Button kind="quiet" icon="log-in" label="I already have an account" onPress={() => router.push({ pathname: '/account/sign-in', params: { mode: 'sign_in' } })} />
+      <Button kind="quiet" icon="log-in" label={t('welcome.haveAccount')} onPress={() => router.push({ pathname: '/account/sign-in', params: { mode: 'sign_in' } })} />
     </View>
   );
 }

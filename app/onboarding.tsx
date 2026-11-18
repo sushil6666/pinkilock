@@ -22,11 +22,12 @@ import { useStore } from '@/state/store';
 import { color, space, type } from '@/theme/tokens';
 import { ErrorText } from '@/components/ui/ErrorText';
 import { shown } from '@/lib/report';
-import { AREA_MAX, NAME_MAX, looksLikeContact, nameOk } from '@/domain/profile';
-import { ALL_CONSENTS } from '@/domain/countries';
+import { AREA_MAX, NAME_MAX, PRONOUN_OPTIONS, looksLikeContact, nameOk } from '@/domain/profile';
+import { ALL_CONSENTS, COUNTRIES, DIAL_CODES, openCities } from '@/domain/countries';
+import { areasIn, matchAreas } from '@/domain/areas';
+import { contactKindOf, contactKindsFor } from '@/domain/contacts';
+import { t } from '@/i18n';
 
-const PRONOUNS = ['she/her', 'he/him', 'they/them'];
-const CONTACTS: ContactKind[] = ['Instagram', 'Snapchat', 'WhatsApp'];
 const STEPS = 5;
 
 export default function Onboarding() {
@@ -34,7 +35,10 @@ export default function Onboarding() {
   const [step, setStep] = useState(0);
   const [name, setName] = useState('');
   const [age, setAge] = useState('');
+  // Where: an open city, then an area picked from its list (typed only where a city has no list yet).
+  const [city, setCity] = useState(openCities()[0]?.name ?? '');
   const [area, setArea] = useState('');
+  const [areaQuery, setAreaQuery] = useState('');
   const [pronouns, setPronouns] = useState('');
   const [ideaIds, setIdeaIds] = useState<string[]>([]);
   const [vibes, setVibes] = useState<string[]>([]);
@@ -49,11 +53,17 @@ export default function Onboarding() {
   const { width } = useWindowDimensions();
   const wide = step === 0 && width >= 960;
 
+  const country = openCities().find((c) => c.name === city)?.country ?? '';
+  const listed = areasIn(city).length > 0;
+  const matches = matchAreas(city, areaQuery).slice(0, areaQuery.trim() ? 12 : 8);
+  const areaChips = area && listed && !matches.includes(area) ? [area, ...matches.slice(0, matches.length - 1)] : matches;
+  const contactKinds = contactKindsFor(country);
+  const phoneKind = !!contactKindOf(contactKind)?.phone;
   const ageNum = Number(age);
   const under18 = age.length >= 2 && ageNum < 18;
   const canNext = [
     true,
-    nameOk(name) && ageNum >= 18 && ageNum <= 99 && area.trim().length >= 2 && !looksLikeContact(area),
+    nameOk(name) && ageNum >= 18 && ageNum <= 99 && (listed ? areasIn(city).includes(area) : area.trim().length >= 2 && !looksLikeContact(area)),
     ideaIds.length >= 3,
     handle.trim().length >= 2 && !looksLikeContact(tagline),
     true,
@@ -66,7 +76,7 @@ export default function Onboarding() {
     setBusy(true);
     setError('');
     try {
-      await complete({ name: name.trim(), age: ageNum, area: area.trim(), pronouns, tagline: tagline.trim(), vibes, ideaIds, contactKind, contactHandle: handle.trim(), consents: [...ALL_CONSENTS] });
+      await complete({ name: name.trim(), age: ageNum, area: area.trim(), pronouns, tagline: tagline.trim(), vibes, ideaIds, contactKind, contactHandle: handle.trim(), consents: [...ALL_CONSENTS], city });
       haptic.success();
       router.replace('/(tabs)');
     } catch (e) {
@@ -76,11 +86,11 @@ export default function Onboarding() {
   };
 
   const footer = step === 4
-    ? <>{error ? <ErrorText text={error} /> : null}<HoldButton label="Hold to swear" onComplete={swear} busy={busy} disabled={!(agreed.adult && agreed.legal && agreed.sensitive)} /></>
-    : <Button label={step === 0 ? 'Start' : 'Next'} icon="arrow-right" onPress={() => setStep(step + 1)} disabled={!canNext} />;
+    ? <>{error ? <ErrorText text={error} /> : null}<HoldButton label={t('onboarding.holdToSwear')} onComplete={swear} busy={busy} disabled={!(agreed.adult && agreed.legal && agreed.sensitive)} /></>
+    : <Button label={t(step === 0 ? 'landing.start' : 'common.next')} icon="arrow-right" onPress={() => setStep(step + 1)} disabled={!canNext} />;
 
   return (
-    <Screen desk="form" wide={wide} logo={!wide} back={step > 0 ? 'back' : false} onBack={() => setStep(step - 1)} title={step > 0 ? `${step} of ${STEPS - 1}` : undefined} footer={wide ? undefined : footer}>
+    <Screen desk="form" wide={wide} logo={!wide} back={step > 0 ? 'back' : false} onBack={() => setStep(step - 1)} title={step > 0 ? t('onboarding.stepOf', { step, total: STEPS - 1 }) : undefined} footer={wide ? undefined : footer}>
       {step > 0 && (
         <View style={styles.progress} accessibilityRole="progressbar" accessibilityValue={{ min: 0, max: STEPS - 1, now: step }}>
           {Array.from({ length: STEPS - 1 }, (_, i) => <View key={i} style={[styles.bar, i < step && { backgroundColor: color.pink }]} />)}
@@ -92,28 +102,46 @@ export default function Onboarding() {
 
         {step === 1 && (
           <>
-            <T v="display">Who's{'\n'}showing up?</T>
+            <T v="display">{t('onboarding.whoTitle')}</T>
             <View style={{ gap: space.sm }}>
-              <T v="label" c={color.textDim}>First name</T>
-              <TextInput value={name} onChangeText={setName} placeholder="Riya" placeholderTextColor={color.textMute} maxLength={NAME_MAX} autoCapitalize="words" autoCorrect={false} style={inputStyle} accessibilityLabel="First name" returnKeyType="next" />
-              {name.trim().length >= 2 && !nameOk(name) && <T v="caption" c={color.flare}>First name only, in letters. No numbers, spaces or symbols.</T>}
+              <T v="label" c={color.textDim}>{t('onboarding.firstName')}</T>
+              <TextInput value={name} onChangeText={setName} placeholder={t('onboarding.namePlaceholder')} placeholderTextColor={color.textMute} maxLength={NAME_MAX} autoCapitalize="words" autoCorrect={false} style={inputStyle} accessibilityLabel={t('onboarding.firstName')} returnKeyType="next" />
+              {name.trim().length >= 2 && !nameOk(name) && <T v="caption" c={color.flare}>{t('onboarding.nameRule')}</T>}
             </View>
-            <View style={{ flexDirection: 'row', gap: space.md }}>
-              <View style={{ gap: space.sm, width: 104 }}>
-                <T v="label" c={color.textDim}>Age</T>
-                <TextInput value={age} onChangeText={(t) => setAge(t.replace(/[^0-9]/g, ''))} placeholder="21" placeholderTextColor={color.textMute} keyboardType="number-pad" maxLength={2} style={inputStyle} accessibilityLabel="Age" />
-              </View>
-              <View style={{ gap: space.sm, flex: 1 }}>
-                <T v="label" c={color.textDim}>Your area</T>
-                <TextInput value={area} onChangeText={setArea} placeholder="Bandra West" placeholderTextColor={color.textMute} maxLength={AREA_MAX} autoCapitalize="words" style={inputStyle} accessibilityLabel="Your area" />
-              </View>
+            <View style={{ gap: space.sm, width: 104 }}>
+              <T v="label" c={color.textDim}>{t('onboarding.age')}</T>
+              <TextInput value={age} onChangeText={(v) => setAge(v.replace(/[^0-9]/g, ''))} placeholder="21" placeholderTextColor={color.textMute} keyboardType="number-pad" maxLength={2} style={inputStyle} accessibilityLabel={t('onboarding.age')} />
             </View>
-            {looksLikeContact(area) && <T v="caption" c={color.flare}>Contacts unlock after a kept promise. Take that out.</T>}
-            {under18 && <T v="caption" c={color.flare}>Pinkilock is for adults only. You need to be 18 or older.</T>}
+            {under18 && <T v="caption" c={color.flare}>{t('onboarding.adultsOnly')}</T>}
             <View style={{ gap: space.sm }}>
-              <T v="label" c={color.textDim}>Pronouns (optional)</T>
+              <T v="label" c={color.textDim}>{t('onboarding.city')}</T>
               <View style={styles.wrap}>
-                {PRONOUNS.map((p) => <Chip key={p} label={p} selected={pronouns === p} onPress={() => setPronouns(pronouns === p ? '' : p)} />)}
+                {openCities().map((c) => (
+                  <Chip key={c.name} label={c.name} sub={COUNTRIES.find((k) => k.code === c.country)?.name} selected={city === c.name}
+                    onPress={() => { setCity(c.name); setArea(''); setAreaQuery(''); }} />
+                ))}
+              </View>
+              <T v="caption" c={color.textDim}>{t('onboarding.oneCity')}</T>
+            </View>
+            <View style={{ gap: space.sm }}>
+              <T v="label" c={color.textDim}>{t('onboarding.area')}</T>
+              {listed ? (
+                <>
+                  <TextInput value={areaQuery} onChangeText={setAreaQuery} placeholder={t('onboarding.areaSearch')} placeholderTextColor={color.textMute} maxLength={AREA_MAX} autoCapitalize="words" autoCorrect={false} style={inputStyle} accessibilityLabel={t('onboarding.area')} />
+                  <View style={styles.wrap}>
+                    {areaChips.map((a) => <Chip key={a} label={a} selected={area === a} onPress={() => setArea(area === a ? '' : a)} />)}
+                  </View>
+                  {matches.length === 0 && <T v="caption" c={color.textDim}>{t('onboarding.noArea')}</T>}
+                </>
+              ) : (
+                <TextInput value={area} onChangeText={setArea} placeholder={t('onboarding.neighbourhood')} placeholderTextColor={color.textMute} maxLength={AREA_MAX} autoCapitalize="words" style={inputStyle} accessibilityLabel={t('onboarding.area')} />
+              )}
+              {!listed && looksLikeContact(area) && <T v="caption" c={color.flare}>{t('errors.PL065')}</T>}
+            </View>
+            <View style={{ gap: space.sm }}>
+              <T v="label" c={color.textDim}>{t('onboarding.pronouns')}</T>
+              <View style={styles.wrap}>
+                {PRONOUN_OPTIONS.map((p) => <Chip key={p} label={p} selected={pronouns === p} onPress={() => setPronouns(pronouns === p ? '' : p)} />)}
               </View>
             </View>
           </>
@@ -122,25 +150,25 @@ export default function Onboarding() {
         {step === 2 && (
           <>
             <View style={{ gap: space.sm }}>
-              <T v="display">What are{'\n'}you up for?</T>
-              <T c={color.textDim}>Pick at least three. They are your bio: people ask you out to one of them.</T>
+              <T v="display">{t('onboarding.upForTitle')}</T>
+              <T c={color.textDim}>{t('onboarding.upForBody')}</T>
             </View>
             {KIND_ORDER.map((kind) => (
               <View key={kind} style={{ gap: space.sm }}>
                 <T v="label" c={color.textDim}>{KIND_LABEL[kind]}</T>
                 {IDEAS.filter((idea) => idea.kind === kind).map((idea) => (
-                  <Chip key={idea.id} label={`${idea.emoji}  ${idea.title}`} sub={`${idea.minutes} min  /  ${idea.blurb}`} selected={ideaIds.includes(idea.id)} onPress={() => toggle(ideaIds, setIdeaIds, idea.id, 6)} />
+                  <Chip key={idea.id} label={`${idea.emoji}  ${idea.title}`} sub={t('onboarding.ideaSub', { minutes: idea.minutes, blurb: idea.blurb })} selected={ideaIds.includes(idea.id)} onPress={() => toggle(ideaIds, setIdeaIds, idea.id, 6)} />
                 ))}
               </View>
             ))}
-            <T v="caption" c={ideaIds.length >= 3 ? color.gold : color.textDim}>{ideaIds.length} picked{ideaIds.length < 3 ? `, ${3 - ideaIds.length} to go` : ''} (6 max)</T>
+            <T v="caption" c={ideaIds.length >= 3 ? color.gold : color.textDim}>{ideaIds.length < 3 ? t('onboarding.pickedToGo', { count: ideaIds.length, left: 3 - ideaIds.length }) : t('onboarding.picked', { count: ideaIds.length })}</T>
           </>
         )}
 
         {step === 3 && (
           <>
-            <T v="display">Your vibe,{'\n'}briefly.</T>
-            <T v="caption" c={vibes.length > 0 ? color.gold : color.textDim}>{vibes.length} of 3 tags picked</T>
+            <T v="display">{t('onboarding.vibeTitle')}</T>
+            <T v="caption" c={vibes.length > 0 ? color.gold : color.textDim}>{t('onboarding.tagsPicked', { count: vibes.length })}</T>
             {VIBE_GROUPS.map((group) => (
               <View key={group.label} style={{ gap: space.sm }}>
                 <T v="label" c={color.textDim}>{group.label}</T>
@@ -150,49 +178,49 @@ export default function Onboarding() {
               </View>
             ))}
             <View style={{ gap: space.sm }}>
-              <T v="label" c={color.textDim}>One line about you (optional)</T>
+              <T v="label" c={color.textDim}>{t('onboarding.line')}</T>
               <View style={styles.wrap}>
                 {TAGLINE_PROMPTS.map((p) => <Tag key={p} label={p.trim()} tone={tagline.startsWith(p) ? color.gold : color.textDim} selected={tagline.startsWith(p)} onPress={() => setTagline(p)} />)}
               </View>
-              <TextInput value={tagline} onChangeText={setTagline} placeholder="Will judge your chai order." placeholderTextColor={color.textMute} maxLength={80} style={[inputStyle, type.body]} accessibilityLabel="One line about you" />
-              {looksLikeContact(tagline) && <T v="caption" c={color.flare}>Contacts unlock after a kept promise. Take that out.</T>}
+              <TextInput value={tagline} onChangeText={setTagline} placeholder={t('onboarding.linePlaceholder')} placeholderTextColor={color.textMute} maxLength={80} style={[inputStyle, type.body]} accessibilityLabel={t('onboarding.lineLabel')} />
+              {looksLikeContact(tagline) && <T v="caption" c={color.flare}>{t('errors.PL065')}</T>}
             </View>
             <View style={{ gap: space.sm }}>
-              <T v="label" c={color.pink}>What unlocks when you both show</T>
+              <T v="label" c={color.pink}>{t('onboarding.unlocks')}</T>
               <View style={styles.wrap}>
-                {CONTACTS.map((k) => <Chip key={k} label={k} selected={contactKind === k} onPress={() => setContactKind(k)} />)}
+                {contactKinds.map((k) => <Chip key={k.kind} label={k.kind} selected={contactKind === k.kind} onPress={() => setContactKind(k.kind as ContactKind)} />)}
               </View>
-              <TextInput value={handle} onChangeText={setHandle} placeholder={contactKind === 'WhatsApp' ? '+91 number' : '@yourhandle'} placeholderTextColor={color.textMute} maxLength={40} autoCapitalize="none" autoCorrect={false} keyboardType={contactKind === 'WhatsApp' ? 'phone-pad' : 'default'} style={inputStyle} accessibilityLabel={`${contactKind} handle`} />
-              <T v="caption" c={color.textDim}>Nobody sees this until you both keep a promise. Not when you match, and not when you lock a plan.</T>
+              <TextInput value={handle} onChangeText={setHandle} placeholder={phoneKind ? t('onboarding.phonePlaceholder', { dial: DIAL_CODES[country] ?? '' }) : t('onboarding.handlePlaceholder')} placeholderTextColor={color.textMute} maxLength={40} autoCapitalize="none" autoCorrect={false} keyboardType={phoneKind ? 'phone-pad' : 'default'} style={inputStyle} accessibilityLabel={t('onboarding.handleLabel', { kind: contactKind })} />
+              <T v="caption" c={color.textDim}>{t('onboarding.handleHidden')}</T>
             </View>
           </>
         )}
 
         {step === 4 && (
           <>
-            <T v="label" c={color.pink}>The anti-ghosting promise</T>
-            <T v="display">{name.trim() || 'You'},{'\n'}pinky{'\n'}swear.</T>
+            <T v="label" c={color.pink}>{t('onboarding.promise')}</T>
+            <T v="display">{t('onboarding.swearTitle', { name: name.trim() || t('common.you') })}</T>
             <View style={{ gap: space.md }}>
-              {[
-                ['If I lock it, I show up.', 'On time, for the whole ten minutes or the whole boba.'],
-                ['If I cannot, I say so early.', 'Bailing still counts as a flake, but vanishing counts for more.'],
-                ['My record is public.', 'Kept and flaked promises show on my profile as my trust score.'],
-              ].map(([head, sub]) => (
+              {([
+                ['onboarding.oath1', 'onboarding.oath1Body'],
+                ['onboarding.oath2', 'onboarding.oath2Body'],
+                ['onboarding.oath3', 'onboarding.oath3Body'],
+              ] as const).map(([head, sub]) => (
                 <View key={head} style={styles.oath}>
-                  <T v="heading">{head}</T>
-                  <T c={color.textDim}>{sub}</T>
+                  <T v="heading">{t(head)}</T>
+                  <T c={color.textDim}>{t(sub)}</T>
                 </View>
               ))}
             </View>
             <View style={{ gap: space.sm }}>
-              <T v="label" c={color.textDim}>Before you swear</T>
-              <Chip label="I am 18 or older" selected={agreed.adult} onPress={() => setAgreed({ ...agreed, adult: !agreed.adult })} />
-              <Chip label="I agree to the terms and the privacy policy" selected={agreed.legal} onPress={() => setAgreed({ ...agreed, legal: !agreed.legal })} />
-              <Chip label="Pinkilock may use my dating preferences" sub="Who you want to date can say something about your sexual orientation. It is used only to run Pinkilock."
+              <T v="label" c={color.textDim}>{t('onboarding.beforeSwear')}</T>
+              <Chip label={t('onboarding.agreeAdult')} selected={agreed.adult} onPress={() => setAgreed({ ...agreed, adult: !agreed.adult })} />
+              <Chip label={t('onboarding.agreeLegal')} selected={agreed.legal} onPress={() => setAgreed({ ...agreed, legal: !agreed.legal })} />
+              <Chip label={t('onboarding.agreeSensitive')} sub={t('onboarding.agreeSensitiveBody')}
                 selected={agreed.sensitive} onPress={() => setAgreed({ ...agreed, sensitive: !agreed.sensitive })} />
-              <View style={{ flexDirection: 'row', gap: space.md }}>
-                <Tag label="Read the terms" onPress={() => router.push('/legal/terms')} />
-                <Tag label="Read the privacy policy" onPress={() => router.push('/legal/privacy')} />
+              <View style={styles.wrap}>
+                <Tag label={t('onboarding.readTerms')} onPress={() => router.push('/legal/terms')} />
+                <Tag label={t('onboarding.readPrivacy')} onPress={() => router.push('/legal/privacy')} />
               </View>
             </View>
           </>

@@ -3,6 +3,7 @@
  * The same rows live in the `ideas` table (supabase/migrations): add an idea in both places.
  */
 import type { MicroDateIdea } from './types';
+import { t } from '../i18n';
 
 export const IDEAS: MicroDateIdea[] = [
   { id: 'video_coffee', title: '10-min video coffee', emoji: '☕', minutes: 10, kind: 'video', blurb: 'Cameras on, one cup, hard stop at ten.' },
@@ -51,7 +52,18 @@ export function ideaOf(id: string): MicroDateIdea {
   return byId.get(id) ?? IDEAS[0];
 }
 
-export const KIND_LABEL: Record<MicroDateIdea['kind'], string> = { video: 'Video', irl: 'In person', game: 'Game' };
+/** The words come from src/i18n (`kinds`). */
+export const KIND_LABEL: Readonly<Record<MicroDateIdea['kind'], string>> = {
+  get video() {
+    return t('kinds.video');
+  },
+  get irl() {
+    return t('kinds.irl');
+  },
+  get game() {
+    return t('kinds.game');
+  },
+};
 
 /** The order the kinds are shown in when someone picks what they are up for. */
 export const KIND_ORDER: MicroDateIdea['kind'][] = ['irl', 'video', 'game'];
@@ -142,14 +154,13 @@ export const TAGLINE_PROMPTS = [
  */
 export type NoteTone = 'chill' | 'bold' | 'flirty' | 'wild' | 'naughty' | 'old_school';
 
-export const NOTE_TONES: { id: NoteTone; label: string }[] = [
-  { id: 'chill', label: 'Chill' },
-  { id: 'bold', label: 'Bold' },
-  { id: 'flirty', label: 'Flirty' },
-  { id: 'wild', label: 'Wild' },
-  { id: 'naughty', label: 'Naughty' },
-  { id: 'old_school', label: 'Old school' },
-];
+/** The words come from src/i18n (`tones`). */
+export const NOTE_TONES: { id: NoteTone; readonly label: string }[] = (['chill', 'bold', 'flirty', 'wild', 'naughty', 'old_school'] as const).map((id) => ({
+  id,
+  get label() {
+    return t(`tones.${id}`);
+  },
+}));
 
 const STARTERS_ANY = ['low stakes, high snacks.', 'hard stop, pinky promise.', 'no pressure, just vibes.', 'i will be early. it is a whole thing.'];
 const STARTERS_BY_KIND: Record<MicroDateIdea['kind'], string[]> = {
@@ -221,9 +232,13 @@ export function noteStarters(kind: MicroDateIdea['kind'], tone: NoteTone = 'chil
  * Profile tags, grouped for the picker. A profile stores the plain strings, so a tag that is
  * already on someone's card must keep its exact spelling. Flirty tags stay suggestive, not explicit.
  */
-export const VIBE_GROUPS: { label: string; vibes: string[] }[] = [
+/** Group names come from src/i18n (`vibeGroups`); the tags are the `vibes` table, reviewed per language (WP9). */
+export const VIBE_GROUPS: { id: string; readonly label: string; vibes: string[] }[] = [
   {
-    label: 'Energy',
+    id: 'energy',
+    get label() {
+      return t('vibeGroups.energy');
+    },
     vibes: [
       'night owl', 'early bird', 'overthinker', 'homebody', 'chronically online', 'main character',
       'golden retriever energy', 'black cat energy', 'side quest enjoyer', 'yapper', 'good listener', 'always early',
@@ -231,7 +246,10 @@ export const VIBE_GROUPS: { label: string; vibes: string[] }[] = [
     ],
   },
   {
-    label: 'Into',
+    id: 'into',
+    get label() {
+      return t('vibeGroups.into');
+    },
     vibes: [
       'gym rat', 'foodie', 'film nerd', 'thrifter', 'dog person', 'cat person', 'gamer', 'bookworm', 'plant parent',
       'chai over coffee', 'concert goer', 'meme dealer', 'anime watcher', 'k-drama binger', 'sunset chaser',
@@ -239,14 +257,20 @@ export const VIBE_GROUPS: { label: string; vibes: string[] }[] = [
     ],
   },
   {
-    label: 'Wild and bold',
+    id: 'wild',
+    get label() {
+      return t('vibeGroups.wild');
+    },
     vibes: [
       'wild one', 'bold moves only', 'says it first', 'dare taker', 'spontaneous', 'no filter', 'loud laugh',
       'bad influence', 'adrenaline junkie', 'rule bender', 'life of the party', 'zero chill',
     ],
   },
   {
-    label: 'Flirt style',
+    id: 'flirt',
+    get label() {
+      return t('vibeGroups.flirt');
+    },
     vibes: [
       'shameless flirt', 'smooth talker', 'a little naughty', 'tease', 'rizz on demand', 'eye contact enjoyer',
       'slow burn', 'trouble, the fun kind', 'playful', 'hard to get', 'blushes easily', 'hopeless romantic',
@@ -254,7 +278,10 @@ export const VIBE_GROUPS: { label: string; vibes: string[] }[] = [
     ],
   },
   {
-    label: 'Old school',
+    id: 'oldSchool',
+    get label() {
+      return t('vibeGroups.oldSchool');
+    },
     vibes: [
       'old school', 'old soul', 'gentleman', 'chivalry is not dead', 'calls, not texts', 'handwritten notes',
       'flowers on the first date', 'retro bollywood', 'ghazals and chai', 'vinyl and film cameras', 'slow dancer',

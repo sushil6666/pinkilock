@@ -263,8 +263,9 @@ name changes once in 30 days and the line once in 7. Line review exists in three
 structured yes/no/unsure output, server-side fallback on a refusal), switched on by the deploy
 workflow once `ANTHROPIC_API_KEY` exists. Reports gain `shared_contact`; `scripts/moderate.sh` is the
 moderation tool (also WP7's "moderation view"), with strikes and suspension. G18 closes whenever
-review is on; the attacker suite keeps it marked because the default is off. **Left:** picked area,
-city and pronouns (with WP9's city lists); a person's appeal (WP8).
+review is on; the attacker suite keeps it marked because the default is off. **Left:** a person's
+appeal (WP8, since built). **Built 2026-11-18:** the area is picked from the city's list, pronouns from a
+list, and onboarding asks for the city (migration `20261118000003`, decision D073).
 
 ### WP2. Make accounts cost something (G4, G6)
 
@@ -529,6 +530,22 @@ deletion waits for the lawyer's number.
   word, and what is playful in one place is offensive in another.
 - Emergency numbers and the safety page (WP8) are per country.
 
+**Status, 2026-11-18: first part built** (decision D073). Onboarding asks for country and city from
+the open list, and the area is picked from that city's list. Contact kinds are a catalogue by region
+(Telegram and Signal everywhere; LINE, KakaoTalk and WeChat where they are used). Phone sign-in has a
+country picker and assumes no country.
+
+**Status, 2026-11-18: strings built** (decision D074). Every word on screen is in `src/i18n/en.ts`
+behind `t()`, with plurals; error messages are shown by code in the phone's language; dates,
+times and numbers follow the phone's locale through `Intl`, and distance shows in miles where the
+locale uses them. Right-to-left is wired (layout direction on a phone, `dir` and `lang` in a
+browser). Two pseudo-languages stand in for the second language until a translator writes one:
+`en-XA` (a third longer) and `ar-XB` (right to left), and a unit test fails on words written into a
+screen. No screen names a country. **Left:** a real second language from a native speaker, with its
+catalogue rows (ideas, tags, ask lines); the app tests run in it; time zones named on cross-zone
+plans (needs each person's zone on the server); ideas by region; area lists for each city as it
+opens.
+
 **Done when:** the app runs fully in a second language in the app tests, a user in a second time
 zone sees correct plan times in the live test, and no screen contains a hard-coded country.
 
@@ -636,8 +653,8 @@ check, and must be named in the data map (WP8).
 Built on 2026-11-18 after WP4 (decision D070; migration `20261118000002_double_dates.sql`). Friends
 pair up first as a **duo**, from a one-day link a friend opens in the app; the server seats both duos
 when a double is asked, so nobody types who their friend is. The design below held as written; the
-asker's pinky is the seal, as in a plan for two. **Left:** a double on the live two-user test (it
-needs four users), and a local's review of the wording.
+asker's pinky is the seal, as in a plan for two. A double now also runs on the live test
+(`tests/live/doubles.test.ts`, four users). **Left:** a local's review of the wording.
 
 Two friends ask two friends: four people, one plan. What it changes:
 

@@ -19,20 +19,21 @@ import { NightSky } from './NightSky';
 import { Notes, Scribble } from './Welcome';
 import { Button } from './ui/Button';
 import { T } from './ui/T';
+import { t } from '../i18n';
 
-const RULES: [string, string][] = [
-  ['One person at a time.', 'No feed to swipe. You ask one person to one small plan, and they say yes or no.'],
-  ['A real plan, with a time.', 'Ten minutes of coffee on video, a boba run, a bookstore lap. Something you can actually turn up to.'],
-  ['Contacts stay locked.', 'Instagram, Snapchat or WhatsApp opens only after you both check in. Until then nobody has a way to pester you.'],
-  ['Your record is real.', 'Kept and flaked promises are counted and shown beside your score, so people who show up get seen.'],
-];
+const RULES = [
+  ['landing.rule1', 'landing.rule1Body'],
+  ['landing.rule2', 'landing.rule2Body'],
+  ['landing.rule3', 'landing.rule3Body'],
+  ['landing.rule4', 'landing.rule4Body'],
+] as const;
 
-const FAQ: [string, string][] = [
-  ['What is a micro-date?', 'A plan short enough to say yes to: ten to thirty minutes, one thing to do, a set time. If it goes well, you plan the next one.'],
-  ['When do I get their handle?', 'When you both check in at the plan. The app keeps it locked until then, for both of you.'],
-  ['What if someone flakes?', 'It goes on their record. Plans that end for a good reason, like a safety bail, are not counted against anyone.'],
-  ['Is it safe?', 'It is adults only. The suggested places are public. Anyone can be blocked or reported from their profile, and asking for a contact early is reportable.'],
-];
+const FAQ = [
+  ['landing.q1', 'landing.a1'],
+  ['landing.q2', 'landing.a2'],
+  ['landing.q3', 'landing.a3'],
+  ['landing.q4', 'landing.a4'],
+] as const;
 
 /** One place per area, so the list shows how far the city reaches rather than one street. */
 const PLACES: Venue[] = VENUES.filter((v, i) => VENUES.findIndex((w) => w.area === v.area) === i).slice(0, 12);
@@ -51,7 +52,7 @@ function Section({ eyebrow, title, children }: { eyebrow: string; title: string;
 }
 
 /** Splits a list into rows of `n`, so a grid keeps equal columns without percentage maths. */
-function rows<X>(list: X[], n: number): X[][] {
+function rows<X>(list: readonly X[], n: number): X[][] {
   const out: X[][] = [];
   for (let i = 0; i < list.length; i += n) out.push(list.slice(i, i + n));
   return out;
@@ -72,8 +73,8 @@ export function Landing({ onStart }: { onStart: () => void }) {
         <View style={styles.navSide} />
         <Logo size={22} />
         <View style={[styles.navSide, styles.navRight]}>
-          <Button kind="quiet" icon="log-in" label="Sign in" onPress={signIn} />
-          <Button kind="ghost" label="Start" icon="arrow-right" onPress={onStart} />
+          <Button kind="quiet" icon="log-in" label={t('landing.signIn')} onPress={signIn} />
+          <Button kind="ghost" label={t('landing.start')} icon="arrow-right" onPress={onStart} />
         </View>
       </View>
 
@@ -86,11 +87,11 @@ export function Landing({ onStart }: { onStart: () => void }) {
             <Scribble wide />
           </View>
           <View style={styles.heroWords}>
-            <T v="mega" style={roomy ? styles.headline : styles.headlineTight} accessibilityRole="header">No ghosting.{'\n'}No endless{'\n'}swiping.</T>
-            <T v="heading" c={color.textDim}>One person. One tiny plan. One pinky promise that you both show up.</T>
+            <T v="mega" style={roomy ? styles.headline : styles.headlineTight} accessibilityRole="header">{t('welcome.headline')}</T>
+            <T v="heading" c={color.textDim}>{t('welcome.sub')}</T>
             <View style={styles.ctaRow}>
-              <Button label="Start" icon="arrow-right" onPress={onStart} style={{ minWidth: 200 }} />
-              <Button kind="quiet" icon="log-in" label="I already have an account" onPress={signIn} />
+              <Button label={t('landing.start')} icon="arrow-right" onPress={onStart} style={{ minWidth: 200 }} />
+              <Button kind="quiet" icon="log-in" label={t('welcome.haveAccount')} onPress={signIn} />
             </View>
           </View>
         </View>
@@ -98,28 +99,24 @@ export function Landing({ onStart }: { onStart: () => void }) {
 
       <View style={[styles.inner, { gap: space.x5 * 2 }]}>
 
-        <Section eyebrow="How it works" title="Three steps. That is the whole app.">
+        <Section eyebrow={t('landing.howEyebrow')} title={t('landing.howTitle')}>
           <View style={styles.cols}>
             <View style={{ flex: 1 }}><Notes /></View>
             <View style={{ flex: 1, justifyContent: 'center' }}>
-              <T c={color.textDim} style={{ maxWidth: 420 }}>
-                Everyone on Pinkilock is here for the same reason: to meet someone, briefly, for real. You
-                pick the plan and the time. They lock pinkies or pass. Then you both turn up, check in, and
-                the app unlocks how to reach each other.
-              </T>
+              <T c={color.textDim} style={{ maxWidth: 420 }}>{t('landing.howBody')}</T>
             </View>
           </View>
         </Section>
 
-        <Section eyebrow="The rules" title="Built so showing up is the easy part.">
+        <Section eyebrow={t('landing.rulesEyebrow')} title={t('landing.rulesTitle')}>
           <View style={styles.cols}>
             <View style={{ flex: 1.4, gap: space.lg }}>
               {rows(RULES, 2).map((row, r) => (
                 <View key={r} style={styles.gridRow}>
                   {row.map(([head, body]) => (
                     <View key={head} style={styles.card}>
-                      <T v="heading">{head}</T>
-                      <T c={color.textDim}>{body}</T>
+                      <T v="heading">{t(head)}</T>
+                      <T c={color.textDim}>{t(body)}</T>
                     </View>
                   ))}
                 </View>
@@ -131,7 +128,7 @@ export function Landing({ onStart }: { onStart: () => void }) {
           </View>
         </Section>
 
-        <Section eyebrow="Micro-dates" title="Small enough to say yes to.">
+        <Section eyebrow={t('landing.ideasEyebrow')} title={t('landing.ideasTitle')}>
           <View style={{ gap: space.lg }}>
             {rows(ideas, ideaCols).map((row, r) => (
               <View key={r} style={styles.gridRow}>
@@ -139,28 +136,25 @@ export function Landing({ onStart }: { onStart: () => void }) {
                   <View key={idea.id} style={styles.card}>
                     <T style={styles.emoji} {...webOnly({ 'aria-hidden': true })}>{idea.emoji}</T>
                     <T v="bodyBold">{idea.title}</T>
-                    <T v="caption" c={color.textMute}>{idea.minutes} min</T>
+                    <T v="caption" c={color.textMute}>{t('ticket.minutes', { minutes: idea.minutes })}</T>
                     <T v="caption" c={color.textDim}>{idea.blurb}</T>
                   </View>
                 ))}
               </View>
             ))}
-            <T v="hand" c={color.pink}>pick three. that is your bio.</T>
-            {IDEAS.length > ideas.length && <T v="caption" c={color.textMute}>And {IDEAS.length - ideas.length} more in the app.</T>}
+            <T v="hand" c={color.pink}>{t('landing.pickThree')}</T>
+            {IDEAS.length > ideas.length && <T v="caption" c={color.textMute}>{t('landing.more', { count: IDEAS.length - ideas.length })}</T>}
           </View>
         </Section>
 
-        <Section eyebrow="Places" title="Meet somewhere busy and public.">
+        <Section eyebrow={t('landing.placesEyebrow')} title={t('landing.placesTitle')}>
           <View style={{ gap: space.lg }}>
-            <T c={color.textDim} style={{ maxWidth: 560 }}>
-              In-person plans are picked from a list of well-known spots: promenades, parks, markets and
-              landmarks. Nobody has to suggest their place, and nobody can.
-            </T>
+            <T c={color.textDim} style={{ maxWidth: 560 }}>{t('landing.placesBody')}</T>
             {rows(PLACES, 4).map((row, r) => (
               <View key={r} style={styles.gridRow}>
                 {row.map((v) => (
                   <View key={v.id} style={styles.place}>
-                    <T v="label" c={color.pink}>{v.kind}</T>
+                    <T v="label" c={color.pink}>{t(`venueKinds.${v.kind}`)}</T>
                     <T v="bodyBold">{v.name}</T>
                     <T v="caption" c={color.textMute}>{v.area}</T>
                   </View>
@@ -168,18 +162,18 @@ export function Landing({ onStart }: { onStart: () => void }) {
                 {Array.from({ length: 4 - row.length }, (_, i) => <View key={`gap${i}`} style={{ flex: 1 }} />)}
               </View>
             ))}
-            <T v="caption" c={color.textMute}>{CITIES.join(', ')} for now, {VENUES.length} places and growing.</T>
+            <T v="caption" c={color.textMute}>{t('landing.citiesNow', { cities: CITIES.join(', '), count: VENUES.length })}</T>
           </View>
         </Section>
 
-        <Section eyebrow="Questions" title="Fair questions.">
+        <Section eyebrow={t('landing.faqEyebrow')} title={t('landing.faqTitle')}>
           <View style={{ gap: space.x4 }}>
             {rows(FAQ, 2).map((row, r) => (
               <View key={r} style={styles.gridRow}>
                 {row.map(([q, a]) => (
                   <View key={q} style={{ flex: 1, gap: space.sm }}>
-                    <T v="heading">{q}</T>
-                    <T c={color.textDim}>{a}</T>
+                    <T v="heading">{t(q)}</T>
+                    <T c={color.textDim}>{t(a)}</T>
                   </View>
                 ))}
               </View>
@@ -188,17 +182,17 @@ export function Landing({ onStart }: { onStart: () => void }) {
         </Section>
 
         <View style={styles.final}>
-          <T v="mega" style={styles.headline} center accessibilityRole="header">Pinky promise?</T>
-          <T v="heading" c={color.textDim} center>Make a profile, pick three plans, send your first vibe check. Adults only, 18 and over.</T>
-          <Button label="Start" icon="arrow-right" onPress={onStart} style={{ minWidth: 260, alignSelf: 'center' }} />
+          <T v="mega" style={styles.headline} center accessibilityRole="header">{t('landing.finalTitle')}</T>
+          <T v="heading" c={color.textDim} center>{t('landing.finalBody')}</T>
+          <Button label={t('landing.start')} icon="arrow-right" onPress={onStart} style={{ minWidth: 260, alignSelf: 'center' }} />
         </View>
 
         <View style={styles.footer} {...webOnly({ role: 'contentinfo' as const })}>
           <Logo size={14} />
           <View style={styles.navRight}>
-            <Button kind="quiet" label="Terms" onPress={() => router.push('/legal/terms')} />
-            <Button kind="quiet" label="Privacy" onPress={() => router.push('/legal/privacy')} />
-            <Button kind="quiet" label="Safety" onPress={() => router.push('/safety')} />
+            <Button kind="quiet" label={t('landing.terms')} onPress={() => router.push('/legal/terms')} />
+            <Button kind="quiet" label={t('landing.privacy')} onPress={() => router.push('/legal/privacy')} />
+            <Button kind="quiet" label={t('landing.safety')} onPress={() => router.push('/safety')} />
           </View>
         </View>
       </View>

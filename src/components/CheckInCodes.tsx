@@ -12,6 +12,7 @@ import { Button } from './ui/Button';
 import { ErrorText } from './ui/ErrorText';
 import { inputStyle } from './ui/input';
 import { T } from './ui/T';
+import { t } from '../i18n';
 
 interface Props {
   inviteId: string;
@@ -25,8 +26,8 @@ interface Props {
 }
 
 export function CheckInCodes({ inviteId, name, theirNames, remote, done, onCheckIn }: Props) {
-  const showTo = theirNames ? `${theirNames[0]} and ${theirNames[1]}` : name;
-  const fromWhom = theirNames ? `Code from ${theirNames[0]} or ${theirNames[1]}` : `${name}'s code`;
+  const showTo = theirNames ? t('checkIn.both', { a: theirNames[0], b: theirNames[1] }) : name;
+  const fromWhom = theirNames ? t('checkIn.codeFromEither', { a: theirNames[0], b: theirNames[1] }) : t('checkIn.codeOf', { name });
   const [mine, setMine] = useState<string | null>(null);
   const [theirs, setTheirs] = useState('');
   const [busy, setBusy] = useState(false);
@@ -56,29 +57,29 @@ export function CheckInCodes({ inviteId, name, theirNames, remote, done, onCheck
 
   return (
     <View style={{ gap: space.md }}>
-      <View style={styles.mine} accessible accessibilityLabel={mine ? `Your check-in code: ${mine.split('').join(' ')}` : 'Your check-in code is loading'}>
-        <T v="label" c={color.textDim}>Your code</T>
+      <View style={styles.mine} accessible accessibilityLabel={mine ? t('checkIn.mineSpoken', { code: mine.split('').join(' ') }) : t('checkIn.mineLoading')}>
+        <T v="label" c={color.textDim}>{t('checkIn.yourCode')}</T>
         <T v="mega" c={color.gold} selectable>{mine ?? '····'}</T>
-        <T v="caption" c={color.textDim}>{remote ? `Read it out to ${showTo} on the call.` : `Show it to ${showTo}.`}</T>
+        <T v="caption" c={color.textDim}>{t(remote ? 'checkIn.readOut' : 'checkIn.showIt', { who: showTo })}</T>
       </View>
-      {done ? <T c={color.textDim}>{theirNames ? 'You are in. Keep your code up until the other side has entered it.' : `You are in. Keep your code up until ${name} has entered it.`}</T> : (<>
+      {done ? <T c={color.textDim}>{theirNames ? t('checkIn.inDouble') : t('checkIn.inOne', { name })}</T> : (<>
       <View style={{ gap: space.sm }}>
         <T v="label" c={color.textDim}>{fromWhom}</T>
         <TextInput
           value={theirs}
-          onChangeText={(t) => setTheirs(t.replace(/[^0-9]/g, '').slice(0, 4))}
+          onChangeText={(v) => setTheirs(v.replace(/[^0-9]/g, '').slice(0, 4))}
           placeholder="····"
           placeholderTextColor={color.textMute}
           keyboardType="number-pad"
           maxLength={4}
           style={[inputStyle, type.title, { letterSpacing: 8 }]}
-          accessibilityLabel={theirNames ? `${fromWhom}, check-in` : `${name}'s check-in code`}
+          accessibilityLabel={theirNames ? t('checkIn.boxDouble', { from: fromWhom }) : t('checkIn.boxOne', { name })}
         />
-        {demo ? <T v="caption" c={color.textMute}>Prototype: {name} reads out {demo}.</T> : null}
+        {demo ? <T v="caption" c={color.textMute}>{t('checkIn.demo', { name, code: demo })}</T> : null}
       </View>
       <ErrorText text={error} />
-      <Button icon="check" label="Check in" onPress={submit} disabled={theirs.length !== 4} busy={busy} />
-      <T v="caption" c={color.textDim}>{theirNames ? 'Codes only work across the two sides, between people who are together. Nobody can check in for you.' : 'Codes only work between two people who are together. Nobody can check in for you.'}</T>
+      <Button icon="check" label={t('checkIn.button')} onPress={submit} disabled={theirs.length !== 4} busy={busy} />
+      <T v="caption" c={color.textDim}>{t(theirNames ? 'checkIn.ruleDouble' : 'checkIn.ruleOne')}</T>
       </>)}
     </View>
   );

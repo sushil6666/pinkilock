@@ -14,6 +14,7 @@ import type { Profile, Reveal } from '../domain/types';
 import { quiet } from '../lib/log';
 import { color, radius, space } from '../theme/tokens';
 import { T } from './ui/T';
+import { t } from '../i18n';
 
 interface Props {
   person: Profile;
@@ -38,13 +39,13 @@ export function LockedReveal({ person, reveal, hint }: Props) {
     <View style={{ gap: space.md }}>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.sm }}>
         <Feather name={open ? 'unlock' : 'lock'} size={14} color={open ? color.gold : color.pink} />
-        <T v="label" c={open ? color.gold : color.pink}>{open ? 'Unlocked: you both showed' : 'Locked'}</T>
+        <T v="label" c={open ? color.gold : color.pink}>{t(open ? 'reveal.unlocked' : 'reveal.locked')}</T>
       </View>
 
-      <View style={styles.contact} accessible accessibilityLabel={open ? `${reveal.contactKind}: ${reveal.contactHandle}` : `Contact locked. ${hint}`}>
+      <View style={styles.contact} accessible accessibilityLabel={open ? t('reveal.contactSpoken', { kind: reveal.contactKind, handle: reveal.contactHandle }) : t('reveal.contactLocked', { hint })}>
         <Feather name="at-sign" size={18} color={open ? color.gold : color.textMute} />
         <View style={{ flex: 1 }}>
-          <T v="label" c={color.textMute}>{open ? reveal.contactKind : 'Contact'}</T>
+          <T v="label" c={color.textMute}>{open ? reveal.contactKind : t('reveal.contact')}</T>
           {open ? (
             <Animated.View entering={FadeIn.duration(500)}><T v="heading" selectable>{reveal.contactHandle}</T></Animated.View>
           ) : (
@@ -55,7 +56,7 @@ export function LockedReveal({ person, reveal, hint }: Props) {
 
       <View style={styles.grid}>
         {tiles.map((photo, i) => (
-          <View key={i} style={styles.tile} accessible accessibilityRole="image" accessibilityLabel={photo ? photo.caption : 'Locked photo'}>
+          <View key={i} style={styles.tile} accessible accessibilityRole="image" accessibilityLabel={photo ? photo.caption : t('reveal.lockedPhoto')}>
             <LinearGradient colors={photo ? photo.palette : (i % 2 ? [person.palette[1], person.palette[0]] : person.palette)} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={StyleSheet.absoluteFill} />
             {photo ? (
               <Animated.View entering={FadeIn.delay(i * 120).duration(500)} style={styles.tileOpen}>

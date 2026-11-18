@@ -8,6 +8,8 @@
  * The contact check stops the plain cases (a handle, a link, a number, "add me on ..."). It does
  * not stop an invented code; that needs review before a line is shown (WP1, not built yet).
  */
+import { areasIn } from './areas';
+import { contactKindsFor } from './contacts';
 import { AppError } from './errors';
 import { IDEAS, VIBES } from './ideas';
 import type { OnboardingInput } from './types';
@@ -50,22 +52,38 @@ export function looksLikeContact(text: string | null | undefined): boolean {
   return CONTACT_PATTERNS.some((p) => p.test(t));
 }
 
+/** Pronouns are picked, never typed (WP1). The same list is `pronoun_options` in SQL. */
+export const PRONOUN_OPTIONS = ['she/her', 'he/him', 'they/them', 'she/they', 'he/they', 'any pronouns'];
+
 const ideaIds = new Set(IDEAS.map((i) => i.id));
 const vibeSet = new Set(VIBES);
 
-/** Throws the same coded error the server would for a profile it would refuse. */
-export function checkProfile(p: Pick<OnboardingInput, 'name' | 'age' | 'area' | 'pronouns' | 'tagline' | 'vibes' | 'ideaIds'>): void {
+/**
+ * Throws the same coded error the server would for a profile it would refuse. `city` makes the area
+ * a pick from that city's list (when it has one); `was` is the saved profile, whose area and
+ * pronouns stay valid even if they were typed before lists existed.
+ */
+export function checkProfile(
+  p: Pick<OnboardingInput, 'name' | 'age' | 'area' | 'pronouns' | 'tagline' | 'vibes' | 'ideaIds'>,
+  city = 'Mumbai',
+  was?: { area: string; pronouns: string },
+): void {
   if (!nameOk(p.name)) throw new AppError('PL060');
   if (!Number.isInteger(p.age) || p.age < 18 || p.age > 99) throw new AppError('PL061');
   if (p.vibes.length > VIBES_MAX || new Set(p.vibes).size !== p.vibes.length || p.vibes.some((v) => !vibeSet.has(v))) throw new AppError('PL062');
   if (p.ideaIds.length < IDEAS_MIN || p.ideaIds.length > IDEAS_MAX || new Set(p.ideaIds).size !== p.ideaIds.length || p.ideaIds.some((id) => !ideaIds.has(id))) throw new AppError('PL063');
   if ([...p.area.trim()].length > AREA_MAX || [...p.pronouns.trim()].length > PRONOUNS_MAX || [...p.tagline.trim()].length > TAGLINE_MAX) throw new AppError('PL064');
   if (looksLikeContact(p.tagline) || looksLikeContact(p.area) || looksLikeContact(p.pronouns)) throw new AppError('PL065');
+  const area = p.area.trim();
+  if (area && area !== was?.area && areasIn(city).length && !areasIn(city).includes(area)) throw new AppError('PL095');
+  const pronouns = p.pronouns.trim();
+  if (pronouns && pronouns !== was?.pronouns && !PRONOUN_OPTIONS.includes(pronouns)) throw new AppError('PL096');
 }
 
-export function checkContact(kind: string, handle: string): void {
+/** A contact kind offered in this country (src/domain/contacts.ts), and a handle of a sane length. */
+export function checkContact(kind: string, handle: string, country = 'IN'): void {
   const h = handle.trim();
-  if (!['Instagram', 'Snapchat', 'WhatsApp'].includes(kind) || h.length < HANDLE_MIN || h.length > HANDLE_MAX) throw new AppError('PL066');
+  if (!contactKindsFor(country).some((k) => k.kind === kind) || h.length < HANDLE_MIN || h.length > HANDLE_MAX) throw new AppError('PL066');
 }
 
 /** The one line and the place on an ask. */

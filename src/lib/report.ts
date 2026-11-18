@@ -5,7 +5,8 @@
  * screen and the build are sent: never the words, which can hold content.
  */
 import { Platform } from 'react-native';
-import { asAppError, withRef, type AppError, type ErrorCode } from '../domain/errors';
+import { ERRORS, asAppError, withRef, type AppError, type ErrorCode } from '../domain/errors';
+import { tMaybe } from '../i18n';
 import { backend } from '../services';
 import { buildLabel } from './build';
 import { log, quiet } from './log';
@@ -23,7 +24,9 @@ export function report(e: unknown, where: string, fallback?: ErrorCode): AppErro
 /** Report it and return what the screen should show: the words, then `CODE · TRACE` on its own line. */
 export function shown(e: unknown, where: string, fallback?: ErrorCode): string {
   const err = report(e, where, fallback);
-  return withRef(err.message, err);
+  // The catalogue's own words are shown in the phone's language; a message of its own stays as it is.
+  const words = err.message === ERRORS[err.code] ? tMaybe(`errors.${err.code}`) ?? err.message : err.message;
+  return withRef(words, err);
 }
 
 /** Everything support needs, and nothing private: ids, codes, routes and times only. */

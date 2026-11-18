@@ -14,14 +14,9 @@ import { T } from '@/components/ui/T';
 import { shown } from '@/lib/report';
 import { backend, type PrivacyRequestKind } from '@/services';
 import { color, space, type } from '@/theme/tokens';
+import { fmtDate, t, tMaybe } from '@/i18n';
 
-const KINDS: { id: PrivacyRequestKind; label: string }[] = [
-  { id: 'score_review', label: 'My Trust Score looks wrong' },
-  { id: 'data_question', label: 'A question about my data' },
-  { id: 'correction', label: 'Something about me is wrong' },
-  { id: 'appeal', label: 'Appeal a decision' },
-  { id: 'other', label: 'Something else' },
-];
+const KINDS: PrivacyRequestKind[] = ['score_review', 'data_question', 'correction', 'appeal', 'other'];
 
 export default function Requests() {
   const [kind, setKind] = useState<PrivacyRequestKind | null>(null);
@@ -51,41 +46,41 @@ export default function Requests() {
 
   if (sent) {
     return (
-      <Screen desk="read" back="back" title="Ask us">
+      <Screen desk="read" back="back" title={t('requests.title')}>
         <View style={{ gap: space.lg }}>
-          <T v="display">Sent.</T>
-          <T c={color.textDim}>A person reads every request and answers within 30 days.</T>
-          <Button kind="ghost" label="Back to Me" onPress={() => router.back()} />
+          <T v="display">{t('requests.sentTitle')}</T>
+          <T c={color.textDim}>{t('requests.sentBody')}</T>
+          <Button kind="ghost" label={t('requests.backToMe')} onPress={() => router.back()} />
         </View>
       </Screen>
     );
   }
 
   return (
-    <Screen desk="read" back="back" title="Ask us">
+    <Screen desk="read" back="back" title={t('requests.title')}>
       <View style={{ gap: space.xl }}>
         {decisions.length > 0 && (
           <View style={{ gap: space.sm }}>
-            <T v="label" c={color.textDim}>Decisions about your account</T>
+            <T v="label" c={color.textDim}>{t('requests.decisions')}</T>
             {decisions.map((d) => (
-              <Chip key={d.id} label={`${d.action.replace('_', ' ')} · ${new Date(d.at).toLocaleDateString()}`} sub={d.reason}
+              <Chip key={d.id} label={t('requests.decision', { action: tMaybe(`requests.actions.${d.action}`) ?? d.action.replace('_', ' '), date: fmtDate(d.at) })} sub={d.reason}
                 selected={kind === 'appeal' && actionId === d.id} onPress={() => { setKind('appeal'); setActionId(d.id); }} />
             ))}
-            <T v="caption" c={color.textDim}>Tap one to appeal it.</T>
+            <T v="caption" c={color.textDim}>{t('requests.tapToAppeal')}</T>
           </View>
         )}
         <View style={{ gap: space.sm }}>
-          <T v="label" c={color.textDim}>What is it about?</T>
-          {KINDS.map((k) => <Chip key={k.id} label={k.label} selected={kind === k.id} onPress={() => setKind(k.id)} />)}
+          <T v="label" c={color.textDim}>{t('requests.about')}</T>
+          {KINDS.map((k) => <Chip key={k} label={t(`requests.kinds.${k}`)} selected={kind === k} onPress={() => setKind(k)} />)}
         </View>
         <View style={{ gap: space.sm }}>
-          <T v="label" c={color.textDim}>{`Tell us more  ${detail.length}/500`}</T>
-          <TextInput value={detail} onChangeText={setDetail} maxLength={500} multiline placeholder="What happened, and what you would like us to do."
+          <T v="label" c={color.textDim}>{t('requests.more', { n: detail.length, max: 500 })}</T>
+          <TextInput value={detail} onChangeText={setDetail} maxLength={500} multiline placeholder={t('requests.placeholder')}
             placeholderTextColor={color.textMute} style={[inputStyle, type.body, { minHeight: 120, paddingVertical: space.md, textAlignVertical: 'top' }]}
-            accessibilityLabel="Tell us more" />
+            accessibilityLabel={t('requests.moreLabel')} />
         </View>
         <ErrorText text={error} />
-        <Button label="Send" onPress={send} disabled={!kind || !detail.trim() || (kind === 'appeal' && decisions.length > 0 && !actionId)} busy={busy} />
+        <Button label={t('common.send')} onPress={send} disabled={!kind || !detail.trim() || (kind === 'appeal' && decisions.length > 0 && !actionId)} busy={busy} />
       </View>
     </Screen>
   );

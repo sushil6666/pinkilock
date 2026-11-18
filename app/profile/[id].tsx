@@ -24,6 +24,7 @@ import { ErrorText } from '@/components/ui/ErrorText';
 import { shown } from '@/lib/report';
 import { answersIn } from '@/domain/answers';
 import { Vouches } from '@/components/Vouches';
+import { fmtDistance, t } from '@/i18n';
 
 export default function ProfileScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -57,8 +58,8 @@ export default function ProfileScreen() {
     return (
       <Screen back="back" scroll={false}>
         <View style={{ flex: 1, justifyContent: 'center', gap: space.md }}>
-          <T v="display">Gone.</T>
-          <T c={color.textDim}>This profile is no longer available.</T>
+          <T v="display">{t('ask.goneTitle')}</T>
+          <T c={color.textDim}>{t('profile.goneBody')}</T>
         </View>
       </Screen>
     );
@@ -66,8 +67,8 @@ export default function ProfileScreen() {
 
   const shared = person.ideaIds.filter((x) => me.ideaIds.includes(x));
   const footer = live
-    ? <Button icon={live.status === 'locked' ? 'lock' : 'send'} label={live.status === 'locked' ? 'Open your plan' : 'Open your ask'} onPress={() => router.push(live.status === 'locked' ? `/plan/${live.id}` : `/invite/${live.id}`)} />
-    : <Button icon="send" label={`Send ${person.name} a vibe check`} onPress={() => router.push({ pathname: '/invite/new', params: { to: person.id } })} />;
+    ? <Button icon={live.status === 'locked' ? 'lock' : 'send'} label={t(live.status === 'locked' ? 'profile.openPlan' : 'profile.openAsk')} onPress={() => router.push(live.status === 'locked' ? `/plan/${live.id}` : `/invite/${live.id}`)} />
+    : <Button icon="send" label={t('profile.send', { name: person.name })} onPress={() => router.push({ pathname: '/invite/new', params: { to: person.id } })} />;
 
   return (
     <Screen back="back" title={person.area} footer={footer}>
@@ -75,8 +76,8 @@ export default function ProfileScreen() {
       <View style={[styles.hero, desktop && { height: 560 }]}>
         <Portrait name={person.name} palette={person.palette} glyph={person.glyph} fill style={StyleSheet.absoluteFill} />
         <View style={{ padding: space.lg, gap: 4 }}>
-          <T v="display" numberOfLines={1} adjustsFontSizeToFit>{person.name}, {person.age}</T>
-          <T v="caption" c={color.textDim}>{person.area}, {person.city}{person.distanceKm > 0 ? `  /  ${person.distanceKm} km` : ''}{person.pronouns ? `  /  ${person.pronouns}` : ''}</T>
+          <T v="display" numberOfLines={1} adjustsFontSizeToFit>{t('profile.nameAge', { name: person.name, age: person.age })}</T>
+          <T v="caption" c={color.textDim}>{[t('profile.areaCity', { area: person.area, city: person.city }), person.distanceKm > 0 ? fmtDistance(person.distanceKm) : '', person.pronouns].filter(Boolean).join('  /  ')}</T>
         </View>
       </View>
       } right={
@@ -90,7 +91,7 @@ export default function ProfileScreen() {
         {person.vibes.length > 0 && <View style={styles.wrap}>{person.vibes.map((v) => <Chip key={v} label={v} />)}</View>}
 
         <View style={{ gap: space.sm }}>
-          <T v="label" c={color.textDim}>Up for</T>
+          <T v="label" c={color.textDim}>{t('profile.upFor')}</T>
           {person.ideaIds.map((ideaId) => {
             const idea = ideaOf(ideaId);
             return (
@@ -98,50 +99,48 @@ export default function ProfileScreen() {
                 key={ideaId}
                 disabled={!!live}
                 accessibilityRole="button"
-                accessibilityLabel={`Ask ${person.name} to ${idea.title}`}
+                accessibilityLabel={t('profile.askTo', { name: person.name, idea: idea.title })}
                 onPress={() => router.push({ pathname: '/invite/new', params: { to: person.id, idea: ideaId } })}
                 style={({ pressed }) => [styles.idea, pressed && { borderColor: color.pink }]}
               >
                 <T style={{ fontSize: 26, lineHeight: 34 }} maxFontSizeMultiplier={1}>{idea.emoji}</T>
                 <View style={{ flex: 1 }}>
                   <T v="bodyBold">{idea.title}</T>
-                  <T v="caption" c={color.textDim}>{idea.minutes} min  /  {idea.blurb}</T>
+                  <T v="caption" c={color.textDim}>{t('onboarding.ideaSub', { minutes: idea.minutes, blurb: idea.blurb })}</T>
                 </View>
-                {shared.includes(ideaId) ? <Tag label="You too" tone={color.gold} /> : !live ? <Feather name="arrow-up-right" size={18} color={color.textMute} /> : null}
+                {shared.includes(ideaId) ? <Tag label={t('profile.youToo')} tone={color.gold} /> : !live ? <Feather name="arrow-up-right" size={18} color={color.textMute} /> : null}
               </Pressable>
             );
           })}
         </View>
 
         <View style={{ gap: space.sm }}>
-          <T v="label" c={color.textDim}>Contact and more photos</T>
+          <T v="label" c={color.textDim}>{t('profile.contactPhotos')}</T>
           <LockedReveal
             person={person}
             reveal={reveal}
-            hint={live && !isOpen(live)
-              ? `Opens when you and ${person.name} both check in to your plan.`
-              : `Stays locked until you and ${person.name} lock a plan and both show up for it.`}
+            hint={t(live && !isOpen(live) ? 'profile.opensAtPlan' : 'profile.staysLocked', { name: person.name })}
           />
         </View>
 
-        <Button kind="quiet" icon="shield" label="Block or report" onPress={() => setSafety(true)} />
+        <Button kind="quiet" icon="shield" label={t('profile.blockOrReport')} onPress={() => setSafety(true)} />
       </View>
       } />
 
       <Sheet
         visible={safety}
         onClose={() => setSafety(false)}
-        eyebrow="Safety"
-        title={`Block ${person.name}?`}
-        body={`You stop seeing each other, here and in Discover, and any plan between you ends. Nobody's score changes. ${person.name} is not told.`}
+        eyebrow={t('profile.safety')}
+        title={t('profile.blockTitle', { name: person.name })}
+        body={t('profile.blockBody', { name: person.name })}
       >
         {error ? <ErrorText text={error} /> : null}
-        <HoldButton tone="flare" label={`Hold to block ${person.name}`} busy={busy} onComplete={doBlock} />
-        <Button kind="ghost" icon="flag" label="Report instead" onPress={() => {
+        <HoldButton tone="flare" label={t('profile.holdBlock', { name: person.name })} busy={busy} onComplete={doBlock} />
+        <Button kind="ghost" icon="flag" label={t('profile.reportInstead')} onPress={() => {
           setSafety(false);
           router.push({ pathname: '/report/[id]', params: { id: person.id, invite: (live ?? between[0])?.id ?? '' } });
         }} />
-        <Button kind="quiet" label="Never mind" onPress={() => setSafety(false)} />
+        <Button kind="quiet" label={t('profile.neverMind')} onPress={() => setSafety(false)} />
       </Sheet>
     </Screen>
   );

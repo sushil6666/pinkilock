@@ -19,12 +19,13 @@ import { color, radius, space } from '@/theme/tokens';
 import { ErrorText } from '@/components/ui/ErrorText';
 import { shown } from '@/lib/report';
 import { aria } from '@/lib/web';
+import { t } from '@/i18n';
 
 export default function Report() {
   const { id, invite } = useLocalSearchParams<{ id: string; invite?: string }>();
   const person = usePerson(id);
   const report = useStore((s) => s.report);
-  const [name] = useState(person?.name ?? 'them');
+  const [name] = useState(person?.name ?? t('report.them'));
   const [reason, setReason] = useState<ReportReason | null>(null);
   const [detail, setDetail] = useState('');
   const [busy, setBusy] = useState(false);
@@ -47,11 +48,11 @@ export default function Report() {
 
   if (done) {
     return (
-      <Screen desk="form" scroll={false} footer={<Button label="Back to Discover" icon="arrow-right" onPress={() => backToDiscover()} />}>
+      <Screen desk="form" scroll={false} footer={<Button label={t('ask.backToDiscover')} icon="arrow-right" onPress={() => backToDiscover()} />}>
         <Animated.View entering={FadeInDown.duration(360)} style={{ flex: 1, justifyContent: 'center', gap: space.lg }}>
-          <T v="label" c={color.gold}>Reported</T>
-          <T v="display">Thanks.{'\n'}That's{'\n'}handled.</T>
-          <T c={color.textDim}>{name} is blocked: you will not see each other again, and any plan between you has ended without a mark on your record. A person reads every report.</T>
+          <T v="label" c={color.gold}>{t('report.done')}</T>
+          <T v="display">{t('report.doneTitle')}</T>
+          <T c={color.textDim}>{t('report.doneBody', { name })}</T>
         </Animated.View>
       </Screen>
     );
@@ -61,16 +62,16 @@ export default function Report() {
     <Screen
       desk="form"
       back="close"
-      title="Report"
+      title={t('report.title')}
       footer={<>
         {error ? <ErrorText text={error} /> : null}
-        <HoldButton tone="flare" label="Hold to report and block" busy={busy} disabled={!reason} onComplete={send} />
+        <HoldButton tone="flare" label={t('report.hold')} busy={busy} disabled={!reason} onComplete={send} />
       </>}
     >
       <View style={{ gap: space.xl }}>
         <View style={{ gap: space.sm }}>
-          <T v="display">What{'\n'}happened?</T>
-          <T c={color.textDim}>{name} is not told who reported them. Reporting also blocks them.</T>
+          <T v="display">{t('report.what')}</T>
+          <T c={color.textDim}>{t('report.notTold', { name })}</T>
         </View>
 
         <View style={{ gap: space.sm }} accessibilityRole="radiogroup">
@@ -82,7 +83,7 @@ export default function Report() {
                 accessibilityRole="radio"
                 accessibilityState={{ checked: on }}
                 {...aria({ checked: on })}
-                accessibilityLabel={`${r.label}. ${r.hint}`}
+                accessibilityLabel={t('report.reasonSpoken', { label: r.label, hint: r.hint })}
                 onPress={() => setReason(r.id)}
                 style={[styles.reason, on && { borderColor: color.flare, backgroundColor: color.flareWash }]}
               >
@@ -97,18 +98,18 @@ export default function Report() {
         </View>
 
         <View style={{ gap: space.sm }}>
-          <T v="label" c={color.textDim}>Anything we should know (optional)</T>
+          <T v="label" c={color.textDim}>{t('report.detail')}</T>
           <TextInput
             value={detail}
             onChangeText={setDetail}
             maxLength={REPORT_DETAIL_MAX}
             multiline
-            placeholder="What they said or did, and when."
+            placeholder={t('report.placeholder')}
             placeholderTextColor={color.textMute}
             style={[inputStyle, { minHeight: 120, paddingTop: space.md, textAlignVertical: 'top' }]}
-            accessibilityLabel="Details"
+            accessibilityLabel={t('report.detailLabel')}
           />
-          <T v="caption" c={color.textMute} style={{ textAlign: 'right' }}>{detail.length} / {REPORT_DETAIL_MAX}</T>
+          <T v="caption" c={color.textMute} style={{ textAlign: 'right' }}>{t('report.count', { n: detail.length, max: REPORT_DETAIL_MAX })}</T>
         </View>
       </View>
     </Screen>

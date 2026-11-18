@@ -1,8 +1,9 @@
-/** Time slots for the composer and the few date formats the app uses. No date library needed. */
+/**
+ * Time slots for the composer and the few date formats the app uses. Formats follow the phone's
+ * locale through Intl (src/i18n); times are shown in the viewer's own time zone.
+ */
+import { fmtDay, fmtDayMonth, fmtTime, fmtWeekday, t } from '../i18n';
 import { DAY, HOUR, MIN } from './invites';
-
-const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
 const startOfDay = (t: number) => {
   const d = new Date(t);
@@ -10,24 +11,18 @@ const startOfDay = (t: number) => {
   return d.getTime();
 };
 
-export function dayLabel(t: number, now: number): string {
-  const diff = Math.round((startOfDay(t) - startOfDay(now)) / DAY);
-  if (diff === 0) return 'Today';
-  if (diff === 1) return 'Tomorrow';
-  if (diff === -1) return 'Yesterday';
-  const d = new Date(t);
-  return `${DAYS[d.getDay()]} ${d.getDate()} ${MONTHS[d.getMonth()]}`;
+export function dayLabel(at: number, now: number): string {
+  const diff = Math.round((startOfDay(at) - startOfDay(now)) / DAY);
+  if (diff === 0) return t('common.today');
+  if (diff === 1) return t('common.tomorrow');
+  if (diff === -1) return t('common.yesterday');
+  return fmtDay(at);
 }
 
-export function timeLabel(t: number): string {
-  const d = new Date(t);
-  const h = d.getHours();
-  const m = d.getMinutes();
-  const h12 = h % 12 === 0 ? 12 : h % 12;
-  return `${h12}:${String(m).padStart(2, '0')} ${h < 12 ? 'AM' : 'PM'}`;
-}
+/** "7:30 PM" or "19:30", as the phone writes times. */
+export const timeLabel = (at: number): string => fmtTime(at);
 
-export const whenLabel = (t: number, now: number) => `${dayLabel(t, now)}, ${timeLabel(t)}`;
+export const whenLabel = (at: number, now: number) => t('common.dayAtTime', { day: dayLabel(at, now), time: timeLabel(at) });
 
 export interface DayOption {
   id: string;
@@ -43,8 +38,8 @@ export function dayOptions(now: number): DayOption[] {
     const d = new Date(start + 12 * HOUR);
     return {
       id: String(start),
-      label: i === 0 ? 'Today' : i === 1 ? 'Tmrw' : DAYS[d.getDay()],
-      sub: `${d.getDate()} ${MONTHS[d.getMonth()]}`,
+      label: i === 0 ? t('common.today') : i === 1 ? t('common.tomorrowShort') : fmtWeekday(d.getTime()),
+      sub: fmtDayMonth(d.getTime()),
       start,
     };
   });
@@ -80,7 +75,7 @@ export const pad2 = (n: number) => String(n).padStart(2, '0');
 /** "2d 4h", "3h 12m", "04:59" */
 export function shortCountdown(target: number, now: number): string {
   const p = countdownParts(target, now);
-  if (p.days > 0) return `${p.days}d ${p.hours}h`;
-  if (p.hours > 0) return `${p.hours}h ${pad2(p.minutes)}m`;
+  if (p.days > 0) return t('countdown.shortDays', { days: p.days, hours: p.hours });
+  if (p.hours > 0) return t('countdown.shortHours', { hours: p.hours, minutes: pad2(p.minutes) });
   return `${pad2(p.minutes)}:${pad2(p.seconds)}`;
 }

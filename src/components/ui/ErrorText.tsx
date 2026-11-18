@@ -11,6 +11,7 @@ import { splitRef } from '../../domain/errors';
 import { color } from '../../theme/tokens';
 import { Button } from './Button';
 import { T } from './T';
+import { t } from '../../i18n';
 
 export function ErrorText({ text, tone = color.flare, style }: { text: string | null | undefined; tone?: string; style?: StyleProp<TextStyle> }) {
   if (!text) return null;
@@ -18,9 +19,9 @@ export function ErrorText({ text, tone = color.flare, style }: { text: string | 
   return (
     <View accessibilityRole="alert" style={{ gap: 2 }}>
       <T v="caption" c={tone} style={style}>{message}</T>
-      {ref ? <T v="caption" c={color.textMute} selectable accessibilityLabel={`Error reference ${ref}`}>{ref}</T> : null}
+      {ref ? <T v="caption" c={color.textMute} selectable accessibilityLabel={t('common.errorRef', { ref })}>{ref}</T> : null}
       {ref?.startsWith('PL068') ? (
-        <Button kind="ghost" icon="mail" label="Add your email" onPress={() => router.push({ pathname: '/account/sign-in', params: { mode: 'link', kind: 'email' } })} />
+        <Button kind="ghost" icon="mail" label={t('common.addEmail')} onPress={() => router.push({ pathname: '/account/sign-in', params: { mode: 'link', kind: 'email' } })} />
       ) : null}
     </View>
   );

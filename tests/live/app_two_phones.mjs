@@ -73,7 +73,9 @@ async function onboard(browser, who) {
   await btn(page, 'Start').click();
   await page.getByLabel('First name').fill(who.name);
   await page.getByLabel('Age').fill('24');
+  // The area is picked from the city's list (WP1): search, then pick.
   await page.getByLabel('Your area').fill('Bandra');
+  await page.getByRole('button', { name: 'Bandra West', exact: true }).click();
   await btn(page, 'Next').click();
   for (const idea of ['Boba run', 'Chai and a walk', 'Momo stop']) await page.getByText(idea, { exact: false }).first().click();
   await btn(page, 'Next').click();
