@@ -184,10 +184,8 @@ reference under every error on screen; `client_errors` and `log_client_error`; o
 logger with breadcrumbs; no empty catch (a unit test, in place of a lint rule, since the project
 has no linter); the build stamp; Share diagnostics; `private.invite_timeline`; the crash screen;
 "Trace a bug" in `OPERATIONS.md`. **Not done:** polling Expo push receipts (delivery after Expo
-accepts a push is still unseen); one trace id shared across the several calls of a single tap
-(today each database call has its own); and direct table writes (profile save, pass) carry no
-trace until WP1 moves them into functions. Source maps wait for the crash tool in WP7. For WP8:
-`client_errors` rows are personal data and are not yet in `export_my_data`.
+accepts a push is still unseen); and direct table writes (pass) carry no trace. Source maps wait for the crash tool in WP7. **Built 2026-11-18:** one trace id per tap (every server call of one Backend method shares it,
+`src/services/traceScope.ts`); `client_errors` rows are in `export_my_data` as `error_reports`.
 
 ### WP1. Nothing free-form reaches a stranger before the reveal (G1, G2, G3, G18)
 

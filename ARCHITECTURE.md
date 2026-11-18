@@ -420,8 +420,9 @@ what the server did (`OPERATIONS.md`, "Trace a bug").
   for the app itself. The live backend maps on the code, never on message text; the mock and the
   shared rules in `src/domain/invites.ts` throw the same codes. A server error that is not one of
   ours is shown as `PC002` and its text is dropped, because it can quote row values.
-- **Trace ids.** The live backend sends a fresh 8-character id as `x-trace-id` with each call to
-  a database function. Triggers copy it onto every `events` row and every `notifications` row the
+- **Trace ids.** The live backend sends an 8-character id as `x-trace-id` with each call to a
+  database function. One tap calls one Backend method, and every call inside it shares one id
+  (`src/services/traceScope.ts`), so a lock that writes and then re-reads leaves one trail. Triggers copy it onto every `events` row and every `notifications` row the
   call causes, and the push function logs it. The header is accepted only in that exact shape.
 - **On screen.** `ErrorText` shows the words and, under them, `CODE · TRACE`. `src/lib/report.ts`
   is the one place a shown error goes: it is remembered for diagnostics and sent to
