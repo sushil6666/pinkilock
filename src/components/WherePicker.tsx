@@ -1,7 +1,8 @@
 /**
  * Where someone is: an open city, then an area. Used at sign-up and on Me, where a person can move
  * city (D083). "Use my location" comes first and fills in the nearest city and area (D087); anyone
- * who says no, or has no location on this device, picks by hand. An area that is not on the list can
+ * who says no, or has no location on this device, picks by hand. A blocked location comes up as a
+ * popup with "Try again" and "Pick by hand" (D090). An area that is not on the list can
  * be named. The position is used once, on this device, and never saved or sent. The server checks
  * the city and the area again in save_profile.
  */
@@ -9,6 +10,7 @@ import { useEffect, useState } from 'react';
 import { StyleSheet, TextInput, View } from 'react-native';
 import { Button } from '@/components/ui/Button';
 import { Chip, Tag } from '@/components/ui/Chip';
+import { Sheet } from '@/components/ui/Sheet';
 import { inputStyle } from '@/components/ui/input';
 import { T } from '@/components/ui/T';
 import { areasIn, closeAreas, matchAreas } from '@/domain/areas';
@@ -37,6 +39,8 @@ export function WherePicker({ city, area, onCity, onArea, cityNote, autoLocate =
 }) {
   const [query, setQuery] = useState('');
   const [finding, setFinding] = useState<Finding>({ state: 'idle' });
+  // The blocked-location popup: opens when the answer is no, stays open while trying again.
+  const [blocked, setBlocked] = useState(false);
   const listed = areasIn(city).length > 0;
   const typed = query.trim();
   const matches = matchAreas(city, query).slice(0, typed ? 12 : 8);
@@ -61,6 +65,7 @@ export function WherePicker({ city, area, onCity, onArea, cityNote, autoLocate =
   const locate = async () => {
     setFinding({ state: 'finding' });
     const got = await locateOnce();
+    setBlocked(!got.ok && got.why === 'denied');
     if (!got.ok) return setFinding({ state: got.why });
     const found = nearestCity(got.here);
     if (!found) return setFinding({ state: 'outside' });
@@ -79,7 +84,7 @@ export function WherePicker({ city, area, onCity, onArea, cityNote, autoLocate =
   }, []);
 
   const note = {
-    idle: '', finding: t('where.finding'), denied: t('where.denied'), unavailable: t('where.unavailable'), outside: t('where.outside'),
+    idle: '', finding: t('where.finding'), denied: t('where.deniedShort'), unavailable: t('where.unavailable'), outside: t('where.outside'),
     found: finding.state === 'found' && finding.city === city ? t('where.found', { city: finding.city }) : '',
   }[finding.state];
 
@@ -88,9 +93,13 @@ export function WherePicker({ city, area, onCity, onArea, cityNote, autoLocate =
       <View style={{ gap: space.sm }}>
         <Button kind="ghost" icon="crosshair" label={t(finding.state === 'denied' || finding.state === 'unavailable' ? 'where.retry' : 'where.useLocation')}
           onPress={locate} busy={finding.state === 'finding'} />
-        {note ? <T v="caption" c={finding.state === 'found' ? color.gold : finding.state === 'finding' ? color.textDim : color.flare}>{note}</T> : null}
+        {note && !blocked ? <T v="caption" c={finding.state === 'found' ? color.gold : finding.state === 'finding' || finding.state === 'denied' ? color.textDim : color.flare}>{note}</T> : null}
         <T v="caption" c={color.textMute}>{t('where.private')}</T>
       </View>
+      <Sheet visible={blocked} onClose={() => setBlocked(false)} title={t('where.deniedTitle')} body={t('where.deniedBody')}>
+        <Button icon="crosshair" label={t('common.tryAgain')} onPress={locate} busy={finding.state === 'finding'} />
+        <Button kind="ghost" label={t('where.byHand')} onPress={() => setBlocked(false)} />
+      </Sheet>
       <View style={{ gap: space.sm }}>
         <T v="label" c={color.textDim}>{t('onboarding.city')}</T>
         {groups.map((g) => (

@@ -92,7 +92,7 @@ Font scaling is allowed up to 1.3x (`maxFontSizeMultiplier`) so layouts hold on 
   the prototype ships no stock photos of real people.
 - **LockedReveal**: blurred tiles and a masked handle with a lock and the line that says what
   unlocks it.
-- **Sheet**: bottom sheet for confirmations (pass, bail). Rises 280 ms with `easeOutCubic` over a
+- **Sheet**: bottom sheet for confirmations (pass, bail, blocked location); on desktop a dialog in the middle of the window. Rises 280 ms with `easeOutCubic` over a
   72% indigo scrim. There are no system alerts anywhere in the app.
 - **Loop**: a short clay animation, a GIF drawn in 3D by `scripts/make-loops.mjs` (two pinkies
   hooking, the pair tilted 45 degrees rising to the right like the logo mark; a padlock clicking shut). Drawn on `bg` and keyed out, so it only goes on `bg`, never on a
