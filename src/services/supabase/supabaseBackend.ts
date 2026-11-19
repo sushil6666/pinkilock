@@ -298,11 +298,15 @@ export function createSupabaseBackend(url: string, anonKey: string, storage: Ses
     // RLS filters the feed: only invites I am on ever arrive here.
     db.channel('pinkilock')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'invites' }, (payload) => {
-        if (payload.eventType !== 'DELETE') takeInvite(toInvite(payload.new)).catch(quiet('realtime.invite'));
-        // Deletes carry only the id (and reach every subscriber): an account that went away.
-        else if ((payload.old as Row)?.id && known.has((payload.old as Row).id)) forget([], [(payload.old as Row).id]);
+        takeInvite(toInvite(payload.new)).catch(quiet('realtime.invite'));
       })
-      // My duo row: a friend joined, or one of us left. Re-read rather than trust the payload.
+      // The feed carries no deletes (G24, D093). When something of mine went away (a duo left, an
+      // invite whose other person deleted their account), my own nudge row changes: look again,
+      // and the re-read drops what RLS no longer returns.
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'feed_nudges' }, () => {
+        resync().catch(quiet('realtime.nudge'));
+      })
+      // My duo row: a friend joined. Re-read rather than trust the payload.
       .on('postgres_changes', { event: '*', schema: 'public', table: 'duos' }, () => {
         readDuo()
           .then(async (duoId) => {

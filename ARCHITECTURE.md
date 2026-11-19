@@ -109,7 +109,11 @@ screen -> store action -> backend.method() -> rows -> merge -> screen
 ```
 
 `backend.subscribe` is the realtime channel. With Supabase it is a Realtime `postgres_changes`
-subscription on `invites`, `trust_scores` and `profiles` (RLS filters the feed to rows I may read).
+subscription on `invites`, `duos`, `trust_scores` and `feed_nudges` (RLS filters the feed to rows I
+may read). The feed carries inserts and updates only: RLS cannot check a row that is gone, so a
+delete would reach every listener (G24, D093). When something of mine is deleted (a duo left, a plan
+whose other person deleted their account), a trigger touches my own `feed_nudges` row and the phone
+re-reads.
 Every time the socket connects or reconnects, the backend re-reads the cards and my invites and
 announces whatever changed, so nothing that happened while the phone was asleep or offline is
 lost. In the mock it carries the simulated other person.
@@ -437,7 +441,7 @@ applies the same formula with every flake weighted 1.
 methods it has `block`, `unblock`, `blockedPeople`, `report`, `exportMyData`, `deleteAccount`,
 `account`, `sendCode`, `verifyCode` (by email or phone) and `signOut`. `Changes.removed` names people and
 invites the backend can no longer see, and the store drops them; the live backend works that out
-on every re-read and from Realtime deletes, and is never told why. `src/services/index.ts`
+on every re-read (a nudge on `feed_nudges` asks for one), and is never told why. `src/services/index.ts`
 returns the Supabase implementation when `EXPO_PUBLIC_SUPABASE_URL` and
 `EXPO_PUBLIC_SUPABASE_ANON_KEY` are set, otherwise the mock.
 

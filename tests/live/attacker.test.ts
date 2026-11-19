@@ -230,6 +230,32 @@ if (process.env.E2E_MAILBOX) {
   });
 }
 
+test('G24 closed (D093): a listener on every table hears no delete, so no one learns an account went away', async () => {
+  const heard: string[] = [];
+  const feed = raw.channel('attacker-feed');
+  for (const table of ['profiles', 'duos', 'invites', 'trust_scores', 'feed_nudges']) {
+    feed.on('postgres_changes', { event: '*', schema: 'public', table }, (p) => heard.push(`${p.eventType} ${table}`));
+  }
+  await new Promise<void>((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error('the feed never started')), 15_000);
+    feed.on('system', {}, (p: { extension?: string; status?: string }) => {
+      if (p.extension === 'postgres_changes' && p.status === 'ok') {
+        clearTimeout(timer);
+        resolve();
+      }
+    });
+    feed.subscribe();
+  });
+  // Someone X has never met joins, then deletes their account.
+  const z = person('TestZara');
+  await z.backend.boot();
+  await z.backend.completeOnboarding(profile(z.name, '@e2e_zara'));
+  await z.backend.deleteAccount();
+  await new Promise((r) => setTimeout(r, 4000));
+  await raw.removeChannel(feed);
+  assert.deepEqual(heard.filter((h) => h.startsWith('DELETE')), [], 'X heard a delete');
+});
+
 // Last, because it moves X out of Y's city (D083).
 test('moving city: an area from the new city, once a week, and no direct writes', async () => {
   await assert.rejects(x.backend.updateMe({ city: 'Delhi NCR' }), (e: unknown) => e instanceof AppError && e.code === 'PL095', 'a Mumbai area following X to Delhi NCR');

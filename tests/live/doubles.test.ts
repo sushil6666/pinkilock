@@ -78,3 +78,10 @@ test('two duos, one double: pinkies, the seal, check-in across sides, and the re
   assert.equal((await b.backend.getReveal(sent.id, d.id)).contactHandle, '@e2e_testdhruv');
   await assert.rejects(a.backend.getReveal(sent.id, b.id), (e: unknown) => e instanceof AppError && e.code === 'PC003', 'not my own friend: they never were hidden behind a promise with me');
 });
+
+test('leaving a duo reaches the friend at once, without a delete on the feed (G24, D093)', async () => {
+  // D's phone is open; C leaves. The feed sends no deletes, so D hears it through D's own nudge.
+  d.quiet();
+  await c.backend.leaveDuo();
+  await d.hears('the duo ended', (e) => 'duoId' in e.changes && e.changes.duoId === null);
+});
