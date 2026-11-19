@@ -1,9 +1,13 @@
 /**
  * A person, drawn: two-colour gradient, a big glyph, an oversized initial. The prototype ships no
  * photographs of real people, and the block style suits the editorial look better than stock faces.
+ *
+ * With `faceUrl` (D095), their checked face takes the drawing's place. A link that does not load
+ * (expired, or taken down since) falls back to the drawing.
  */
 import { LinearGradient } from 'expo-linear-gradient';
-import { StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
+import { useState } from 'react';
+import { Image, StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 import { color, font, radius } from '../theme/tokens';
 import { T } from './ui/T';
 import { t } from '../i18n';
@@ -15,11 +19,30 @@ interface Props {
   size?: number;
   /** Fill the parent instead of being a square avatar. */
   fill?: boolean;
+  /** Their face, when they have one that this person may see. */
+  faceUrl?: string | null;
   style?: StyleProp<ViewStyle>;
 }
 
-export function Portrait({ name, palette, glyph, size = 56, fill, style }: Props) {
+export function Portrait({ name, palette, glyph, size = 56, fill, faceUrl, style }: Props) {
   const initial = name.trim().charAt(0).toUpperCase() || '?';
+  const [broken, setBroken] = useState<string | null>(null);
+  const face = faceUrl && faceUrl !== broken ? faceUrl : null;
+  if (face && fill) {
+    return (
+      <View style={[styles.fill, style]} accessible accessibilityRole="image" accessibilityLabel={t('common.cardOf', { name })}>
+        <Image source={{ uri: face }} style={StyleSheet.absoluteFill} resizeMode="cover" onError={() => setBroken(face)} />
+        <LinearGradient colors={['transparent', color.onPhoto]} style={styles.fade} />
+      </View>
+    );
+  }
+  if (face) {
+    return (
+      <View style={[{ width: size, height: size, borderRadius: radius.card, overflow: 'hidden', backgroundColor: color.surface }, style]} accessible accessibilityRole="image" accessibilityLabel={name}>
+        <Image source={{ uri: face }} style={StyleSheet.absoluteFill} resizeMode="cover" onError={() => setBroken(face)} />
+      </View>
+    );
+  }
   if (fill) {
     return (
       <View style={[styles.fill, style]} accessible accessibilityRole="image" accessibilityLabel={t('common.cardOf', { name })}>

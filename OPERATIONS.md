@@ -160,7 +160,11 @@ the certificate is present).
 Version 0.3.0 is the Expo SDK 58 upgrade (React Native 0.88, D094): a new binary, and no
 over-the-air update reaches 0.2.0 builds, whose native side is SDK 52. Android draws the app edge to
 edge; the `expo-navigation-bar` plugin in `app.json` keeps the bar's buttons light with no scrim.
-EAS builds on Node 22.13 (`eas.json`).
+EAS builds on Node 22.13 (`eas.json`). It also adds `expo-camera` for the face on the card (D095):
+the front camera only, with the camera permission line in `app.json`, no microphone and no barcode
+scanner. A 0.2.0 build shows "needs the latest version" where the camera would be. The Supabase
+deploy applies migrations before it deploys functions, which this needs: the new `photo` function
+sends `p_kind`, which only the new `add_photo` takes (the old three-argument call still works).
 
 Version 0.2.0 adds native modules (encrypted session storage, screenshot blocking on the reveal),
 so it needs a new binary; an over-the-air update cannot reach 0.1.0 builds. A production build
@@ -385,7 +389,11 @@ of Discover and cannot ask, lock or edit.
 ### Check photos
 
 Every new photo waits for a person (D088): nobody else sees it until it is approved. Work through
-them at least daily; a person sees "Checking" on their own photo until then.
+them at least daily; a person sees "Checking" on their own photo until then. The list has a `kind`
+column: `face` is the face on the card (D095), shown to strangers once approved, so look harder:
+one person's face, clearly theirs, no text, screens, other people or filters; anything else is
+`hold_photo` (and `hold_photo_contact` if it carries a contact). Approving a new face takes the old
+one down. A held face can be retaken straight away.
 
 ```bash
 scripts/moderate.sh "$DB" photos                                  # waiting photos: id, owner, path

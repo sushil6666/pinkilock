@@ -125,6 +125,15 @@ export interface Backend {
   removePhoto(id: string): Promise<MyPhoto[]>;
 
   /**
+   * My face on my card (D095): taken with the camera, checked by a person, then shown on my card to
+   * whoever is shown the card. One waits at a time and the old one stays up meanwhile; a new one
+   * once a week (straight away after a held one). The list is my face rows, oldest first.
+   */
+  myFace(): Promise<MyPhoto[]>;
+  addFace(photo: PickedPhoto): Promise<MyPhoto[]>;
+  removeFace(id: string): Promise<MyPhoto[]>;
+
+  /**
    * Refuses unless the invite is kept: the reveal is gated on the server, not by a blur. On a
    * double, `profileId` picks whom (someone on the other side; both of us must have checked in).
    */

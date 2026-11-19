@@ -476,6 +476,15 @@ approved photo only where the reveal is; the attacker suites try a direct upload
 nudity), which wait for O04 and replace the person for the clear cases; re-encoding on the server
 (the app re-encodes; the server only strips).
 
+**Status, 2026-11-19: the face on the card built, with a person as the check** (decision D095).
+Taken with the front camera only (`expo-camera`, in the 0.3.0 binary), sent through the same
+`photo` function with `?kind=face`, `pending` until approved, a strike when held for a contact.
+Once a week (straight away after a held one, three tries a week), as the plan says. Shown to whoever
+is shown the card (`private.face_visible`), never across a block or while paused; tests in
+`tests/db/faces.sql`, both attacker suites and `tests/live/photos.test.ts`. **Left:** the automatic
+checks (O04); re-encoding on the server; selfie verification (F2, O11), which can reuse the camera
+step. Camera-only is a convenience, not a defence: a modified app can send any picture.
+
 ### WP8. Privacy and regulation, built once for every region (G16, G17)
 
 Get a privacy lawyer before the first public launch; this package builds what they will ask for.

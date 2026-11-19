@@ -63,7 +63,7 @@ function Person({ id, invite, meId, show }: { id: string; invite: Invite; meId: 
       onPress={() => router.push(`/profile/${id}`)}
       style={styles.person}
     >
-      {person ? <Portrait name={person.name} palette={person.palette} glyph={person.glyph} size={32} /> : <View style={styles.blank} />}
+      {person ? <Portrait name={person.name} palette={person.palette} glyph={person.glyph} faceUrl={person.faceUrl} size={32} /> : <View style={styles.blank} />}
       <View style={{ flex: 1 }}>
         <T v="bodyBold" numberOfLines={1}>{name}</T>
         {what ? <T v="caption" c={done ? color.gold : color.textDim} numberOfLines={1}>{what}</T> : null}

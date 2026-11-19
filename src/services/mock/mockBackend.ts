@@ -10,6 +10,7 @@ import { fail } from '../../domain/errors';
 import * as rules from '../../domain/invites';
 import { ASK_LINES, ideaOf } from '../../domain/ideas';
 import { REPORT_DETAIL_MAX, REPORT_REASONS, REPORTS_PER_DAY } from '../../domain/safety';
+import { FACE_WEEK_MS, faceRefusal } from '../../domain/face';
 import type { BlockedPerson, CodeKind, Invite, MyContact, MyPhoto, NewInvite, OnboardingInput, Profile, ReportReason, Reveal } from '../../domain/types';
 import { quiet } from '../../lib/log';
 import type { Backend, BackendEvent, Changes, ClientErrorReport, Notice, Snapshot } from '../backend';
@@ -82,6 +83,18 @@ export function createMockBackend(options: { captcha?: () => Promise<string | un
   const PHOTO_CHECK_MS = 3000;
   const listPhotos = (): MyPhoto[] =>
     myPhotoList.map((p) => ({ id: p.id, url: p.uri, status: Date.now() - p.at >= PHOTO_CHECK_MS ? 'approved' : 'pending' }));
+  /**
+   * My face (D095), in memory: the same rules as the server (src/domain/face.ts), and the same
+   * stand-in moderator. Once approved, a new face replaces the old one. The made-up people keep
+   * their drawn portraits: the prototype ships no photographs of real people.
+   */
+  let myFaceList: { id: string; uri: string; at: number; status: MyPhoto['status'] }[] = [];
+  let faceTries: number[] = [];
+  const listFace = (): MyPhoto[] => {
+    const done = myFaceList.find((f) => f.status === 'pending' && Date.now() - f.at >= PHOTO_CHECK_MS);
+    if (done) myFaceList = [{ ...done, status: 'approved' }];
+    return myFaceList.map((f) => ({ id: f.id, url: f.uri, status: f.status, at: f.at }));
+  };
   let proofTimer: ReturnType<typeof setTimeout> | null = null;
   const listeners = new Set<(e: BackendEvent) => void>();
   let timer: ReturnType<typeof setInterval> | null = null;
@@ -547,6 +560,31 @@ export function createMockBackend(options: { captcha?: () => Promise<string | un
       return listPhotos();
     },
 
+    async myFace() {
+      await wait(LATENCY);
+      return listFace();
+    },
+
+    async addFace(photo) {
+      const d = await load();
+      await wait(LATENCY);
+      if (!d.me) fail('PL002');
+      listFace();
+      const now = Date.now();
+      const refused = faceRefusal(faceTries, myFaceList, now);
+      if (refused) fail(refused);
+      faceTries = [...faceTries.filter((at) => at > now - FACE_WEEK_MS), now];
+      myFaceList = [...myFaceList, { id: `face-${now}`, uri: photo.uri, at: now, status: 'pending' }];
+      return listFace();
+    },
+
+    async removeFace(id) {
+      await wait(LATENCY);
+      if (!myFaceList.some((f) => f.id === id)) fail('PL110');
+      myFaceList = myFaceList.filter((f) => f.id !== id);
+      return listFace();
+    },
+
     async reportBadContact(inviteId, ownerId) {
       const d = await load();
       await wait(LATENCY);
@@ -664,6 +702,8 @@ export function createMockBackend(options: { captcha?: () => Promise<string | un
       await AsyncStorage.removeItem(KEY).catch(quiet('mock.clear'));
       myPhotoList = [];
       photoUploads = [];
+      myFaceList = [];
+      faceTries = [];
       db = fresh();
       return snapshot(db);
     },
@@ -720,6 +760,8 @@ export function createMockBackend(options: { captcha?: () => Promise<string | un
       await AsyncStorage.removeItem(KEY).catch(quiet('mock.clear'));
       myPhotoList = [];
       photoUploads = [];
+      myFaceList = [];
+      faceTries = [];
       db = fresh();
       return snapshot(db);
     },

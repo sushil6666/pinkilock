@@ -85,7 +85,7 @@ export default function Plans() {
   );
 }
 
-function Row({ invite, name, portrait, right, tone, sub, onPress }: { invite: Invite; name: string; portrait?: { name: string; palette: [string, string]; glyph: string }; right: string; tone: string; sub: string; onPress: () => void }) {
+function Row({ invite, name, portrait, right, tone, sub, onPress }: { invite: Invite; name: string; portrait?: { name: string; palette: [string, string]; glyph: string; faceUrl?: string | null }; right: string; tone: string; sub: string; onPress: () => void }) {
   const idea = ideaOf(invite.ideaId);
   return (
     <Pressable accessibilityRole="button" accessibilityLabel={t('plans.rowSpoken', { idea: idea.title, name, when: sub, status: right })} onPress={onPress} style={({ pressed }) => [styles.row, pressed && { backgroundColor: color.surfaceHi }]}>

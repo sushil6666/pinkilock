@@ -27,6 +27,7 @@ const TITLES: Record<string, Key | null> = {
   'account/sign-in': 'titles.signIn',
   'account/blocked': 'titles.blocked',
   'account/requests': 'titles.askUs',
+  face: 'titles.face',
   'legal/[doc]': 'titles.termsAndPrivacy',
   safety: 'titles.safety',
   'vouch/[token]': 'titles.vouchForAFriend',

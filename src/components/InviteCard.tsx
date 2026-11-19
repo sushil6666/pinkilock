@@ -128,7 +128,7 @@ export function InviteCard({ invite, meId, other, now, onPress, compact }: Props
       </View>
 
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.md }}>
-        {other && <Portrait name={other.name} palette={other.palette} glyph={other.glyph} size={compact ? 36 : 44} />}
+        {other && <Portrait name={other.name} palette={other.palette} glyph={other.glyph} faceUrl={other.faceUrl} size={compact ? 36 : 44} />}
         <View style={{ flex: 1 }}>
           <T v="bodyBold" numberOfLines={1}>{who}</T>
           {!compact && other && <T v="caption" c={color.textDim}>{t('common.ageArea', { age: other.age, area: other.area })}</T>}

@@ -96,6 +96,8 @@ export const ERRORS = {
   PL110: 'That photo is not there any more.',
   PL111: 'That sign-in request was not valid.',
   PL112: 'Wait a few minutes before asking for another code.',
+  PL113: 'Your new face photo is still being checked.',
+  PL114: 'You can change your face photo once a week.',
 
   PA001: 'Phone sign-in is not switched on yet.',
   PA002: 'Email sign-in is not switched on yet.',

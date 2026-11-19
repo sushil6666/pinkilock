@@ -17,6 +17,8 @@
 # Photo actions: approve_photo; hold_photo (shown to nobody); hold_photo_contact (it carries a
 # handle, a number, a code or a QR: shown to nobody, and one strike, as for a line).
 # A photo is looked at in the dashboard: Storage, bucket `photos`, at the path `photos` lists.
+# kind `face` is the face on the card (D095): one face, nothing else (no text, screens, other
+# people, filters). Approving a new face takes the old one down.
 set -euo pipefail
 db="${1:?usage: moderate.sh <db-url> queue|report|person|history ...}"
 cmd="${2:-queue}"
@@ -45,7 +47,7 @@ case "$cmd" in
     ;;
   photos)
     echo "== Photos waiting for a person (oldest first). Open each in the dashboard: Storage > photos > path"
-    q -c "select x.id, x.created_at::timestamp(0) as at, x.profile_id, x.path, x.bytes, p.contact_strikes as strikes,
+    q -c "select x.id, x.created_at::timestamp(0) as at, x.kind, x.profile_id, x.path, x.bytes, p.contact_strikes as strikes,
                  p.suspended_at is not null as suspended
           from public.photos x left join public.profiles p on p.id = x.profile_id
           where x.status = 'pending' order by x.created_at"

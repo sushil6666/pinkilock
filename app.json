@@ -63,6 +63,15 @@
         }
       ],
       [
+        "expo-camera",
+        {
+          "cameraPermission": "Pinkilock uses the front camera to take the photo of your face shown on your card.",
+          "microphonePermission": false,
+          "recordAudioAndroid": false,
+          "barcodeScannerEnabled": false
+        }
+      ],
+      [
         "expo-build-properties",
         {
           "android": {
