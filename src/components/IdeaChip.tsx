@@ -18,14 +18,17 @@ interface Props {
   idea: MicroDateIdea;
   selected?: boolean;
   onPress?: () => void;
+  /** The person's city, named on an idea that is local to it. */
+  localTo?: string;
 }
 
 const PARTS = ['what', 'where', 'cost', 'why'] as const;
 
-export function IdeaChip({ idea, selected, onPress }: Props) {
+export function IdeaChip({ idea, selected, onPress, localTo }: Props) {
   const [open, setOpen] = useState(false);
   const label = `${idea.emoji}  ${idea.title}`;
   const sub = t('onboarding.ideaSub', { minutes: idea.minutes, blurb: idea.blurb });
+  const local = localTo && idea.cities?.includes(localTo) ? t('ideaInfo.localTo', { city: localTo }) : '';
   const parts = PARTS.map((p) => [p, tMaybe(`ideaInfo.ideas.${idea.id}.${p}`)] as const).filter(([, v]) => !!v);
   const fg = selected ? color.onPink : color.text;
   const dim = selected ? color.onPink : color.textDim;
@@ -37,7 +40,7 @@ export function IdeaChip({ idea, selected, onPress }: Props) {
           accessibilityRole={onPress ? 'button' : 'text'}
           accessibilityState={{ selected: !!selected }}
           {...(onPress ? aria({ pressed: !!selected }) : {})}
-          accessibilityLabel={`${label}, ${sub}`}
+          accessibilityLabel={[label, local, sub].filter(Boolean).join(', ')}
           disabled={!onPress}
           onPress={() => {
             haptic.tick();
@@ -45,6 +48,7 @@ export function IdeaChip({ idea, selected, onPress }: Props) {
           }}
           style={styles.main}
         >
+          {local ? <T v="caption" c={selected ? color.onPink : color.gold}>{local}</T> : null}
           <T v="label" c={fg}>{label}</T>
           <T v="caption" c={dim}>{sub}</T>
         </Pressable>

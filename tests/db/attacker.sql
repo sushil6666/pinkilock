@@ -411,6 +411,15 @@ select t.ok(t.sqlstate($$select save_profile('Xavier', 25, 'Bandra West', '', ''
   'X cannot pick an idea from another country''s list (PL104)');
 reset role;
 update public.ideas set countries = null where id = 'two_truths';
+-- City ideas: the check is on the row itself, so it holds however save_profile is called. X keeps
+-- the line X has, so the only thing wrong is the idea.
+select coalesce((select r.text from private.line_reviews r where r.profile_id = :'x' and r.status in ('pending', 'held')), tagline, '') as x_line
+  from profiles where id = :'x' \gset
+set role authenticated;
+select t.as_user(:'x');
+select t.ok(t.sqlstate(format($$select save_profile('Xavier', 25, 'Bandra West', '', %L, '{}', array['boba_run','chai_walk','hyd_irani_chai'])$$, :'x_line')) = 'PL104',
+  'X cannot pick an idea local to another city (PL104)');
+reset role;
 
 -- The data download (format 4): Y's lists the two flags Y made on X's handle, by person and plan,
 -- without X's handle; X's says nothing about who flagged it.

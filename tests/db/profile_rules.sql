@@ -166,6 +166,24 @@ update public.ideas set countries = array['IN'] where id = 'chai_walk';
 select t.ok((select countries from ideas where id = 'pani_puri_duel') = array['IN'] and (select countries from ideas where id = 'boba_run') is null,
   'pani puri is offered in India only; boba everywhere');
 
+-- City ideas (PL104): an in-person idea local to one city is offered only to people who live there.
+set role authenticated;
+select t.as_user(:'r');
+select t.ok(t.sqlstate($$select save_profile('Riya', 25, 'Khar', '', '', '{}', array['boba_run','chai_walk','hyd_irani_chai'])$$) = 'PL104',
+  'a Mumbai profile cannot pick a Hyderabad idea (PL104)');
+select t.ok(t.sqlstate($$select save_profile('Riya', 25, 'Khar', '', '', '{}', array['boba_run','chai_walk','mumbai_sea_wall'])$$) is null,
+  'a Mumbai profile can pick a Mumbai idea');
+reset role;
+select t.ok((select count(*) from ideas where cities is not null) = 32
+  and (select count(distinct c) from ideas, unnest(cities) c) = (select count(*) from cities where active)
+  and not exists (select 1 from ideas where cities is not null and (countries is distinct from array['IN'] or kind <> 'irl')),
+  'every open city has its own in-person idea, in India only');
+update profiles set city = 'Hyderabad' where id = :'r';
+select t.ok((select 'mumbai_sea_wall' = any (idea_ids) from profiles where id = :'r'), 'a city idea already saved stays after a move');
+select t.ok(t.sqlstate($$update profiles set idea_ids = idea_ids || array['misal_stop'] where id = '$$ || :'r' || $$'$$) = 'PL104',
+  'a new pick from another city is refused, however the row is written');
+update profiles set city = 'Mumbai', idea_ids = array['boba_run','chai_walk','meme_duel'] where id = :'r';
+
 -- An area of one's own (D087): AREA_CASES in src/domain/profile.ts, the same table.
 reset role;
 select t.ok(private.custom_area_ok(a) = ok, 'custom area: ' || a || ' -> ' || ok) from (values

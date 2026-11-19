@@ -17,7 +17,7 @@ import { inputStyle } from '@/components/ui/input';
 import { HoldButton } from '@/components/ui/HoldButton';
 import { Screen } from '@/components/ui/Screen';
 import { T } from '@/components/ui/T';
-import { KIND_LABEL, KIND_ORDER, TAGLINE_PROMPTS, VIBE_GROUPS, ideasFor } from '@/domain/ideas';
+import { KIND_LABEL, KIND_ORDER, TAGLINE_PROMPTS, VIBE_GROUPS, ideasFor, pickerIdeas } from '@/domain/ideas';
 import type { ContactKind } from '@/domain/types';
 import { haptic } from '@/lib/haptics';
 import { useStore } from '@/state/store';
@@ -112,10 +112,10 @@ export default function Onboarding() {
             </View>
             {under18 && <T v="caption" c={color.flare}>{t('onboarding.adultsOnly')}</T>}
             <WherePicker city={city} area={area} cityNote={t('onboarding.oneCity', { count: openCities().length })} onArea={setArea} onCity={(name) => {
-              // Ideas are offered by country (WP9): keep only the picks the new city's country has.
+              // Ideas are offered by country (WP9) and some by city: keep only the picks the new city has.
               const to = openCities().find((c) => c.name === name)?.country ?? '';
               setCity(name);
-              setIdeaIds(ideaIds.filter((id) => ideasFor(to).some((i) => i.id === id)));
+              setIdeaIds(ideaIds.filter((id) => ideasFor(to, name).some((i) => i.id === id)));
             }} />
             <View style={{ gap: space.sm }}>
               <T v="label" c={color.textDim}>{t('onboarding.pronouns')}</T>
@@ -135,8 +135,8 @@ export default function Onboarding() {
             {KIND_ORDER.map((kind) => (
               <View key={kind} style={{ gap: space.sm }}>
                 <T v="label" c={color.textDim}>{KIND_LABEL[kind]}</T>
-                {ideasFor(country).filter((idea) => idea.kind === kind).map((idea) => (
-                  <IdeaChip key={idea.id} idea={idea} selected={ideaIds.includes(idea.id)} onPress={() => toggle(ideaIds, setIdeaIds, idea.id, 6)} />
+                {pickerIdeas(ideasFor(country, city), kind).map((idea) => (
+                  <IdeaChip key={idea.id} idea={idea} localTo={city} selected={ideaIds.includes(idea.id)} onPress={() => toggle(ideaIds, setIdeaIds, idea.id, 6)} />
                 ))}
               </View>
             ))}

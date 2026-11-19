@@ -30,6 +30,8 @@ With no keys set, the app runs on ten made-up people who answer by themselves. A
 
 1. Onboard (five short steps, ends with a hold to swear the promise). The vibe step offers tags
    in five groups (Energy, Into, Wild and bold, Flirt style, Old school); pick up to three.
+   The plan step lists every option with a one-line summary (the arrow opens what, where, cost and
+   why); options local to your city come first, marked "Local to <city>".
 2. **Asks**: open Aanya's boba run, tap **Lock it**, slide your pinky in. She seals it about two
    seconds later.
 3. **Plans**: the plan with Ira starts in four minutes, so check-in is already open. Check in by

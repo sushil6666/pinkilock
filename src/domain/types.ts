@@ -11,6 +11,8 @@ export interface MicroDateIdea {
   blurb: string;
   /** Offered only in these countries (WP9); everywhere when left out. */
   countries?: string[];
+  /** Offered only to people who live in these cities (a city idea); every city when left out. */
+  cities?: string[];
 }
 
 /** One of CONTACT_KINDS in src/domain/contacts.ts (which kinds a person sees depends on their country). */

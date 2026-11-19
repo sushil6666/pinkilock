@@ -4,6 +4,7 @@
  */
 import { Feather } from '@expo/vector-icons';
 import { ContactPanel } from '@/components/ContactCheck';
+import { IdeaChip } from '@/components/IdeaChip';
 import { MyFace, useMyFace } from '@/components/MyFace';
 import { MyPhotos } from '@/components/MyPhotos';
 import { router } from 'expo-router';
@@ -18,7 +19,7 @@ import { Columns } from '@/components/ui/Columns';
 import { Screen } from '@/components/ui/Screen';
 import { Sheet } from '@/components/ui/Sheet';
 import { T } from '@/components/ui/T';
-import { IDEAS, KIND_LABEL, KIND_ORDER, VIBE_GROUPS, offeredIn } from '@/domain/ideas';
+import { IDEAS, KIND_LABEL, KIND_ORDER, VIBE_GROUPS, offeredIn, pickerIdeas } from '@/domain/ideas';
 import { maskEmail } from '@/domain/email';
 import { maskPhone } from '@/domain/phone';
 import { trustScore } from '@/domain/trust';
@@ -229,9 +230,9 @@ export default function Me() {
       {KIND_ORDER.map((kind) => (
         <View key={kind} style={{ gap: space.sm, marginBottom: space.lg }}>
           <T v="label" c={color.textMute}>{KIND_LABEL[kind]}</T>
-          <View style={styles.wrap}>
-            {IDEAS.filter((i) => i.kind === kind && (offeredIn(i.id, me.country) || me.ideaIds.includes(i.id))).map((i) => <Chip key={i.id} label={`${i.emoji} ${i.title}`} selected={me.ideaIds.includes(i.id)} onPress={() => toggleIdea(i.id)} />)}
-          </View>
+          {pickerIdeas(IDEAS.filter((i) => offeredIn(i.id, me.country, me.city) || me.ideaIds.includes(i.id)), kind).map((i) => (
+            <IdeaChip key={i.id} idea={i} localTo={me.city} selected={me.ideaIds.includes(i.id)} onPress={() => toggleIdea(i.id)} />
+          ))}
         </View>
       ))}
       {error ? <ErrorText text={error} style={{ marginTop: space.sm }} /> : null}
