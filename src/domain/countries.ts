@@ -13,7 +13,7 @@ export const DIAL_CODES: Record<string, string> = { IN: '91', GB: '44', US: '1',
 export const openCities = (): City[] => CITIES.filter((c) => c.active && COUNTRIES.some((k) => k.code === c.country && k.active));
 /**
  * `zone` is the city's IANA time zone, the `time_zone` column. `state` is the state or union
- * territory, for the "state, then city" picker (D091); it is app-side only, since the server never
+ * territory, for the "state, then city" picker (D092); it is app-side only, since the server never
  * needs it.
  */
 export interface City { name: string; country: string; active: boolean; zone: string; state: string }
@@ -50,7 +50,7 @@ export const CITIES: City[] = [
   { name: 'Surat', country: 'IN', active: true, zone: 'Asia/Kolkata', state: 'Gujarat' },
   { name: 'Vadodara', country: 'IN', active: true, zone: 'Asia/Kolkata', state: 'Gujarat' },
   { name: 'Visakhapatnam', country: 'IN', active: true, zone: 'Asia/Kolkata', state: 'Andhra Pradesh' },
-  // Every other tier-2 (Y class) city (D091). Lists written without a local check: see the migration.
+  // Every other tier-2 (Y class) city (D092). Lists written without a local check: see the migration.
   { name: 'Vijayawada', country: 'IN', active: true, zone: 'Asia/Kolkata', state: 'Andhra Pradesh' },
   { name: 'Guntur', country: 'IN', active: true, zone: 'Asia/Kolkata', state: 'Andhra Pradesh' },
   { name: 'Nellore', country: 'IN', active: true, zone: 'Asia/Kolkata', state: 'Andhra Pradesh' },

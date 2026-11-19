@@ -13,6 +13,7 @@ import * as SystemUI from 'expo-system-ui';
 import { useEffect, useMemo } from 'react';
 import { I18nManager, Platform, StyleSheet, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { CaptchaHost } from '@/components/captcha/CaptchaHost';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { NoticeBanner } from '@/components/NoticeBanner';
 import { startPush } from '@/lib/push';
@@ -95,7 +96,15 @@ export default function RootLayout() {
     if (shut) router.replace('/');
   }, [shut]);
 
-  if (!up) return <View style={{ flex: 1, backgroundColor: color.bg }} />;
+  // The captcha check may be needed while the app is still starting (the first anonymous sign-in).
+  if (!up) {
+    return (
+      <SafeAreaProvider>
+        <View style={{ flex: 1, backgroundColor: color.bg }} />
+        <CaptchaHost />
+      </SafeAreaProvider>
+    );
+  }
 
   return (
     <GestureHandlerRootView style={{ flex: 1, backgroundColor: color.bg }}>
@@ -112,6 +121,7 @@ export default function RootLayout() {
         {/* Nothing of the screen underneath may show for the moment before the gate takes over. */}
         {shut ? <View style={[StyleSheet.absoluteFill, { backgroundColor: color.bg }]} /> : null}
         <NoticeBanner />
+        <CaptchaHost />
       </SafeAreaProvider>
     </GestureHandlerRootView>
   );

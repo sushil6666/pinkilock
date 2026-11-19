@@ -1,4 +1,4 @@
--- Every tier-2 city (decision D091). Sushil asked for all tier-2 cities, not the twelve opened in
+-- Every tier-2 city (decision D092). Sushil asked for all tier-2 cities, not the twelve opened in
 -- 20261118000009 (D083). "Tier 2" here is the government's Y class of cities (the house rent
 -- allowance list): every Y city now opens, each with its areas and busy, public places to meet.
 --

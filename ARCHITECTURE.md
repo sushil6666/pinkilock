@@ -198,7 +198,7 @@ the app and the mock, and one table of lines is run through both copies. The che
 cases only: a made-up code still gets through until lines are reviewed before anyone sees them
 (`docs/build-plan.md`, WP1).
 
-**Where, and with what consent.** `countries` and `cities` are an allow-list (India open, with 91 cities: the eight metros and every tier-2 city, D083, D091);
+**Where, and with what consent.** `countries` and `cities` are an allow-list (India open, with 91 cities: the eight metros and every tier-2 city, D083, D092);
 a profile's city must be open, and a move to another city needs an area in the new city and comes at most once in 7 days (PL105; `profiles.city_changed_at`, server-only). Discover is per city, so it follows a move; so do the places offered in an ask. A first profile needs the request's country (`cf-ipcountry`, when
 present; the live test passes with a one-run token, D063) to be open and four consents at the current `legal_version`: 18+, terms, privacy, and the
 separate consent to use dating preferences. `privacy_requests` holds questions and appeals
@@ -234,7 +234,7 @@ to the server, the logs or the store; only the city and area picked are saved. A
 or a place outside every open city falls back to the lists, with a retry. By hand, the eight metros are
 one tap; the other cities are found by a search (name, an old name such as Bangalore, the state,
 or one of the city's areas, which then comes with it) or by picking the state, then the city
-(`src/domain/citySearch.ts`, D091). A city's state is app-side only. Typing finds loose
+(`src/domain/citySearch.ts`, D092). A city's state is app-side only. Typing finds loose
 spellings and "Did you mean" names (`matchAreas`, `closeAreas`). An area off the list is allowed
 when it reads as a place (`customAreaOk` and `private.custom_area_ok`: 3 to 30 characters, a letter
 first, letters, digits and `.'-`, up to 4 words and 3 digits, nothing like a contact; PL106).
@@ -327,8 +327,19 @@ person's record does not change, because Trust Scores count kept promises from t
 first screen. Adding an email or a phone number (Me, Account) calls `updateUser({ email })` or
 `updateUser({ phone })` and then `verifyOtp` with type `email_change` or `phone_change`, which
 turns the same user into an email or phone user: the id, and so every row, stays. On a new phone,
-"I already have an account" signs in with either (`signInWithOtp` with `shouldCreateUser: false`,
-so no account is ever made that way). Signing out is offered only once one of them is linked,
+"I already have an account" signs in with either, and no account is ever made that way.
+
+Both kinds of code go through the `auth-code` Edge Function (D091, gap G22), never straight to
+Auth, so the app never says who has an account. `public.auth_code_check` (service role only)
+decides whether to send: to an account's own address when signing in, to a free one (or my own)
+when adding it. The function answers `{ sent: true }` either way, sends in the background so the
+time taken is the same, and the screen says "If ... is on a Pinkilock account, a code is on its
+way". A code that was never sent fails like a mistyped one (PA006). Requests count by a hash of
+the address and by the caller (one a minute and three a quarter-hour per address, ten an hour per
+caller; PL112). Auth itself, called directly, would still tell, so production adds Auth's captcha
+(Cloudflare Turnstile) once the owner's keys exist: `src/lib/captcha.ts` asks for a token before an
+anonymous sign-in and before a code, `<CaptchaHost />` at the root shows the check (a script in a
+browser, a WebView on a phone), and the function checks the token itself before anything else. Signing out is offered only once one of them is linked,
 since an anonymous account could not be got back. Email is offered first because it is free to
 send: the deploy workflow points Auth at our own SMTP sender and installs the code-only templates
 in `supabase/templates` once the `SMTP_*` settings exist, and switches email off until then

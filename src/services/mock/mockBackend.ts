@@ -57,7 +57,9 @@ interface Db {
 const wait = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
 const uid = () => `inv_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
 
-export function createMockBackend(): Backend {
+export function createMockBackend(options: { captcha?: () => Promise<string | undefined> } = {}): Backend {
+  /** As the live backend: a captcha token before a sign-in code, while captcha is on (D091). */
+  const captcha = options.captcha ?? (async () => undefined);
   const clientErrors: ClientErrorReport[] = [];
   let passTimes: number[] = [];
   const codeTries = new Map<string, { fails: number; until: number }>();
@@ -674,23 +676,19 @@ export function createMockBackend(): Backend {
     async sendCode(kind, address, mode) {
       const d = await load();
       await wait(LATENCY);
-      const what = kind === 'phone' ? 'number' : 'email address';
-      if (mode === 'link') {
-        if (!d.me) fail('PL002');
-        if (await AsyncStorage.getItem(parked(kind, address)).catch(() => null)) {
-          fail('PA004', `That ${what} is already on another account. Sign in with it instead.`);
-        }
-        return;
-      }
-      if (!(await AsyncStorage.getItem(parked(kind, address)).catch(() => null))) {
-        fail('PA005', `We could not find an account with that ${what}. Create one first, then add it from the Me tab.`);
-      }
+      // As the auth-code function (D091): the same answer whether or not the address can be used.
+      // Only an account's own address (signing in) or a free one (adding it) "gets" a code.
+      if (mode === 'link' && !d.me) fail('PL002');
+      await captcha();
     },
 
     async verifyCode(kind, address, code, mode) {
       const d = await load();
       await wait(LATENCY);
       if (code !== MOCK_CODE) fail('PA006');
+      const taken = !!(await AsyncStorage.getItem(parked(kind, address)).catch(() => null));
+      // No code was sent to someone else's address, or to one with no account: nothing matches.
+      if (mode === 'link' ? taken : !taken) fail('PA006');
       if (mode === 'link') {
         if (kind === 'phone') d.phone = address;
         else d.email = address;
@@ -698,7 +696,7 @@ export function createMockBackend(): Backend {
         return snapshot(d);
       }
       const raw = await AsyncStorage.getItem(parked(kind, address));
-      if (!raw) fail('PA005', `We could not find an account with that ${kind === 'phone' ? 'number' : 'email address'}. Create one first, then add it from the Me tab.`);
+      if (!raw) fail('PA006');
       db = JSON.parse(raw) as Db;
       if (db.phone) await AsyncStorage.removeItem(parked('phone', db.phone));
       if (db.email) await AsyncStorage.removeItem(parked('email', db.email));

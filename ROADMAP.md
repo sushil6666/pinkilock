@@ -84,7 +84,7 @@ someone, and delete their account, on both platforms, against the production pro
   the device and keeps no coordinates; every city lists its common neighbourhoods (about 1,330),
   typing suggests the nearest spellings, and anyone can name an area of their own within limits.
   Needs a new Android build (`expo-location`).
-- [x] **Every tier-2 city** (D091): all of the government's Y class cities open, 91 cities in all,
+- [x] **Every tier-2 city** (D092): all of the government's Y class cities open, 91 cities in all,
   with about 2,290 areas and 686 places to meet. Metros stay one tap; every other city is found by
   a search (name, old name, state or area) or by picking the state, then the city. The new lists
   were written without a local check and need one before launch.

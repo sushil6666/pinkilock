@@ -10,7 +10,7 @@ insert into public.profiles (id, name, age, area) values (:'v', 'Veer', 27, 'Juh
 insert into public.venues (id, city, area, name, kind, active) values ('test_closed', 'Mumbai', 'Nowhere', 'A place that closed', 'park', false);
 
 select t.ok((select count(*) from public.venues where active) = 686 and (select count(distinct city) from public.venues where active) = 91
-  and exists (select 1 from public.venues where id = 'mum_carter_road'), 'the venue catalogue has 686 places in 91 cities (D091)');
+  and exists (select 1 from public.venues where id = 'mum_carter_road'), 'the venue catalogue has 686 places in 91 cities (D092)');
 select t.ok(not exists (select 1 from public.venues where char_length(name || ', ' || area) > 60), 'every venue fits in the place field');
 
 set role authenticated;

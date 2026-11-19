@@ -291,6 +291,17 @@ now**: on a phone it needs a web view in the middle of sign-in, the link gate al
 accounts useless for asking, and app attestation (WP6) is the right defence for the app; revisit
 for the website once it is public (O08 stays open for that).
 
+**Status, 2026-11-19: G22 closed for the app; captcha built, off until its keys exist** (D091,
+which revisits the captcha call above for this reason). Sign-in codes go through the `auth-code`
+function: the same answer for any address, a code only where it belongs, and limits per address
+hash and per caller (`tests/db/auth_codes.sql`; the live attacker suite checks the answers match).
+Auth itself, called directly, still tells until its captcha is on: that stays a `gap G22` line in
+`tests/live/attacker.test.ts`. Turnstile is wired in the app (web and phone), the function and the
+deploy, for production only, and turns on when `PROD_TURNSTILE_SITE_KEY` and
+`PROD_TURNSTILE_SECRET` exist (`OPERATIONS.md`, "Captcha", which also gives the order: ship the build
+with the check first). **Left:** the Turnstile account (O08); once captcha is on, the G22 line
+fails on production and becomes a plain check.
+
 ### WP3. Discover through a function (G5)
 
 - `discover(p_limit int default 20)` returns at most 20 cards a call: same city, not blocked, not

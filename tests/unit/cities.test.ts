@@ -1,4 +1,4 @@
-/** Finding a city among all the open ones (D091): search, other names, states. Plain Node: `npm run test:unit`. */
+/** Finding a city among all the open ones (D092): search, other names, states. Plain Node: `npm run test:unit`. */
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { AREAS } from '../../src/domain/areas';

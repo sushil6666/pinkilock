@@ -4,7 +4,7 @@
  * who says no, or has no location on this device, picks by hand. A blocked location comes up as a
  * popup with "Try again" and "Pick by hand" (D090). By hand, the metros are one tap; every other
  * open city is found by a search (its name, an old name, its state or one of its areas) or by
- * picking the state, then the city (D091). An area that is not on the list can
+ * picking the state, then the city (D092). An area that is not on the list can
  * be named. The position is used once, on this device, and never saved or sent. The server checks
  * the city and the area again in save_profile.
  */

@@ -9,7 +9,7 @@ insert into auth.users (id, created_at) values (:'q2', now() - interval '40 days
 set role authenticated;
 select t.as_user(:'p2');
 select t.ok((select count(*) from countries where active) = 1 and (select count(*) from cities where active) = 91
-  and not exists (select 1 from cities where active and country <> 'IN'), 'one country is open, India, with its 91 cities (D083, D091)');
+  and not exists (select 1 from cities where active and country <> 'IN'), 'one country is open, India, with its 91 cities (D083, D092)');
 select t.ok(t.fails($$update countries set active = true$$), 'a user cannot open a country');
 select t.ok(t.sqlstate($$select give_consents(array['adult', 'whatever'])$$) = 'PL079', 'only the four consents exist (PL079)');
 select give_consents(array['adult', 'terms', 'privacy']);
