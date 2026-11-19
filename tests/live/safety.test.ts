@@ -172,7 +172,7 @@ test('email: link keeps the id and history; sign in on a new phone gets them bac
   assert.equal((await b.backend.account()).email, email);
   const before = linked.invites.map((i) => i.id).sort();
 
-  // G22 (D090): the answer is the same whether the address is free, taken or unknown; nothing is
+  // G22 (D091): the answer is the same whether the address is free, taken or unknown; nothing is
   // sent to someone else's address or to one with no account, so no code for it ever matches.
   sql('delete from private.auth_code_requests');
   await c.backend.sendCode('email', email, 'link');
@@ -214,7 +214,7 @@ test('phone: link keeps the id and history; sign in on a new phone gets them bac
   const before = linked.invites.map((i) => i.id).sort();
 
   // Someone else cannot take the number. C, not B: the email test signed B out everywhere (G19).
-  // G22 (D090): the same answer for a taken or unknown number, and no code that matches.
+  // G22 (D091): the same answer for a taken or unknown number, and no code that matches.
   sql('delete from private.auth_code_requests');
   await assert.rejects(c.backend.sendCode('phone', phone, 'link').then(() => c.backend.verifyCode('phone', phone, '123456', 'link')), /did not match/);
   await c.backend.sendCode('phone', '+919000000103', 'sign_in');

@@ -1,4 +1,4 @@
--- Sign-in codes that say nothing about who has an account (G22, D090), after photos.sql.
+-- Sign-in codes that say nothing about who has an account (G22, D091), after photos.sql.
 -- K has an account with an email and a phone; L is anonymous; M signs in fresh.
 \set ON_ERROR_STOP on
 \pset tuples_only on

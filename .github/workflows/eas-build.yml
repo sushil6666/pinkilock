@@ -80,7 +80,7 @@ jobs:
             put EXPO_PUBLIC_SUPABASE_URL "https://$ref.supabase.co"
             put EXPO_PUBLIC_SUPABASE_ANON_KEY "$key"
           fi
-          # The captcha's public site key (D090): production only, the same project the deploy
+          # The captcha's public site key (D091): production only, the same project the deploy
           # turns Auth's captcha on for. Without it the check is off in this build.
           if [ "$PROFILE" = production ] && [ -n "$PROD_TURNSTILE_SITE_KEY" ]; then
             put EXPO_PUBLIC_TURNSTILE_SITE_KEY "$PROD_TURNSTILE_SITE_KEY"

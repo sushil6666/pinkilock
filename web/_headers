@@ -2,18 +2,19 @@
 # .github/workflows/web-deploy.yml, which replaces SUPABASE_HOST with the project the build talks to.
 #
 # The page holds the sign-in session in the browser, so it runs no script but its own: no inline
-# script, no eval, nothing from another origin except Cloudflare's captcha (Turnstile, D090: its
+# script, no eval, nothing from another origin except Cloudflare's captcha (Turnstile, D091: its
 # script and its frame, and only when the build has a site key). Styles may be inline because
 # react-native-web writes its styles into the page. The only other place the page may talk to is
 # Supabase (HTTPS for the API, WSS for Realtime), and the only other images it shows are photos
-# from Supabase Storage's ten-minute signed links (D088).
+# from Supabase Storage's ten-minute signed links (D088). Of the browser's powers, only the location
+# may be asked for, and only by the site itself, for "Use my location" (D087).
 /*
   Content-Security-Policy: default-src 'self'; script-src 'self' https://challenges.cloudflare.com; frame-src https://challenges.cloudflare.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://SUPABASE_HOST; font-src 'self' data:; connect-src 'self' https://SUPABASE_HOST wss://SUPABASE_HOST; manifest-src 'self'; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests
   Strict-Transport-Security: max-age=31536000
   X-Content-Type-Options: nosniff
   X-Frame-Options: DENY
   Referrer-Policy: strict-origin-when-cross-origin
-  Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=(), usb=(), interest-cohort=()
+  Permissions-Policy: camera=(), microphone=(), geolocation=(self), payment=(), usb=(), interest-cohort=()
   Cross-Origin-Opener-Policy: same-origin
 
 # Files whose names carry a hash of their content never change: keep them a year.

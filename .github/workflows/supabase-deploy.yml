@@ -173,7 +173,7 @@ jobs:
       - name: Deploy the sign-in code function
         run: npx supabase functions deploy auth-code --use-api --no-verify-jwt
       - name: Captcha on sign-in (production, once Turnstile is set up)
-        # Gap G22, D090. On only for production and only when both the secret and the site key
+        # Gap G22, D091. On only for production and only when both the secret and the site key
         # exist: the site key goes into the app and website builds, and Auth must never ask for a
         # token no app can give. Preview stays off, so the live test can run against it. Turn it on
         # only after the phone build with the check is out: an older build cannot sign in once it

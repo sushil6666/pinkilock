@@ -30,3 +30,11 @@ test('the captcha may load its script and frame, and nothing else comes from ano
   assert.ok(!csp.get('script-src')?.some((v) => v.includes('unsafe')), 'no inline script, no eval');
   assert.deepEqual(csp.get('frame-ancestors'), ["'none'"], 'nobody may frame the site');
 });
+
+test('the site itself may ask for the location ("Use my location", D087), and nothing else may', () => {
+  const line = readFileSync(join(__dirname, '..', '..', 'web', '_headers'), 'utf8').split('\n').find((l) => l.trim().startsWith('Permissions-Policy:'));
+  assert.ok(line);
+  assert.match(line, /geolocation=\(self\)/, 'with geolocation=() the browser refuses before the person is even asked');
+  assert.match(line, /camera=\(\)/);
+  assert.match(line, /microphone=\(\)/);
+});

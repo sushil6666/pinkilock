@@ -326,7 +326,7 @@ first screen. Adding an email or a phone number (Me, Account) calls `updateUser(
 turns the same user into an email or phone user: the id, and so every row, stays. On a new phone,
 "I already have an account" signs in with either, and no account is ever made that way.
 
-Both kinds of code go through the `auth-code` Edge Function (D090, gap G22), never straight to
+Both kinds of code go through the `auth-code` Edge Function (D091, gap G22), never straight to
 Auth, so the app never says who has an account. `public.auth_code_check` (service role only)
 decides whether to send: to an account's own address when signing in, to a free one (or my own)
 when adding it. The function answers `{ sent: true }` either way, sends in the background so the

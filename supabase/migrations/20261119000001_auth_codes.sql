@@ -1,4 +1,4 @@
--- Sign-in codes that say nothing about who has an account (gap G22, decision D090).
+-- Sign-in codes that say nothing about who has an account (gap G22, decision D091).
 --
 -- The app no longer asks Auth for a code itself. It asks the `auth-code` Edge Function, which asks
 -- public.auth_code_check (service role only) whether to send, and answers the app the same way

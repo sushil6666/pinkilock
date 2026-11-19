@@ -291,7 +291,7 @@ now**: on a phone it needs a web view in the middle of sign-in, the link gate al
 accounts useless for asking, and app attestation (WP6) is the right defence for the app; revisit
 for the website once it is public (O08 stays open for that).
 
-**Status, 2026-11-19: G22 closed for the app; captcha built, off until its keys exist** (D090,
+**Status, 2026-11-19: G22 closed for the app; captcha built, off until its keys exist** (D091,
 which revisits the captcha call above for this reason). Sign-in codes go through the `auth-code`
 function: the same answer for any address, a code only where it belongs, and limits per address
 hash and per caller (`tests/db/auth_codes.sql`; the live attacker suite checks the answers match).

@@ -697,7 +697,7 @@ export function createSupabaseBackend(url: string, anonKey: string, storage: Ses
     },
 
     async sendCode(kind, address, mode) {
-      // Through the auth-code function (D090, G22): it answers the same whether or not the address
+      // Through the auth-code function (D091, G22): it answers the same whether or not the address
       // can be used, and sends a code only to an account's own address (signing in) or a free one
       // (adding it to mine). A code that was never sent fails like a mistyped one (PA006).
       if (mode === 'link') await uid();

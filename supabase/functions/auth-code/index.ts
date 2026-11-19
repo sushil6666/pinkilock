@@ -1,5 +1,5 @@
 /**
- * auth-code: sends a sign-in code without saying who has an account (gap G22, decision D090).
+ * auth-code: sends a sign-in code without saying who has an account (gap G22, decision D091).
  *
  * The app POSTs { kind: 'email' | 'phone', address, mode: 'sign_in' | 'link', captcha_token? } with
  * the person's session (or the anon key when there is none). This function:

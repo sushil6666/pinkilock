@@ -203,7 +203,7 @@ if (LINK_GATE) {
 // Needs email sign-in switched on, which the local stack has and a project without a mail sender
 // does not; there the answer says nothing either way.
 if (process.env.E2E_MAILBOX) {
-  test('G22 closed for the app (D090): the code request answers the same for any address', async () => {
+  test('G22 closed for the app (D091): the code request answers the same for any address', async () => {
     if (withDb) sql('delete from private.auth_code_requests');
     const ask = async (email: string) => {
       const res = await fetch(`${URL}/functions/v1/auth-code`, {
@@ -223,7 +223,7 @@ if (process.env.E2E_MAILBOX) {
   });
 
   // Still open while Auth's captcha is off (it is off on the local stack and until the Turnstile
-  // secret exists): Auth itself, called directly, answers differently. D090; OPERATIONS.md, "Captcha".
+  // secret exists): Auth itself, called directly, answers differently. D091; OPERATIONS.md, "Captcha".
   gap('G22', 'Auth, called directly, says whether an email address has an account', async () => {
     const res = await signedOut.auth.signInWithOtp({ email: `nobody-${Date.now()}@example.com`, options: { shouldCreateUser: false } });
     assert.equal(res.error, null, `the answer gives it away: ${res.error?.message}`);

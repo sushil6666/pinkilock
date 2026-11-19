@@ -58,7 +58,7 @@ const wait = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
 const uid = () => `inv_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
 
 export function createMockBackend(options: { captcha?: () => Promise<string | undefined> } = {}): Backend {
-  /** As the live backend: a captcha token before a sign-in code, while captcha is on (D090). */
+  /** As the live backend: a captcha token before a sign-in code, while captcha is on (D091). */
   const captcha = options.captcha ?? (async () => undefined);
   const clientErrors: ClientErrorReport[] = [];
   let passTimes: number[] = [];
@@ -676,7 +676,7 @@ export function createMockBackend(options: { captcha?: () => Promise<string | un
     async sendCode(kind, address, mode) {
       const d = await load();
       await wait(LATENCY);
-      // As the auth-code function (D090): the same answer whether or not the address can be used.
+      // As the auth-code function (D091): the same answer whether or not the address can be used.
       // Only an account's own address (signing in) or a free one (adding it) "gets" a code.
       if (mode === 'link' && !d.me) fail('PL002');
       await captcha();

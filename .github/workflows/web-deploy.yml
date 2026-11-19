@@ -65,7 +65,7 @@ jobs:
           if [ -n "$missing" ]; then echo "::error::Not set in the repository's Actions settings:$missing (see the top of this workflow)"; exit 1; fi
           if [ -n "$PROD_REF" ] && [ -n "$PROD_KEY" ]; then
             ref="$PROD_REF"; key="$PROD_KEY"; echo "EXPO_PUBLIC_APP_ENV=production" >> "$GITHUB_ENV"
-            # The captcha site key (D090) goes with the production backend only.
+            # The captcha site key (D091) goes with the production backend only.
             if [ -n "$PROD_TURNSTILE_SITE_KEY" ]; then echo "EXPO_PUBLIC_TURNSTILE_SITE_KEY=$PROD_TURNSTILE_SITE_KEY" >> "$GITHUB_ENV"; fi
           elif [ -n "$PREVIEW_REF" ] && [ -n "$PREVIEW_KEY" ]; then
             ref="$PREVIEW_REF"; key="$PREVIEW_KEY"

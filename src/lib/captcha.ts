@@ -1,5 +1,5 @@
 /**
- * A Turnstile token for Supabase Auth's captcha (decision D090, gap G22). Off, and a no-op, until
+ * A Turnstile token for Supabase Auth's captcha (decision D091, gap G22). Off, and a no-op, until
  * the build has EXPO_PUBLIC_TURNSTILE_SITE_KEY; the deploy turns Auth's captcha on only once the
  * matching secret exists (OPERATIONS.md, "Captcha"). The backend asks for a token before an
  * anonymous sign-in and before a sign-in code; <CaptchaHost /> in app/_layout.tsx shows the check.
