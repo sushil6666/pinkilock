@@ -114,8 +114,12 @@ test('a face (D095): through the same function, shown once approved to whoever i
   const link = await faceOf(met);
   assert.ok(link, 'approved: on the card for someone who shares a plan with its owner');
   assert.equal((await fetch(link!)).status, 200, 'and its link opens');
-  const rows = await raw(stranger).from('photos').select('id').eq('profile_id', owner.id);
-  assert.equal(rows.data?.length ?? 0, 0, 'never for someone who was not shown the card');
+  // The stranger booted in the same city, so Discover handed them the owner's card: they may see it.
+  const strangerSees = async () => (await raw(stranger).from('photos').select('id').eq('profile_id', owner.id)).data?.length ?? 0;
+  assert.equal(sql(`select count(*) from private.discover_seen where user_id = '${stranger.id}' and card_id = '${owner.id}'`), '1', 'Discover showed the stranger the card');
+  assert.equal(await strangerSees(), 1, 'so the stranger sees the face on it');
+  sql(`delete from private.discover_seen where user_id = '${stranger.id}' and card_id = '${owner.id}'`);
+  assert.equal(await strangerSees(), 0, 'never for someone who was not shown the card');
   await assert.rejects(owner.backend.addFace({ uri: asUri(fixture) }), (e) => e instanceof AppError && e.code === 'PL114', 'a new one once a week');
 
   assert.deepEqual(await owner.backend.removeFace(mine.id), [], 'the owner takes it down');
