@@ -71,6 +71,9 @@ async function onboard(browser, who) {
   await btn(page, 'Start').waitFor();
   await fits(who, 'the first screen');
   await btn(page, 'Start').click();
+  // No location permission in this browser: the picker asks at once, is told no, and says so in a
+  // popup (D090). Pick by hand closes it.
+  await btn(page, 'Pick by hand').click();
   await page.getByLabel('First name').fill(who.name);
   await page.getByLabel('Age').fill('24');
   // The area is picked from the city's list (WP1): search, then pick.
