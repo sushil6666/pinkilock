@@ -8,8 +8,8 @@ insert into auth.users (id, created_at) values (:'q2', now() - interval '40 days
 
 set role authenticated;
 select t.as_user(:'p2');
-select t.ok((select count(*) from countries where active) = 1 and (select count(*) from cities where active) = 20
-  and not exists (select 1 from cities where active and country <> 'IN'), 'one country is open, India, with its twenty cities (D083)');
+select t.ok((select count(*) from countries where active) = 1 and (select count(*) from cities where active) = 91
+  and not exists (select 1 from cities where active and country <> 'IN'), 'one country is open, India, with its 91 cities (D083, D091)');
 select t.ok(t.fails($$update countries set active = true$$), 'a user cannot open a country');
 select t.ok(t.sqlstate($$select give_consents(array['adult', 'whatever'])$$) = 'PL079', 'only the four consents exist (PL079)');
 select give_consents(array['adult', 'terms', 'privacy']);
@@ -18,7 +18,7 @@ select give_consents(array['sensitive']);
 select t.ok((select count(*) from my_consents()) = 4, 'my consents are recorded with their version');
 
 -- Where.
-select t.ok(t.sqlstate($$select save_profile('Pari', 25, 'Boring Road', '', '', '{}', array['boba_run','chai_walk','meme_duel'], 'Instagram', '@pari', 'Patna')$$) = 'PL076', 'a city that is not open is refused (PL076)');
+select t.ok(t.sqlstate($$select save_profile('Pari', 25, 'Old Town', '', '', '{}', array['boba_run','chai_walk','meme_duel'], 'Instagram', '@pari', 'Leh')$$) = 'PL076', 'a city that is not open is refused (PL076)');
 select t.headers('{"cf-ipcountry": "US"}');
 select t.ok(t.sqlstate($$select save_profile('Pari', 25, 'Bandra West', '', '', '{}', array['boba_run','chai_walk','meme_duel'], 'Instagram', '@pari')$$) = 'PL078', 'a first profile from a country that is not open is refused (PL078)');
 select t.headers('{"cf-ipcountry": "IN"}');
@@ -59,7 +59,7 @@ select t.as_user(:'p3');
 select t.headers(json_build_object('cf-ipcountry', 'US', 'x-pinkilock-test-token', repeat('c', 64))::text);
 select t.ok(t.sqlstate($$select save_profile('Tara', 25, 'Bandra West', '', '', '{}', array['boba_run','chai_walk','meme_duel'], 'Instagram', '@tara')$$) = 'PL078', 'a wrong token is no pass (PL078)');
 select t.headers(json_build_object('cf-ipcountry', 'US', 'x-pinkilock-test-token', repeat('b', 64))::text);
-select t.ok(t.sqlstate($$select save_profile('Tara', 25, 'Boring Road', '', '', '{}', array['boba_run','chai_walk','meme_duel'], 'Instagram', '@tara', 'Patna')$$) = 'PL076', 'with the token, a closed city is still refused (PL076)');
+select t.ok(t.sqlstate($$select save_profile('Tara', 25, 'Old Town', '', '', '{}', array['boba_run','chai_walk','meme_duel'], 'Instagram', '@tara', 'Leh')$$) = 'PL076', 'with the token, a closed city is still refused (PL076)');
 select t.ok(t.sqlstate($$select save_profile('Tara', 25, 'Bandra West', '', '', '{}', array['boba_run','chai_walk','meme_duel'], 'Instagram', '@tara')$$) is null, 'with the current token, a first profile from any network is let in');
 select t.headers('');
 reset role;
