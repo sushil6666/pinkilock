@@ -203,7 +203,28 @@ if (LINK_GATE) {
 // Needs email sign-in switched on, which the local stack has and a project without a mail sender
 // does not; there the answer says nothing either way.
 if (process.env.E2E_MAILBOX) {
-  gap('G22', 'sign-in says whether an email address has an account', async () => {
+  test('G22 closed for the app (D090): the code request answers the same for any address', async () => {
+    if (withDb) sql('delete from private.auth_code_requests');
+    const ask = async (email: string) => {
+      const res = await fetch(`${URL}/functions/v1/auth-code`, {
+        method: 'POST', headers: { apikey: KEY!, Authorization: `Bearer ${KEY}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ kind: 'email', address: email, mode: 'sign_in' }),
+      });
+      return `${res.status} ${await res.text()}`;
+    };
+    const known = withDb ? sql(`select email from auth.users where email like 'e2e-%' and not is_anonymous limit 1`) : '';
+    const answers = [await ask(`nobody-${Date.now()}@example.com`), ...(known ? [await ask(known)] : [])];
+    assert.ok(answers.every((a) => a === '200 {"sent":true}'), `the answers differ: ${answers.join(' | ')}`);
+    // Too many addresses from one caller wait, whoever they belong to.
+    const many = [];
+    for (let i = 0; i < 12; i++) many.push((await ask(`probe-${i}-${Date.now()}@example.com`)).split(' ')[0]);
+    assert.ok(many.includes('429'), 'probing many addresses is slowed down');
+    if (withDb) sql('delete from private.auth_code_requests');
+  });
+
+  // Still open while Auth's captcha is off (it is off on the local stack and until the Turnstile
+  // secret exists): Auth itself, called directly, answers differently. D090; OPERATIONS.md, "Captcha".
+  gap('G22', 'Auth, called directly, says whether an email address has an account', async () => {
     const res = await signedOut.auth.signInWithOtp({ email: `nobody-${Date.now()}@example.com`, options: { shouldCreateUser: false } });
     assert.equal(res.error, null, `the answer gives it away: ${res.error?.message}`);
   });

@@ -64,6 +64,7 @@ jobs:
           PROD_REF: ${{ vars.PROD_SUPABASE_PROJECT_REF }}
           PROD_KEY: ${{ vars.PROD_EXPO_PUBLIC_SUPABASE_ANON_KEY }}
           GOOGLE_SERVICES_JSON_CONTENT: ${{ secrets.GOOGLE_SERVICES_JSON }}
+          PROD_TURNSTILE_SITE_KEY: ${{ vars.PROD_TURNSTILE_SITE_KEY }}
         run: |
           put() { eas env:create --environment "$PROFILE" --name "$1" --value "$2" --visibility plaintext --force --non-interactive >/dev/null; echo "set $1 for $PROFILE"; }
           case "$PROFILE" in
@@ -78,6 +79,11 @@ jobs:
             if [ "$PROFILE" = production ] && [ "$ref" = "$PREVIEW_REF" ]; then echo "::error::PROD_SUPABASE_PROJECT_REF is the preview project. A store build needs the production project."; exit 1; fi
             put EXPO_PUBLIC_SUPABASE_URL "https://$ref.supabase.co"
             put EXPO_PUBLIC_SUPABASE_ANON_KEY "$key"
+          fi
+          # The captcha's public site key (D090): production only, the same project the deploy
+          # turns Auth's captcha on for. Without it the check is off in this build.
+          if [ "$PROFILE" = production ] && [ -n "$PROD_TURNSTILE_SITE_KEY" ]; then
+            put EXPO_PUBLIC_TURNSTILE_SITE_KEY "$PROD_TURNSTILE_SITE_KEY"
           fi
           if [ -n "$GOOGLE_SERVICES_JSON_CONTENT" ]; then
             file="$RUNNER_TEMP/google-services.json"

@@ -154,7 +154,8 @@ export default function SignInCodeScreen() {
         ) : (
           <>
             <T v="display">{t(isPhone ? 'signIn.checkTexts' : 'signIn.checkInbox')}</T>
-            <T c={color.textDim}>{t(isPhone ? 'signIn.sentText' : 'signIn.sentEmail', { digits: CODE_LENGTH, to: isPhone ? maskPhone(sentTo) : maskEmail(sentTo) })}</T>
+            {/* The same words whether or not a code was sent (D090): nothing here says who has an account. */}
+            <T c={color.textDim}>{t(mode === 'link' ? (isPhone ? 'signIn.sentTextLink' : 'signIn.sentEmailLink') : (isPhone ? 'signIn.sentText' : 'signIn.sentEmail'), { digits: CODE_LENGTH, to: isPhone ? maskPhone(sentTo) : maskEmail(sentTo) })}</T>
             <View style={{ gap: space.sm }}>
               <T v="label" c={color.textDim}>{t('signIn.code')}</T>
               <TextInput

@@ -172,8 +172,17 @@ test('email: link keeps the id and history; sign in on a new phone gets them bac
   assert.equal((await b.backend.account()).email, email);
   const before = linked.invites.map((i) => i.id).sort();
 
-  await assert.rejects(c.backend.sendCode('email', email, 'link'), /another account/, 'someone else cannot take the address');
-  await assert.rejects(c.backend.sendCode('email', `e2e-nobody-${Date.now()}@example.com`, 'sign_in'), (e: { code?: string }) => e.code === 'PA005', 'sign-in never makes a new account');
+  // G22 (D090): the answer is the same whether the address is free, taken or unknown; nothing is
+  // sent to someone else's address or to one with no account, so no code for it ever matches.
+  sql('delete from private.auth_code_requests');
+  await c.backend.sendCode('email', email, 'link');
+  await assert.rejects(c.backend.verifyCode('email', email, first.code, 'link'), /did not match/, 'someone else cannot take the address');
+  const nobody = `e2e-nobody-${Date.now()}@example.com`;
+  await c.backend.sendCode('email', nobody, 'sign_in');
+  await assert.rejects(c.backend.verifyCode('email', nobody, '123456', 'sign_in'), /did not match/, 'an address with no account gets no code');
+  assert.equal(sql(`select count(*) from auth.users where email = '${nobody}'`), '0', 'sign-in never makes a new account');
+  await assert.rejects(c.backend.sendCode('email', nobody, 'sign_in'), (e: { code?: string }) => e.code === 'PA007', 'a second code within a minute waits, whoever it is for');
+  sql('delete from private.auth_code_requests');
 
   const fresh = createSupabaseBackend(URL!, KEY!, memoryStorage());
   assert.equal((await fresh.boot()).me, null, 'a new phone starts as nobody');
@@ -205,8 +214,13 @@ test('phone: link keeps the id and history; sign in on a new phone gets them bac
   const before = linked.invites.map((i) => i.id).sort();
 
   // Someone else cannot take the number. C, not B: the email test signed B out everywhere (G19).
-  await assert.rejects(c.backend.sendCode('phone', phone, 'link').then(() => c.backend.verifyCode('phone', phone, '123456', 'link')), /another account/);
-  await assert.rejects(c.backend.sendCode('phone', '+919000000103', 'sign_in'), (e: { code?: string }) => e.code === 'PA005', 'sign-in never makes a new account');
+  // G22 (D090): the same answer for a taken or unknown number, and no code that matches.
+  sql('delete from private.auth_code_requests');
+  await assert.rejects(c.backend.sendCode('phone', phone, 'link').then(() => c.backend.verifyCode('phone', phone, '123456', 'link')), /did not match/);
+  await c.backend.sendCode('phone', '+919000000103', 'sign_in');
+  await assert.rejects(c.backend.verifyCode('phone', '+919000000103', '123456', 'sign_in'), /did not match/, 'a number with no account gets no code');
+  assert.equal(sql(`select count(*) from auth.users where phone = '919000000103'`), '0', 'sign-in never makes a new account');
+  sql('delete from private.auth_code_requests');
 
   // A new phone: empty storage, sign in with the number.
   const fresh = createSupabaseBackend(URL!, KEY!, memoryStorage());

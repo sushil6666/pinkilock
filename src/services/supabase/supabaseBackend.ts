@@ -95,7 +95,13 @@ function safeId(id: string): string {
 
 const emptySnapshot = (): Snapshot => ({ me: null, myContact: null, profiles: [], invites: [], passedIds: [] });
 
-export function createSupabaseBackend(url: string, anonKey: string, storage: SessionStorage): Backend {
+export interface SupabaseOptions {
+  /** A captcha token for Auth (src/lib/captcha.ts); undefined while captcha is off. */
+  captcha?: () => Promise<string | undefined>;
+}
+
+export function createSupabaseBackend(url: string, anonKey: string, storage: SessionStorage, options: SupabaseOptions = {}): Backend {
+  const captcha = options.captcha ?? (async () => undefined);
   const db: SupabaseClient = createClient(url, anonKey, {
     auth: { storage, autoRefreshToken: true, persistSession: true, detectSessionInUrl: false },
   });
@@ -142,7 +148,8 @@ export function createSupabaseBackend(url: string, anonKey: string, storage: Ses
     if (meId) return meId;
     const { data } = await db.auth.getSession();
     if (data.session) return (meId = data.session.user.id);
-    const res = await db.auth.signInAnonymously();
+    const captchaToken = await captcha();
+    const res = await db.auth.signInAnonymously(captchaToken ? { options: { captchaToken } } : undefined);
     if (res.error || !res.data.user) throw res.error ? codeError(res.error.message, 'email') : new AppError('PA009');
     return (meId = res.data.user.id);
   }
@@ -690,20 +697,28 @@ export function createSupabaseBackend(url: string, anonKey: string, storage: Ses
     },
 
     async sendCode(kind, address, mode) {
-      if (mode === 'link') {
-        await uid();
-        // On an anonymous user this sends a code to the new number or address; verifying it turns
-        // the same user into a phone or email user, so the id and the whole history stay.
-        const { error } = await db.auth.updateUser(kind === 'phone' ? { phone: address } : { email: address });
-        if (error) throw codeError(error.message, kind);
-        return;
+      // Through the auth-code function (D090, G22): it answers the same whether or not the address
+      // can be used, and sends a code only to an account's own address (signing in) or a free one
+      // (adding it to mine). A code that was never sent fails like a mistyped one (PA006).
+      if (mode === 'link') await uid();
+      const trace = activeTrace() ?? newTrace();
+      const captchaToken = await captcha();
+      const { data } = await db.auth.getSession();
+      let res: Response;
+      try {
+        res = await fetch(`${url.replace(/\/$/, '')}/functions/v1/auth-code`, {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${data.session?.access_token ?? anonKey}`, apikey: anonKey, 'Content-Type': 'application/json', 'x-trace-id': trace },
+          body: JSON.stringify({ kind, address, mode, captcha_token: captchaToken }),
+        });
+      } catch {
+        // Not reached: the phone is offline.
+        throw new AppError('PC001', undefined, trace);
       }
-      // Getting back into an existing account. No new accounts are made this way: a new person
-      // onboards first and adds a number or address in Me.
-      const { error } = await db.auth.signInWithOtp(
-        kind === 'phone' ? { phone: address, options: { shouldCreateUser: false } } : { email: address, options: { shouldCreateUser: false } },
-      );
-      if (error) throw codeError(error.message, kind);
+      if (res.ok) return;
+      const body = (await res.json().catch(() => ({}))) as { code?: string };
+      const code = body.code === 'PL112' ? 'PA007' : body.code;
+      throw isErrorCode(code) ? new AppError(code, undefined, trace) : new AppError('PA009', undefined, trace);
     },
 
     async verifyCode(kind, address, code, mode) {
