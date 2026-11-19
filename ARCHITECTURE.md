@@ -269,7 +269,8 @@ act through `private.moderate` (`scripts/moderate.sh`), and two strikes suspend 
 and people I share an invite with (`private.shares_invite`). Everyone else comes from
 `discover(limit)`: at most 20 a call, same city, not passed, blocked or live with me, linked while
 the gate is on, in an order that is fixed for the day and different for every person. An account
-reaches at most 200 different people a day (`private.discover_seen`). New people are therefore
+reaches at most 200 different people a day (`private.discover_seen`); a card whose account is
+deleted while the page is being served is skipped, not an error (D097). New people are therefore
 fetched, not pushed: the app asks again when Discover opens, every minute while it is open, and
 when fewer than three cards are left (`backend.moreProfiles`).
 
