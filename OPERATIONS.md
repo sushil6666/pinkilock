@@ -515,7 +515,15 @@ with `person <uuid> unsuspend "appeal accepted"` (or the matching action) when i
 
 Only after its checklist and the lawyer's sign-off (WP8). Then a migration sets `active = true` in
 `countries` and `cities`, and the same change goes into `src/domain/countries.ts`. Discover is per
-city; a city with no venue list falls back to typed places.
+city; a city with no venue list falls back to typed places. A city opened inside India needs no
+new legal review: it gets its `state` in `CITIES` (for the state, then city picker), at least 12
+areas with rough centres and 6 places to meet (`npm run test:unit` checks), and any old name people
+still use goes in `CITY_ALIASES` (`src/domain/citySearch.ts`).
+
+The tier-2 cities opened by D092 (migration `20261119000002_tier2_cities.sql`) have area and place
+lists written without a local check. Before launch, have someone who lives in each city read its
+areas, their rough centres and its places; fix names and centres in a new migration, and switch a
+wrong place off (`active = false`), never delete it.
 
 ### Areas people name themselves
 

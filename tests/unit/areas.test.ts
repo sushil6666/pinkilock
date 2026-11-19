@@ -41,7 +41,7 @@ test('my location picks the nearest city and areas, and nothing far away', () =>
   assert.equal(nearestAreas('Bhubaneswar', { lat: 20.283, lng: 85.806 })[0], 'Baramunda');
   assert.equal(nearestCity({ lat: 19.061, lng: 72.829 }), 'Mumbai');
   assert.equal(nearestAreas('Mumbai', { lat: 19.061, lng: 72.829 })[0], 'Bandra West');
-  assert.equal(nearestCity({ lat: 25.59, lng: 85.14 }), null, 'Patna is not open');
+  assert.equal(nearestCity({ lat: 34.152, lng: 77.577 }), null, 'Leh is not open');
   assert.equal(nearestCity({ lat: 51.5, lng: -0.12 }), null, 'London is not open');
 });
 
@@ -72,7 +72,7 @@ test('the area and pronouns are picked; what was saved before the lists still pa
   assert.equal(code(() => checkProfile({ ...card, area: 'Bandra!!' })), 'PL106');
   assert.equal(code(() => checkProfile({ ...card, pronouns: 'xe/xem' })), 'PL096');
   assert.equal(code(() => checkProfile({ ...card, area: 'Bandra', pronouns: 'xe/xem' }, 'Mumbai', { area: 'Bandra', pronouns: 'xe/xem' })), null);
-  assert.equal(code(() => checkProfile({ ...card, area: 'Anywhere' }, 'Patna', { area: '', pronouns: '', ideaIds: card.ideaIds })), null, 'a city with no list yet takes a typed area');
+  assert.equal(code(() => checkProfile({ ...card, area: 'Anywhere' }, 'Leh', { area: '', pronouns: '', ideaIds: card.ideaIds })), null, 'a city with no list yet takes a typed area');
   assert.equal(code(() => checkProfile({ ...card, area: 'Bandra West' }, 'Delhi NCR', { area: 'Bandra West', pronouns: 'she/her', city: 'Mumbai' })), 'PL095', 'a move keeps no area from the old city');
   assert.equal(code(() => checkProfile({ ...card, area: 'Saket' }, 'Delhi NCR', { area: 'Bandra West', pronouns: 'she/her', city: 'Mumbai' })), null);
   assert.deepEqual(matchAreas('Mumbai', 'band'), ['Bandra East', 'Bandra West', 'Bhandup'], 'exact matches first, then loose ones');

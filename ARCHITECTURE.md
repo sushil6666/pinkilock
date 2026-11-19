@@ -198,7 +198,7 @@ the app and the mock, and one table of lines is run through both copies. The che
 cases only: a made-up code still gets through until lines are reviewed before anyone sees them
 (`docs/build-plan.md`, WP1).
 
-**Where, and with what consent.** `countries` and `cities` are an allow-list (India open, with twenty cities: the eight metros and twelve tier-2 cities, D083);
+**Where, and with what consent.** `countries` and `cities` are an allow-list (India open, with 91 cities: the eight metros and every tier-2 city, D083, D092);
 a profile's city must be open, and a move to another city needs an area in the new city and comes at most once in 7 days (PL105; `profiles.city_changed_at`, server-only). Discover is per city, so it follows a move; so do the places offered in an ask. A first profile needs the request's country (`cf-ipcountry`, when
 present; the live test passes with a one-run token, D063) to be open and four consents at the current `legal_version`: 18+, terms, privacy, and the
 separate consent to use dating preferences. `privacy_requests` holds questions and appeals
@@ -231,7 +231,10 @@ list holds its common neighbourhoods (about 1,330 areas). "Use my location" (`sr
 picks the nearest open city (an area within 25 km) and its nearest areas from approximate centres in
 `src/domain/areaCentres.ts`, which exist only in the app. The coordinates never leave the phone: not
 to the server, the logs or the store; only the city and area picked are saved. A denial, no location
-or a place outside every open city falls back to the lists, with a retry. Typing finds loose
+or a place outside every open city falls back to the lists, with a retry. By hand, the eight metros are
+one tap; the other cities are found by a search (name, an old name such as Bangalore, the state,
+or one of the city's areas, which then comes with it) or by picking the state, then the city
+(`src/domain/citySearch.ts`, D092). A city's state is app-side only. Typing finds loose
 spellings and "Did you mean" names (`matchAreas`, `closeAreas`). An area off the list is allowed
 when it reads as a place (`customAreaOk` and `private.custom_area_ok`: 3 to 30 characters, a letter
 first, letters, digits and `.'-`, up to 4 words and 3 digits, nothing like a contact; PL106).
