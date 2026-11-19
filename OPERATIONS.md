@@ -176,8 +176,11 @@ Expo SDK upgrade with `npx expo install --fix`, never one at a time.
 - **Secret scan.** gitleaks over the whole history. If it fires, the secret is already leaked:
   rotate it first ("A secret leaks", below), then remove it.
 - **Dependency audit.** `npm run audit:check` fails on any high or critical advisory in what ships
-  that is not listed in `security/audit-baseline.json`. The baseline is what was already there on
-  2026-11-17; it is debt to clear by upgrading, and the check says when a name can come off it.
+  that is not listed in `security/audit-baseline.json`. Each entry there is triaged with a reason
+  (D093: four, all build-time, until the Expo SDK 58 upgrade); it is debt to clear by upgrading, and
+  the check says when a name can come off it. A library that ships is patched within its major
+  version through `overrides` in `package.json`; `tests/unit/dependencies.test.ts` checks they hold.
+  Installing needs npm 10 or newer.
 
 ### Staying inside the Actions minutes
 

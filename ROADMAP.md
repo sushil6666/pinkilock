@@ -61,6 +61,11 @@ Supabase stack and in CI; it reaches the real project when the PR merges.
 - [x] **Contact handles that work** (D077): each app's format checked in the app and on the
   server, a "Check it" link, and a flag after a kept plan when a handle did not work, which counts
   against the owner's Trust Score unless they verify or fix it within 7 days (D079).
+- [x] **Hardening left from WP5** (D093): shipped dependency advisories patched in place (16 high
+  or critical down to 4, all build-time), the live feed sends no deletes (G24), and production
+  bundles print nothing.
+- [ ] The Expo SDK 58 upgrade, which clears the last 4 advisories (tar, cacache, image-size, the
+  Expo CLI) and lets `vendor/decode-uri-component` and the `overrides` go.
 - [ ] **Proved handles** (D078): built (code, `contact-verify` function, Verified tick). Needs a
   Pinkilock WhatsApp Business number and an Instagram professional account on a Meta app
   (OPERATIONS.md, "Turning on contact proofs").

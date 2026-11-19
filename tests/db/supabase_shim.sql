@@ -52,3 +52,6 @@ exception when others then
 end $$;
 create function t.as_user(u uuid) returns void language sql as
   $$ select set_config('request.jwt.claim.sub', u::text, false) $$;
+-- Supabase's Realtime publication, empty as on a new project, so that the migrations' changes to
+-- it run here too (D093: inserts and updates only).
+create publication supabase_realtime;

@@ -14,7 +14,8 @@ one Expo codebase.
 
 ## Run it on your phone (mock data, no accounts needed)
 
-Needs Node 18.18 or newer and the Expo Go app (SDK 52) on the phone.
+Needs Node 18.18 or newer with npm 10 or newer (npm 9 cannot install the patched copy in
+`vendor/`; `npm install -g npm@10` fixes that), and the Expo Go app (SDK 52) on the phone.
 
 ```bash
 npm install

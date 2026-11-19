@@ -389,6 +389,15 @@ done:** stripping `console` calls with a Babel plugin (the app's own logger alre
 in production); the 16 audit advisories (G23), which need an Expo SDK upgrade; Realtime delete ids
 (G24), low risk.
 
+**Status, 2026-11-19: the three parts left are built** (decision D093). Production bundles drop
+every `console` call, the libraries' included (`babel.config.js`). G24 is closed: the Realtime
+feed sends no deletes, a person hears of their own through `feed_nudges`, and both attacker suites
+check it. G23 is down from 16 high or critical advisories to 4, patched within each library's
+major version (`overrides`, and decode-uri-component 0.5.1 kept as CommonJS in `vendor/`; a unit
+test feeds query-string a link that froze the old one). **Left:** tar, cacache, image-size and the
+Expo CLI, all build-time only and triaged in `security/audit-baseline.json`, go with the Expo SDK
+58 upgrade.
+
 ### WP6. App attestation (later; needs store accounts)
 
 - Play Integrity on Android and App Attest on iOS, verified in an Edge Function, required once at

@@ -44,11 +44,15 @@ insert into public.profile_private (profile_id, contact_kind, contact_handle) va
 select t.ok((select string_agg(table_schema || '.' || table_name || ':' || privs, ' ' order by table_schema, table_name) from (
     select table_schema, table_name, string_agg(privilege_type, ',' order by privilege_type) as privs
     from information_schema.role_table_grants where grantee = 'authenticated' and table_schema not in ('t', 'storage') group by 1, 2) g)
-  = 'public.areas:SELECT public.ask_lines:SELECT public.cities:SELECT public.contact_kinds:SELECT public.countries:SELECT public.duos:SELECT public.ideas:SELECT public.invites:SELECT public.passes:SELECT public.profile_cards:SELECT '
+  = 'public.areas:SELECT public.ask_lines:SELECT public.cities:SELECT public.contact_kinds:SELECT public.countries:SELECT public.duos:SELECT public.feed_nudges:SELECT public.ideas:SELECT public.invites:SELECT public.passes:SELECT public.profile_cards:SELECT '
     'public.profile_private:SELECT public.pronoun_options:SELECT public.trust_scores:SELECT public.venues:SELECT public.vibes:SELECT',
   'a signed-in user holds exactly these table rights and no others');
 select t.ok(not exists (select 1 from information_schema.role_table_grants where grantee = 'anon' and table_schema <> 'storage'),
   'signed out, there is no right on any table in any schema');
+-- G24 closed (D093): Realtime cannot check RLS on a row that is gone, so it would send a delete's id
+-- to every subscriber. The feed sends no deletes; a phone hears of its own through feed_nudges.
+select t.ok((select not pubdelete from pg_publication where pubname = 'supabase_realtime'),
+  'G24 closed: the live feed sends no deletes, so no listener learns that a row of someone else''s went away');
 -- Supabase grants the API roles every right on storage.objects and lets RLS decide, so in storage
 -- the policies are what is pinned: one, reading a photo whose row the reader may read.
 select t.ok((select string_agg(policyname || ':' || cmd || ':' || array_to_string(roles, ','), ' ' order by policyname)
