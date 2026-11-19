@@ -5,6 +5,7 @@
 import { Feather } from '@expo/vector-icons';
 import { ContactPanel } from '@/components/ContactCheck';
 import { IdeaChip } from '@/components/IdeaChip';
+import { MyFace, useMyFace } from '@/components/MyFace';
 import { MyPhotos } from '@/components/MyPhotos';
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
@@ -185,17 +186,20 @@ export default function Me() {
   };
 
   const live = backend.kind === 'supabase';
+  const face = useMyFace();
 
   return (
     <Screen inTabs>
       <Columns gap={0} left={<>
       <View style={{ flexDirection: 'row', gap: space.lg, alignItems: 'center', marginBottom: space.xl }}>
-        <Portrait name={me.name} palette={me.palette} glyph={me.glyph} size={84} />
+        <Portrait name={me.name} palette={me.palette} glyph={me.glyph} faceUrl={face.current?.url} size={84} />
         <View style={{ flex: 1 }}>
           <T v="display" numberOfLines={1} adjustsFontSizeToFit>{me.name}</T>
           <T v="caption" c={color.textDim}>{[me.age, me.area ? t('profile.areaCity', { area: me.area, city: me.city }) : me.city, me.pronouns].filter(Boolean).join('  /  ')}</T>
         </View>
       </View>
+
+      <MyFace face={face} />
 
       <TrustBadge person={me} size="lg" />
       <T v="caption" c={color.textDim} style={{ marginTop: space.sm }}>
@@ -263,7 +267,7 @@ export default function Me() {
       <T v="label" c={color.textDim} style={styles.section}>{t('me.duoTitle')}</T>
       {duo ? (
         <View style={styles.duo}>
-          <Portrait name={duo.name} palette={duo.palette} glyph={duo.glyph} size={40} />
+          <Portrait name={duo.name} palette={duo.palette} glyph={duo.glyph} faceUrl={duo.faceUrl} size={40} />
           <View style={{ flex: 1 }}>
             <T v="bodyBold">{t('me.youAnd', { name: duo.name })}</T>
             <T v="caption" c={color.textDim}>{t('me.duoBody')}</T>

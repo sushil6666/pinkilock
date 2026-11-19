@@ -278,5 +278,5 @@ const styles = StyleSheet.create({
   ring: { position: 'absolute', width: 140, height: 140, borderRadius: 70, borderWidth: 2, borderColor: color.line },
   burst: { borderColor: color.pink, borderWidth: 6 },
   track: { position: 'absolute', bottom: 6, height: 3, borderRadius: 2, backgroundColor: color.line, overflow: 'hidden' },
-  trackFill: { ...StyleSheet.absoluteFillObject, backgroundColor: color.pink, transformOrigin: 'right center' },
+  trackFill: { ...StyleSheet.absoluteFill, backgroundColor: color.pink, transformOrigin: 'right center' },
 });

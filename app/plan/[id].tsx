@@ -134,7 +134,7 @@ export default function PlanScreen() {
           </View>
           {invite.note ? <T style={styles.note}>{t('common.quoted', { text: invite.note })}</T> : null}
           {double ? null : <Pressable accessibilityRole="button" accessibilityLabel={t('plan.openProfile', { name })} onPress={() => router.push(`/profile/${other.id}`)} style={styles.who}>
-            <Portrait name={name} palette={other.palette} glyph={other.glyph} size={44} />
+            <Portrait name={name} palette={other.palette} glyph={other.glyph} faceUrl={other.faceUrl} size={44} />
             <View style={{ flex: 1 }}>
               <T v="bodyBold">{t('plan.withName', { name })}</T>
               <T v="caption" c={color.textDim}>{t('common.ageArea', { age: other.age, area: other.area })}</T>

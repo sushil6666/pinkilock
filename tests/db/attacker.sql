@@ -59,12 +59,12 @@ select t.ok((select string_agg(policyname || ':' || cmd || ':' || array_to_strin
     from pg_policies where schemaname = 'storage') = 'photos_read:SELECT:authenticated',
   'storage has one policy: a signed-in reader may read a photo file whose row they may read, and nobody may write');
 select t.ok((select string_agg(column_name, ',' order by column_name) from information_schema.role_column_grants
-    where grantee = 'authenticated' and table_name = 'photos') = 'created_at,id,path,profile_id,status',
+    where grantee = 'authenticated' and table_name = 'photos') = 'created_at,id,kind,path,profile_id,status',
   'a signed-in user may read these photo columns, and write none');
 select t.ok((select string_agg(n.nspname || '.' || p.proname, ' ' order by n.nspname, p.proname)
     from pg_proc p join pg_namespace n on n.oid = p.pronamespace
     where n.nspname in ('public', 'private', 'analytics') and has_function_privilege('authenticated', p.oid, 'execute'))
-  = 'private.blocked_pair private.has_duo private.on_invite private.revealed_to private.shares_invite private.vouch_summary public.bail public.block_user public.check_in public.create_duo_link public.create_vouch_link public.date_feedback public.decline_invite '
+  = 'private.blocked_pair private.face_visible private.has_duo private.on_invite private.revealed_to private.shares_invite private.vouch_summary public.bail public.block_user public.check_in public.create_duo_link public.create_vouch_link public.date_feedback public.decline_invite '
     'public.delete_my_account public.discover public.duo_link_name public.export_my_data public.file_privacy_request public.give_consents public.join_duo public.leave_duo public.log_client_error public.log_event public.my_blocks public.my_checkin_code public.my_consents public.my_contact_flags public.my_line_review public.my_moderation public.offer_pinky public.pass_profile public.rate_date public.register_push_token public.remove_photo public.report_bad_contact public.report_user public.restore_passes '
     'public.save_availability public.save_profile public.send_invite public.start_contact_check public.unblock_user public.unregister_push_token public.vouch public.vouch_link_name',
   'a signed-in user can call exactly these functions and no others');
@@ -112,6 +112,23 @@ select t.ok(t.fails(format($$insert into passes (profile_id, passed_id) values (
   'X cannot write or delete passes directly, even their own: only pass_profile and restore_passes');
 select t.ok(t.fails('create table public.loot (x int)') and t.fails('create function public.loot() returns int language sql as ''select 1'''),
   'X cannot create tables or functions in public');
+
+-- A face (D095) is shown to whoever is shown the card: X was never shown crowd1's.
+reset role;
+insert into public.photos (profile_id, path, bytes, kind, status) values (:'crowd1', :'crowd1' || '/face.jpg', 10, 'face', 'approved');
+insert into storage.objects (bucket_id, name) values ('photos', :'crowd1' || '/face.jpg');
+set role authenticated;
+select t.as_user(:'x');
+select t.ok(not exists (select 1 from photos where profile_id = :'crowd1') and not exists (select 1 from storage.objects where name like :'crowd1' || '/%'),
+  'X cannot read the face of someone whose card X was never shown, nor its file');
+select t.ok(t.fails(format($$insert into private.discover_seen (user_id, card_id) values (%L, %L)$$, :'x', :'crowd1'))
+  and t.fails(format($$select add_photo(%L, 10, true, 'face')$$, :'x')),
+  'X cannot pretend to have been shown a card, nor add a face without the photo function');
+reset role;
+delete from public.photos where path = :'crowd1' || '/face.jpg';
+delete from storage.objects where name = :'crowd1' || '/face.jpg';
+set role authenticated;
+select t.as_user(:'x');
 
 -- ---------------------------------------------------------------------------------------------
 -- 3. X tries the functions that are not for the app.

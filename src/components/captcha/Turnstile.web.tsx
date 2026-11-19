@@ -2,7 +2,7 @@
  * Cloudflare Turnstile in a browser: its script, loaded once from Cloudflare, renders the check
  * into this view's element.
  */
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, type ComponentRef } from 'react';
 import { View } from 'react-native';
 import { AppError } from '../../domain/errors';
 import { TURNSTILE_SITE_KEY } from '../../lib/captcha';
@@ -30,7 +30,7 @@ function api(): Promise<TurnstileApi> {
 }
 
 export function Turnstile({ onToken, onError }: { onToken(token: string): void; onError(e: unknown): void }) {
-  const box = useRef<View>(null);
+  const box = useRef<ComponentRef<typeof View>>(null);
   // The latest callbacks, without drawing the check again each time they change.
   const cb = useRef({ onToken, onError });
   cb.current = { onToken, onError };

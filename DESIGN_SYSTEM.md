@@ -89,7 +89,14 @@ Font scaling is allowed up to 1.3x (`maxFontSizeMultiplier`) so layouts hold on 
 - **TrustBadge**: pill on `onPhoto` with a 1.5px border in its tone and a shield icon, score in tabular figures and the tier name. Gold at 90+,
   white 75 to 89, flare under 55. `size="lg"` adds the kept and flaked counts.
 - **Portrait**: people are shown as a two-colour gradient block with a large glyph and initial, so
-  the prototype ships no stock photos of real people.
+  the prototype ships no stock photos of real people. When someone's face has been checked (D095),
+  it takes the block's place, `cover`-cropped, under the same bottom fade (`onPhoto`) so the name and
+  badge stay readable; a link that fails falls back to the block.
+- **Face camera**: a 3:4 frame (`radius.card`) with the front camera, the area outside a face oval
+  dimmed with `scrim`, the oval in a dashed `pink` line and a "Fit your face in the oval" pill on
+  `onPhoto`. After the shot: the photo in the same frame, the line saying who will see it, then
+  "Use this photo" (primary) and "Retake" (ghost). On Me, no face is a dashed `pink` row with a
+  camera disc; with one, a gold "On your card" line and Change / Take down tags.
 - **LockedReveal**: blurred tiles and a masked handle with a lock and the line that says what
   unlocks it.
 - **Sheet**: bottom sheet for confirmations (pass, bail, blocked location); on desktop a dialog in the middle of the window. Rises 280 ms with `easeOutCubic` over a

@@ -94,7 +94,7 @@ export default function Discover() {
       <Animated.View key={person.id} entering={FadeIn.duration(260)}>
         <Columns left={<>
         <Pressable accessibilityRole="button" accessibilityLabel={t('plan.openProfile', { name: person.name })} onPress={() => router.push(`/profile/${person.id}`)} style={[styles.card, desktop && { height: 560 }]}>
-          <Portrait name={person.name} palette={person.palette} glyph={person.glyph} fill style={StyleSheet.absoluteFill} />
+          <Portrait name={person.name} palette={person.palette} glyph={person.glyph} faceUrl={person.faceUrl} fill style={StyleSheet.absoluteFill} />
           <View style={styles.cardBody}>
             <TrustBadge person={person} />
             <T v="display" numberOfLines={1} adjustsFontSizeToFit>{t('profile.nameAge', { name: person.name, age: person.age })}</T>

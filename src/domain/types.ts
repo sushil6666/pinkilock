@@ -50,6 +50,11 @@ export interface Profile {
   hasDuo?: boolean;
   /** How many extra photos exist. The photos themselves live behind the reveal. */
   photoCount: number;
+  /**
+   * Their face (D095): a short-lived signed link, given only because RLS let this person see it.
+   * Absent or null means the drawn portrait.
+   */
+  faceUrl?: string | null;
 }
 
 /** What a kept promise unlocks. Only ever returned by Backend.getReveal. */
@@ -81,6 +86,8 @@ export interface MyPhoto {
   id: string;
   status: 'pending' | 'approved' | 'held';
   url: string | null;
+  /** When it was sent (ms). The face uses it to say when the next change is possible. */
+  at?: number;
 }
 
 /** A photo picked on this phone, made into a JPEG of at most 1280 px by src/lib/photoPick.ts. */

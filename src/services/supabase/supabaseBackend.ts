@@ -13,7 +13,7 @@ import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import { AppError, RESYNC_CODES, isErrorCode, newTrace } from '../../domain/errors';
 import { ideaOf } from '../../domain/ideas';
 import { CHECK_IN_CLOSES_AFTER, isDouble, otherId, peopleOf } from '../../domain/invites';
-import type { Account, BlockedPerson, CodeKind, ContactCheck, Invite, MyContact, MyPhoto, Profile, Reveal } from '../../domain/types';
+import type { Account, BlockedPerson, CodeKind, ContactCheck, Invite, MyContact, MyPhoto, PickedPhoto, Profile, Reveal } from '../../domain/types';
 import { log, quiet } from '../../lib/log';
 import type { Backend, BackendEvent, Changes, Notice, Snapshot } from '../backend';
 import { t } from '../../i18n';
@@ -135,13 +135,65 @@ export function createSupabaseBackend(url: string, anonKey: string, storage: Ses
    * and Storage signs a file only where its row is readable. Links last ten minutes and are never
    * kept: each screen asks again.
    */
-  async function photosOf(owner: string): Promise<MyPhoto[]> {
-    const rows = check(await db.from('photos').select('id, path, status, created_at').eq('profile_id', owner).order('created_at')) as Row[];
+  async function photosOf(owner: string, kind: 'locked' | 'face' = 'locked'): Promise<MyPhoto[]> {
+    const rows = check(await db.from('photos').select('id, path, status, created_at').eq('profile_id', owner).eq('kind', kind).order('created_at')) as Row[];
     if (!rows.length) return [];
     const res = await db.storage.from('photos').createSignedUrls(rows.map((r) => r.path as string), 600);
     if (res.error) throw new AppError('PC002', undefined, activeTrace() ?? newTrace());
     const links = new Map((res.data ?? []).filter((d) => d.path && d.signedUrl).map((d) => [d.path as string, d.signedUrl]));
-    return rows.map((r) => ({ id: r.id, status: r.status, url: links.get(r.path) ?? null }));
+    return rows.map((r) => ({ id: r.id, status: r.status, url: links.get(r.path) ?? null, at: ms(r.created_at) ?? undefined }));
+  }
+
+  /**
+   * Faces on cards (D095). The rows are asked for every time, so RLS decides every time who is
+   * shown whose face (private.face_visible: the card's own audience, never across a block). Only
+   * the signed link is reused, while its row still comes back and it has ten minutes left, so a
+   * card does not flicker on every re-read. A face that cannot be fetched leaves the drawn portrait.
+   */
+  const faceLinks = new Map<string, { url: string; until: number }>();
+  const FACE_LINK_S = 3600;
+  async function withFaces(cards: Profile[]): Promise<Profile[]> {
+    if (!cards.length) return cards;
+    try {
+      const rows = check(await db.from('photos').select('profile_id, path')
+        .eq('kind', 'face').eq('status', 'approved').in('profile_id', cards.map((c) => c.id))) as Row[];
+      const now = Date.now();
+      const stale = rows.map((r) => r.path as string).filter((p) => (faceLinks.get(p)?.until ?? 0) < now + 600_000);
+      if (stale.length) {
+        const res = await db.storage.from('photos').createSignedUrls(stale, FACE_LINK_S);
+        for (const d of res.data ?? []) if (d.path && d.signedUrl) faceLinks.set(d.path, { url: d.signedUrl, until: now + FACE_LINK_S * 1000 });
+      }
+      const byOwner = new Map(rows.map((r) => [r.profile_id as string, faceLinks.get(r.path as string)?.url ?? null]));
+      return cards.map((c) => ({ ...c, faceUrl: byOwner.get(c.id) ?? null }));
+    } catch (e) {
+      quiet('cards.faces')(e);
+      return cards;
+    }
+  }
+  const cardsFrom = (rows: Row[]) => withFaces(rows.map(toProfile));
+
+  /** One photo to the `photo` Edge Function, which strips it and files it as `pending` (D088, D095). */
+  async function upload(photo: PickedPhoto, kind: 'locked' | 'face'): Promise<void> {
+    const trace = activeTrace() ?? newTrace();
+    const { data } = await db.auth.getSession();
+    if (!data.session) throw new AppError('PL001', undefined, trace);
+    log.info('photo.add', { kind, trace });
+    let res: Response;
+    try {
+      const file = await (await fetch(photo.uri)).blob();
+      res = await fetch(`${url.replace(/\/$/, '')}/functions/v1/photo${kind === 'face' ? '?kind=face' : ''}`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${data.session.access_token}`, apikey: anonKey, 'Content-Type': 'image/jpeg', 'x-trace-id': trace },
+        body: file,
+      });
+    } catch {
+      // Not reached: the phone is offline, or the file could not be read.
+      throw new AppError('PC001', undefined, trace);
+    }
+    if (!res.ok) {
+      const body = (await res.json().catch(() => ({}))) as { code?: string; message?: string };
+      throw fromServer({ code: body.code ?? 'PC002', message: body.message ?? '' }, trace);
+    }
   }
 
   async function uid(): Promise<string> {
@@ -228,7 +280,7 @@ export function createSupabaseBackend(url: string, anonKey: string, storage: Ses
       db.from('invites').select('*').order('created_at', { ascending: false }),
       readDuo().then((duoId) => listeners.forEach((l) => l({ changes: { duoId } }))),
     ]);
-    if (cards.data) announceCards(cards.data.map(toProfile));
+    if (cards.data) announceCards(await cardsFrom(cards.data));
     for (const row of invites.data ?? []) await takeInvite(toInvite(row));
     // What RLS no longer returns is gone for me: a block either way, or a deleted account.
     if (invites.data) {
@@ -345,12 +397,12 @@ export function createSupabaseBackend(url: string, anonKey: string, storage: Ses
   /** Scores come from the analytics worker, so re-read the cards it may have touched. */
   async function refreshCards(ids: string[]) {
     const { data } = await db.from('profile_cards').select('*').in('id', ids);
-    if (data) announceCards(data.map(toProfile));
+    if (data) announceCards(await cardsFrom(data));
   }
 
   /** The next page of Discover (at most 20, from the server's own order and limits). */
   async function discoverPage(): Promise<Profile[]> {
-    const page = (await rpc<Row[]>('discover', { p_limit: 20 })).map(toProfile);
+    const page = await cardsFrom(await rpc<Row[]>('discover', { p_limit: 20 }));
     page.forEach((p) => {
       discovered.add(p.id);
       names.set(p.id, p.name);
@@ -368,7 +420,7 @@ export function createSupabaseBackend(url: string, anonKey: string, storage: Ses
       db.from('profile_private').select('contact_kind, contact_handle, contact_verified_at').eq('profile_id', id).maybeSingle(),
       readDuo(),
     ]);
-    const all = check(cards).map(toProfile);
+    const all = await cardsFrom(check(cards));
     if (all.some((p) => p.id === id)) {
       const known = new Set(all.map((p) => p.id));
       for (const p of await discoverPage()) if (!known.has(p.id)) all.push(p);
@@ -446,7 +498,7 @@ export function createSupabaseBackend(url: string, anonKey: string, storage: Ses
       // The server stores the handle in its own form and clears the tick on a new one: read it back.
       if (hasContact) changes.myContact = (await contactStatus()) ?? undefined;
       const card = check(await db.from('profile_cards').select('*').eq('id', id).single());
-      return { ...changes, me: toProfile(card as unknown as Row) };
+      return { ...changes, me: (await cardsFrom([card as unknown as Row]))[0] };
     },
 
     async pass(profileId) {
@@ -502,7 +554,7 @@ export function createSupabaseBackend(url: string, anonKey: string, storage: Ses
       const id = await uid();
       await rpc('save_availability', { p_windows: windows });
       const card = check(await db.from('profile_cards').select('*').eq('id', id).single());
-      return { me: toProfile(card as unknown as Row) };
+      return { me: (await cardsFrom([card as unknown as Row]))[0] };
     },
 
     async myLineReview() {
@@ -530,7 +582,7 @@ export function createSupabaseBackend(url: string, anonKey: string, storage: Ses
     async joinDuo(token) {
       await uid();
       const duoId = await rpc<string>('join_duo', { p_token: token });
-      const card = check(await db.from('profile_cards').select('*').eq('id', duoId)).map(toProfile);
+      const card = await cardsFrom(check(await db.from('profile_cards').select('*').eq('id', duoId)));
       card.forEach((p) => names.set(p.id, p.name));
       return { duoId, profiles: card };
     },
@@ -573,28 +625,21 @@ export function createSupabaseBackend(url: string, anonKey: string, storage: Ses
 
     myPhotos: async () => photosOf(await uid()),
 
-    async addPhoto(photo) {
-      const trace = activeTrace() ?? newTrace();
-      const { data } = await db.auth.getSession();
-      if (!data.session) throw new AppError('PL001', undefined, trace);
-      log.info('photo.add', { trace });
-      let res: Response;
-      try {
-        const file = await (await fetch(photo.uri)).blob();
-        res = await fetch(`${url.replace(/\/$/, '')}/functions/v1/photo`, {
-          method: 'POST',
-          headers: { Authorization: `Bearer ${data.session.access_token}`, apikey: anonKey, 'Content-Type': 'image/jpeg', 'x-trace-id': trace },
-          body: file,
-        });
-      } catch {
-        // Not reached: the phone is offline, or the file could not be read.
-        throw new AppError('PC001', undefined, trace);
-      }
-      if (!res.ok) {
-        const body = (await res.json().catch(() => ({}))) as { code?: string; message?: string };
-        throw fromServer({ code: body.code ?? 'PC002', message: body.message ?? '' }, trace);
-      }
+    addPhoto: async (photo) => {
+      await upload(photo, 'locked');
       return photosOf(await uid());
+    },
+
+    myFace: async () => photosOf(await uid(), 'face'),
+
+    addFace: async (photo) => {
+      await upload(photo, 'face');
+      return photosOf(await uid(), 'face');
+    },
+
+    async removeFace(id) {
+      await rpc('remove_photo', { p_id: id });
+      return photosOf(await uid(), 'face');
     },
 
     async removePhoto(id) {
@@ -656,7 +701,7 @@ export function createSupabaseBackend(url: string, anonKey: string, storage: Ses
         db.from('profile_cards').select('*').eq('id', profileId),
         db.from('invites').select('*').or(['from_id', 'to_id', 'from_friend', 'to_friend'].map((c) => `${c}.eq.${safeId(profileId)}`).join(',')),
       ]);
-      const profiles = check(card).map(toProfile);
+      const profiles = await cardsFrom(check(card));
       profiles.forEach((p) => names.set(p.id, p.name));
       const list = check(invites).map(toInvite);
       list.forEach((i) => known.set(i.id, i));

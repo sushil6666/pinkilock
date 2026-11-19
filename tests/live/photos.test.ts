@@ -101,3 +101,27 @@ test('removing it closes it at once, and its file is deleted', { skip: !DB }, as
   assert.equal(sql(`select count(*) from public.photo_trash where path = '${path}'`), '0', 'the trash entry is cleared');
   assert.equal(sql(`select count(*) from storage.objects where bucket_id = 'photos' and name = '${path}'`), '0', 'and the file is gone from Storage');
 });
+
+test('a face (D095): through the same function, shown once approved to whoever is shown the card', { skip: !DB }, async () => {
+  const [mine] = await owner.backend.addFace({ uri: asUri(fixture) });
+  assert.equal(mine.status, 'pending');
+  assert.equal((await owner.backend.myPhotos()).length, 0, 'the face is not one of the photos behind the lock');
+  await assert.rejects(owner.backend.addFace({ uri: asUri(fixture) }), (e) => e instanceof AppError && e.code === 'PL113', 'one waits at a time');
+  const faceOf = async (p: Person) => (await p.backend.boot()).profiles.find((c) => c.id === owner.id)?.faceUrl ?? null;
+  assert.equal(await faceOf(met), null, 'pending: not on the card yet');
+
+  sql(`select private.moderate_photo('${mine.id}', 'approve_photo', 'e2e: ordinary')`);
+  const link = await faceOf(met);
+  assert.ok(link, 'approved: on the card for someone who shares a plan with its owner');
+  assert.equal((await fetch(link!)).status, 200, 'and its link opens');
+  // The stranger booted in the same city, so Discover handed them the owner's card: they may see it.
+  const strangerSees = async () => (await raw(stranger).from('photos').select('id').eq('profile_id', owner.id)).data?.length ?? 0;
+  assert.equal(sql(`select count(*) from private.discover_seen where user_id = '${stranger.id}' and card_id = '${owner.id}'`), '1', 'Discover showed the stranger the card');
+  assert.equal(await strangerSees(), 1, 'so the stranger sees the face on it');
+  sql(`delete from private.discover_seen where user_id = '${stranger.id}' and card_id = '${owner.id}'`);
+  assert.equal(await strangerSees(), 0, 'never for someone who was not shown the card');
+  await assert.rejects(owner.backend.addFace({ uri: asUri(fixture) }), (e) => e instanceof AppError && e.code === 'PL114', 'a new one once a week');
+
+  assert.deepEqual(await owner.backend.removeFace(mine.id), [], 'the owner takes it down');
+  assert.equal(await faceOf(met), null, 'and the card is drawn again');
+});
