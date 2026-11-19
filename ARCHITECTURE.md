@@ -219,6 +219,12 @@ value saved before the lists existed stays valid until it changes. Onboarding as
 (`contact_kinds`): a kind with no countries works everywhere, the others only where people use them.
 Phone sign-in takes the picked country's dialling code instead of assuming India.
 
+**Distance on a card** (D089) comes from the same centres: `areaKm` in `src/domain/nearby.ts` gives
+the straight line between my area and theirs, in whole kilometres (at least 1), and nothing for
+another city, the same area, or an area of someone's own that has no centre. It uses only the two
+areas both cards already show, so it says nothing new about where anyone is; the mock and the live
+app use the same helper (`cardKm`).
+
 **Where I am, from the phone** (D087, migration `20261118000013_areas_by_location.sql`). Each city's
 list holds its common neighbourhoods (about 1,330 areas). "Use my location" (`src/lib/location.ts`,
 `expo-location`, once, balanced accuracy) reads the position on the device and `src/domain/nearby.ts`
