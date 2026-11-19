@@ -324,8 +324,19 @@ person's record does not change, because Trust Scores count kept promises from t
 first screen. Adding an email or a phone number (Me, Account) calls `updateUser({ email })` or
 `updateUser({ phone })` and then `verifyOtp` with type `email_change` or `phone_change`, which
 turns the same user into an email or phone user: the id, and so every row, stays. On a new phone,
-"I already have an account" signs in with either (`signInWithOtp` with `shouldCreateUser: false`,
-so no account is ever made that way). Signing out is offered only once one of them is linked,
+"I already have an account" signs in with either, and no account is ever made that way.
+
+Both kinds of code go through the `auth-code` Edge Function (D091, gap G22), never straight to
+Auth, so the app never says who has an account. `public.auth_code_check` (service role only)
+decides whether to send: to an account's own address when signing in, to a free one (or my own)
+when adding it. The function answers `{ sent: true }` either way, sends in the background so the
+time taken is the same, and the screen says "If ... is on a Pinkilock account, a code is on its
+way". A code that was never sent fails like a mistyped one (PA006). Requests count by a hash of
+the address and by the caller (one a minute and three a quarter-hour per address, ten an hour per
+caller; PL112). Auth itself, called directly, would still tell, so production adds Auth's captcha
+(Cloudflare Turnstile) once the owner's keys exist: `src/lib/captcha.ts` asks for a token before an
+anonymous sign-in and before a code, `<CaptchaHost />` at the root shows the check (a script in a
+browser, a WebView on a phone), and the function checks the token itself before anything else. Signing out is offered only once one of them is linked,
 since an anonymous account could not be got back. Email is offered first because it is free to
 send: the deploy workflow points Auth at our own SMTP sender and installs the code-only templates
 in `supabase/templates` once the `SMTP_*` settings exist, and switches email off until then

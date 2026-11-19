@@ -556,8 +556,10 @@ export const en = {
     emailPlaceholder: 'you@example.com',
     checkTexts: 'Check\nyour texts.',
     checkInbox: 'Check\nyour inbox.',
-    sentText: "We've sent a {digits}-digit code to {to}. It usually arrives within a minute.",
-    sentEmail: "We've sent a {digits}-digit code to {to}. It usually arrives within a minute. If you can't find it, check your spam folder.",
+    sentText: 'If {to} is on a Pinkilock account, a {digits}-digit code is on its way. It usually arrives within a minute. Nothing yet? Check the number.',
+    sentEmail: "If {to} is on a Pinkilock account, a {digits}-digit code is on its way. It usually arrives within a minute. Nothing yet? Check the address and your spam folder.",
+    sentTextLink: "If {to} isn't on another Pinkilock account, a {digits}-digit code is on its way. It usually arrives within a minute.",
+    sentEmailLink: "If {to} isn't on another Pinkilock account, a {digits}-digit code is on its way. It usually arrives within a minute. If you can't find it, check your spam folder.",
     code: 'One-time code',
     codeShort: 'Code',
     mockCode: 'Mock data: the code is always {code}.',
@@ -953,6 +955,12 @@ export const en = {
   },
 
   /** The calendar file for a locked plan. It goes only where the person sends it. */
+  captcha: {
+    eyebrow: 'Quick check',
+    title: 'One moment',
+    body: 'A quick check that you are a person. It usually finishes by itself.',
+  },
+
   photos: {
     title: 'Photos',
     add: 'Add photo',

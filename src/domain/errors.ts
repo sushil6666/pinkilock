@@ -94,6 +94,8 @@ export const ERRORS = {
   PL108: 'You have three photos. Remove one first.',
   PL109: 'That is enough new photos for this week. Try again in a few days.',
   PL110: 'That photo is not there any more.',
+  PL111: 'That sign-in request was not valid.',
+  PL112: 'Wait a few minutes before asking for another code.',
 
   PA001: 'Phone sign-in is not switched on yet.',
   PA002: 'Email sign-in is not switched on yet.',
@@ -104,6 +106,8 @@ export const ERRORS = {
   PA007: 'Wait a moment before asking for another code.',
   PA008: 'Add a phone number or an email first, or you could not get back in.',
   PA009: 'Sign-in did not work. Try again.',
+  PA010: 'The quick check did not finish. Try again.',
+  PA011: 'Update Pinkilock to sign in: this version cannot show the quick check.',
 
   PC001: 'Could not reach the server. Check your connection and try again.',
   PC002: 'Something went wrong on our side. Try again.',

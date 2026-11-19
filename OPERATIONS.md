@@ -56,6 +56,7 @@ All of these live in GitHub, under Settings, Secrets and variables, Actions. Non
 | Secret | `CLOUDFLARE_API_TOKEN` | Web deploy publishes the website with it | A custom token scoped to the account, Cloudflare Pages: Edit and nothing else. Make a new one in the Cloudflare dashboard (My Profile, API Tokens), update the secret, delete the old one |
 | Variable | `CLOUDFLARE_ACCOUNT_ID` | Web deploy | Not a secret |
 | Secret | `PROD_SUPABASE_ACCESS_TOKEN` | Optional: only if production is in another Supabase account | As for `SUPABASE_ACCESS_TOKEN` |
+| Variable, secret | `PROD_TURNSTILE_SITE_KEY`, `PROD_TURNSTILE_SECRET` | Captcha on production sign-in (D091): the site key goes into production builds, the secret to Auth and the `auth-code` function; on only when both exist | Rotate the secret in Cloudflare (Turnstile, the widget, Settings), update `PROD_TURNSTILE_SECRET`, run **Supabase deploy** (production) |
 | Secret | `META_APP_SECRET`, `META_VERIFY_TOKEN` | Deploy gives them to the `contact-verify` function; contact proofs are off until both exist (D078) | Reset the app secret in Meta's App Dashboard (App settings, Basic), update the secret, run **Supabase deploy**. The verify token is any string you choose; change it in Meta's webhook settings at the same time |
 | Secret | `WHATSAPP_TOKEN`, `INSTAGRAM_TOKEN` | `contact-verify`: answers on WhatsApp; looks up who sent an Instagram message and answers | Make a new system-user token (WhatsApp) or long-lived token (Instagram) in Meta, update, run **Supabase deploy** |
 | Variable | `PINKILOCK_WHATSAPP_NUMBER`, `PINKILOCK_INSTAGRAM` | Deploy: where the app tells people to send their code (digits with 91; the account's username) | Not secrets. Empty leaves that app's proofs off |
@@ -101,8 +102,30 @@ local copy in `supabase/config.toml`), never in the dashboard.
 | Refresh token rotation | on, 10 second reuse window | A copied refresh token is noticed when both copies are used |
 | Email code life | 10 minutes | A code read later from a mailbox is useless |
 
-Not set yet, and on the build plan (`docs/build-plan.md`, WP2): captcha on anonymous sign-in and on
-code requests.
+Captcha on anonymous sign-in and on code requests is set by its own step, on production only and
+only once Turnstile is set up: see "Captcha" below.
+
+### Captcha
+
+Auth's captcha (Cloudflare Turnstile) stops a script from asking Auth directly whether an email or
+number has an account (gap G22, D091); the app's own path never tells. It is on only for
+production, and only when both of these exist:
+
+- the variable `PROD_TURNSTILE_SITE_KEY` (public: it goes into the production app and website builds);
+- the secret `PROD_TURNSTILE_SECRET` (the deploy gives it to Auth and to the `auth-code` function).
+
+Set up: in Cloudflare, Turnstile, add a widget (mode Managed) for `pinkilock.com`, the hostname the
+phone's check page claims (`EXPO_PUBLIC_TURNSTILE_PAGE`). Then, in this order:
+
+1. Add `PROD_TURNSTILE_SITE_KEY`, run **EAS build** (production) and ship that build. Builds from
+   before this change have no check and could not sign in once captcha is on.
+2. Wait until nearly everyone is on that build (the store consoles show versions).
+3. Add `PROD_TURNSTILE_SECRET` and run **Supabase deploy** (production), then **Web deploy**.
+   The run summary says "Captcha on sign-in: on (Turnstile)".
+
+To turn it off, delete the secret and run **Supabase deploy** (production). Preview never has it, so
+the live test can sign people up there. If people report "The quick check did not finish", look at
+Turnstile's analytics in Cloudflare; "Update Pinkilock to sign in" means an old build met captcha.
 
 ### Limits and the link gate
 
@@ -442,7 +465,10 @@ rows without the id.
 - The app says "Email sign-in is not switched on yet": the `SMTP_*` settings are not all set, or
   the deploy has not run since. Its run summary says whether email sign-in is on. Without them the
   deploy switches email off on purpose.
-- Codes never arrive: check the sender's logs (Resend, Emails) and the spam folder. A domain that
+- Codes never arrive: first, the address may have no account (signing in) or be on another one
+  (adding it); the app says the same either way on purpose (D091). The `auth-code` function's log
+  has one line per request with `sent`, `not_sent` or Auth's status, never the address. Then check
+  the sender's logs (Resend, Emails) and the spam folder. A domain that
   is not verified at the sender is refused there. Supabase also caps emails per hour (Auth, Rate
   limits); a burst of sign-ins past it gets "Wait a moment before asking for another code".
 
