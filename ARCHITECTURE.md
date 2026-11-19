@@ -21,7 +21,7 @@ put together and why. The look and the gesture are specified in `DESIGN_SYSTEM.m
 
 | Layer | Choice | Why |
 | --- | --- | --- |
-| App | Expo SDK 52, React Native 0.76 (New Architecture), TypeScript strict, Expo Router 4 | One codebase for Android and iOS, runs in Expo Go today |
+| App | Expo SDK 58, React Native 0.88 (New Architecture), React 19, TypeScript 6 strict, Expo Router 58 | One codebase for Android and iOS, runs in Expo Go today |
 | Motion | Reanimated 3 + Gesture Handler 2 | The lock gesture runs on the UI thread at 60fps |
 | Touch feedback | Expo Haptics behind `src/lib/haptics.ts` | One vocabulary on both platforms, silent on web |
 | Client state | Zustand (`src/state/store.ts`) | Small, no providers, narrow re-renders |

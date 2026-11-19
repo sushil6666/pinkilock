@@ -70,7 +70,7 @@ async function start(): Promise<PushStatus> {
 
     // While the app is open the in-app banner already says it; do not also drop a system banner.
     Notifications.setNotificationHandler({
-      handleNotification: async () => ({ shouldShowAlert: false, shouldPlaySound: false, shouldSetBadge: false }),
+      handleNotification: async () => ({ shouldShowBanner: false, shouldShowList: false, shouldPlaySound: false, shouldSetBadge: false }),
     });
     if (Platform.OS === 'android') {
       // Android shows nothing without a channel. HIGH, because a promise has a clock on it.

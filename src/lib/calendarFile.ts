@@ -39,7 +39,7 @@ export async function addToCalendar(plan: CalendarPlan, dialogTitle: string): Pr
   }
   const m = phoneModules();
   if (!m) throw new Error('calendar: no share module');
-  const uri = `${m.files.cacheDirectory}pinkilock-plan.ics`;
-  await m.files.writeAsStringAsync(uri, ics);
-  await m.sharing.shareAsync(uri, { mimeType: 'text/calendar', UTI: 'com.apple.ical.ics', dialogTitle });
+  const file = new m.files.File(m.files.Paths.cache, 'pinkilock-plan.ics');
+  file.write(ics);
+  await m.sharing.shareAsync(file.uri, { mimeType: 'text/calendar', UTI: 'com.apple.ical.ics', dialogTitle });
 }

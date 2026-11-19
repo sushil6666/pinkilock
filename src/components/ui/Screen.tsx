@@ -150,7 +150,7 @@ export function Screen({ children, title, back = false, onBack, right, footer, s
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: color.bg },
   fill: { flex: 1 },
-  rail: { ...StyleSheet.absoluteFillObject, alignItems: 'center' },
+  rail: { ...StyleSheet.absoluteFill, alignItems: 'center' },
   railLines: { flex: 1, width: '100%', maxWidth: columnMax + 2, borderLeftWidth: StyleSheet.hairlineWidth, borderRightWidth: StyleSheet.hairlineWidth, borderColor: color.line },
   header: { ...column, minHeight: 56, flexDirection: 'row', alignItems: 'center', paddingHorizontal: gutter - 4, paddingVertical: space.xs },
   headerWide: { maxWidth: undefined, paddingHorizontal: space.x4 },

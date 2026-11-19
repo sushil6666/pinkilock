@@ -64,8 +64,9 @@ Supabase stack and in CI; it reaches the real project when the PR merges.
 - [x] **Hardening left from WP5** (D093): shipped dependency advisories patched in place (16 high
   or critical down to 4, all build-time), the live feed sends no deletes (G24), and production
   bundles print nothing.
-- [ ] The Expo SDK 58 upgrade, which clears the last 4 advisories (tar, cacache, image-size, the
-  Expo CLI) and lets `vendor/decode-uri-component` and the `overrides` go.
+- [x] **Expo SDK 58** (D094): React Native 0.88, React 19, Expo Router 58. No high or critical
+  advisory left in what ships; batch 8's patches are gone. App version 0.3.0.
+- [ ] A 0.3.0 build tried on a real Android phone (EAS preview build), then shipped.
 - [ ] **Proved handles** (D078): built (code, `contact-verify` function, Verified tick). Needs a
   Pinkilock WhatsApp Business number and an Instagram professional account on a Meta app
   (OPERATIONS.md, "Turning on contact proofs").

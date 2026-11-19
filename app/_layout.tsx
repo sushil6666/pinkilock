@@ -5,7 +5,6 @@
 import { CaveatBrush_400Regular } from '@expo-google-fonts/caveat-brush';
 import { InterTight_400Regular, InterTight_500Medium, InterTight_700Bold, InterTight_800ExtraBold, InterTight_800ExtraBold_Italic } from '@expo-google-fonts/inter-tight';
 import { useFonts } from 'expo-font';
-import * as NavigationBar from 'expo-navigation-bar';
 import { Stack, router, usePathname, useSegments, type ErrorBoundaryProps } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
@@ -67,11 +66,8 @@ export default function RootLayout() {
   useEffect(() => {
     boot();
     SystemUI.setBackgroundColorAsync(color.bg).catch(quiet('/_layout'));
-    if (Platform.OS === 'android') {
-      // The night sky behind the 3-button or gesture bar, with light buttons.
-      NavigationBar.setBackgroundColorAsync(color.bg).catch(quiet('/_layout'));
-      NavigationBar.setButtonStyleAsync('light').catch(quiet('/_layout'));
-    }
+    // Android draws the app edge to edge: the night sky is already behind the 3-button or gesture
+    // bar, and the expo-navigation-bar plugin (app.json) makes its buttons light with no scrim.
   }, [boot]);
 
   // Once there is a profile to attach a device to: ask for notifications and register the phone.

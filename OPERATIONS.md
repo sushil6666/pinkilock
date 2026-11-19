@@ -157,6 +157,11 @@ the certificate is present).
 
 ### The app on the phone
 
+Version 0.3.0 is the Expo SDK 58 upgrade (React Native 0.88, D094): a new binary, and no
+over-the-air update reaches 0.2.0 builds, whose native side is SDK 52. Android draws the app edge to
+edge; the `expo-navigation-bar` plugin in `app.json` keeps the bar's buttons light with no scrim.
+EAS builds on Node 22.13 (`eas.json`).
+
 Version 0.2.0 adds native modules (encrypted session storage, screenshot blocking on the reveal),
 so it needs a new binary; an over-the-air update cannot reach 0.1.0 builds. A production build
 without the Supabase keys fails at build time and refuses to start (`EXPO_PUBLIC_APP_ENV`).
@@ -176,11 +181,9 @@ Expo SDK upgrade with `npx expo install --fix`, never one at a time.
 - **Secret scan.** gitleaks over the whole history. If it fires, the secret is already leaked:
   rotate it first ("A secret leaks", below), then remove it.
 - **Dependency audit.** `npm run audit:check` fails on any high or critical advisory in what ships
-  that is not listed in `security/audit-baseline.json`. Each entry there is triaged with a reason
-  (D093: four, all build-time, until the Expo SDK 58 upgrade); it is debt to clear by upgrading, and
-  the check says when a name can come off it. A library that ships is patched within its major
-  version through `overrides` in `package.json`; `tests/unit/dependencies.test.ts` checks they hold.
-  Installing needs npm 10 or newer.
+  that is not listed in `security/audit-baseline.json`. Since the Expo SDK 58 upgrade (D094) the
+  baseline is empty; an entry needs a triaged reason, and the check says when a name can come off
+  it. Prefer upgrading to patching: batch 8's in-place patches (D093) went with the upgrade.
 
 ### Staying inside the Actions minutes
 

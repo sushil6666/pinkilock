@@ -398,6 +398,10 @@ test feeds query-string a link that froze the old one). **Left:** tar, cacache, 
 Expo CLI, all build-time only and triaged in `security/audit-baseline.json`, go with the Expo SDK
 58 upgrade.
 
+**Status, 2026-11-19: G23 closed by the Expo SDK 58 upgrade** (decision D094). No high or critical
+advisory is left in what ships (three moderate, in Expo's build-time fingerprint tool); the audit
+baseline is empty, and the `overrides` and `vendor/` copy from D093 are gone.
+
 ### WP6. App attestation (later; needs store accounts)
 
 - Play Integrity on Android and App Attest on iOS, verified in an Edge Function, required once at
