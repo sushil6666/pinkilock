@@ -75,6 +75,8 @@ someone, and delete their account, on both platforms, against the production pro
 
 ## Phase 4: The date itself (planned)
 
+- [x] **Plan options explained, and local ones** (D094): every option shows its summary and opens
+  what, where, cost and why on sign-up and Me; each open city has in-person options of its own.
 - [x] **Double micro-dates** (market review, F3): duos made from a link, four people on one plan,
   check-in across sides, a flake only on whoever did not show, the reveal between people who met.
 - [x] **Ready for a second country** (build plan WP9, first parts): area, pronouns and city picked

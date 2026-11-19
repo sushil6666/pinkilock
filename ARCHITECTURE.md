@@ -570,7 +570,13 @@ and venues are rows in SQL tables, and are translated per region by a native spe
 region opens (WP9). A local idea (cutting chai, pani puri) lists the countries it is offered in
 (`ideas.countries`, null for everywhere): onboarding and Me offer only what is on offer where the
 person lives, and `save_profile` refuses a newly picked one from elsewhere (PL104) while keeping
-any already saved. Stored values stay as they were written: the place on a remote ask, and the
+any already saved. A city idea (vada pav on the sea wall, misal pav) also lists the open cities it
+is offered in (`ideas.cities`; a state's dish lists every open city in that state), so every open
+city has at least one in-person idea of its own. The pickers show those first, marked "Local to
+<city>", and a trigger on `profiles` (`private.check_city_ideas`) refuses a newly picked one from
+another city, a move included, with the same PL104. Every plan option in both pickers (sign-up
+and Me) shows its one-line summary, and its arrow opens what you do, where, the cost and why it
+works. Stored values stay as they were written: the place on a remote ask, and the
 picked ask line, are read by the other person as sent.
 
 ### On the phone

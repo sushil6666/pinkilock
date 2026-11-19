@@ -44,6 +44,39 @@ export const IDEAS: MicroDateIdea[] = [
   { id: 'photo_walk', title: 'Golden hour photoshoot', emoji: '🤳', minutes: 20, kind: 'irl', blurb: 'Shoot each other\'s next profile picture. Hype is mandatory.' },
   { id: 'kulfi_gossip', title: 'Kulfi and gossip', emoji: '🍡', minutes: 20, kind: 'irl', blurb: 'One kulfi each. Trade your best harmless gossip.', countries: ['IN'] },
   { id: 'dress_up_coffee', title: 'Overdressed coffee', emoji: '✨', minutes: 25, kind: 'irl', blurb: 'Both overdress for a very ordinary coffee. Commit to it.' },
+  // Local to one city (city ideas): offered only to people who live there.
+  { id: 'mumbai_sea_wall', title: 'Vada pav on the sea wall', emoji: '🌊', minutes: 30, kind: 'irl', blurb: 'One vada pav each, one stretch of the sea wall.', countries: ['IN'], cities: ['Mumbai'] },
+  { id: 'delhi_chaat_crawl', title: 'Two-stall chaat crawl', emoji: '🥙', minutes: 25, kind: 'irl', blurb: 'Two chaat stalls, one plate at each. Pick a winner.', countries: ['IN'], cities: ['Delhi NCR'] },
+  { id: 'blr_darshini_coffee', title: 'Darshini filter coffee', emoji: '☕', minutes: 20, kind: 'irl', blurb: 'Stand-up filter coffee and one masala dosa to split.', countries: ['IN'], cities: ['Bengaluru', 'Mysuru', 'Mangaluru', 'Hubballi-Dharwad', 'Belagavi', 'Kalaburagi'] },
+  { id: 'hyd_irani_chai', title: 'Irani chai and Osmania biscuits', emoji: '🫖', minutes: 20, kind: 'irl', blurb: 'Two chais, a plate of biscuits. Dunk and talk.', countries: ['IN'], cities: ['Hyderabad', 'Warangal'] },
+  { id: 'chennai_beach_sundal', title: 'Beach walk and sundal', emoji: '🏖️', minutes: 30, kind: 'irl', blurb: 'A paper cone of sundal and a slow walk by the sea.', countries: ['IN'], cities: ['Chennai'] },
+  { id: 'kol_phuchka_bhaar', title: 'Phuchka and bhaar chai', emoji: '🍵', minutes: 20, kind: 'irl', blurb: 'Phuchka till one taps out, then chai in clay cups.', countries: ['IN'], cities: ['Kolkata', 'Siliguri', 'Asansol', 'Durgapur'] },
+  { id: 'misal_stop', title: 'Misal pav stop', emoji: '🌶️', minutes: 25, kind: 'irl', blurb: 'One plate each, pick your spice, extra pav allowed.', countries: ['IN'], cities: ['Mumbai', 'Pune', 'Nagpur', 'Nashik', 'Chhatrapati Sambhajinagar', 'Solapur', 'Kolhapur', 'Amravati', 'Nanded', 'Sangli', 'Malegaon'] },
+  { id: 'amd_riverfront_walk', title: 'Riverfront sunset walk', emoji: '🌉', minutes: 30, kind: 'irl', blurb: 'One stretch of the riverfront at sunset, a cold drink each.', countries: ['IN'], cities: ['Ahmedabad'] },
+  { id: 'bbsr_dahibara', title: 'Dahibara aloodum stop', emoji: '🥣', minutes: 20, kind: 'irl', blurb: 'One plate each from a street cart. Rate the spice.', countries: ['IN'], cities: ['Bhubaneswar', 'Cuttack', 'Rourkela'] },
+  { id: 'chd_sukhna_lake', title: 'Sukhna Lake walk', emoji: '🌅', minutes: 30, kind: 'irl', blurb: 'One lap of the lake path, then a chai.', countries: ['IN'], cities: ['Chandigarh'] },
+  { id: 'cbe_bakery_puff', title: 'Bakery puff break', emoji: '🥐', minutes: 20, kind: 'irl', blurb: 'Hot puffs and tea at a local bakery. Split two kinds.', countries: ['IN'], cities: ['Coimbatore', 'Tiruppur', 'Erode', 'Salem'] },
+  { id: 'goa_shack_sunset', title: 'Beach shack sunset', emoji: '🌴', minutes: 30, kind: 'irl', blurb: 'A soft drink each at a shack. Stay till the sun goes.', countries: ['IN'], cities: ['Goa'] },
+  { id: 'indore_poha_jalebi', title: 'Poha jalebi breakfast', emoji: '🥞', minutes: 20, kind: 'irl', blurb: 'Poha and jalebi from a morning stall. Sweet first or savoury?', countries: ['IN'], cities: ['Indore', 'Bhopal', 'Gwalior', 'Jabalpur', 'Ujjain'] },
+  { id: 'jaipur_kachori_chai', title: 'Pyaaz kachori and chai', emoji: '🧅', minutes: 20, kind: 'irl', blurb: 'One kachori each, one chai. Find the best stall.', countries: ['IN'], cities: ['Jaipur', 'Jodhpur', 'Kota', 'Bikaner', 'Ajmer'] },
+  { id: 'kochi_pazham_pori', title: 'Chai and pazham pori', emoji: '🍌', minutes: 20, kind: 'irl', blurb: 'Banana fritters and chai at a tea shop. Split the plate.', countries: ['IN'], cities: ['Kochi', 'Thiruvananthapuram', 'Kozhikode', 'Thrissur', 'Kollam', 'Kannur', 'Malappuram'] },
+  { id: 'lko_basket_chaat', title: 'Basket chaat stop', emoji: '🧺', minutes: 20, kind: 'irl', blurb: 'One basket chaat to share. Two spoons, no fighting.', countries: ['IN'], cities: ['Lucknow'] },
+  { id: 'ngp_tarri_poha', title: 'Tarri poha stop', emoji: '🍛', minutes: 20, kind: 'irl', blurb: 'Spicy poha with chana curry from a morning cart.', countries: ['IN'], cities: ['Nagpur', 'Amravati'] },
+  { id: 'surat_locho', title: 'Locho stop', emoji: '🫓', minutes: 20, kind: 'irl', blurb: 'One plate of locho to split. Extra sev is the rule.', countries: ['IN'], cities: ['Surat'] },
+  { id: 'vdr_sev_usal', title: 'Sev usal stop', emoji: '🍲', minutes: 20, kind: 'irl', blurb: 'One plate each, pick your spice, a cold drink after.', countries: ['IN'], cities: ['Vadodara'] },
+  { id: 'vizag_beach_road', title: 'Beach road corn walk', emoji: '🐚', minutes: 30, kind: 'irl', blurb: 'A slow walk on the beach road, a corn cob each.', countries: ['IN'], cities: ['Visakhapatnam'] },
+  { id: 'andhra_punugulu', title: 'Punugulu and chai', emoji: '🍘', minutes: 20, kind: 'irl', blurb: 'A paper plate of punugulu and a chai each.', countries: ['IN'], cities: ['Visakhapatnam', 'Vijayawada', 'Guntur', 'Nellore'] },
+  { id: 'ghy_lal_cha', title: 'Lal cha and pitha', emoji: '🍵', minutes: 20, kind: 'irl', blurb: 'Red tea and a plate of pitha at a tea stall.', countries: ['IN'], cities: ['Guwahati'] },
+  { id: 'patna_litti', title: 'Litti chokha stop', emoji: '🔥', minutes: 20, kind: 'irl', blurb: 'One plate of litti chokha each, straight off the coals.', countries: ['IN'], cities: ['Patna'] },
+  { id: 'cg_gupchup', title: 'Gupchup face-off', emoji: '🥟', minutes: 15, kind: 'irl', blurb: 'Six gupchup each. First to tap out pays.', countries: ['IN'], cities: ['Raipur', 'Bhilai'] },
+  { id: 'gujarat_fafda', title: 'Fafda jalebi morning', emoji: '🥨', minutes: 20, kind: 'irl', blurb: 'Fafda, jalebi and chutney from a morning farsan shop.', countries: ['IN'], cities: ['Ahmedabad', 'Surat', 'Vadodara', 'Rajkot', 'Jamnagar', 'Bhavnagar'] },
+  { id: 'jh_dhuska', title: 'Dhuska and chai', emoji: '🍩', minutes: 20, kind: 'irl', blurb: 'A plate of dhuska with aloo and a chai each.', countries: ['IN'], cities: ['Ranchi', 'Jamshedpur', 'Dhanbad', 'Bokaro'] },
+  { id: 'jk_kahwa', title: 'Kahwa and a walk', emoji: '🫖', minutes: 25, kind: 'irl', blurb: 'A cup of kahwa each and a short walk.', countries: ['IN'], cities: ['Srinagar', 'Jammu'] },
+  { id: 'pdy_promenade', title: 'Promenade sea walk', emoji: '🌊', minutes: 30, kind: 'irl', blurb: 'One stretch of the sea front, one cold drink each.', countries: ['IN'], cities: ['Puducherry'] },
+  { id: 'punjab_lassi', title: 'Lassi stop', emoji: '🥛', minutes: 20, kind: 'irl', blurb: 'One tall lassi each. Sweet or salty, no judging.', countries: ['IN'], cities: ['Ludhiana', 'Amritsar', 'Jalandhar', 'Chandigarh'] },
+  { id: 'tn_jigarthanda', title: 'Jigarthanda stop', emoji: '🥤', minutes: 20, kind: 'irl', blurb: 'One jigarthanda each, extra ice cream on top.', countries: ['IN'], cities: ['Chennai', 'Coimbatore', 'Madurai', 'Tiruchirappalli', 'Salem', 'Tiruppur', 'Erode'] },
+  { id: 'doon_bakery', title: 'Bakery rusk and chai', emoji: '🍪', minutes: 20, kind: 'irl', blurb: 'Fresh rusks or buns and a chai at an old bakery.', countries: ['IN'], cities: ['Dehradun'] },
+  { id: 'up_kulhad_samosa', title: 'Kulhad chai and samosa', emoji: '🫖', minutes: 20, kind: 'irl', blurb: 'Chai in clay cups and one samosa each.', countries: ['IN'], cities: ['Lucknow', 'Kanpur', 'Agra', 'Varanasi', 'Prayagraj', 'Meerut', 'Bareilly', 'Aligarh', 'Moradabad', 'Gorakhpur', 'Saharanpur', 'Jhansi', 'Firozabad'] },
 ];
 
 const byId = new Map(IDEAS.map((i) => [i.id, i]));
@@ -54,10 +87,18 @@ export function ideaOf(id: string): MicroDateIdea {
 
 /** The words come from src/i18n (`kinds`). */
 /** The ideas offered in a country, in catalogue order: everywhere ones and its own local ones (WP9). */
-export const ideasFor = (country: string | undefined): MicroDateIdea[] => IDEAS.filter((i) => !i.countries || (!!country && i.countries.includes(country)));
+/** A city idea (`cities`) is offered only to people who live in one of those cities. */
+export const ideasFor = (country: string | undefined, city?: string): MicroDateIdea[] =>
+  IDEAS.filter((i) => (!i.countries || (!!country && i.countries.includes(country))) && (!i.cities || (!!city && i.cities.includes(city))));
 
-/** True when an idea is offered in that country. */
-export const offeredIn = (id: string, country: string | undefined): boolean => ideasFor(country).some((i) => i.id === id);
+/** Ideas of one kind for a picker: the ones local to the city first, then the rest in catalogue order. */
+export const pickerIdeas = (ideas: MicroDateIdea[], kind: MicroDateIdea['kind']): MicroDateIdea[] => {
+  const ofKind = ideas.filter((i) => i.kind === kind);
+  return [...ofKind.filter((i) => i.cities), ...ofKind.filter((i) => !i.cities)];
+};
+
+/** True when an idea is offered in that country (and city, for a city idea). */
+export const offeredIn = (id: string, country: string | undefined, city?: string): boolean => ideasFor(country, city).some((i) => i.id === id);
 
 export const KIND_LABEL: Readonly<Record<MicroDateIdea['kind'], string>> = {
   get video() {
@@ -117,6 +158,38 @@ const OPENERS: Record<string, string> = {
   photo_walk: 'Tell them your good side. Then ignore it.',
   kulfi_gossip: 'Best harmless gossip you are sitting on. Go.',
   dress_up_coffee: 'Compliment the outfit first. Mean it.',
+  mumbai_sea_wall: 'Dry chutney or green? This decides a lot.',
+  delhi_chaat_crawl: 'Aloo tikki or papdi chaat? Choose your fighter.',
+  blr_darshini_coffee: 'Strong or light decoction? Be honest.',
+  hyd_irani_chai: 'How many biscuits before it gets weird?',
+  chennai_beach_sundal: 'Sundal or bajji next? Plan the second snack.',
+  kol_phuchka_bhaar: 'How many phuchkas before you tap out?',
+  misal_stop: 'Medium or tikhat? No judgement. Some judgement.',
+  amd_riverfront_walk: 'Best thing to eat in this city, go.',
+  bbsr_dahibara: 'More dahi or more aloodum? Pick a side.',
+  chd_sukhna_lake: 'Morning person or evening person? Defend it.',
+  cbe_bakery_puff: 'Veg puff or egg puff? This matters.',
+  goa_shack_sunset: 'Which beach is overrated? Say it.',
+  indore_poha_jalebi: 'Sweet first or savoury first?',
+  jaipur_kachori_chai: 'Best kachori in town? Argue.',
+  kochi_pazham_pori: 'Best rainy-day snack in town? Go.',
+  lko_basket_chaat: 'Who gets the last bite? Decide now.',
+  ngp_tarri_poha: 'How much tarri is too much tarri?',
+  surat_locho: 'Butter or cheese locho? Pick one.',
+  vdr_sev_usal: 'Extra sev or extra spice?',
+  vizag_beach_road: 'Lemon and chilli on the corn, or plain?',
+  andhra_punugulu: 'Peanut chutney or ginger chutney?',
+  ghy_lal_cha: 'Til pitha or narikol? Pick your side.',
+  patna_litti: 'Extra ghee or none? Be honest.',
+  cg_gupchup: 'Sweet water or spicy water first?',
+  gujarat_fafda: 'Fafda first or jalebi first?',
+  jh_dhuska: 'Best snack in town? Argue.',
+  jk_kahwa: 'Saffron or almonds in your kahwa?',
+  pdy_promenade: 'French Quarter or Tamil Quarter? Pick a favourite street.',
+  punjab_lassi: 'Sweet or salty? Choose with care.',
+  tn_jigarthanda: 'Extra ice cream or extra basundi?',
+  doon_bakery: 'Rusk or bun maska? Decide.',
+  up_kulhad_samosa: 'Green chutney or saunth?',
 };
 
 export function openerOf(id: string): string {

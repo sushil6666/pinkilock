@@ -59,7 +59,7 @@ reset role;
 set role authenticated;
 select t.ok(t.fails('truncate passes'), 'a signed-in user cannot truncate a table');
 select t.ok(t.fails($$delete from ideas where id = 'boba_run' returning 1/0$$), 'a signed-in user cannot delete from the catalogue');
-select t.ok((select count(*) from ideas) = 38 and exists (select 1 from ideas where id = 'thrift_dare') and exists (select 1 from ideas where id = 'rizz_off'), 'the catalogue has all 38 ideas, old and new');
+select t.ok((select count(*) from ideas) = 70 and exists (select 1 from ideas where id = 'thrift_dare') and exists (select 1 from ideas where id = 'rizz_off'), 'the catalogue has all 70 ideas, old, new and local to a city');
 
 -- A: sees every card, only their own private row, cannot write invites or read events directly.
 select t.as_user(:'a');

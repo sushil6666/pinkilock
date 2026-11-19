@@ -115,7 +115,7 @@ export function checkProfile(
   const pronouns = p.pronouns.trim();
   if (pronouns && pronouns !== was?.pronouns && !PRONOUN_OPTIONS.includes(pronouns)) throw new AppError('PL096');
   const country = CITIES.find((c) => c.name === city)?.country;
-  if (p.ideaIds.some((id) => !was?.ideaIds?.includes(id) && !offeredIn(id, country))) throw new AppError('PL104');
+  if (p.ideaIds.some((id) => !was?.ideaIds?.includes(id) && !offeredIn(id, country, city))) throw new AppError('PL104');
 }
 
 /**
