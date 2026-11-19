@@ -14,8 +14,9 @@ one Expo codebase.
 
 ## Run it on your phone (mock data, no accounts needed)
 
-Needs Node 18.18 or newer with npm 10 or newer (npm 9 cannot install the patched copy in
-`vendor/`; `npm install -g npm@10` fixes that), and the Expo Go app (SDK 52) on the phone.
+Needs Node 22.13 or newer (Expo SDK 58 and React Native 0.88 refuse older ones; on WSL,
+`nvm install 22` is the quickest way) and the Expo Go app for SDK 58 on the phone (update it from
+the store if it says the project is too new).
 
 ```bash
 npm install

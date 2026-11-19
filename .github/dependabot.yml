@@ -26,8 +26,6 @@ updates:
       - dependency-name: "react-native"
       - dependency-name: "react-native-*"
       - dependency-name: "@react-native-async-storage/*"
-      # Pinned by expo-router (see "overrides" in package.json)
-      - dependency-name: "@react-navigation/*"
       # Versions the SDK's `expo install --check` also pins
       - dependency-name: "@types/react"
       - dependency-name: "typescript"

@@ -21,7 +21,7 @@ Leaving. You can download your data and delete your account at any time from Me.
 
 export const PRIVACY = `DRAFT, NOT YET REVIEWED BY A LAWYER
 
-What we keep: your profile (first name, age, area, city, the line about you, tags and date ideas), the contact you choose to unlock after a kept promise, your plans and what happened to them, your answers after a date, and the error codes the app sends when something breaks. Your email or phone number, if you add one, is used to sign you in.
+What we keep: your profile (first name, age, area, city, the line about you, tags and date ideas), the contact you choose to unlock after a kept promise, the photos you add (your face, taken in the app and shown on your card once a person here has checked it, and up to three more shown only after a kept promise; place, phone and time details are stripped from each file), your plans and what happened to them, your answers after a date, and the error codes the app sends when something breaks. Your email or phone number, if you add one, is used to sign you in.
 
 Your location. If you let it, the app reads your device's location once, to suggest your city and nearest area. That happens on your device: the location is never saved, never sent to us and never shown to anyone. Only the city and area you then pick are kept, as part of your profile. You can say no and pick them by hand.
 

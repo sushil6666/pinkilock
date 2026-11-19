@@ -105,7 +105,7 @@ export default function NewInvite() {
       footer={<>{hint}<HoldButton label={t(asDouble ? 'compose.holdDouble' : 'compose.hold', { name: person.name })} onComplete={submit} disabled={!!missing || full} busy={busy} /></>}
     >
       <View style={styles.to}>
-        <Portrait name={person.name} palette={person.palette} glyph={person.glyph} size={52} />
+        <Portrait name={person.name} palette={person.palette} glyph={person.glyph} faceUrl={person.faceUrl} size={52} />
         <View style={{ flex: 1, gap: 4 }}>
           <T v="title" numberOfLines={1}>{t('compose.askName', { name: person.name })}</T>
           <TrustBadge person={person} />

@@ -1,9 +1,4 @@
 {
   "_about": "High and critical npm advisories in what ships that are triaged and accepted for now. Debt to clear by upgrading, not a list of things that are fine. See scripts/audit-check.mjs.",
-  "accepted": {
-    "@expo/cli": "high; flagged through cacache and tar below, and its own config packages (moderate: glob, uuid). Build-time only, not in the app bundle; triaged 2026-11-19 (D093). Fixed only by moving to Expo SDK 58, a separate piece of work.",
-    "cacache": "high; flagged through tar and glob. Used by the Expo CLI's cache when building. Build-time only, not in the app bundle; triaged 2026-11-19 (D093). Fixed only by moving to Expo SDK 58, a separate piece of work.",
-    "image-size": "high; DoS on crafted JXL, HEIF or ICNS files (GHSA-5p2g-fcmc-qvqq, GHSA-w3rx-r6r6-pgpr). Metro reads the size of our own image assets with it; 2.x changes the API Metro calls. Build-time only, not in the app bundle; triaged 2026-11-19 (D093). Fixed only by moving to Expo SDK 58, a separate piece of work.",
-    "tar": "critical; path traversal and DoS on crafted archives. The Expo CLI extracts template tarballs from npm with it, and only when the system tar fails; 7.x has no default export, which the CLI loads. Build-time only, not in the app bundle; triaged 2026-11-19 (D093). Fixed only by moving to Expo SDK 58, a separate piece of work."
-  }
+  "accepted": {}
 }

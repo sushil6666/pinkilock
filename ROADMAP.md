@@ -64,8 +64,9 @@ Supabase stack and in CI; it reaches the real project when the PR merges.
 - [x] **Hardening left from WP5** (D093): shipped dependency advisories patched in place (16 high
   or critical down to 4, all build-time), the live feed sends no deletes (G24), and production
   bundles print nothing.
-- [ ] The Expo SDK 58 upgrade, which clears the last 4 advisories (tar, cacache, image-size, the
-  Expo CLI) and lets `vendor/decode-uri-component` and the `overrides` go.
+- [x] **Expo SDK 58** (D094): React Native 0.88, React 19, Expo Router 58. No high or critical
+  advisory left in what ships; batch 8's patches are gone. App version 0.3.0.
+- [ ] A 0.3.0 build tried on a real Android phone (EAS preview build), then shipped.
 - [ ] **Proved handles** (D078): built (code, `contact-verify` function, Verified tick). Needs a
   Pinkilock WhatsApp Business number and an Instagram professional account on a Meta app
   (OPERATIONS.md, "Turning on contact proofs").
@@ -97,8 +98,11 @@ someone, and delete their account, on both platforms, against the production pro
 - [x] **Photos behind the lock** (D088): up to three photos on Me, stored in a private Supabase
   Storage bucket by the `photo` Edge Function, which strips their metadata. A person checks each one
   before anyone sees it (`scripts/moderate.sh photos`); then it shows only after a kept promise, like
-  the handle. Picking needs the next binary. AI review (O04) and the public photo taken with the
-  camera (WP7b) come later.
+  the handle. Picking needs the next binary. AI review (O04) comes later.
+- [x] **Your face on your card** (D095): one optional photo taken in the app with the front camera
+  (never from the gallery), checked by a person, then shown on the card instead of the drawn
+  portrait to whoever is shown the card, never across a block. Once a week. Needs the 0.3.0 binary
+  (`expo-camera`); selfie verification (F2, O11) can reuse the camera step.
 - The video room named in video plans.
 - [x] **Calendar export**: "Add to calendar" on a locked plan makes an `.ics` file on the phone and
   hands it over (a download in a browser, the share sheet on a phone). It reaches phones with the next

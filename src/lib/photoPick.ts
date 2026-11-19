@@ -37,10 +37,17 @@ export async function pickPhoto(): Promise<PickedPhoto | null> {
   const res = await m.picker.launchImageLibraryAsync({ mediaTypes: ['images'], allowsMultipleSelection: false, exif: false, quality: 1 });
   const asset = res.canceled ? null : res.assets[0];
   if (!asset) return null;
-  const long = Math.max(asset.width || 0, asset.height || 0);
+  return toJpeg(asset.uri, asset.width, asset.height);
+}
+
+/** Any picture (a pick, or a camera shot from src/lib/faceCamera.ts) as a plain JPEG of at most 1280 px. */
+export async function toJpeg(uri: string, width: number, height: number): Promise<PickedPhoto | null> {
+  const m = modules();
+  if (!m) return null;
+  const long = Math.max(width || 0, height || 0);
   const resize = long > LONG_SIDE
-    ? [{ resize: asset.width >= asset.height ? { width: LONG_SIDE } : { height: LONG_SIDE } }]
+    ? [{ resize: width >= height ? { width: LONG_SIDE } : { height: LONG_SIDE } }]
     : [];
-  const out = await m.manipulator.manipulateAsync(asset.uri, resize, { compress: 0.82, format: m.manipulator.SaveFormat.JPEG });
+  const out = await m.manipulator.manipulateAsync(uri, resize, { compress: 0.82, format: m.manipulator.SaveFormat.JPEG });
   return { uri: out.uri };
 }

@@ -1,5 +1,6 @@
 /**
- * photo: adds one photo behind the lock (ROADMAP Phase 4, build plan WP7b, decision D088).
+ * photo: adds one photo behind the lock (ROADMAP Phase 4, build plan WP7b, decision D088), or with
+ * `?kind=face` the face on the card (D095).
  *
  * The app POSTs the JPEG it made (resized, re-encoded) with the person's own access token. This
  * function:
@@ -64,9 +65,11 @@ Deno.serve(async (req) => {
   const raw = size > READ_LIMIT ? null : new Uint8Array(await req.arrayBuffer());
   const clean = raw && raw.length <= READ_LIMIT ? stripJpeg(raw) : null;
 
-  // 3. The rules, and a row.
+  // 3. The rules, and a row. `?kind=face` is the photo for the card (D095); the database refuses any
+  // other kind, and its rules differ: one face waiting at a time, a new one once a week.
+  const kind = new URL(req.url).searchParams.get('kind') === 'face' ? 'face' : 'locked';
   const added = await rpc<{ id: string; path: string }>('add_photo', {
-    p_user: user.id, p_bytes: clean?.length ?? raw?.length ?? size, p_jpeg: !!clean,
+    p_user: user.id, p_bytes: clean?.length ?? raw?.length ?? size, p_jpeg: !!clean, p_kind: kind,
   }, trace);
   if (added.error || !added.data || !clean) {
     console.log(JSON.stringify({ event: 'photo', user: user.id, result: added.error?.code ?? 'refused', trace }));
@@ -85,6 +88,6 @@ Deno.serve(async (req) => {
     console.log(JSON.stringify({ event: 'photo', user: user.id, result: 'storage_failed', status: stored.status, trace }));
     return json({ code: 'PC002', message: '' }, 502);
   }
-  console.log(JSON.stringify({ event: 'photo', user: user.id, photo: id, result: 'pending', bytes: clean.length, trace }));
+  console.log(JSON.stringify({ event: 'photo', user: user.id, photo: id, kind, result: 'pending', bytes: clean.length, trace }));
   return json({ id, status: 'pending' });
 });

@@ -14,13 +14,14 @@ a processor or a kind of data updates this file in the same pull request.
 | Areas named off the list: city, name, how many people, first and last time | `private.area_requests` | Until promoted to the list or cleared | No client; operators |
 | Contact handle | `profile_private` | Until deleted | The person; someone they kept a promise with |
 | Photos behind the lock (up to three; the file has no metadata: place, phone and time are stripped on the server) | `photos`, Storage bucket `photos` | Until removed or the account is deleted; the file within minutes after (`photo_trash`) | The person; moderators; once approved, someone they kept a promise with |
-| Photo uploads, for the weekly limit | `private.photo_uploads` | 8 days | No client |
+| Your face on your card (one; taken with the camera; no metadata) | `photos` (`kind` = `face`), Storage bucket `photos` | Until replaced, removed or the account is deleted; the file within minutes after (`photo_trash`) | The person; moderators; once approved, whoever is shown the card (people they share a plan or duo with, and Discover for two days after showing it), never across a block |
+| Photo uploads, for the weekly limits (photos and face) | `private.photo_uploads` | 8 days | No client |
 | Sign-in code requests: a hash of the address, the caller (account id, or a hash of the network address) and the time, for the limits | `private.auth_code_requests` | 1 day | No client |
 | Plans: who (two people, or four on a double), idea, time, place, line, status, pinkies, check-ins | `invites` | Place and line cleared 90 days after the plan ends | The two people on it |
 | Behaviour log (asks, locks, check-ins, bails) | `events` | Kept; a deleted account's rows lose its id | No client; the analytics worker |
 | Trust Score | `trust_scores` | Recomputed every 6 hours | The person; people they share a plan with; Discover |
 | Answers after a date | `date_ratings` | Until deleted | No client; the analytics worker |
-| Consents with version and time | `consents` | Until deleted | No client; operators |
+| Consents with version and time (the four at sign-up; `face` when a face is first sent) | `consents` | Until deleted | No client; operators |
 | Reports, blocks, moderation actions | `reports`, `blocks`, `private.moderation_actions` | Reports kept with ids removed on deletion | Moderators only |
 | Profile line under review | `private.line_reviews` | Until decided or replaced | The person (their own); moderators |
 | Requests and appeals | `privacy_requests` | Until deleted | Operators |

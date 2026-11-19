@@ -4,11 +4,10 @@
     "slug": "pinkilock",
     "owner": "pinkilock",
     "scheme": "pinkilock",
-    "version": "0.2.0",
+    "version": "0.3.0",
     "orientation": "portrait",
     "userInterfaceStyle": "dark",
     "backgroundColor": "#241A63",
-    "newArchEnabled": true,
     "ios": {
       "bundleIdentifier": "com.pinkilock.app",
       "supportsTablet": false
@@ -21,10 +20,6 @@
         "monochromeImage": "./assets/adaptive-icon-mono.png",
         "backgroundColor": "#241A63"
       }
-    },
-    "androidNavigationBar": {
-      "backgroundColor": "#241A63",
-      "barStyle": "light-content"
     },
     "androidStatusBar": {
       "backgroundColor": "#241A63",
@@ -68,6 +63,15 @@
         }
       ],
       [
+        "expo-camera",
+        {
+          "cameraPermission": "Pinkilock uses the front camera to take the photo of your face shown on your card.",
+          "microphonePermission": false,
+          "recordAudioAndroid": false,
+          "barcodeScannerEnabled": false
+        }
+      ],
+      [
         "expo-build-properties",
         {
           "android": {
@@ -80,6 +84,13 @@
         "expo-location",
         {
           "locationWhenInUsePermission": "Pinkilock uses your location once, on this phone, to suggest your city and nearest area. It is never saved or sent."
+        }
+      ],
+      [
+        "expo-navigation-bar",
+        {
+          "style": "light",
+          "enforceContrast": false
         }
       ]
     ],

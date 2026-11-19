@@ -3,7 +3,7 @@
  * desktop window the bar becomes a menu down the left: icon beside label, the active tab in pink.
  */
 import { Feather } from '@expo/vector-icons';
-import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
+import type { BottomTabBarProps } from 'expo-router/tabs';
 import { Tabs } from 'expo-router';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -24,7 +24,7 @@ const TABS: Record<string, { label: 'tabs.discover' | 'tabs.asks' | 'tabs.plans'
   me: { label: 'tabs.me', icon: 'user' },
 };
 
-function TabBar({ state, navigation }: BottomTabBarProps) {
+function TabBar({ state, emitter, navigateToTab }: BottomTabBarProps) {
   const insets = useSafeAreaInsets();
   const desktop = useDesktop();
   const meId = useStore((s) => s.me?.id ?? '');
@@ -51,8 +51,8 @@ function TabBar({ state, navigation }: BottomTabBarProps) {
               {...aria({ selected: focused })}
               accessibilityLabel={count ? t('tabs.withCount', { tab: t(tab.label), count }) : t(tab.label)}
               onPress={() => {
-                const event = navigation.emit({ type: 'tabPress', target: route.key, canPreventDefault: true });
-                if (!focused && !event.defaultPrevented) navigation.navigate(route.name);
+                const event = emitter.emit({ type: 'tabPress', target: route.key, canPreventDefault: true });
+                if (!focused && !event.defaultPrevented) navigateToTab(route.key);
               }}
               style={({ pressed }) => [styles.sideTab, (focused || pressed) && styles.sideOn]}
             >
@@ -85,8 +85,8 @@ function TabBar({ state, navigation }: BottomTabBarProps) {
             accessibilityLabel={count ? t('tabs.withCount', { tab: t(tab.label), count }) : t(tab.label)}
             onPress={() => {
               haptic.tick();
-              const event = navigation.emit({ type: 'tabPress', target: route.key, canPreventDefault: true });
-              if (!focused && !event.defaultPrevented) navigation.navigate(route.name);
+              const event = emitter.emit({ type: 'tabPress', target: route.key, canPreventDefault: true });
+              if (!focused && !event.defaultPrevented) navigateToTab(route.key);
             }}
             style={styles.tab}
           >

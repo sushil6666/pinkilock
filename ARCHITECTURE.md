@@ -21,7 +21,7 @@ put together and why. The look and the gesture are specified in `DESIGN_SYSTEM.m
 
 | Layer | Choice | Why |
 | --- | --- | --- |
-| App | Expo SDK 52, React Native 0.76 (New Architecture), TypeScript strict, Expo Router 4 | One codebase for Android and iOS, runs in Expo Go today |
+| App | Expo SDK 58, React Native 0.88 (New Architecture), React 19, TypeScript 6 strict, Expo Router 58 | One codebase for Android and iOS, runs in Expo Go today |
 | Motion | Reanimated 3 + Gesture Handler 2 | The lock gesture runs on the UI thread at 60fps |
 | Touch feedback | Expo Haptics behind `src/lib/haptics.ts` | One vocabulary on both platforms, silent on web |
 | Client state | Zustand (`src/state/store.ts`) | Small, no providers, narrow re-renders |
@@ -166,7 +166,7 @@ Full DDL is `supabase/migrations`. Tables:
 | --- | --- | --- |
 | `profiles` | The public card: name, age (18+ check), area, tagline, vibes, `idea_ids` | Read: me, and people I share an invite with (any status, never across a block); everyone else only through `discover()`. **No direct writes**: only through `save_profile` |
 | `profile_private` | Contact handle | Read: you, and anyone with a `kept` invite with you (`private.revealed_to`). **No direct writes**: the contact through `save_profile` |
-| `photos` | Up to three photos behind the lock: path in Storage, `pending` / `approved` / `held`, size | Read: your own; someone else's only when approved and `private.revealed_to` allows. **No client writes**: added by the `photo` Edge Function (`add_photo`, service role), removed with `remove_photo`, decided by a moderator |
+| `photos` | Up to three photos behind the lock, and the face on the card (`kind`: `locked` or `face`): path in Storage, `pending` / `approved` / `held`, size | Read: your own; someone else's only when approved, and then a locked one where `private.revealed_to` allows and a face where `private.face_visible` does. **No client writes**: added by the `photo` Edge Function (`add_photo`, service role), removed with `remove_photo`, decided by a moderator |
 | `photo_trash` | Paths of photo files whose row is gone | No client access. Filled by a trigger, emptied by the push function through the Storage API |
 | Storage bucket `photos` | The photo files, JPEG with no metadata, 2 MB at most | Private. A file is readable (as a ten-minute signed link) only where its `photos` row is; no client can write |
 | `ideas` | The micro-date catalogue | Read only |
@@ -538,6 +538,28 @@ app keeps none. Removing a photo, or deleting the account, deletes the row at on
 every way to read the file) and leaves the path in `photo_trash`; the push function, woken by a
 five-minute job, deletes the files through the Storage API. A phone build from before this change
 has no picker, so Me says photos need the new version.
+
+### Your face on your card
+
+One optional photo of your face (D095), shown on your card in place of the drawn portrait. It is
+taken in the app with the front camera and never picked from the gallery
+(`src/components/FaceCamera.tsx`, `expo-camera`; in a browser, the browser's camera), with an oval
+to fit into and, before sending, the line that says who will see it. Sending it records the `face`
+consent. It travels the same road as the photos behind the lock: the `photo` Edge Function with
+`?kind=face`, `add_photo` with `p_kind = 'face'`, `pending` until a moderator approves it, a strike
+when held for a contact. Its own rules (`src/domain/face.ts` and `add_photo`): one waiting at a
+time, a new one once a week except straight after a held one, three tries a week. While a new one
+waits the old one stays up; approving it deletes the old one.
+
+Who sees it is `private.face_visible`: the owner, and whoever is already shown the card (people
+they share a plan or a duo with, and cards `discover()` handed out in the last two days), never
+across a block and never while the account is paused. The `photos_face` policy and the Storage
+policy apply it, so a face is never signed for anyone else. The backend adds `faceUrl` to every
+card it reads (one query for the faces of the cards in hand, then signed links of an hour, reused
+while their rows still come back); `Portrait` draws the face, and falls back to the drawing if the
+link fails. "Camera only" stops an ordinary person sending a screenshot; a modified app could send
+any picture, so the person who checks it is the real defence until the automatic checks (O04).
+A 0.2.x phone build has no camera module, so Me says the face needs the new version.
 
 ### Share my date and the after-date check
 

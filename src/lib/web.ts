@@ -43,8 +43,12 @@ export function aria(state: { pressed?: boolean; selected?: boolean; checked?: b
   return out;
 }
 
-/** Props that only exist in a browser (tabIndex, onKeyDown). Empty on a phone. */
-export function webOnly<P extends object>(props: P): P | Record<string, never> {
+/**
+ * Props that only exist in a browser (tabIndex, onKeyDown with a DOM keyboard event). Empty on a
+ * phone. Typed as an opaque object: React Native 0.88 has an onKeyDown of its own with a different
+ * event, and these never reach it.
+ */
+export function webOnly<P extends object>(props: P): object {
   return isWeb ? props : {};
 }
 

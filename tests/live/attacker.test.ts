@@ -281,6 +281,8 @@ test('photos (D088): no direct upload, no rule-skipping, and no one else\'s file
   }
   // The rules and the row are the photo function's only.
   refused(await raw.rpc('add_photo', { p_user: x.id, p_bytes: 4, p_jpeg: true }), 'calling add_photo myself');
+  refused(await raw.rpc('add_photo', { p_user: x.id, p_bytes: 4, p_jpeg: true, p_kind: 'face' }), 'calling add_photo myself for a face (D095)');
+  refused(await raw.from('photos').update({ kind: 'face' }).eq('profile_id', x.id).select('id'), 'turning a photo behind the lock into a face');
   refused(await raw.from('photos').insert({ profile_id: x.id, path: `${x.id}/x.jpg`, bytes: 4 }), 'writing a photo row');
   refused(await raw.from('photo_trash').select('*'), 'reading the photo trash');
   // The function wants a real session, and a real JPEG.
