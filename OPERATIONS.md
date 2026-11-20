@@ -405,7 +405,10 @@ scripts/moderate.sh "$DB" photo <id> hold_photo_contact "handle on a card"  # no
 Look at each file in the dashboard (Storage, bucket `photos`, the path from the list). Hold
 anything with readable text, a handle, a number, a QR code or a barcode as `hold_photo_contact`;
 hold nudity, violence, other people's faces, or a photo of a photo as `hold_photo`. The files there
-carry no metadata: the `photo` function strips it before storing. A held photo stays on the
+carry no metadata: the `photo` function strips it and draws the picture again before storing
+(D098). Its log line says how long that took (`ms`); a refusal with `why: not_redrawn` is a file
+that passed the strip but would not decode. If successful uploads start taking more than about
+1500 ms, the function is near the Edge runtime's 2 s of CPU a request: tell the owner. A held photo stays on the
 owner's Me as "Not approved" until they remove it. Removed photos and deleted accounts leave their
 paths in `photo_trash`, which the push function empties within five minutes; if it grows,
 check the push function's log for `photo_trash_failed`.

@@ -6,10 +6,12 @@
  * function:
  *   1. asks Auth who the token belongs to (an unknown or expired token is PL001);
  *   2. strips every bit of metadata from the file (./jpeg.ts): place, phone, time, comments, and
- *      anything after the image. A file that is not a whole JPEG is refused;
+ *      anything after the image. A file that is not a whole JPEG is refused. Then draws the picture
+ *      again from its pixels (./reencode.ts, D098), so nothing hidden in the picture data survives;
+ *      a file that will not decode, or is larger than the app sends, is refused;
  *   3. asks the database for the rules and a row (public.add_photo, service role only: three
  *      photos, six uploads a week, 2 MB, not paused). Its PL code goes back to the app as is;
- *   4. stores the stripped file in the private `photos` bucket at the path the row names. If that
+ *   4. stores the new file in the private `photos` bucket at the path the row names. If that
  *      fails, the row is taken back (public.forget_photo).
  * The photo is `pending`: nobody else sees it until a moderator approves it
  * (scripts/moderate.sh photos). No client can write to the bucket; this is the only way in.
@@ -18,7 +20,14 @@
  * SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are provided by the platform.
  * Logs carry the user id, the result and the trace id only, never the picture.
  */
+import decodeJpeg, { init as initDecoder } from 'npm:@jsquash/jpeg@1.6.0/decode.js';
+import jpegJs from 'npm:jpeg-js@0.4.4';
 import { stripJpeg } from './jpeg.ts';
+import { MOZJPEG_DEC_HEX } from './mozjpeg_dec.ts';
+import { makeCodec, reencode } from './reencode.ts';
+
+// The versions match package.json's devDependencies, which tests/unit/reencode.test.ts runs.
+const codec = makeCodec({ init: initDecoder, decode: decodeJpeg }, MOZJPEG_DEC_HEX, jpegJs);
 
 const BASE = (Deno.env.get('SUPABASE_URL') ?? '').replace(/\/$/, '');
 const SERVICE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
@@ -63,7 +72,10 @@ Deno.serve(async (req) => {
   // 2. The file, with nothing in it but the picture.
   const size = Number(req.headers.get('content-length') ?? '0');
   const raw = size > READ_LIMIT ? null : new Uint8Array(await req.arrayBuffer());
-  const clean = raw && raw.length <= READ_LIMIT ? stripJpeg(raw) : null;
+  const stripped = raw && raw.length <= READ_LIMIT ? stripJpeg(raw) : null;
+  const started = performance.now();
+  const clean = stripped ? await reencode(stripped, codec) : null;
+  const ms = Math.round(performance.now() - started);
 
   // 3. The rules, and a row. `?kind=face` is the photo for the card (D095); the database refuses any
   // other kind, and its rules differ: one face waiting at a time, a new one once a week.
@@ -72,7 +84,8 @@ Deno.serve(async (req) => {
     p_user: user.id, p_bytes: clean?.length ?? raw?.length ?? size, p_jpeg: !!clean, p_kind: kind,
   }, trace);
   if (added.error || !added.data || !clean) {
-    console.log(JSON.stringify({ event: 'photo', user: user.id, result: added.error?.code ?? 'refused', trace }));
+    const why = stripped && !clean ? 'not_redrawn' : undefined;
+    console.log(JSON.stringify({ event: 'photo', user: user.id, result: added.error?.code ?? 'refused', why, ms, trace }));
     return json({ code: added.error?.code ?? 'PC002', message: added.error?.message ?? '' }, 400);
   }
 
@@ -88,6 +101,6 @@ Deno.serve(async (req) => {
     console.log(JSON.stringify({ event: 'photo', user: user.id, result: 'storage_failed', status: stored.status, trace }));
     return json({ code: 'PC002', message: '' }, 502);
   }
-  console.log(JSON.stringify({ event: 'photo', user: user.id, photo: id, kind, result: 'pending', bytes: clean.length, trace }));
+  console.log(JSON.stringify({ event: 'photo', user: user.id, photo: id, kind, result: 'pending', bytes: clean.length, ms, trace }));
   return json({ id, status: 'pending' });
 });

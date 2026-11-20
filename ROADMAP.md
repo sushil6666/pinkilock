@@ -98,7 +98,8 @@ someone, and delete their account, on both platforms, against the production pro
   were written without a local check and need one before launch.
 
 - [x] **Photos behind the lock** (D088): up to three photos on Me, stored in a private Supabase
-  Storage bucket by the `photo` Edge Function, which strips their metadata. A person checks each one
+  Storage bucket by the `photo` Edge Function, which strips their metadata and draws the picture
+  again from its pixels (D098). A person checks each one
   before anyone sees it (`scripts/moderate.sh photos`); then it shows only after a kept promise, like
   the handle. Picking needs the next binary. AI review (O04) comes later.
 - [x] **Your face on your card** (D095): one optional photo taken in the app with the front camera

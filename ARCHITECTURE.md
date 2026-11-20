@@ -526,7 +526,10 @@ only where the handle is shown: after a kept promise, never across a block. On M
 `expo-image-manipulator` to a JPEG of at most 1280 px, which drops the file's metadata) and the
 backend POSTs it with the person's own token to the `photo` Edge Function. The function checks the
 token with Auth, strips the file again (`supabase/functions/photo/jpeg.ts`: EXIF, XMP, ICC,
-comments and anything after the image; a file that is not a whole JPEG is refused), asks
+comments and anything after the image; a file that is not a whole JPEG is refused), then draws
+the picture again from its pixels (`supabase/functions/photo/reencode.ts`, D098: mozjpeg in
+WebAssembly decodes, jpeg-js writes a new baseline JPEG at quality 85; more than 1600 px on a side,
+or a file that will not decode, is refused), so nothing hidden in the picture data survives, asks
 `add_photo` for the rules (three photos, six uploads a week, 2 MB, not paused) and stores the file
 in the private `photos` bucket. No client can write to the bucket, so a modified app cannot skip
 any of that.
