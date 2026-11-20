@@ -92,9 +92,20 @@ jobs:
       - name: Push, end to end
         run: npm run test:push:local
       - name: Two phones through the real screens
+        env:
+          # Each step's screens, and both browsers at the moment it fails.
+          SHOTS_DIR: ${{ runner.temp }}/app-shots
         run: |
           npx playwright install --with-deps chromium
           npm run test:app:local
+      - name: Keep the screens of a failed app run
+        if: failure()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: app-shots
+          path: ${{ runner.temp }}/app-shots
+          retention-days: 7
+          if-no-files-found: ignore
       - name: Edge Function logs
         if: failure()
         run: docker logs supabase_edge_runtime_pinkilock 2>&1 | tail -100

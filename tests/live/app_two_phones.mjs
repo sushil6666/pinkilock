@@ -122,6 +122,13 @@ for (const [aSize, bSize] of RUNS) {
     failed = true;
     console.error(`FAILED after step ${step} (${pass.trim()}): ${e.message}`);
     for (const who of [A, B]) if (who.page) await shot(who, 'failure');
+    // Where each browser stood, and the first words on its screen: enough to tell a lost tap from
+    // a screen that opened with nothing to show. Test people only, so their text is not private.
+    for (const who of [A, B]) {
+      if (!who.page) continue;
+      const words = (await who.page.locator('body').innerText().catch(() => '')).replace(/\s+/g, ' ').slice(0, 300);
+      console.error(`  ${who.name}: ${who.page.url()} | ${words}`);
+    }
   } finally {
     for (const who of [A, B]) if (who.page) await who.page.context().close();
     sql(`delete from public.events where actor_id in (select id from public.profiles where name in ('${A.name}', '${B.name}')); delete from auth.users where is_anonymous and id in (select id from public.profiles where name in ('${A.name}', '${B.name}')); delete from public.blocks where blocker_id in (select id from public.profiles where name in ('${A.name}', '${B.name}'))`);
