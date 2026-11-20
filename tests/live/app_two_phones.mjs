@@ -90,6 +90,24 @@ async function onboard(browser, who) {
   await page.getByLabel('Me', { exact: true }).waitFor();
 }
 
+/**
+ * Tap a button that opens another screen, and wait for that screen. The test taps the moment a
+ * button shows, faster than any thumb; on PR #86 (run 44767750929) a "Lock it" tap made while the
+ * invite was still opening from the banner was lost, and B stayed on the invite. If the next screen
+ * has not come in 5 s and the button is still there, tap once more and say so in the log.
+ */
+async function tapThrough(who, name, next) {
+  await btn(who.page, name).click();
+  try {
+    await next.waitFor({ timeout: 5000 });
+  } catch {
+    if (!(await btn(who.page, name).isVisible())) throw new Error(`"${name}" was tapped, but neither it nor the next screen is showing`);
+    console.log(`note  [${who.name}] the first "${name}" tap was lost; tapping again`);
+    await btn(who.page, name).click();
+    await next.waitFor();
+  }
+}
+
 /** Drag the pinky across, the way a thumb would. */
 async function slidePinky(page) {
   const stage = page.getByLabel('Slide your pinky in to lock this plan');
@@ -175,7 +193,9 @@ async function flow(A, B) {
   await shot(B, 'banner');
   await btn(B.page, new RegExp(`${A.name} asked you`)).click();
   ok('B got the ask over Realtime (banner)');
-  await btn(B.page, 'Lock it').click();
+  // Let the invite settle first: it has just opened from the banner.
+  await B.page.getByText(`${A.name} wants to lock this in.`).waitFor();
+  await tapThrough(B, 'Lock it', B.page.getByLabel('Slide your pinky in to lock this plan'));
   await slidePinky(B.page);
   await B.page.getByText(/pinky is out|Waiting|seal/i).first().waitFor({ timeout: 10000 });
   await shot(B, 'half-locked');
