@@ -474,7 +474,7 @@ approved photo only where the reveal is; the attacker suites try a direct upload
 `add_photo`, writing a row and signing someone else's file. Three photos, six uploads a week.
 **Left:** the public photo taken with the camera; the automatic checks (one face, no text, no QR,
 nudity), which wait for O04 and replace the person for the clear cases; re-encoding on the server
-(the app re-encodes; the server only strips).
+(the app re-encodes; the server only strips). *Re-encoding done 2026-11-20, D098.*
 
 **Status, 2026-11-19: the face on the card built, with a person as the check** (decision D095).
 Taken with the front camera only (`expo-camera`, in the 0.3.0 binary), sent through the same
@@ -482,8 +482,17 @@ Taken with the front camera only (`expo-camera`, in the 0.3.0 binary), sent thro
 Once a week (straight away after a held one, three tries a week), as the plan says. Shown to whoever
 is shown the card (`private.face_visible`), never across a block or while paused; tests in
 `tests/db/faces.sql`, both attacker suites and `tests/live/photos.test.ts`. **Left:** the automatic
-checks (O04); re-encoding on the server; selfie verification (F2, O11), which can reuse the camera
+checks (O04); selfie verification (F2, O11), which can reuse the camera
 step. Camera-only is a convenience, not a defence: a modified app can send any picture.
+
+**Status, 2026-11-20: every photo drawn again on the server** (decision D098). After stripping, the
+`photo` function decodes the picture (mozjpeg in WebAssembly, carried in the function as hex so
+no file is read at run time) and writes a new JPEG (jpeg-js, quality 85, one baseline scan). Data
+hidden in the picture data (an unused table, extra scans, the coefficients) does not survive. Sizes
+are read from the header before decoding, so a file claiming a huge picture is refused without
+being decoded. About 0.4 s of CPU for a 1280 px photo in Node; the runtime allows 2 s. Tests:
+`tests/unit/reencode.test.ts` and the live test, which hides text in a table and reads the stored
+file back.
 
 ### WP8. Privacy and regulation, built once for every region (G16, G17)
 

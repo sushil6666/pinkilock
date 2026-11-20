@@ -18,7 +18,11 @@ import { KEY, URL, person, profile, type Person } from './helpers';
 
 const DB = process.env.E2E_DB_URL;
 const sql = (q: string): string => execFileSync('psql', [DB!, '-v', 'ON_ERROR_STOP=1', '-qtA', '-c', q], { encoding: 'utf8' }).trim();
-const fixture = readFileSync(join(__dirname, '..', 'unit', 'fixtures', 'exif_gps_baseline.jpg'));
+const plain = readFileSync(join(__dirname, '..', 'unit', 'fixtures', 'exif_gps_baseline.jpg'));
+// Text in a quantisation table nobody uses: valid JPEG, not metadata, so only drawing the picture
+// again (D098) takes it out.
+const fixture = Buffer.concat([plain.subarray(0, 2), Buffer.from([0xff, 0xdb, 0x00, 67, 0x03]),
+  Buffer.concat([Buffer.from('@in_the_picture', 'latin1'), Buffer.alloc(64)]).subarray(0, 64).map((b) => b || 1), plain.subarray(2)]);
 const asUri = (bytes: Buffer, type = 'image/jpeg') => `data:${type};base64,${bytes.toString('base64')}`;
 const has = (bytes: Uint8Array, text: string) => Buffer.from(bytes).includes(Buffer.from(text, 'latin1'));
 
@@ -54,6 +58,7 @@ test('a photo goes in through the function, without its metadata, and waits for 
   const file = new Uint8Array(await (await fetch(mine[0].url!)).arrayBuffer());
   assert.deepEqual([...file.subarray(0, 4)], [0xff, 0xd8, 0xff, 0xe0], 'a JPEG with a plain JFIF header');
   for (const t of ['Exif', 'PhoneMaker', 'secret comment', '@handle']) assert.ok(!has(file, t), `${t} was stripped on the server`);
+  assert.ok(has(fixture, '@in_the_picture') && !has(file, '@in_the_picture'), 'the picture was drawn again on the server');
   assert.ok(Number(sql(`select bytes from public.photos where id = '${mine[0].id}'`)) === file.length, 'the row records the stored size');
 
   await assert.rejects(owner.backend.addPhoto({ uri: asUri(Buffer.from('@e2e_pia, my handle'), 'text/plain') }),
