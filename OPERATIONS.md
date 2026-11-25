@@ -203,6 +203,11 @@ least one minute. What uses them here, and how to use fewer:
 - **Supabase deploy:** one run per merge that touches `supabase/`, followed by the live test.
   Merging two such PRs back to back runs it twice. Merge them together where you can.
 - Check the total under Settings, Billing and plans. A public repo has no limit on minutes.
+- Since 2026-11-25 the repo is public (D100), so minutes are not limited. If it goes private again,
+  the limits above apply: the first sign of running out is jobs that fail in a few seconds with no
+  logs and no `analytics-worker` issue.
+- While it is public, never commit a secret, a `.env` file or `google-services.json`: everything
+  in the history is readable by anyone.
 
 ## 5. Everyday changes
 
