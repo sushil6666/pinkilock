@@ -16,6 +16,7 @@ import { CHECK_IN_CLOSES_AFTER, isDouble, otherId, peopleOf } from '../../domain
 import type { Account, BlockedPerson, CodeKind, ContactCheck, Invite, MyContact, MyPhoto, PickedPhoto, Profile, Reveal } from '../../domain/types';
 import { log, quiet } from '../../lib/log';
 import { isMood, type NoteKind, type SelfLove } from '../../domain/selfLove';
+import { isBoundary, type Spicy, type SpicyPlan } from '../../domain/spicy';
 import type { Backend, BackendEvent, Changes, Notice, Snapshot } from '../backend';
 import { t } from '../../i18n';
 import { activeTrace, tracedAll } from '../traceScope';
@@ -34,6 +35,18 @@ function selfLoveFrom(raw: unknown): SelfLove {
     pausedUntil: ms(r.paused_until ?? null),
     reset: r.reset ? { started: r.reset.started, done: r.reset.done ?? [] } : null,
   };
+}
+
+/** my_spicy() and its siblings. */
+function spicyFrom(raw: unknown): Spicy {
+  const r = (raw ?? {}) as { on?: boolean; discord?: string | null; telegram?: string | null; signal?: string | null; boundaries?: string[]; since?: string | null };
+  return { on: !!r.on, discord: r.discord ?? null, telegram: r.telegram ?? null, signal: r.signal ?? null, boundaries: (r.boundaries ?? []).filter(isBoundary), since: ms(r.since ?? null) };
+}
+
+/** spicy_with() and spicy_yes(). */
+function spicyPlanFrom(raw: unknown): SpicyPlan {
+  const r = (raw ?? {}) as { open?: boolean; my_yes?: boolean; mutual?: boolean; their_boundaries?: string[]; discord?: string | null; telegram?: string | null; signal?: string | null };
+  return { open: !!r.open, myYes: !!r.my_yes, mutual: !!r.mutual, theirBoundaries: (r.their_boundaries ?? []).filter(isBoundary), discord: r.discord ?? null, telegram: r.telegram ?? null, signal: r.signal ?? null };
 }
 
 function toInvite(r: Row): Invite {
@@ -760,6 +773,27 @@ export function createSupabaseBackend(url: string, anonKey: string, storage: Ses
     async doResetStep(day) {
       await uid();
       return selfLoveFrom(await rpc('do_reset_step', { p_day: day }));
+    },
+
+    async spicy() {
+      await uid();
+      return spicyFrom(await rpc('my_spicy'));
+    },
+    async saveSpicy(input) {
+      await uid();
+      return spicyFrom(await rpc('save_spicy', { p_adult: input.adult, p_rules: input.rules, p_discord: input.discord, p_telegram: input.telegram, p_signal: input.signal, p_boundaries: input.boundaries }));
+    },
+    async spicyOff() {
+      await uid();
+      return spicyFrom(await rpc('spicy_off'));
+    },
+    async spicyWith(profileId) {
+      await uid();
+      return spicyPlanFrom(await rpc('spicy_with', { p_other: profileId }));
+    },
+    async spicyYes(profileId, yes) {
+      await uid();
+      return spicyPlanFrom(await rpc('spicy_yes', { p_other: profileId, p_yes: yes }));
     },
 
     async exportMyData() {

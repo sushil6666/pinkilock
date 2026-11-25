@@ -6,6 +6,7 @@
  * to one rpc() or select() (ARCHITECTURE.md section 8) and `subscribe` to a Realtime channel.
  */
 import type { Mood, NoteKind, SelfLove } from '../domain/selfLove';
+import type { Spicy, SpicyInput, SpicyPlan } from '../domain/spicy';
 import type { Account, BlockedPerson, ContactCheck, Invite, MyContact, MyPhoto, NewInvite, NewReport, OnboardingInput, CodeKind, CodeMode, PickedPhoto, Profile, Reveal } from '../domain/types';
 
 export interface Snapshot {
@@ -167,6 +168,24 @@ export interface Backend {
   startReset(): Promise<SelfLove>;
   /** Ticks a day of the reset; each opens on its own day. */
   doResetStep(day: number): Promise<SelfLove>;
+
+  /**
+   * Spicy mode (D103): off unless I turn it on. It needs a phone or an email on the account, the
+   * 18+ yes, the safety rules, and a Discord or Telegram username (never a phone number).
+   */
+  spicy(): Promise<Spicy>;
+  /** Turns it on, or saves new usernames or boundaries while on. */
+  saveSpicy(input: SpicyInput): Promise<Spicy>;
+  /** One tap: off, and the usernames, boundaries and every yes are gone. */
+  spicyOff(): Promise<Spicy>;
+  /**
+   * With one person, from day one: open only when we both have it on and I can see their card
+   * (Discover showed them, or we share an ask or plan), nobody blocked. Their usernames come only
+   * when we both said yes; nothing ever says that they said no.
+   */
+  spicyWith(profileId: string): Promise<SpicyPlan>;
+  /** Yes, move our chat; false takes my yes back. PL130 when it is not open. */
+  spicyYes(profileId: string, yes: boolean): Promise<SpicyPlan>;
 
   subscribe(listener: (e: BackendEvent) => void): () => void;
 

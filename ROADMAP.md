@@ -107,6 +107,10 @@ someone, and delete their account, on both platforms, against the production pro
   plans, mood check-in with streak and gold badge, gratitude jar, boundaries) and, after a no, a kind
   note, a 3-day reset, a private journal, a pause from Discover and help lines (Tele-MANAS 14416).
 
+- [x] **Spicy mode** (D103): an opt-in for two adults, off by default, with the safety rules, 18+
+  and rules yeses, boundaries from a list, and from day one, with a yes from both, a hand-off to
+  Discord (first), Telegram or Signal. Needs a lawyer's view before launch (O14).
+
 - [x] **Photos behind the lock** (D088): up to three photos on Me, stored in a private Supabase
   Storage bucket by the `photo` Edge Function, which strips their metadata and draws the picture
   again from its pixels (D098). A person checks each one
