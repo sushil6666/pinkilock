@@ -87,7 +87,7 @@ select t.ok((select my_self_love() -> 'reset' -> 'done') = '[]'::jsonb, 'startin
 select export_my_data() -> 'self_love' as sl, export_my_data() ->> 'format' as fmt \gset
 select t.ok((:'sl'::jsonb -> 'notes') @> '[{"kind": "journal"}]'::jsonb, 'S''s export holds S''s notes');
 select t.ok(jsonb_array_length(:'sl'::jsonb -> 'moods') = 1, 'and moods');
-select t.ok(:'fmt' = 'pinkilock-export-7', 'in format 7');
+select t.ok(split_part(:'fmt', '-', 3)::int >= 7, 'in format 7 or later');
 select delete_my_account();
 reset role;
 select t.ok(not exists (select 1 from private.self_notes where user_id = :'s') and not exists (select 1 from private.self_moods where user_id = :'s')

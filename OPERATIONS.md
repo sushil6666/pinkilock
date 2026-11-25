@@ -292,6 +292,12 @@ the SQL editor. A person's request about them is answered with their data downlo
 on Bounce back (Tele-MANAS 14416, `SUPPORT_LINES` in `src/domain/selfLove.ts`) should be checked
 before launch and when a country opens.
 
+**Spicy mode data (D103).** Usernames, boundaries and yeses are in `private.spicy` and
+`private.spicy_yes`. Like Self love, nobody reads them in the SQL editor except to answer a report
+about that person, and a person's request is answered with their data download. Spicy mode should not
+be announced or launched publicly until a lawyer has reviewed it (O14 in `docs/decisions.md`). A report
+about Spicy mode is handled like any other: the report already blocks, which closes the hand-off.
+
 ## 6. Health checks
 
 Do these in a quick weekly look, and whenever something feels wrong.

@@ -13,6 +13,7 @@ import { DateFeedback } from '@/components/DateFeedback';
 import { ShareMyDate } from '@/components/ShareMyDate';
 import { AddToCalendar } from '@/components/AddToCalendar';
 import { LockedReveal } from '@/components/LockedReveal';
+import { SpicyHandoff } from '@/components/Spicy';
 import { Portrait } from '@/components/Portrait';
 import { TrustBadge } from '@/components/TrustBadge';
 import { Button } from '@/components/ui/Button';
@@ -206,6 +207,7 @@ export default function PlanScreen() {
             <LockedReveal person={other} reveal={reveal} hint={t('plan.revealHint', { name })} onFlag={flaggable ? () => backend.reportBadContact(invite.id, other.id) : undefined} />
           </View>
         )}
+        {kept && !double && <SpicyHandoff inviteId={invite.id} otherId={other.id} name={name} />}
         {!flaked && double && [other, theirFriend].map((p, k) => p ? (
           <View key={p.id} style={{ gap: space.sm }}>
             <T v="label" c={color.textDim}>{kept && showable(p.id) ? t('plan.unlocked', { name: p.name }) : t('plan.whatUnlocksFrom', { name: p.name })}</T>

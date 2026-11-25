@@ -22,6 +22,7 @@ import { ALL_CONSENTS, CITIES, openCities } from '../../domain/countries';
 const cityCountry = (city: string) => CITIES.find((c) => c.name === city)?.country ?? 'IN';
 import { FREE_WINDOWS } from '../../domain/freeWindows';
 import { DAY } from '../../domain/invites';
+import { checkSpicy, spicyClosed, spicyOff, type Boundary, type Spicy } from '../../domain/spicy';
 import { PAUSE_MAX_DAYS, RESET_DAYS, checkSelfNote, dayOf, emptySelfLove, isMood, stepOpen, type SelfLove } from '../../domain/selfLove';
 import { VOUCH_MAX_PICKS, VOUCH_PHRASES } from '../../domain/vouches';
 import { t } from '../../i18n';
@@ -57,7 +58,23 @@ interface Db {
   duoId?: string | null;
   /** Self love (D101), mine alone. `today` is worked out on each read. */
   selfLove?: Omit<SelfLove, 'today'>;
+  /** Spicy mode (D103), mine; absent is off. And the plans I said yes on. */
+  spicy?: Spicy;
+  spicyYes?: string[];
 }
+
+/**
+ * The made-up people who have Spicy mode on, with what the server would hold for them. On a kept
+ * plan with one of them, they say yes when I do (the mock has nobody to wait for); the rest have
+ * it off, so a kept plan with them shows nothing, as live.
+ */
+const SPICY_PEOPLE: Record<string, { discord: string | null; telegram: string | null; signal: string | null; boundaries: Boundary[] }> = {
+  aanya: { discord: 'aanya.after.dark', telegram: null, signal: 'aanya.27', boundaries: ['ask_first', 'face_private'] },
+  kabir: { discord: 'kabir_k', telegram: 'kabir_talks', signal: null, boundaries: ['words_only'] },
+  ira: { discord: null, telegram: 'ira_paints', signal: null, boundaries: ['slow', 'no_video'] },
+  zoya: { discord: 'zoya.z', telegram: null, signal: null, boundaries: [] },
+  rhea: { discord: 'rhea.waves', telegram: 'rhea_waves', signal: 'rhea.11', boundaries: ['ask_first', 'no_photos'] },
+};
 
 const wait = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
 const uid = () => `inv_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
@@ -316,6 +333,17 @@ export function createMockBackend(options: { captcha?: () => Promise<string | un
     return selfOf(d);
   }
 
+  /** As spicy_plan_for in SQL: closed unless kept, one-on-one, nobody blocked, both on. */
+  function mockSpicyPlan(d: Db, inviteId: string) {
+    const i = d.invites.find((x) => x.id === inviteId);
+    if (!i || !d.me || !d.spicy?.on || i.status !== 'kept' || rules.isDouble(i)) return spicyClosed;
+    const them = rules.otherId(i, ME_ID);
+    const theirs = SPICY_PEOPLE[them];
+    if (!theirs || isBlocked(d, them) || !rules.canReveal(i, ME_ID, them)) return spicyClosed;
+    const myYes = !!d.spicyYes?.includes(inviteId);
+    return { open: true, myYes, mutual: myYes, theirBoundaries: theirs.boundaries, discord: myYes ? theirs.discord : null, telegram: myYes ? theirs.telegram : null, signal: myYes ? theirs.signal : null };
+  }
+
   return {
     kind: 'mock',
 
@@ -459,6 +487,45 @@ export function createMockBackend(options: { captcha?: () => Promise<string | un
         const done = [...new Set([...(s.reset!.done), day])].filter((x) => x >= 1 && x <= RESET_DAYS).sort();
         return { ...s, reset: { started: s.reset!.started, done } };
       }),
+
+    async spicy() {
+      const d = await load();
+      await wait(LATENCY);
+      if (!d.me) fail('PL002');
+      return d.spicy ?? spicyOff;
+    },
+    async saveSpicy(input) {
+      const d = await load();
+      await wait(LATENCY);
+      if (!d.me) fail('PL002');
+      if (d.me.age < 18) fail('PL127');
+      d.spicy = { on: true, ...checkSpicy(input, !!(d.phone || d.email)), since: Date.now() };
+      save();
+      return d.spicy;
+    },
+    async spicyOff() {
+      const d = await load();
+      await wait(LATENCY);
+      if (!d.me) fail('PL002');
+      delete d.spicy;
+      delete d.spicyYes;
+      save();
+      return spicyOff;
+    },
+    async spicyPlan(inviteId) {
+      const d = await load();
+      await wait(LATENCY);
+      return mockSpicyPlan(d, inviteId);
+    },
+    async spicyYes(inviteId, yes) {
+      const d = await load();
+      await wait(LATENCY);
+      if (!mockSpicyPlan(d, inviteId).open) fail('PL130');
+      const mine = (d.spicyYes ?? []).filter((id) => id !== inviteId);
+      d.spicyYes = yes ? [...mine, inviteId] : mine;
+      save();
+      return mockSpicyPlan(d, inviteId);
+    },
 
     // Requests go nowhere in the mock; there is no moderator.
     async fileRequest(_kind, detail) {
@@ -755,6 +822,7 @@ export function createMockBackend(options: { captcha?: () => Promise<string | un
         blocks: (d.blocked ?? []).map((b) => ({ profile: b.id, at: new Date(b.at).toISOString() })),
         reports_made: (d.reports ?? []).map((r) => ({ profile: r.profileId, reason: r.reason, detail: r.detail, at: new Date(r.at).toISOString() })),
         devices: (d.pushTokens ?? []).map(() => ({ platform: 'this phone' })),
+        spicy: d.spicy ? { discord: d.spicy.discord, telegram: d.spicy.telegram, signal: d.spicy.signal, boundaries: d.spicy.boundaries, since: d.spicy.since ? new Date(d.spicy.since).toISOString() : null, yes: (d.spicyYes ?? []).map((invite) => ({ invite })) } : null,
         self_love: d.selfLove ? { moods: d.selfLove.moods, notes: d.selfLove.notes.map(({ kind, body, day, at }) => ({ kind, body, day, at: new Date(at).toISOString() })), paused_until: d.selfLove.pausedUntil, reset: d.selfLove.reset } : null,
       }, null, 2);
     },

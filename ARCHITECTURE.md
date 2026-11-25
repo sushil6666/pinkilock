@@ -322,7 +322,7 @@ in the SQL editor (`select * from reports where reviewed_at is null`).
 **Export and deletion.** `export_my_data()` returns one JSON document: account (id, phone),
 profile, contact, trust score, my invites (the other person by id only), passes, blocks, reports
 I made, devices, notifications sent to me, my events, and Self love (moods, notes, the pause and
-the reset; format 7). Reports about me are not in it, nor
+the reset), and Spicy mode (my usernames, boundaries and yeses; format 8). Reports about me are not in it, nor
 anyone else's contact. `delete_my_account()` ends my live invites, removes my id from every events
 row (and clears what the phone sent with `app_open`), then deletes the auth user; everything that
 references the profile cascades, and reports keep their row with my id set to null. The other
@@ -507,6 +507,21 @@ asks already made carry on. The kind lines, the self-care steps and the solo ide
 `src/i18n/en.ts`; solo plans are venues of the person's city (`soloPlans` in
 `src/domain/selfLove.ts`). Nothing from Self love is logged or pushed. Bounce back is offered on an
 ask someone said no to or that ran out, and on Asks, Sent, for three days afterwards.
+
+### Spicy mode
+
+An opt-in for two adults (D103), off by default, reached from Me. `private.spicy` (one row while it
+is on: Discord, Telegram and Signal usernames, boundaries from a fixed list, when the 18+ and rules yeses
+were given) and `private.spicy_yes` (a yes on one plan) are readable by no client role and not by the
+analytics worker. The app uses only `my_spicy`, `save_spicy` (both yeses, a linked account, the
+usernames through `private.spicy_username`, which refuses more than six digits as a phone number,
+PL123 to PL129), `spicy_off` (deletes the row and every yes), `spicy_plan` and `spicy_yes` (PL130).
+`private.spicy_plan_for` opens only on a kept one-on-one plan of the caller's, with
+`private.revealed_to` (so no block) and both people on and not suspended; every other case is the
+same `{"open": false}`, so it says nothing about the other person. Usernames come back only when both
+said yes. Pinkilock hosts no chat: Discord is shown first, Telegram second (a `t.me` link), Signal third (with a tip to turn on disappearing messages). Nothing
+is logged, pushed or sent to analytics. The rules are mirrored in `src/domain/spicy.ts`, and
+`SPICY_HANDLE_CASES` is the shared username table (`tests/db/spicy_cases.sql`).
 
 ### Friend vouches
 
