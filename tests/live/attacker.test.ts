@@ -295,3 +295,18 @@ test('photos (D088): no direct upload, no rule-skipping, and no one else\'s file
   const link = await raw.storage.from('photos').createSignedUrl(`${y.id}/anything.jpg`, 60);
   assert.ok(link.error || !link.data?.signedUrl, 'no link to a file I may not read');
 });
+
+test('Self love (D101): mine alone, over the API too', async () => {
+  await y.backend.addSelfNote('journal', 'e2e private journal line');
+  await y.backend.saveMood('low');
+  // The tables are in `private`, which PostgREST does not serve; the functions answer about the caller only.
+  refused(await raw.schema('private' as 'public').from('self_notes').select('*'), 'reading the notes table');
+  refused(await raw.schema('private' as 'public').from('self_love').insert({ user_id: y.id, paused_until: new Date(Date.now() + 864e5).toISOString() }), 'pausing Y directly');
+  const mine = await raw.rpc('my_self_love');
+  assert.ok(!JSON.stringify(mine.data ?? {}).includes('e2e private journal line'), 'X\'s own Self love never carries Y\'s notes');
+  const yNotes = await y.backend.selfLove();
+  refused(await raw.rpc('remove_self_note', { p_id: Number(yNotes.notes[0].id) }), 'removing Y\'s note');
+  assert.equal((await y.backend.selfLove()).notes.length, 1, 'Y\'s note is still there');
+  refused(await signedOut.rpc('my_self_love'), 'signed out, there is no Self love to read');
+  await assert.rejects(x.backend.pauseDiscover(30), (e: unknown) => e instanceof AppError && e.code === 'PL121', 'a pause is 1 to 14 days');
+});

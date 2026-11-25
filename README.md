@@ -55,6 +55,10 @@ With no keys set, the app runs on ten made-up people who answer by themselves. A
    Cards marked "Has a duo" (Zoya, Aanya, Arjun and their friends) can then be asked out on a double:
    in the ask, pick **Double, with Rhea**. The other three put a pinky out together; you seal it. On the
    plan, check in with the code from either person on the other side, and the reveal opens for each.
+10. **Self love**: in **Me**, tap the gold **Self love** card for today's kind line, a mood check-in
+    with your week and streak, solo plans in your city, the gratitude jar and your boundaries. Only
+    you see it. **Bounce back** (from there, or from an ask someone passed on) has a kind note, a
+    3-day reset, a private journal, a pause from Discover, and help lines.
 
 ## Run the backend locally (Docker)
 

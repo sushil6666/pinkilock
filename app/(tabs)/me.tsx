@@ -9,7 +9,7 @@ import { MyFace, useMyFace } from '@/components/MyFace';
 import { MyPhotos } from '@/components/MyPhotos';
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { Platform, Share, StyleSheet, View } from 'react-native';
+import { Platform, Pressable, Share, StyleSheet, View } from 'react-native';
 import { Portrait } from '@/components/Portrait';
 import { TrustBadge } from '@/components/TrustBadge';
 import { Button } from '@/components/ui/Button';
@@ -258,6 +258,15 @@ export default function Me() {
       ) : null}
 
       </>} right={<>
+      <Pressable accessibilityRole="button" accessibilityLabel={t('selfLove.meOpen')} onPress={() => router.push('/self-love')} style={({ pressed }) => [styles.selfLove, pressed && { opacity: 0.85 }]}>
+        <Feather name="heart" size={22} color={color.gold} />
+        <View style={{ flex: 1, gap: 2 }}>
+          <T v="label" c={color.gold}>{t('selfLove.eyebrow')}</T>
+          <T v="heading">{t('selfLove.meTitle')}</T>
+          <T v="caption" c={color.textDim}>{t('selfLove.meBody')}</T>
+        </View>
+        <Feather name="chevron-right" size={20} color={color.textDim} />
+      </Pressable>
       <View style={{ marginTop: space.lg, gap: space.sm }}>
         <Vouches person={me} />
         <Button kind="ghost" icon="users" label={t('me.askVouch')} onPress={askVouch} />
@@ -388,4 +397,5 @@ const styles = StyleSheet.create({
   wrap: { flexDirection: 'row', flexWrap: 'wrap', gap: space.sm },
   section: { marginTop: space.x3, marginBottom: space.md },
   panel: { flexDirection: 'row', alignItems: 'center', gap: space.md, borderWidth: 1, borderColor: color.line, borderRadius: radius.card, backgroundColor: color.surface, padding: space.lg },
+  selfLove: { flexDirection: 'row', alignItems: 'center', gap: space.md, borderWidth: 1, borderColor: color.goldDeep, borderRadius: radius.card, backgroundColor: color.goldWash, padding: space.lg },
 });

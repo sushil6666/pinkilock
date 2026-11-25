@@ -64,9 +64,7 @@ select t.ok((select string_agg(column_name, ',' order by column_name) from infor
 select t.ok((select string_agg(n.nspname || '.' || p.proname, ' ' order by n.nspname, p.proname)
     from pg_proc p join pg_namespace n on n.oid = p.pronamespace
     where n.nspname in ('public', 'private', 'analytics') and has_function_privilege('authenticated', p.oid, 'execute'))
-  = 'private.blocked_pair private.face_visible private.has_duo private.on_invite private.revealed_to private.shares_invite private.vouch_summary public.bail public.block_user public.check_in public.create_duo_link public.create_vouch_link public.date_feedback public.decline_invite '
-    'public.delete_my_account public.discover public.duo_link_name public.export_my_data public.file_privacy_request public.give_consents public.join_duo public.leave_duo public.log_client_error public.log_event public.my_blocks public.my_checkin_code public.my_consents public.my_contact_flags public.my_line_review public.my_moderation public.offer_pinky public.pass_profile public.rate_date public.register_push_token public.remove_photo public.report_bad_contact public.report_user public.restore_passes '
-    'public.save_availability public.save_profile public.send_invite public.start_contact_check public.unblock_user public.unregister_push_token public.vouch public.vouch_link_name',
+  = 'private.blocked_pair private.face_visible private.has_duo private.on_invite private.revealed_to private.shares_invite private.vouch_summary public.add_self_note public.bail public.block_user public.check_in public.create_duo_link public.create_vouch_link public.date_feedback public.decline_invite public.delete_my_account public.discover public.do_reset_step public.duo_link_name public.export_my_data public.file_privacy_request public.give_consents public.join_duo public.leave_duo public.log_client_error public.log_event public.my_blocks public.my_checkin_code public.my_consents public.my_contact_flags public.my_line_review public.my_moderation public.my_self_love public.offer_pinky public.pass_profile public.pause_discover public.rate_date public.register_push_token public.remove_photo public.remove_self_note public.report_bad_contact public.report_user public.restore_passes public.save_availability public.save_mood public.save_profile public.send_invite public.start_contact_check public.start_reset public.unblock_user public.unregister_push_token public.vouch public.vouch_link_name',
   'a signed-in user can call exactly these functions and no others');
 select t.ok(not exists (select 1 from pg_proc p join pg_namespace n on n.oid = p.pronamespace
     where n.nspname in ('public', 'private', 'analytics') and has_function_privilege('anon', p.oid, 'execute')),
@@ -474,3 +472,15 @@ select t.ok(t.fails('select * from private.area_requests') and t.fails($$insert 
   'X cannot read or add to the named-area list');
 reset role;
 
+
+-- D101: Self love is the person's alone. X cannot read or write anyone's moods, notes, pause or reset.
+set role authenticated;
+select t.as_user(:'y');
+select add_self_note('journal', 'y private journal line');
+select t.as_user(:'x');
+select t.ok(t.fails('select * from private.self_notes') and t.fails('select * from private.self_moods') and t.fails('select * from private.self_love')
+  and t.fails(format($$insert into private.self_love (user_id, paused_until) values (%L, now() + interval '1 year')$$, :'y')),
+  'X cannot read or write the Self love tables, or pause Y');
+select t.ok(not (my_self_love()::text like '%y private journal line%'), 'X''s own Self love never carries Y''s notes');
+select t.ok(not (export_my_data()::text like '%y private journal line%'), 'nor does X''s export');
+reset role;
