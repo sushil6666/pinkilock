@@ -155,9 +155,10 @@ export type ErrorCode = keyof typeof ERRORS;
 /**
  * PL codes the app raises itself, about a database answer that is not an error. PL039: a wrong
  * check-in code comes back as the plan unchanged (an error would undo the server's count of wrong
- * tries), and the app names it.
+ * tries), and the app names it. PL144: top-ups are off (no Razorpay keys, or a phone app before Play
+ * Billing); the `wallet` Edge Function and the app say it, not a migration.
  */
-export const APP_RAISED_PL: readonly ErrorCode[] = ['PL039'];
+export const APP_RAISED_PL: readonly ErrorCode[] = ['PL039', 'PL144'];
 
 /** Refusals that usually mean a block or an account deletion this phone has not heard about yet. */
 export const RESYNC_CODES: readonly ErrorCode[] = ['PL003', 'PL004', 'PL030', 'PL033', 'PL034'];

@@ -325,3 +325,18 @@ test('Spicy mode (D103): nothing of anyone else\'s, over the API too', async () 
   await assert.rejects(x.backend.spicyYes('00000000-0000-0000-0000-000000000000', true), (e: unknown) => e instanceof AppError && e.code === 'PL130', 'and takes no yes');
   refused(await signedOut.rpc('my_spicy'), 'signed out, there is no Spicy to read');
 });
+
+test('The wallet (D104, D105): no credits from nowhere, nothing of anyone else\'s, over the API too', async () => {
+  refused(await raw.schema('private' as 'public').from('wallets').select('*'), 'reading any wallet');
+  refused(await raw.schema('private' as 'public').from('wallets').insert({ user_id: x.id, paid: 2000 }), 'crediting myself');
+  refused(await raw.schema('private' as 'public').from('wallet_ledger').select('*'), 'reading the ledger');
+  refused(await raw.schema('private' as 'public').from('spicy_unlocks').select('*'), 'reading the Spicy unlocks');
+  // Only the Edge Function (service role) may open or pay an order, or use a voucher.
+  refused(await raw.rpc('wallet_open_order', { p_user: x.id, p_pack: 'p49', p_order: 'order_attack1' }), 'opening an order');
+  refused(await raw.rpc('wallet_paid', { p_order: 'order_attack1', p_payment: 'pay_attack1', p_paise: 4900 }), 'saying an order was paid');
+  refused(await raw.rpc('wallet_refunded', { p_payment: 'pay_attack1' }), 'refunding');
+  refused(await raw.rpc('redeem_treat', { p_partner: 'any', p_code: 'ABCDEFGH' }), 'using a voucher');
+  await assert.rejects(x.backend.stakePlan('00000000-0000-0000-0000-000000000000'), (e: unknown) => e instanceof AppError && e.code === 'PL135', 'no stake on a plan that is not mine');
+  await assert.rejects(x.backend.spicyPay(y.id, 'full'), (e: unknown) => e instanceof AppError && e.code === 'PL130', 'no paying for usernames Spicy does not open');
+  refused(await signedOut.rpc('my_wallet'), 'signed out, there is no wallet to read');
+});

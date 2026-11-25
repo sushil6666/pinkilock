@@ -6,6 +6,7 @@
  * stored as a due time per invite (`db.due`), so a restart never loses a pending reaction.
  */
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Platform } from 'react-native';
 import { fail } from '../../domain/errors';
 import * as rules from '../../domain/invites';
 import { ASK_LINES, ideaOf } from '../../domain/ideas';
@@ -27,7 +28,7 @@ import { PAUSE_MAX_DAYS, RESET_DAYS, checkSelfNote, dayOf, emptySelfLove, isMood
 import { VOUCH_MAX_PICKS, VOUCH_PHRASES } from '../../domain/vouches';
 import {
   BOOST_MS, COSTS, EXTRA_ASK_MS, KEPT_PAIR_DAYS, KEPT_REWARDS_PER_WEEK, MAX_EARNED, MAX_EXTRA_ASKS, REWARDS, SPICY_UNLOCK, STREAK_DAYS, TREATS,
-  TREATS_PER_WEEK, VOUCHER_MS, canStake, emptyWallet, mockVoucher, spicyShare, split, splitTreat, stakeEnd, streakOf, topUp,
+  TREATS_PER_WEEK, VOUCHER_MS, canStake, topUpsHere, emptyWallet, mockVoucher, spicyShare, split, splitTreat, stakeEnd, streakOf, topUp,
   type LedgerEntry, type LedgerKind, type RewardKind, type Treat, type TreatPartner, type Wallet,
 } from '../../domain/wallet';
 import { t } from '../../i18n';
@@ -397,7 +398,7 @@ export function createMockBackend(options: { captcha?: () => Promise<string | un
     return part;
   }
   /** What the triggers do on the server: settle stakes and treats, and reward kept plans. */
-  function settle(d: Db, now: number) {
+  function settleWallet(d: Db, now: number) {
     const w = walletOf(d);
     for (const [id, st] of Object.entries(w.stakes)) {
       if (st.ended) continue;
@@ -424,7 +425,7 @@ export function createMockBackend(options: { captcha?: () => Promise<string | un
     if (d.myContact?.verified) reward(w, 'verified_handle', 'once');
   }
   function walletView(d: Db, now = Date.now()): Wallet {
-    settle(d, now);
+    settleWallet(d, now);
     const w = walletOf(d);
     const today = dayOf(now);
     return {
@@ -448,7 +449,7 @@ export function createMockBackend(options: { captcha?: () => Promise<string | un
     await wait(LATENCY);
     if (!d.me) fail('PL002');
     const now = Date.now();
-    settle(d, now);
+    settleWallet(d, now);
     work(d, walletOf(d), now);
     save();
     return walletView(d, now);
@@ -678,10 +679,11 @@ export function createMockBackend(options: { captcha?: () => Promise<string | un
       }),
     // The mock is Razorpay's test mode: a top-up is paid at once and no money moves.
     async topUpStatus() {
-      return { open: true, test: true };
+      return { open: topUpsHere(Platform.OS), test: true };
     },
     topUp: (packId) =>
       walletChange((_d, w) => {
+        if (!topUpsHere(Platform.OS)) fail('PL144');
         const pack = topUp(w, packId);
         move(w, 'topup', pack.credits, 0, `order_${Date.now()}`);
       }),
@@ -707,13 +709,13 @@ export function createMockBackend(options: { captcha?: () => Promise<string | un
     async treatOptions(inviteId) {
       const d = await load();
       const inv = d.invites.find((i) => i.id === inviteId);
-      if (!d.me || !inv || inv.status !== 'locked' || inv.startsAt <= Date.now() || rules.isDouble(inv) || walletOf(d).treats[inviteId]) return [];
+      if (!d.me || !inv || inv.status !== 'locked' || inv.startsAt <= Date.now() || rules.isDouble(inv) || ideaOf(inv.ideaId).kind !== 'irl' || walletOf(d).treats[inviteId]) return [];
       return [mockPartner(d.me.city)];
     },
     treatPlan: (inviteId, partnerId, item) =>
       walletChange((d, w, now) => {
         const inv = d.invites.find((i) => i.id === inviteId);
-        if (!inv || inv.status !== 'locked' || inv.startsAt <= now || rules.isDouble(inv) || partnerId !== 'demo_partner' || !(item in TREATS)) fail('PL140');
+        if (!inv || inv.status !== 'locked' || inv.startsAt <= now || rules.isDouble(inv) || ideaOf(inv.ideaId).kind !== 'irl' || partnerId !== 'demo_partner' || !(item in TREATS)) fail('PL140');
         if (w.treats[inviteId]) fail('PL141');
         if (Object.values(w.treats).filter((tr) => tr.mine && tr.at > now - 7 * DAY).length >= TREATS_PER_WEEK) fail('PL142');
         splitTreat(w, TREATS[item]);

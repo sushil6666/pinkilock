@@ -151,6 +151,11 @@ Font scaling is allowed up to 1.3x (`maxFontSizeMultiplier`) so layouts hold on 
   columns). `form` puts the night sky and the pinkies on the left and the form, with its footer,
   on the right at `columnMax`. `read` stops at `readMax` (760). The logo stays top centre. Phones
   and narrow windows keep the phone layout.
+- **Wallet** (D104): existing tokens only. Credits are gold: a gold coin with a `star` before every
+  amount, the balance and the Me entry on gold (`goldWash` behind `goldDeep`), a voucher as a solid
+  `gold` card with the code in `display` and `onGold`. Rewards use `gift` (pink) until done
+  (`check-circle`, gold). Spicy's unlock keeps Spicy's pink panel with a gold meter. The words say
+  "credits", never "money" or "coins", and always that credits are never cash.
 - **Spicy mode** (D103): existing tokens only. Its own things are pink (`pinkWash` behind `pinkDeep`:
   the Me entry card with a `zap` icon, the "on" panel, the hand-off on a card or a plan); the safety rules sit on
   gold (`goldWash` behind `goldDeep`) with a `shield` before each. Boundaries are chips, pink when

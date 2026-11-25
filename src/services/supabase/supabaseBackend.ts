@@ -19,6 +19,7 @@ import { isMood, type NoteKind, type SelfLove } from '../../domain/selfLove';
 import { isBoundary, type Spicy, type SpicyPlan } from '../../domain/spicy';
 import { REWARD_KINDS, TREAT_ITEMS, emptyWallet, topUpsHere, type LedgerKind, type RewardKind, type TreatItem, type TreatPartner, type Wallet } from '../../domain/wallet';
 import { openCheckout } from '../../lib/razorpay';
+import { Platform } from 'react-native';
 import type { Backend, BackendEvent, Changes, Notice, Snapshot } from '../backend';
 import { t } from '../../i18n';
 import { activeTrace, tracedAll } from '../traceScope';

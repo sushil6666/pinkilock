@@ -8,6 +8,7 @@ import { IdeaChip } from '@/components/IdeaChip';
 import { MyFace, useMyFace } from '@/components/MyFace';
 import { MyPhotos } from '@/components/MyPhotos';
 import { SpicyEntry } from '@/components/Spicy';
+import { WalletEntry } from '@/components/Wallet';
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Platform, Pressable, Share, StyleSheet, View } from 'react-native';
@@ -270,6 +271,7 @@ export default function Me() {
         </View>
         <Feather name="chevron-right" size={20} color={color.textDim} />
       </Pressable>
+      <WalletEntry />
       <SpicyEntry />
       <View style={{ marginTop: space.lg, gap: space.sm }}>
         <Vouches person={me} />

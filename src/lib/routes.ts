@@ -35,6 +35,7 @@ const TITLES: Record<string, Key | null> = {
   'self-love': 'titles.selfLove',
   'self-love/bounce-back': 'titles.bounceBack',
   spicy: 'titles.spicy',
+  wallet: 'titles.wallet',
   '+not-found': 'titles.notFound',
 };
 

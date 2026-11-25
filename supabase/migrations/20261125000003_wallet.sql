@@ -15,7 +15,7 @@
 --   * A stake (50) on a locked plan comes back when the plan is kept, ended (a block, a deleted
 --     account), or the other person flaked, or when I bail more than 2 hours before. It is lost on my
 --     no-show or a late bail. Lost credits are gone; they never go to the other person.
---   * Treat the plan: on a locked one-to-one plan, I can cover their coffee, dessert or movie at a
+--   * Treat the plan: on a locked one-to-one plan to meet in person, I can cover their coffee, dessert or movie at a
 --     partner place in our city (public.treat_partners; empty until a partner signs). It is held
 --     until the plan is kept; then they get a voucher code to show at the counter, good for a day.
 --     If the plan is not kept, they say no thanks, or the voucher is not used, it comes back to me.
@@ -358,6 +358,7 @@ declare
 begin
   select * into inv from invites where id = p_invite and me in (from_id, to_id);
   if not found or inv.status <> 'locked' or inv.starts_at <= now() or inv.from_friend is not null
+     or (select kind from ideas where id = inv.idea_id) <> 'irl'
      or exists (select 1 from private.wallet_treats where invite_id = p_invite) then
     return '[]'::jsonb;
   end if;
@@ -381,7 +382,7 @@ begin
   perform private.require_active(me);
   select * into inv from invites where id = p_invite and me in (from_id, to_id) for update;
   if not found or inv.status <> 'locked' or inv.starts_at <= now() or inv.from_friend is not null or cost is null
-     or p_item not in ('coffee', 'dessert', 'movie') then
+     or p_item not in ('coffee', 'dessert', 'movie') or (select kind from ideas where id = inv.idea_id) <> 'irl' then
     raise exception using errcode = 'PL140', message = 'Treats work on a locked plan with a partner place in your city.';
   end if;
   other := case when inv.from_id = me then inv.to_id else inv.from_id end;

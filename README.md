@@ -63,7 +63,13 @@ With no keys set, the app runs on ten made-up people who answer by themselves. A
     the rules, add a Discord username (or Telegram, or Signal) and pick boundaries; the mock account needs a
     phone or an email first (**Me**, sign-in, code `123456`). On the card (or a plan) of Aanya, Kabir, Ira,
     Zoya or Rhea (who have it on in the mock) you see their boundaries and **Yes, move our
-    chat**; say yes and their username shows. **Turn off** wipes it.
+    chat**; say yes, then unlock the match with credits (600, or 300 each; D105) and their username
+    shows. **Turn off** wipes it.
+12. **Wallet** (D104): in **Me**, tap the gold **Wallet** card. The mock is Razorpay's test mode on the
+    web: tap a pack and the credits arrive at once. Spend them on a boost or an extra open ask; open a
+    locked plan to **Stake 50 credits** or to treat the other person to a coffee (the mock pretends
+    there is a partner café). Rewards: keep a plan, rate it, open the app 7 days in a row. Live,
+    top-ups stay off until the Razorpay keys are secrets (`OPERATIONS.md`, "Wallet").
 
 ## Run the backend locally (Docker)
 

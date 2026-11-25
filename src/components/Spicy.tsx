@@ -8,6 +8,7 @@ import * as Linking from 'expo-linking';
 import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
+import { SPICY_UNLOCK, type SpicyShare } from '../domain/wallet';
 import { HANDOFF_RULES, SAFETY_RULES, spicyClosed, spicyOff, telegramLink, type Boundary, type Spicy, type SpicyPlan } from '../domain/spicy';
 import { quiet } from '../lib/log';
 import { shown } from '../lib/report';
@@ -92,15 +93,28 @@ export function SpicyHandoff({ otherId, name, route }: { otherId: string; name: 
     setBusy(false);
   };
 
+  const pay = async (share: SpicyShare) => {
+    setBusy(true);
+    setError('');
+    try {
+      setPlan(await backend.spicyPay(otherId, share));
+    } catch (e) {
+      setError(shown(e, route));
+    }
+    setBusy(false);
+  };
+
   return (
     <View style={styles.panel}>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.sm }}>
         <Feather name="zap" size={18} color={color.pink} />
         <T v="label" c={color.pink}>{t('spicy.title')}</T>
       </View>
-      <T v="heading">{plan.mutual ? t('spicy.mutualTitle') : t('spicy.planTitle')}</T>
+      <T v="heading">{plan.mutual && !plan.unlock.done ? t('spicy.unlockTitle') : plan.mutual ? t('spicy.mutualTitle') : t('spicy.planTitle')}</T>
 
-      {plan.mutual ? (
+      {plan.mutual && !plan.unlock.done ? (
+        <Unlock plan={plan} name={name} busy={busy} onPay={(share) => pay(share)} />
+      ) : plan.mutual ? (
         <>
           <T c={color.textDim}>{t('spicy.mutualBody', { name })}</T>
           {plan.discord ? (
@@ -150,7 +164,35 @@ export function SpicyHandoff({ otherId, name, route }: { otherId: string; name: 
   );
 }
 
+/**
+ * The unlock (D105): 600 credits to Pinkilock for this match, one pays it all or 300 each, and
+ * whoever paid half may pay the rest. The server says what is paid; nothing goes to the other person.
+ */
+function Unlock({ plan, name, busy, onPay }: { plan: SpicyPlan; name: string; busy: boolean; onPay: (share: SpicyShare) => void }) {
+  const half = SPICY_UNLOCK / 2;
+  const rest = SPICY_UNLOCK - plan.unlock.mine - plan.unlock.theirs;
+  const paidHalf = plan.unlock.mine >= half;
+  return (
+    <View style={{ gap: space.sm }}>
+      <T c={color.textDim}>{t('spicy.unlockBody', { total: SPICY_UNLOCK, half, name })}</T>
+      <View style={styles.meter}>
+        <View style={[styles.meterFill, { flex: plan.unlock.mine + plan.unlock.theirs }]} />
+        <View style={{ flex: Math.max(rest, 0) }} />
+      </View>
+      <T v="caption" c={color.textDim}>{t('spicy.unlockPaid', { mine: plan.unlock.mine, theirs: plan.unlock.theirs, name, total: SPICY_UNLOCK })}</T>
+      {paidHalf ? <T v="caption" c={color.gold}>{t('spicy.unlockWaiting', { name })}</T> : null}
+      {!paidHalf && rest >= half ? <Button kind="ghost" icon="star" label={t('spicy.payHalf', { n: Math.min(half - plan.unlock.mine, rest) })} busy={busy} onPress={() => onPay('half')} /> : null}
+      <Button icon="unlock" label={t(rest === SPICY_UNLOCK ? 'spicy.payAll' : 'spicy.payRest', { n: rest })} busy={busy} onPress={() => onPay('full')} />
+      <T v="caption" c={color.textMute}>{t('spicy.unlockBack')}</T>
+      <T v="caption" c={color.textMute}>{t('spicy.unlockBought')}</T>
+      <Button kind="quiet" label={t('spicy.openWallet')} onPress={() => router.push('/wallet')} />
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
+  meter: { flexDirection: 'row', height: 8, borderRadius: radius.pill, backgroundColor: color.surface, overflow: 'hidden' },
+  meterFill: { backgroundColor: color.gold },
   rule: { flexDirection: 'row', gap: space.sm },
   tags: { flexDirection: 'row', flexWrap: 'wrap', gap: space.sm },
   entry: { flexDirection: 'row', alignItems: 'center', gap: space.md, borderWidth: 1, borderColor: color.pinkDeep, borderRadius: radius.card, backgroundColor: color.pinkWash, padding: space.lg, marginTop: space.md },

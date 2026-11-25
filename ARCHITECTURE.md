@@ -322,7 +322,8 @@ in the SQL editor (`select * from reports where reviewed_at is null`).
 **Export and deletion.** `export_my_data()` returns one JSON document: account (id, phone),
 profile, contact, trust score, my invites (the other person by id only), passes, blocks, reports
 I made, devices, notifications sent to me, my events, and Self love (moods, notes, the pause and
-the reset), and Spicy mode (my usernames, boundaries and yeses; format 8). Reports about me are not in it, nor
+the reset), Spicy mode (my usernames, boundaries, yeses and unlocks), and the wallet (balances, ledger, orders,
+stakes and treats; format 9). Reports about me are not in it, nor
 anyone else's contact. `delete_my_account()` ends my live invites, removes my id from every events
 row (and clears what the phone sent with `app_open`), then deletes the auth user; everything that
 references the profile cascades, and reports keep their row with my id set to null. The other
@@ -523,6 +524,39 @@ same `{"open": false}`, so it says nothing about the other person. Usernames com
 said yes. Pinkilock hosts no chat: Discord is shown first, Telegram second (a `t.me` link), Signal third (with a tip to turn on disappearing messages). Nothing
 is logged, pushed or sent to analytics. The rules are mirrored in `src/domain/spicy.ts`, and
 `SPICY_HANDLE_CASES` is the shared username table (`tests/db/spicy_cases.sql`).
+
+Since D105, usernames also wait for the match's **unlock**: 600 bought credits paid to Pinkilock
+(`spicy_pay`: 'half' is 300 once, 'full' is whatever is left), kept per pair in
+`private.spicy_unlocks`. A trigger on `private.spicy_yes` (a yes taken back, Spicy off, a deleted
+account) and one on `blocks` give back what was paid while it is not yet unlocked.
+
+### Wallet
+
+A closed loop of credits (D104), reached from Me, on a plan, in the composer and in Spicy mode. No
+client role and not the analytics worker reads any of its tables:
+
+- `private.wallets` (paid and earned balances, the boost), `private.wallet_ledger` (every change,
+  once per `(user, kind, ref)`), `private.wallet_orders` (Razorpay orders; `user_id` set null when
+  the account goes, the rest kept for the books), `private.wallet_extra_asks`, `private.wallet_stakes`,
+  `private.wallet_treats`, `private.wallet_visits`, and `public.treat_partners` (readable when active,
+  written by no client).
+- Every balance change goes through `private.wallet_move` in the same transaction; spending
+  (`private.wallet_spend`) takes earned credits first. The app calls `my_wallet`, `wallet_visit`
+  (the streak, from boot), `wallet_boost`, `wallet_extra_ask`, `wallet_stake`, `treat_options`,
+  `treat_plan`, `decline_treat` and `spicy_pay` (PL132 to PL146).
+- `send_invite` allows 3 open asks plus the extra ones; `discover()` puts boosted cards first.
+- A trigger on invites leaving `locked` settles stakes (`private.stake_end`, the same rules as
+  `stakeEnd` in `src/domain/wallet.ts`; `STAKE_CASES` is the shared table), turns a held treat into a
+  voucher code on a kept plan or gives it back, and rewards a kept plan. Triggers on
+  `profile_private`, `photos`, `date_ratings` and `vouches` give the other rewards. `wallet_sweep`
+  (pg_cron, every ten minutes) gives back vouchers nobody used in a day.
+- Top-ups: the `wallet` Edge Function makes a Razorpay order at `wallet_pack_price`, files it
+  (`wallet_open_order`), and credits it (`wallet_paid`, once, amount checked) after checking the
+  Checkout signature and reading the payment from Razorpay, or from the signed webhook
+  (`payment.captured`, `order.paid`; `refund.processed` calls `wallet_refunded`). Only the service
+  role may call these and `redeem_treat` (for a partner's till, later). The website loads Razorpay
+  Checkout (`src/lib/razorpay.ts`; `web/_headers` allows its script and frame). The phone apps offer
+  no top-up until Play Billing (O15).
 
 ### Friend vouches
 
