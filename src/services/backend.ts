@@ -7,6 +7,7 @@
  */
 import type { Mood, NoteKind, SelfLove } from '../domain/selfLove';
 import type { Spicy, SpicyInput, SpicyPlan } from '../domain/spicy';
+import type { SpicyShare, TopUpStatus, TreatItem, TreatPartner, Wallet } from '../domain/wallet';
 import type { Account, BlockedPerson, ContactCheck, Invite, MyContact, MyPhoto, NewInvite, NewReport, OnboardingInput, CodeKind, CodeMode, PickedPhoto, Profile, Reveal } from '../domain/types';
 
 export interface Snapshot {
@@ -186,6 +187,42 @@ export interface Backend {
   spicyWith(profileId: string): Promise<SpicyPlan>;
   /** Yes, move our chat; false takes my yes back. PL130 when it is not open. */
   spicyYes(profileId: string, yes: boolean): Promise<SpicyPlan>;
+
+  /**
+   * Spicy mode's unlock (D105): once we both said yes, 600 bought credits to Pinkilock show the
+   * usernames: 'half' pays 300 (once), 'full' pays whatever is left, so the one who paid half can
+   * pay the rest. Never goes to the other person; comes back if the match closes before it is paid.
+   */
+  spicyPay(profileId: string, share: SpicyShare): Promise<SpicyPlan>;
+
+  /**
+   * The credits wallet (D104): a closed loop. Credits are bought (Razorpay) or earned, and spent
+   * only here. Never withdrawn, never sent to another person. Each call answers with the whole of
+   * it as it now stands.
+   */
+  wallet(): Promise<Wallet>;
+  /** Opening the app counts for the streak (seven days in a row earns credits). */
+  walletVisit(): Promise<Wallet>;
+  /** Whether top-ups are open here (Razorpay keys set), and in test mode. */
+  topUpStatus(): Promise<TopUpStatus>;
+  /**
+   * Buy a pack. Live, on the website: the `wallet` Edge Function makes a Razorpay order, Razorpay
+   * Checkout takes the payment, and the function checks the signature and credits it. Refused
+   * (PL144) where top-ups are not open; the phone apps wait for Play Billing (O15).
+   */
+  topUp(packId: string): Promise<Wallet>;
+  /** My card first on Discover in my city for a day (PL133 while one is on). */
+  boost(): Promise<Wallet>;
+  /** One more open ask for a day, two at most (PL134). */
+  buyExtraAsk(): Promise<Wallet>;
+  /** 50 credits on a locked plan, back when it is kept (or they flake), lost if I do not show. */
+  stakePlan(inviteId: string): Promise<Wallet>;
+  /** Partner places in our city that could hand over a treat on this plan; empty when none. */
+  treatOptions(inviteId: string): Promise<TreatPartner[]>;
+  /** Cover their coffee, dessert or movie: bought credits, held until the plan is kept. */
+  treatPlan(inviteId: string, partnerId: string, item: TreatItem): Promise<Wallet>;
+  /** The person treated says no thanks; it goes back to the giver. */
+  declineTreat(inviteId: string): Promise<Wallet>;
 
   subscribe(listener: (e: BackendEvent) => void): () => void;
 

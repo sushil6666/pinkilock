@@ -17,6 +17,8 @@ import type { Account, BlockedPerson, CodeKind, ContactCheck, Invite, MyContact,
 import { log, quiet } from '../../lib/log';
 import { isMood, type NoteKind, type SelfLove } from '../../domain/selfLove';
 import { isBoundary, type Spicy, type SpicyPlan } from '../../domain/spicy';
+import { REWARD_KINDS, TREAT_ITEMS, emptyWallet, topUpsHere, type LedgerKind, type RewardKind, type TreatItem, type TreatPartner, type Wallet } from '../../domain/wallet';
+import { openCheckout } from '../../lib/razorpay';
 import type { Backend, BackendEvent, Changes, Notice, Snapshot } from '../backend';
 import { t } from '../../i18n';
 import { activeTrace, tracedAll } from '../traceScope';
@@ -45,8 +47,29 @@ function spicyFrom(raw: unknown): Spicy {
 
 /** spicy_with() and spicy_yes(). */
 function spicyPlanFrom(raw: unknown): SpicyPlan {
-  const r = (raw ?? {}) as { open?: boolean; my_yes?: boolean; mutual?: boolean; their_boundaries?: string[]; discord?: string | null; telegram?: string | null; signal?: string | null };
-  return { open: !!r.open, myYes: !!r.my_yes, mutual: !!r.mutual, theirBoundaries: (r.their_boundaries ?? []).filter(isBoundary), discord: r.discord ?? null, telegram: r.telegram ?? null, signal: r.signal ?? null };
+  const r = (raw ?? {}) as { open?: boolean; my_yes?: boolean; mutual?: boolean; their_boundaries?: string[]; unlock?: { mine?: number; theirs?: number; done?: boolean }; discord?: string | null; telegram?: string | null; signal?: string | null };
+  const unlock = { mine: r.unlock?.mine ?? 0, theirs: r.unlock?.theirs ?? 0, done: !!r.unlock?.done };
+  return { open: !!r.open, myYes: !!r.my_yes, mutual: !!r.mutual, theirBoundaries: (r.their_boundaries ?? []).filter(isBoundary), unlock, discord: r.discord ?? null, telegram: r.telegram ?? null, signal: r.signal ?? null };
+}
+
+/** my_wallet() and its siblings (D104). */
+function walletFrom(raw: unknown): Wallet {
+  type RawTreat = { invite: string; item: string; credits: number; status: string; mine: boolean; partner: string; code: string | null; until: string | null };
+  const r = (raw ?? {}) as {
+    paid?: number; earned?: number; boost_until?: string | null; extra_asks?: number; stakes?: Record<string, number>; streak?: number; had?: string[];
+    vouch_rewards?: number; kept_this_week?: number; treats?: RawTreat[]; history?: { id: number; kind: string; credits: number; reward: string | null; at: string }[];
+  };
+  const isReward = (k: unknown): k is RewardKind => (REWARD_KINDS as readonly unknown[]).includes(k);
+  return {
+    ...emptyWallet,
+    paid: r.paid ?? 0, earned: r.earned ?? 0, boostUntil: ms(r.boost_until ?? null), extraAsks: r.extra_asks ?? 0, stakes: r.stakes ?? {},
+    streak: r.streak ?? 0, had: (r.had ?? []).filter(isReward), vouchRewards: r.vouch_rewards ?? 0, keptThisWeek: r.kept_this_week ?? 0,
+    treats: (r.treats ?? []).filter((x) => (TREAT_ITEMS as readonly string[]).includes(x.item)).map((x) => ({
+      inviteId: x.invite, item: x.item as TreatItem, credits: x.credits, status: x.status as Wallet['treats'][number]['status'], mine: !!x.mine,
+      partner: x.partner, code: x.code ?? null, until: ms(x.until ?? null),
+    })),
+    history: (r.history ?? []).map((h) => ({ id: String(h.id), kind: h.kind as LedgerKind, credits: h.credits, at: ms(h.at) ?? 0, reward: isReward(h.reward) ? h.reward : undefined })),
+  };
 }
 
 function toInvite(r: Row): Invite {
@@ -220,6 +243,26 @@ export function createSupabaseBackend(url: string, anonKey: string, storage: Ses
       const body = (await res.json().catch(() => ({}))) as { code?: string; message?: string };
       throw fromServer({ code: body.code ?? 'PC002', message: body.message ?? '' }, trace);
     }
+  }
+
+  /** One call to the `wallet` Edge Function (D104), which talks to Razorpay; the app never does. */
+  async function walletFunction<T = unknown>(body: Row): Promise<T> {
+    const trace = activeTrace() ?? newTrace();
+    const { data } = await db.auth.getSession();
+    log.info('wallet.fn', { action: body.action, trace });
+    let res: Response;
+    try {
+      res = await fetch(`${url.replace(/\/$/, '')}/functions/v1/wallet`, {
+        method: 'POST',
+        headers: { ...(data.session ? { Authorization: `Bearer ${data.session.access_token}` } : {}), apikey: anonKey, 'Content-Type': 'application/json', 'x-trace-id': trace },
+        body: JSON.stringify(body),
+      });
+    } catch {
+      throw new AppError('PC001', undefined, trace);
+    }
+    const out = (await res.json().catch(() => ({}))) as T & { code?: string; message?: string };
+    if (!res.ok) throw fromServer({ code: out.code ?? 'PC002', message: out.message ?? '' }, trace);
+    return out;
   }
 
   async function uid(): Promise<string> {
@@ -794,6 +837,65 @@ export function createSupabaseBackend(url: string, anonKey: string, storage: Ses
     async spicyYes(profileId, yes) {
       await uid();
       return spicyPlanFrom(await rpc('spicy_yes', { p_other: profileId, p_yes: yes }));
+    },
+
+    async spicyPay(profileId, share) {
+      await uid();
+      return spicyPlanFrom(await rpc('spicy_pay', { p_other: profileId, p_share: share }));
+    },
+
+    async wallet() {
+      await uid();
+      return walletFrom(await rpc('my_wallet'));
+    },
+    async walletVisit() {
+      await uid();
+      return walletFrom(await rpc('wallet_visit'));
+    },
+    async topUpStatus() {
+      if (!topUpsHere(Platform.OS)) return { open: false, test: false };
+      try {
+        const r = await walletFunction<{ open?: boolean; test?: boolean }>({ action: 'status' });
+        return { open: !!r.open, test: !!r.test };
+      } catch {
+        return { open: false, test: false };
+      }
+    },
+    async topUp(packId) {
+      await uid();
+      // Phone apps wait for Play Billing (O15): digital credits must be bought through the store there.
+      if (!topUpsHere(Platform.OS)) throw new AppError('PL144');
+      const order = await walletFunction<{ order: string; key: string; paise: number; credits: number }>({ action: 'order', pack: packId });
+      const paid = await openCheckout({ key: order.key, order: order.order, paise: order.paise, title: t('wallet.checkoutTitle'), about: t('wallet.checkoutAbout', { n: order.credits }) });
+      // Closed without paying: nothing was taken, and the wallet is as it was.
+      if (paid) await walletFunction({ action: 'verify', order: paid.order, payment: paid.payment, signature: paid.signature });
+      return walletFrom(await rpc('my_wallet'));
+    },
+    async boost() {
+      await uid();
+      return walletFrom(await rpc('wallet_boost'));
+    },
+    async buyExtraAsk() {
+      await uid();
+      return walletFrom(await rpc('wallet_extra_ask'));
+    },
+    async stakePlan(inviteId) {
+      await uid();
+      return walletFrom(await rpc('wallet_stake', { p_invite: inviteId }));
+    },
+    async treatOptions(inviteId) {
+      await uid();
+      const rows = await rpc<{ partner: string; name: string; items: string[] }[]>('treat_options', { p_invite: inviteId });
+      const city = '';
+      return (rows ?? []).map((p): TreatPartner => ({ id: p.partner, name: p.name, city, items: p.items.filter((i): i is TreatItem => (TREAT_ITEMS as readonly string[]).includes(i)) }));
+    },
+    async treatPlan(inviteId, partnerId, item) {
+      await uid();
+      return walletFrom(await rpc('treat_plan', { p_invite: inviteId, p_partner: partnerId, p_item: item }));
+    },
+    async declineTreat(inviteId) {
+      await uid();
+      return walletFrom(await rpc('decline_treat', { p_invite: inviteId }));
     },
 
     async exportMyData() {

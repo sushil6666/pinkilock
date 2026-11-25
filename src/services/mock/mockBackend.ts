@@ -25,6 +25,11 @@ import { DAY } from '../../domain/invites';
 import { checkSpicy, spicyClosed, spicyOff, type Boundary, type Spicy } from '../../domain/spicy';
 import { PAUSE_MAX_DAYS, RESET_DAYS, checkSelfNote, dayOf, emptySelfLove, isMood, stepOpen, type SelfLove } from '../../domain/selfLove';
 import { VOUCH_MAX_PICKS, VOUCH_PHRASES } from '../../domain/vouches';
+import {
+  BOOST_MS, COSTS, EXTRA_ASK_MS, KEPT_PAIR_DAYS, KEPT_REWARDS_PER_WEEK, MAX_EARNED, MAX_EXTRA_ASKS, REWARDS, SPICY_UNLOCK, STREAK_DAYS, TREATS,
+  TREATS_PER_WEEK, VOUCHER_MS, canStake, emptyWallet, mockVoucher, spicyShare, split, splitTreat, stakeEnd, streakOf, topUp,
+  type LedgerEntry, type LedgerKind, type RewardKind, type Treat, type TreatPartner, type Wallet,
+} from '../../domain/wallet';
 import { t } from '../../i18n';
 
 const KEY = 'pinkilock.mock.v1';
@@ -61,7 +66,30 @@ interface Db {
   /** Spicy mode (D103), mine; absent is off. And the people I said yes to. */
   spicy?: Spicy;
   spicyYes?: string[];
+  /** The wallet (D104), as the server's tables hold it. */
+  wallet?: MockWallet;
 }
+
+interface MockWallet {
+  paid: number;
+  earned: number;
+  boostUntil: number | null;
+  extraAsks: number[];
+  stakes: Record<string, { paid: number; earned: number; ended?: 'back' | 'lost' }>;
+  treats: Record<string, Omit<Treat, 'inviteId'> & { at: number; readyAt?: number }>;
+  visits: string[];
+  /** Ledger rows, newest first; `ref` makes one happen once, as on the server. */
+  ledger: (LedgerEntry & { paid: number; earned: number; ref?: string; other?: string })[];
+  /** Spicy unlock (D105): what I paid towards each match. The made-up people never pay. */
+  spicyPaid: Record<string, number>;
+  spicyDone: string[];
+}
+
+/**
+ * The mock runs as if there were a partner place in my city, so Treat the plan can be tried.
+ * Live, public.treat_partners is empty until a real café or cinema signs. i18n: data
+ */
+const mockPartner = (city: string): TreatPartner => ({ id: 'demo_partner', name: 'Demo café & cinema', city, items: ['coffee', 'dessert', 'movie'] });
 
 /**
  * The made-up people who have Spicy mode on, with what the server would hold for them. They say
@@ -338,9 +366,101 @@ export function createMockBackend(options: { captcha?: () => Promise<string | un
     const theirs = SPICY_PEOPLE[them];
     if (!d.me || !d.spicy?.on || !theirs || isBlocked(d, them) || !d.profiles.some((p) => p.id === them)) return spicyClosed;
     const myYes = !!d.spicyYes?.includes(them);
-    return { open: true, myYes, mutual: myYes, theirBoundaries: theirs.boundaries, discord: myYes ? theirs.discord : null, telegram: myYes ? theirs.telegram : null, signal: myYes ? theirs.signal : null };
+    const w = walletOf(d);
+    const done = myYes && w.spicyDone.includes(them);
+    const unlock = { mine: w.spicyPaid[them] ?? 0, theirs: 0, done: w.spicyDone.includes(them) };
+    return { open: true, myYes, mutual: myYes, theirBoundaries: theirs.boundaries, unlock, discord: done ? theirs.discord : null, telegram: done ? theirs.telegram : null, signal: done ? theirs.signal : null };
   }
 
+
+  // --- The wallet (D104), as in supabase/migrations/20261125000003_wallet.sql. ---------------
+  function walletOf(d: Db): MockWallet {
+    d.wallet ??= { paid: 0, earned: 0, boostUntil: null, extraAsks: [], stakes: {}, treats: {}, visits: [], ledger: [], spicyPaid: {}, spicyDone: [] };
+    d.wallet.spicyPaid ??= {};
+    d.wallet.spicyDone ??= [];
+    return d.wallet;
+  }
+  function move(w: MockWallet, kind: LedgerKind, paid: number, earned: number, ref?: string, reward?: RewardKind): boolean {
+    if (ref && w.ledger.some((l) => l.kind === kind && l.ref === ref)) return false;
+    if (kind === 'reward') earned = Math.min(earned, Math.max(MAX_EARNED - w.earned, 0));
+    if (kind === 'reward' && earned <= 0) return false;
+    if (w.paid + paid < 0 || w.earned + earned < 0) fail('PL132');
+    w.paid += paid;
+    w.earned += earned;
+    w.ledger.unshift({ id: `l${Date.now().toString(36)}${w.ledger.length}`, kind, credits: paid + earned, paid, earned, at: Date.now(), ref, reward });
+    return true;
+  }
+  const reward = (w: MockWallet, kind: RewardKind, ref: string) => move(w, 'reward', 0, REWARDS[kind], `${kind}:${ref}`, kind);
+  function spend(w: MockWallet, kind: LedgerKind, cost: number, ref?: string) {
+    const part = split(w, cost);
+    move(w, kind, -part.paid, -part.earned, ref);
+    return part;
+  }
+  /** What the triggers do on the server: settle stakes and treats, and reward kept plans. */
+  function settle(d: Db, now: number) {
+    const w = walletOf(d);
+    for (const [id, st] of Object.entries(w.stakes)) {
+      if (st.ended) continue;
+      const inv = d.invites.find((i) => i.id === id);
+      const end = inv ? stakeEnd(inv.status, !inv.flakedBy ? 'nobody' : inv.flakedBy === ME_ID ? 'me' : 'them', (inv.startsAt - (inv.resolvedAt ?? now)) / 3_600_000) : 'back';
+      if (end === 'back') move(w, 'stake_back', st.paid, st.earned, id);
+      if (end === 'lost') move(w, 'stake_lost', 0, 0, id);
+      if (end !== 'held') st.ended = end;
+    }
+    for (const [id, tr] of Object.entries(w.treats)) {
+      const inv = d.invites.find((i) => i.id === id);
+      if (tr.status === 'held' && inv?.status === 'kept') Object.assign(tr, { status: 'ready', readyAt: now, until: now + VOUCHER_MS, code: tr.mine ? null : mockVoucher(id) });
+      else if (tr.status === 'held' && (!inv || inv.status !== 'locked')) tr.status = 'back';
+      else if (tr.status === 'ready' && (tr.readyAt ?? now) + VOUCHER_MS < now) tr.status = 'back';
+      if (tr.status === 'back' && tr.mine) move(w, 'treat_back', tr.credits, 0, id);
+    }
+    for (const inv of d.invites) {
+      if (inv.status !== 'kept' || !inv.checkIns.includes(ME_ID)) continue;
+      const other = rules.otherId(inv, ME_ID);
+      const week = w.ledger.filter((l) => l.reward === 'kept_plan' && l.at > now - 7 * DAY).length;
+      const pair = w.ledger.some((l) => l.reward === 'kept_plan' && l.other === other && l.at > now - KEPT_PAIR_DAYS * DAY);
+      if (week < KEPT_REWARDS_PER_WEEK && !pair && reward(w, 'kept_plan', inv.id)) w.ledger[0].other = other;
+    }
+    if (d.myContact?.verified) reward(w, 'verified_handle', 'once');
+  }
+  function walletView(d: Db, now = Date.now()): Wallet {
+    settle(d, now);
+    const w = walletOf(d);
+    const today = dayOf(now);
+    return {
+      ...emptyWallet,
+      paid: w.paid,
+      earned: w.earned,
+      boostUntil: w.boostUntil && w.boostUntil > now ? w.boostUntil : null,
+      extraAsks: w.extraAsks.filter((u) => u > now).length,
+      stakes: Object.fromEntries(Object.entries(w.stakes).filter(([, st]) => !st.ended).map(([id, st]) => [id, st.paid + st.earned])),
+      streak: streakOf(w.visits, today),
+      had: (['verified_handle', 'face_checked'] as const).filter((k) => w.ledger.some((l) => l.reward === k)),
+      vouchRewards: w.ledger.filter((l) => l.reward === 'vouched').length,
+      keptThisWeek: w.ledger.filter((l) => l.reward === 'kept_plan' && l.at > now - 7 * DAY).length,
+      treats: Object.entries(w.treats).filter(([id]) => d.invites.some((i) => i.id === id && !isBlocked(d, rules.otherId(i, ME_ID))))
+        .map(([inviteId, tr]) => ({ inviteId, item: tr.item, credits: tr.credits, status: tr.status, mine: tr.mine, partner: tr.partner, code: tr.status === 'ready' ? tr.code : null, until: tr.status === 'ready' ? tr.until : null })),
+      history: w.ledger.slice(0, 50).map(({ id, kind, credits, at, reward: r }) => ({ id, kind, credits, at, reward: r })),
+    };
+  }
+  async function walletChange(work: (d: Db, w: MockWallet, now: number) => void): Promise<Wallet> {
+    const d = await load();
+    await wait(LATENCY);
+    if (!d.me) fail('PL002');
+    const now = Date.now();
+    settle(d, now);
+    work(d, walletOf(d), now);
+    save();
+    return walletView(d, now);
+  }
+  /** Spicy unlock refunds: a match that closes before it is fully paid gives back what I paid. */
+  function spicyRefund(d: Db, them: string) {
+    const w = walletOf(d);
+    const paid = w.spicyPaid[them] ?? 0;
+    if (!paid || w.spicyDone.includes(them)) return;
+    move(w, 'spicy_back', paid, 0, `${them}:${Date.now()}:${Math.random()}`);
+    delete w.spicyPaid[them];
+  }
   return {
     kind: 'mock',
 
@@ -504,6 +624,7 @@ export function createMockBackend(options: { captcha?: () => Promise<string | un
       const d = await load();
       await wait(LATENCY);
       if (!d.me) fail('PL002');
+      for (const them of d.spicyYes ?? []) spicyRefund(d, them);
       delete d.spicy;
       delete d.spicyYes;
       save();
@@ -520,9 +641,87 @@ export function createMockBackend(options: { captcha?: () => Promise<string | un
       if (!mockSpicyPlan(d, profileId).open) fail('PL130');
       const mine = (d.spicyYes ?? []).filter((id) => id !== profileId);
       d.spicyYes = yes ? [...mine, profileId] : mine;
+      if (!yes) spicyRefund(d, profileId);
       save();
       return mockSpicyPlan(d, profileId);
     },
+
+    async spicyPay(profileId, share) {
+      const d = await load();
+      await wait(LATENCY);
+      const plan = mockSpicyPlan(d, profileId);
+      if (!plan.open) fail('PL130');
+      if (!plan.mutual) fail('PL146');
+      const w = walletOf(d);
+      const mine = w.spicyPaid[profileId] ?? 0;
+      const amount = spicyShare(w, share, mine, 0);
+      move(w, 'spicy_unlock', -amount, 0, `${profileId}:${Date.now()}:${Math.random()}`);
+      w.spicyPaid[profileId] = mine + amount;
+      if (mine + amount >= SPICY_UNLOCK) w.spicyDone.push(profileId);
+      save();
+      return mockSpicyPlan(d, profileId);
+    },
+
+    async wallet() {
+      const d = await load();
+      await wait(LATENCY);
+      if (!d.me) fail('PL002');
+      const view = walletView(d);
+      save();
+      return view;
+    },
+    walletVisit: () =>
+      walletChange((d, w, now) => {
+        const today = dayOf(now);
+        if (!w.visits.includes(today)) w.visits = [...w.visits, today].slice(-31);
+        if (streakOf(w.visits, today) >= STREAK_DAYS && !w.ledger.some((l) => l.reward === 'week_streak' && l.at > now - 6 * DAY)) reward(w, 'week_streak', today);
+      }),
+    // The mock is Razorpay's test mode: a top-up is paid at once and no money moves.
+    async topUpStatus() {
+      return { open: true, test: true };
+    },
+    topUp: (packId) =>
+      walletChange((_d, w) => {
+        const pack = topUp(w, packId);
+        move(w, 'topup', pack.credits, 0, `order_${Date.now()}`);
+      }),
+    boost: () =>
+      walletChange((_d, w, now) => {
+        if (w.boostUntil && w.boostUntil > now) fail('PL133');
+        spend(w, 'boost', COSTS.boost);
+        w.boostUntil = now + BOOST_MS;
+      }),
+    buyExtraAsk: () =>
+      walletChange((_d, w, now) => {
+        if (w.extraAsks.filter((u) => u > now).length >= MAX_EXTRA_ASKS) fail('PL134');
+        spend(w, 'extra_ask', COSTS.extra_ask);
+        w.extraAsks = [...w.extraAsks.filter((u) => u > now), now + EXTRA_ASK_MS];
+      }),
+    stakePlan: (inviteId) =>
+      walletChange((d, w, now) => {
+        const inv = d.invites.find((i) => i.id === inviteId);
+        if (w.stakes[inviteId]) fail('PL138');
+        if (!inv || !canStake(inv, now, false)) fail('PL135');
+        w.stakes[inviteId] = spend(w, 'stake', COSTS.stake, inviteId);
+      }),
+    async treatOptions(inviteId) {
+      const d = await load();
+      const inv = d.invites.find((i) => i.id === inviteId);
+      if (!d.me || !inv || inv.status !== 'locked' || inv.startsAt <= Date.now() || rules.isDouble(inv) || walletOf(d).treats[inviteId]) return [];
+      return [mockPartner(d.me.city)];
+    },
+    treatPlan: (inviteId, partnerId, item) =>
+      walletChange((d, w, now) => {
+        const inv = d.invites.find((i) => i.id === inviteId);
+        if (!inv || inv.status !== 'locked' || inv.startsAt <= now || rules.isDouble(inv) || partnerId !== 'demo_partner' || !(item in TREATS)) fail('PL140');
+        if (w.treats[inviteId]) fail('PL141');
+        if (Object.values(w.treats).filter((tr) => tr.mine && tr.at > now - 7 * DAY).length >= TREATS_PER_WEEK) fail('PL142');
+        splitTreat(w, TREATS[item]);
+        move(w, 'treat', -TREATS[item], 0, inviteId);
+        w.treats[inviteId] = { item, credits: TREATS[item], status: 'held', mine: true, partner: mockPartner(d.me!.city).name, code: null, until: null, at: now };
+      }),
+    // Nobody treats me in the mock (the made-up people have no wallets), so there is nothing to say no to.
+    declineTreat: () => walletChange(() => fail('PL143')),
 
     // Requests go nowhere in the mock; there is no moderator.
     async fileRequest(_kind, detail) {
@@ -537,6 +736,7 @@ export function createMockBackend(options: { captcha?: () => Promise<string | un
       const d = await load();
       if (find(d, inviteId).status !== 'kept') fail('PL074');
       if (!ratings.has(inviteId)) ratings.set(inviteId, answer.again);
+      if (reward(walletOf(d), 'rated_date', inviteId)) save();
     },
 
     async dateFeedback(inviteId) {
@@ -574,7 +774,7 @@ export function createMockBackend(options: { captcha?: () => Promise<string | un
         const open = d.invites.filter((i) => i.fromId === ME_ID && rules.isOpen(i));
         // The link gate: off in the mock unless EXPO_PUBLIC_MOCK_REQUIRE_LINKED=1, as it is off on a server with no code sender.
         if (process.env.EXPO_PUBLIC_MOCK_REQUIRE_LINKED === '1' && !d.phone && !d.email) fail('PL068');
-        if (open.length >= rules.MAX_OPEN_ASKS) fail('PL023');
+        if (open.length >= rules.MAX_OPEN_ASKS + walletOf(d).extraAsks.filter((u) => u > now).length) fail('PL023');
         if (d.invites.filter((i) => i.fromId === ME_ID && i.createdAt > now - rules.DAY).length >= rules.ASKS_PER_DAY) fail('PL025');
         if (d.invites.some((i) => i.fromId === ME_ID && i.toId === input.toId && (i.resolvedAt ?? i.createdAt) > now - rules.REASK_AFTER
           && (i.status === 'expired' || (i.status === 'declined' && i.declinedBy === input.toId)))) fail('PL026');
@@ -809,6 +1009,7 @@ export function createMockBackend(options: { captcha?: () => Promise<string | un
         profile: d.me,
         contact: d.myContact,
         duo: d.duoId ? { partner: d.duoId } : null,
+        wallet: d.wallet ? { paid: d.wallet.paid, earned: d.wallet.earned, ledger: d.wallet.ledger, stakes: d.wallet.stakes, treats: d.wallet.treats } : null,
         invites: d.invites.map((i) => ({
           id: i.id, role: i.fromId === ME_ID ? 'asked' : 'was_asked', other_person: rules.otherId(i, ME_ID), idea: i.ideaId,
           with: rules.isDouble(i) ? [i.fromFriendId, i.toFriendId] : undefined,
