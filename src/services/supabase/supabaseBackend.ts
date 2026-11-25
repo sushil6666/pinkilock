@@ -18,8 +18,7 @@ import { log, quiet } from '../../lib/log';
 import { isMood, type NoteKind, type SelfLove } from '../../domain/selfLove';
 import { isBoundary, type Spicy, type SpicyPlan } from '../../domain/spicy';
 import { REWARD_KINDS, TREAT_ITEMS, emptyWallet, topUpsHere, type LedgerKind, type RewardKind, type TreatItem, type TreatPartner, type Wallet } from '../../domain/wallet';
-import { openCheckout } from '../../lib/razorpay';
-import { Platform } from 'react-native';
+import type { openCheckout } from '../../lib/razorpay';
 import type { Backend, BackendEvent, Changes, Notice, Snapshot } from '../backend';
 import { t } from '../../i18n';
 import { activeTrace, tracedAll } from '../traceScope';
@@ -148,10 +147,18 @@ const emptySnapshot = (): Snapshot => ({ me: null, myContact: null, profiles: []
 export interface SupabaseOptions {
   /** A captcha token for Auth (src/lib/captcha.ts); undefined while captcha is off. */
   captcha?: () => Promise<string | undefined>;
+  /**
+   * The app's Platform.OS and Razorpay Checkout (src/lib/razorpay.ts), passed in so that this file
+   * never imports React Native and still loads in plain Node (tests/live). Left out, top-ups are off.
+   */
+  platform?: string;
+  checkout?: typeof openCheckout;
 }
 
 export function createSupabaseBackend(url: string, anonKey: string, storage: SessionStorage, options: SupabaseOptions = {}): Backend {
   const captcha = options.captcha ?? (async () => undefined);
+  const platform = options.platform ?? 'node';
+  const checkout = options.checkout;
   const db: SupabaseClient = createClient(url, anonKey, {
     auth: { storage, autoRefreshToken: true, persistSession: true, detectSessionInUrl: false },
   });
@@ -854,7 +861,7 @@ export function createSupabaseBackend(url: string, anonKey: string, storage: Ses
       return walletFrom(await rpc('wallet_visit'));
     },
     async topUpStatus() {
-      if (!topUpsHere(Platform.OS)) return { open: false, test: false };
+      if (!topUpsHere(platform) || !checkout) return { open: false, test: false };
       try {
         const r = await walletFunction<{ open?: boolean; test?: boolean }>({ action: 'status' });
         return { open: !!r.open, test: !!r.test };
@@ -865,9 +872,9 @@ export function createSupabaseBackend(url: string, anonKey: string, storage: Ses
     async topUp(packId) {
       await uid();
       // Phone apps wait for Play Billing (O15): digital credits must be bought through the store there.
-      if (!topUpsHere(Platform.OS)) throw new AppError('PL144');
+      if (!topUpsHere(platform) || !checkout) throw new AppError('PL144');
       const order = await walletFunction<{ order: string; key: string; paise: number; credits: number }>({ action: 'order', pack: packId });
-      const paid = await openCheckout({ key: order.key, order: order.order, paise: order.paise, title: t('wallet.checkoutTitle'), about: t('wallet.checkoutAbout', { n: order.credits }) });
+      const paid = await checkout({ key: order.key, order: order.order, paise: order.paise, title: t('wallet.checkoutTitle'), about: t('wallet.checkoutAbout', { n: order.credits }) });
       // Closed without paying: nothing was taken, and the wallet is as it was.
       if (paid) await walletFunction({ action: 'verify', order: paid.order, payment: paid.payment, signature: paid.signature });
       return walletFrom(await rpc('my_wallet'));
