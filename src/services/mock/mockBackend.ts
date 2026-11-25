@@ -21,6 +21,8 @@ import { ALL_CONSENTS, CITIES, openCities } from '../../domain/countries';
 
 const cityCountry = (city: string) => CITIES.find((c) => c.name === city)?.country ?? 'IN';
 import { FREE_WINDOWS } from '../../domain/freeWindows';
+import { DAY } from '../../domain/invites';
+import { PAUSE_MAX_DAYS, RESET_DAYS, checkSelfNote, dayOf, emptySelfLove, isMood, stepOpen, type SelfLove } from '../../domain/selfLove';
 import { VOUCH_MAX_PICKS, VOUCH_PHRASES } from '../../domain/vouches';
 import { t } from '../../i18n';
 
@@ -53,6 +55,8 @@ interface Db {
   email?: string | null;
   /** My duo partner (docs/build-plan.md F3). */
   duoId?: string | null;
+  /** Self love (D101), mine alone. `today` is worked out on each read. */
+  selfLove?: Omit<SelfLove, 'today'>;
 }
 
 const wait = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
@@ -288,6 +292,30 @@ export function createMockBackend(options: { captcha?: () => Promise<string | un
     return changes;
   }
 
+  /** Self love as the server would answer: today where I am, the last 60 days of moods, a pause only while it lasts. */
+  function selfOf(d: Db): SelfLove {
+    const now = Date.now();
+    const today = dayOf(now);
+    const s = d.selfLove ?? emptySelfLove(today);
+    const since = dayOf(now - 60 * DAY);
+    return {
+      today,
+      moods: s.moods.filter((m) => m.day > since),
+      notes: s.notes,
+      pausedUntil: s.pausedUntil && s.pausedUntil > now ? s.pausedUntil : null,
+      reset: s.reset,
+    };
+  }
+  async function selfChange(fn: (s: SelfLove, now: number) => SelfLove): Promise<SelfLove> {
+    const d = await load();
+    await wait(LATENCY);
+    if (!d.me) fail('PL002');
+    const { today: _today, ...next } = fn(selfOf(d), Date.now());
+    d.selfLove = next;
+    save();
+    return selfOf(d);
+  }
+
   return {
     kind: 'mock',
 
@@ -396,6 +424,40 @@ export function createMockBackend(options: { captcha?: () => Promise<string | un
         if (windows.some((w) => !FREE_WINDOWS.some((x) => x.id === w))) fail('PL083');
         d.me = { ...d.me, freeWindows: FREE_WINDOWS.map((x) => x.id).filter((id) => windows.includes(id)) };
         return { me: d.me };
+      }),
+
+    async selfLove() {
+      const d = await load();
+      await wait(LATENCY);
+      if (!d.me) fail('PL002');
+      return selfOf(d);
+    },
+    saveMood: (mood) =>
+      selfChange((s) => {
+        if (!isMood(mood)) fail('PL115');
+        return { ...s, moods: [...s.moods.filter((m) => m.day !== s.today), { day: s.today, mood }] };
+      }),
+    addSelfNote: (kind, body) =>
+      selfChange((s, now) => {
+        const text = checkSelfNote(kind, body, s);
+        return { ...s, notes: [{ id: uid(), kind, body: text, day: s.today, at: now }, ...s.notes] };
+      }),
+    removeSelfNote: (id) =>
+      selfChange((s) => {
+        if (!s.notes.some((n) => n.id === id)) fail('PL120');
+        return { ...s, notes: s.notes.filter((n) => n.id !== id) };
+      }),
+    pauseDiscover: (days) =>
+      selfChange((s, now) => {
+        if (!Number.isInteger(days) || days < 0 || days > PAUSE_MAX_DAYS) fail('PL121');
+        return { ...s, pausedUntil: days === 0 ? null : now + days * DAY };
+      }),
+    startReset: () => selfChange((s) => ({ ...s, reset: { started: s.today, done: [] } })),
+    doResetStep: (day) =>
+      selfChange((s) => {
+        if (!stepOpen(s.reset, day, s.today)) fail('PL122');
+        const done = [...new Set([...(s.reset!.done), day])].filter((x) => x >= 1 && x <= RESET_DAYS).sort();
+        return { ...s, reset: { started: s.reset!.started, done } };
       }),
 
     // Requests go nowhere in the mock; there is no moderator.
@@ -693,6 +755,7 @@ export function createMockBackend(options: { captcha?: () => Promise<string | un
         blocks: (d.blocked ?? []).map((b) => ({ profile: b.id, at: new Date(b.at).toISOString() })),
         reports_made: (d.reports ?? []).map((r) => ({ profile: r.profileId, reason: r.reason, detail: r.detail, at: new Date(r.at).toISOString() })),
         devices: (d.pushTokens ?? []).map(() => ({ platform: 'this phone' })),
+        self_love: d.selfLove ? { moods: d.selfLove.moods, notes: d.selfLove.notes.map(({ kind, body, day, at }) => ({ kind, body, day, at: new Date(at).toISOString() })), paused_until: d.selfLove.pausedUntil, reset: d.selfLove.reset } : null,
       }, null, 2);
     },
 

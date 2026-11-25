@@ -81,7 +81,7 @@ select unblock_user(:'g');
 select remove_photo(:'p1');
 select t.ok((select count(*) = 2 from photos), 'the owner removes one');
 select t.ok((select status from photos where id = :'p2') = 'approved', 'the others stay as they were');
-select t.ok((select (export_my_data())->>'format') = 'pinkilock-export-6'
+select t.ok((select split_part((export_my_data())->>'format', '-', 3)::int) >= 6
   and jsonb_array_length((export_my_data())->'photos') = 2, 'the data download lists my photos (format 6)');
 reset role;
 select t.ok((select photo_count = 1 from profiles where id = :'f'), 'the card counts one approved photo now');

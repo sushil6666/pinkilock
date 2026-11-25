@@ -15,6 +15,7 @@ import { ideaOf } from '../../domain/ideas';
 import { CHECK_IN_CLOSES_AFTER, isDouble, otherId, peopleOf } from '../../domain/invites';
 import type { Account, BlockedPerson, CodeKind, ContactCheck, Invite, MyContact, MyPhoto, PickedPhoto, Profile, Reveal } from '../../domain/types';
 import { log, quiet } from '../../lib/log';
+import { isMood, type NoteKind, type SelfLove } from '../../domain/selfLove';
 import type { Backend, BackendEvent, Changes, Notice, Snapshot } from '../backend';
 import { t } from '../../i18n';
 import { activeTrace, tracedAll } from '../traceScope';
@@ -22,6 +23,18 @@ import { activeTrace, tracedAll } from '../traceScope';
 type Row = Record<string, any>;
 
 const ms = (t: string | null): number | null => (t ? new Date(t).getTime() : null);
+
+/** my_self_love() and its siblings, as the app holds it. */
+function selfLoveFrom(raw: unknown): SelfLove {
+  const r = (raw ?? {}) as { today?: string; moods?: { day: string; mood: string }[]; notes?: { id: number; kind: NoteKind; body: string; day: string; at: string }[]; paused_until?: string | null; reset?: { started: string; done: number[] } | null };
+  return {
+    today: r.today ?? new Date().toISOString().slice(0, 10),
+    moods: (r.moods ?? []).filter((m) => isMood(m.mood)).map((m) => ({ day: m.day, mood: m.mood as SelfLove['moods'][number]['mood'] })),
+    notes: (r.notes ?? []).map((n) => ({ id: String(n.id), kind: n.kind, body: n.body, day: n.day, at: ms(n.at) ?? 0 })),
+    pausedUntil: ms(r.paused_until ?? null),
+    reset: r.reset ? { started: r.reset.started, done: r.reset.done ?? [] } : null,
+  };
+}
 
 function toInvite(r: Row): Invite {
   return {
@@ -718,6 +731,35 @@ export function createSupabaseBackend(url: string, anonKey: string, storage: Ses
       await uid();
       await rpc('report_user', { p_profile: input.profileId, p_reason: input.reason, p_detail: input.detail, p_invite: input.inviteId ?? null });
       return { ...forget([input.profileId], []), duoId: await readDuo() };
+    },
+
+    async selfLove() {
+      await uid();
+      return selfLoveFrom(await rpc('my_self_love'));
+    },
+    async saveMood(mood) {
+      await uid();
+      return selfLoveFrom(await rpc('save_mood', { p_mood: mood }));
+    },
+    async addSelfNote(kind, body) {
+      await uid();
+      return selfLoveFrom(await rpc('add_self_note', { p_kind: kind, p_body: body }));
+    },
+    async removeSelfNote(id) {
+      await uid();
+      return selfLoveFrom(await rpc('remove_self_note', { p_id: Number(id) }));
+    },
+    async pauseDiscover(days) {
+      await uid();
+      return selfLoveFrom(await rpc('pause_discover', { p_days: days }));
+    },
+    async startReset() {
+      await uid();
+      return selfLoveFrom(await rpc('start_reset'));
+    },
+    async doResetStep(day) {
+      await uid();
+      return selfLoveFrom(await rpc('do_reset_step', { p_day: day }));
     },
 
     async exportMyData() {

@@ -321,7 +321,8 @@ in the SQL editor (`select * from reports where reviewed_at is null`).
 
 **Export and deletion.** `export_my_data()` returns one JSON document: account (id, phone),
 profile, contact, trust score, my invites (the other person by id only), passes, blocks, reports
-I made, devices, notifications sent to me, and my events. Reports about me are not in it, nor
+I made, devices, notifications sent to me, my events, and Self love (moods, notes, the pause and
+the reset; format 7). Reports about me are not in it, nor
 anyone else's contact. `delete_my_account()` ends my live invites, removes my id from every events
 row (and clears what the phone sent with `app_open`), then deletes the auth user; everything that
 references the profile cascades, and reports keep their row with my id set to null. The other
@@ -492,6 +493,20 @@ what the server did (`OPERATIONS.md`, "Trace a bug").
 `profiles.free_windows` (set with `save_availability`, shown on the card) holds broad windows such as
 weekday evenings. Asks can still pick any time; the composer marks the times inside the other
 person's windows (`src/domain/freeWindows.ts`, in the phone's time zone).
+
+### Self love and Bounce back
+
+A private page reached from Me (D101). `private.self_moods` (one mood a day), `private.self_notes`
+(gratitude, journal and boundary notes, 300 characters, three gratitude notes a day, 200 in all)
+and `private.self_love` (the Discover pause and the 3-day reset) are readable by no client role and
+not by the analytics worker. The app uses only `my_self_love`, `save_mood`, `add_self_note`,
+`remove_self_note`, `pause_discover` (1 to 14 days, 0 ends it), `start_reset` and `do_reset_step`
+(a step opens on its own day), each about the caller and each answering with the whole state. "Today"
+is the day in the person's city. `discover()` leaves out anyone whose pause has not ended; plans and
+asks already made carry on. The kind lines, the self-care steps and the solo ideas are words in
+`src/i18n/en.ts`; solo plans are venues of the person's city (`soloPlans` in
+`src/domain/selfLove.ts`). Nothing from Self love is logged or pushed. Bounce back is offered on an
+ask someone said no to or that ran out, and on Asks, Sent, for three days afterwards.
 
 ### Friend vouches
 

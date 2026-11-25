@@ -5,6 +5,7 @@
  * seeded data, latency and a simulated other person; a Supabase implementation maps each method
  * to one rpc() or select() (ARCHITECTURE.md section 8) and `subscribe` to a Realtime channel.
  */
+import type { Mood, NoteKind, SelfLove } from '../domain/selfLove';
 import type { Account, BlockedPerson, ContactCheck, Invite, MyContact, MyPhoto, NewInvite, NewReport, OnboardingInput, CodeKind, CodeMode, PickedPhoto, Profile, Reveal } from '../domain/types';
 
 export interface Snapshot {
@@ -149,6 +150,23 @@ export interface Backend {
   myContactFlags(): Promise<number>;
   startContactCheck(): Promise<ContactCheck>;
   myContactStatus(): Promise<MyContact | null>;
+
+  /**
+   * Self love (D101): mine alone. Nobody else can read any of it, and it never goes into a log, a
+   * push or an error report. Each call answers with the whole of it as it now stands.
+   */
+  selfLove(): Promise<SelfLove>;
+  /** Today's mood; a second one the same day replaces the first. */
+  saveMood(mood: Mood): Promise<SelfLove>;
+  /** A gratitude note (three a day), a journal entry or a boundary. Up to 300 characters, 200 notes. */
+  addSelfNote(kind: NoteKind, body: string): Promise<SelfLove>;
+  removeSelfNote(id: string): Promise<SelfLove>;
+  /** Off Discover for 1 to 14 days; 0 comes back now. Plans and asks already made carry on. */
+  pauseDiscover(days: number): Promise<SelfLove>;
+  /** Starts the 3-day reset from day one (again, if one was running). */
+  startReset(): Promise<SelfLove>;
+  /** Ticks a day of the reset; each opens on its own day. */
+  doResetStep(day: number): Promise<SelfLove>;
 
   subscribe(listener: (e: BackendEvent) => void): () => void;
 

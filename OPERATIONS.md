@@ -281,6 +281,12 @@ Edit `analytics/duckdb_pipeline.py`, then check it with `python tests/db/run.py`
 `python analytics/duckdb_pipeline.py --dry-run` against a local stack. The next scheduled run
 after the merge uses the new code. No deploy is needed.
 
+**Self love data (D101).** Moods and notes are in `private.self_moods` and `private.self_notes`.
+They are the person's alone: `scripts/moderate.sh` does not show them, and nobody should read them in
+the SQL editor. A person's request about them is answered with their data download. The help line
+on Bounce back (Tele-MANAS 14416, `SUPPORT_LINES` in `src/domain/selfLove.ts`) should be checked
+before launch and when a country opens.
+
 ## 6. Health checks
 
 Do these in a quick weekly look, and whenever something feels wrong.

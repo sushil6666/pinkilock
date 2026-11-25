@@ -113,7 +113,7 @@ reset role;
 -- The owner can take it down, and the download says which photo is which.
 set role authenticated;
 select t.as_user(:'j');
-select t.ok((select (export_my_data())->>'format') = 'pinkilock-export-6'
+select t.ok((select split_part((export_my_data())->>'format', '-', 3)::int) >= 6
   and (select count(*) = 3 from jsonb_array_elements((export_my_data())->'photos') e where e->>'kind' = 'locked'),
   'the data download says each photo''s kind (format 6)');
 select t.ok(exists (select 1 from jsonb_array_elements((export_my_data())->'consents') c where c->>'kind' = 'face'), 'and lists the face consent');

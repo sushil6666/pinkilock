@@ -97,6 +97,10 @@ someone, and delete their account, on both platforms, against the production pro
   a search (name, old name, state or area) or by picking the state, then the city. The new lists
   were written without a local check and need one before launch.
 
+- [x] **Self love and Bounce back** (D101): a private page for the person alone (kind line, solo
+  plans, mood check-in with streak and gold badge, gratitude jar, boundaries) and, after a no, a kind
+  note, a 3-day reset, a private journal, a pause from Discover and help lines (Tele-MANAS 14416).
+
 - [x] **Photos behind the lock** (D088): up to three photos on Me, stored in a private Supabase
   Storage bucket by the `photo` Edge Function, which strips their metadata and draws the picture
   again from its pixels (D098). A person checks each one
