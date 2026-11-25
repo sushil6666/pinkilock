@@ -319,9 +319,9 @@ test('Spicy mode (D103): nothing of anyone else\'s, over the API too', async () 
   // A phone number never goes in as a username, whoever asks.
   await assert.rejects(x.backend.saveSpicy({ adult: true, rules: true, discord: '+91 98765 43210', telegram: '', signal: '', boundaries: [] }),
     (e: unknown) => e instanceof AppError && (e.code === 'PL123' || e.code === 'PL128'), 'no phone number as a username');
-  // A plan that is not mine is closed, and cannot be said yes to.
-  const closed = await raw.rpc('spicy_plan', { p_invite: '00000000-0000-0000-0000-000000000000' });
-  assert.deepEqual(closed.data, { open: false }, 'a plan that is not mine says nothing');
+  // Someone I was never shown, and share nothing with, is closed and cannot be said yes to.
+  const closed = await raw.rpc('spicy_with', { p_other: '00000000-0000-0000-0000-000000000000' });
+  assert.deepEqual(closed.data, { open: false }, 'a stranger says nothing');
   await assert.rejects(x.backend.spicyYes('00000000-0000-0000-0000-000000000000', true), (e: unknown) => e instanceof AppError && e.code === 'PL130', 'and takes no yes');
   refused(await signedOut.rpc('my_spicy'), 'signed out, there is no Spicy to read');
 });

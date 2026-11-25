@@ -512,12 +512,13 @@ ask someone said no to or that ran out, and on Asks, Sent, for three days afterw
 
 An opt-in for two adults (D103), off by default, reached from Me. `private.spicy` (one row while it
 is on: Discord, Telegram and Signal usernames, boundaries from a fixed list, when the 18+ and rules yeses
-were given) and `private.spicy_yes` (a yes on one plan) are readable by no client role and not by the
+were given) and `private.spicy_yes` (a yes to one person) are readable by no client role and not by the
 analytics worker. The app uses only `my_spicy`, `save_spicy` (both yeses, a linked account, the
 usernames through `private.spicy_username`, which refuses more than six digits as a phone number,
-PL123 to PL129), `spicy_off` (deletes the row and every yes), `spicy_plan` and `spicy_yes` (PL130).
-`private.spicy_plan_for` opens only on a kept one-on-one plan of the caller's, with
-`private.revealed_to` (so no block) and both people on and not suspended; every other case is the
+PL123 to PL129), `spicy_off` (deletes the row and every yes given or received), `spicy_with` and `spicy_yes` (PL130).
+`private.spicy_with_for` opens from day one between two people who are both on and not suspended,
+nobody blocked, when the other is a card Discover showed the caller (`private.discover_seen`) or
+someone they share an ask, plan or duo with (`private.shares_invite`); every other case is the
 same `{"open": false}`, so it says nothing about the other person. Usernames come back only when both
 said yes. Pinkilock hosts no chat: Discord is shown first, Telegram second (a `t.me` link), Signal third (with a tip to turn on disappearing messages). Nothing
 is logged, pushed or sent to analytics. The rules are mirrored in `src/domain/spicy.ts`, and

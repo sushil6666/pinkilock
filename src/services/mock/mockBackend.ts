@@ -58,15 +58,15 @@ interface Db {
   duoId?: string | null;
   /** Self love (D101), mine alone. `today` is worked out on each read. */
   selfLove?: Omit<SelfLove, 'today'>;
-  /** Spicy mode (D103), mine; absent is off. And the plans I said yes on. */
+  /** Spicy mode (D103), mine; absent is off. And the people I said yes to. */
   spicy?: Spicy;
   spicyYes?: string[];
 }
 
 /**
- * The made-up people who have Spicy mode on, with what the server would hold for them. On a kept
- * plan with one of them, they say yes when I do (the mock has nobody to wait for); the rest have
- * it off, so a kept plan with them shows nothing, as live.
+ * The made-up people who have Spicy mode on, with what the server would hold for them. They say
+ * yes when I do (the mock has nobody to wait for); the rest have it off, so their cards show
+ * nothing, as live.
  */
 const SPICY_PEOPLE: Record<string, { discord: string | null; telegram: string | null; signal: string | null; boundaries: Boundary[] }> = {
   aanya: { discord: 'aanya.after.dark', telegram: null, signal: 'aanya.27', boundaries: ['ask_first', 'face_private'] },
@@ -333,14 +333,11 @@ export function createMockBackend(options: { captcha?: () => Promise<string | un
     return selfOf(d);
   }
 
-  /** As spicy_plan_for in SQL: closed unless kept, one-on-one, nobody blocked, both on. */
-  function mockSpicyPlan(d: Db, inviteId: string) {
-    const i = d.invites.find((x) => x.id === inviteId);
-    if (!i || !d.me || !d.spicy?.on || i.status !== 'kept' || rules.isDouble(i)) return spicyClosed;
-    const them = rules.otherId(i, ME_ID);
+  /** As spicy_with_for in SQL: closed unless both on, a card I can see, nobody blocked. Every made-up card is one I can see. */
+  function mockSpicyPlan(d: Db, them: string) {
     const theirs = SPICY_PEOPLE[them];
-    if (!theirs || isBlocked(d, them) || !rules.canReveal(i, ME_ID, them)) return spicyClosed;
-    const myYes = !!d.spicyYes?.includes(inviteId);
+    if (!d.me || !d.spicy?.on || !theirs || isBlocked(d, them) || !d.profiles.some((p) => p.id === them)) return spicyClosed;
+    const myYes = !!d.spicyYes?.includes(them);
     return { open: true, myYes, mutual: myYes, theirBoundaries: theirs.boundaries, discord: myYes ? theirs.discord : null, telegram: myYes ? theirs.telegram : null, signal: myYes ? theirs.signal : null };
   }
 
@@ -512,19 +509,19 @@ export function createMockBackend(options: { captcha?: () => Promise<string | un
       save();
       return spicyOff;
     },
-    async spicyPlan(inviteId) {
+    async spicyWith(profileId) {
       const d = await load();
       await wait(LATENCY);
-      return mockSpicyPlan(d, inviteId);
+      return mockSpicyPlan(d, profileId);
     },
-    async spicyYes(inviteId, yes) {
+    async spicyYes(profileId, yes) {
       const d = await load();
       await wait(LATENCY);
-      if (!mockSpicyPlan(d, inviteId).open) fail('PL130');
-      const mine = (d.spicyYes ?? []).filter((id) => id !== inviteId);
-      d.spicyYes = yes ? [...mine, inviteId] : mine;
+      if (!mockSpicyPlan(d, profileId).open) fail('PL130');
+      const mine = (d.spicyYes ?? []).filter((id) => id !== profileId);
+      d.spicyYes = yes ? [...mine, profileId] : mine;
       save();
-      return mockSpicyPlan(d, inviteId);
+      return mockSpicyPlan(d, profileId);
     },
 
     // Requests go nowhere in the mock; there is no moderator.
@@ -822,7 +819,7 @@ export function createMockBackend(options: { captcha?: () => Promise<string | un
         blocks: (d.blocked ?? []).map((b) => ({ profile: b.id, at: new Date(b.at).toISOString() })),
         reports_made: (d.reports ?? []).map((r) => ({ profile: r.profileId, reason: r.reason, detail: r.detail, at: new Date(r.at).toISOString() })),
         devices: (d.pushTokens ?? []).map(() => ({ platform: 'this phone' })),
-        spicy: d.spicy ? { discord: d.spicy.discord, telegram: d.spicy.telegram, signal: d.spicy.signal, boundaries: d.spicy.boundaries, since: d.spicy.since ? new Date(d.spicy.since).toISOString() : null, yes: (d.spicyYes ?? []).map((invite) => ({ invite })) } : null,
+        spicy: d.spicy ? { discord: d.spicy.discord, telegram: d.spicy.telegram, signal: d.spicy.signal, boundaries: d.spicy.boundaries, since: d.spicy.since ? new Date(d.spicy.since).toISOString() : null, yes: (d.spicyYes ?? []).map((who) => ({ with: who })) } : null,
         self_love: d.selfLove ? { moods: d.selfLove.moods, notes: d.selfLove.notes.map(({ kind, body, day, at }) => ({ kind, body, day, at: new Date(at).toISOString() })), paused_until: d.selfLove.pausedUntil, reset: d.selfLove.reset } : null,
       }, null, 2);
     },

@@ -113,7 +113,7 @@ export const ERRORS = {
   PL127: 'Confirm you are 18 or older and agree to the safety rules first.',
   PL128: 'Spicy mode needs a phone number or an email on your account.',
   PL129: 'Pick your boundaries from the list.',
-  PL130: 'Spicy opens only on a kept plan, when you both have it on.',
+  PL130: 'Spicy opens only when you both have it on.',
   PL131: 'That is not a Signal username: 3 to 32 letters, numbers or _, a dot, then 2 to 9 numbers.',
 
   PA001: 'Phone sign-in is not switched on yet.',

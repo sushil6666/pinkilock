@@ -43,7 +43,7 @@ function spicyFrom(raw: unknown): Spicy {
   return { on: !!r.on, discord: r.discord ?? null, telegram: r.telegram ?? null, signal: r.signal ?? null, boundaries: (r.boundaries ?? []).filter(isBoundary), since: ms(r.since ?? null) };
 }
 
-/** spicy_plan() and spicy_yes(). */
+/** spicy_with() and spicy_yes(). */
 function spicyPlanFrom(raw: unknown): SpicyPlan {
   const r = (raw ?? {}) as { open?: boolean; my_yes?: boolean; mutual?: boolean; their_boundaries?: string[]; discord?: string | null; telegram?: string | null; signal?: string | null };
   return { open: !!r.open, myYes: !!r.my_yes, mutual: !!r.mutual, theirBoundaries: (r.their_boundaries ?? []).filter(isBoundary), discord: r.discord ?? null, telegram: r.telegram ?? null, signal: r.signal ?? null };
@@ -787,13 +787,13 @@ export function createSupabaseBackend(url: string, anonKey: string, storage: Ses
       await uid();
       return spicyFrom(await rpc('spicy_off'));
     },
-    async spicyPlan(inviteId) {
+    async spicyWith(profileId) {
       await uid();
-      return spicyPlanFrom(await rpc('spicy_plan', { p_invite: inviteId }));
+      return spicyPlanFrom(await rpc('spicy_with', { p_other: profileId }));
     },
-    async spicyYes(inviteId, yes) {
+    async spicyYes(profileId, yes) {
       await uid();
-      return spicyPlanFrom(await rpc('spicy_yes', { p_invite: inviteId, p_yes: yes }));
+      return spicyPlanFrom(await rpc('spicy_yes', { p_other: profileId, p_yes: yes }));
     },
 
     async exportMyData() {

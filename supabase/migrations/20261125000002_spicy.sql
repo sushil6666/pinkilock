@@ -6,9 +6,11 @@
 --     username (first choice), a Telegram username or a Signal username. A phone number is refused
 --     in every field.
 --   * Boundaries come from a fixed list; nothing typed but the two usernames.
---   * It shows only between two people who both have it on, on a one-on-one plan that was kept,
---     with nobody blocked: the reveal's own gate (private.revealed_to). There each sees the other's
---     boundaries and may say yes to moving the chat. Only when both said yes does either get the
+--   * It shows only between two people who both have it on, from day one: no plan or meeting is
+--     needed (Sushil, 2026-11-25). The other person must be someone I can already see: a card
+--     Discover showed me (private.discover_seen) or someone I share an ask, a plan or a duo with
+--     (private.shares_invite), with nobody blocked. There each sees the other's boundaries and may
+--     say yes to moving the chat. Only when both said yes does either get the
 --     other's usernames. Nobody is told the other said no, or whether the other has it on at all
 --     unless they do too.
 --   * One tap turns it off and wipes it: the usernames, the boundaries and every yes.
@@ -28,10 +30,11 @@ create table private.spicy (
 );
 
 create table private.spicy_yes (
-  invite_id uuid not null references public.invites (id) on delete cascade,
   user_id uuid not null references auth.users (id) on delete cascade,
+  other_id uuid not null references auth.users (id) on delete cascade,
   at timestamptz not null default now(),
-  primary key (invite_id, user_id)
+  primary key (user_id, other_id),
+  check (user_id <> other_id)
 );
 
 alter table private.spicy enable row level security;
@@ -119,77 +122,73 @@ begin
   return private.spicy_state(me);
 end $$;
 
--- One tap: off, and nothing kept. Every yes goes too, so a plan that was open closes for both.
+-- One tap: off, and nothing kept. Every yes goes too, mine and those given to me, so it closes for both.
 create or replace function public.spicy_off()
 returns jsonb language plpgsql security definer set search_path = public as $$
 declare
   me uuid := private.self_love_me();
 begin
-  delete from private.spicy_yes where user_id = me;
+  delete from private.spicy_yes where user_id = me or other_id = me;
   delete from private.spicy where user_id = me;
   return private.spicy_state(me);
 end $$;
 
--- Spicy on one plan, for the caller. Anything that is not open (not my plan, not kept, a double,
--- a block, either of us off or suspended) is the same closed answer, so it says nothing about the
--- other person.
-create or replace function private.spicy_plan_for(p_user uuid, p_invite uuid)
+-- Spicy with one person, for the caller. Anything that is not open (myself, someone I was never
+-- shown and share nothing with, a block, either of us off or suspended) is the same closed answer,
+-- so it says nothing about the other person.
+create or replace function private.spicy_with_for(p_user uuid, p_other uuid)
 returns jsonb language plpgsql stable security definer set search_path = public as $$
 declare
-  i invites;
-  other uuid;
   theirs private.spicy;
   my_yes boolean;
   their_yes boolean;
 begin
-  select * into i from invites where id = p_invite;
-  if not found or i.status <> 'kept' or i.from_friend is not null or p_user not in (i.from_id, i.to_id) then
-    return jsonb_build_object('open', false);
-  end if;
-  other := case when i.from_id = p_user then i.to_id else i.from_id end;
-  select * into theirs from private.spicy where user_id = other;
+  if p_other is null or p_other = p_user then return jsonb_build_object('open', false); end if;
+  select * into theirs from private.spicy where user_id = p_other;
   if not found or not exists (select 1 from private.spicy where user_id = p_user)
-     or not private.revealed_to(other, p_user)
-     or exists (select 1 from profiles p where p.id in (p_user, other) and p.suspended_at is not null) then
+     or private.blocked_pair(p_user, p_other)
+     or not (exists (select 1 from private.discover_seen d where d.user_id = p_user and d.card_id = p_other)
+             or private.shares_invite(p_user, p_other))
+     or exists (select 1 from profiles p where p.id in (p_user, p_other) and p.suspended_at is not null) then
     return jsonb_build_object('open', false);
   end if;
-  my_yes := exists (select 1 from private.spicy_yes where invite_id = p_invite and user_id = p_user);
-  their_yes := exists (select 1 from private.spicy_yes where invite_id = p_invite and user_id = other);
+  my_yes := exists (select 1 from private.spicy_yes where user_id = p_user and other_id = p_other);
+  their_yes := exists (select 1 from private.spicy_yes where user_id = p_other and other_id = p_user);
   return jsonb_build_object('open', true, 'my_yes', my_yes, 'mutual', my_yes and their_yes,
     'their_boundaries', to_jsonb(theirs.boundaries),
     'discord', case when my_yes and their_yes then theirs.discord end,
     'telegram', case when my_yes and their_yes then theirs.telegram end,
     'signal', case when my_yes and their_yes then theirs.signal end);
 end $$;
-revoke all on function private.spicy_plan_for(uuid, uuid) from public, anon, authenticated;
+revoke all on function private.spicy_with_for(uuid, uuid) from public, anon, authenticated;
 
-create or replace function public.spicy_plan(p_invite uuid)
+create or replace function public.spicy_with(p_other uuid)
 returns jsonb language plpgsql stable security definer set search_path = public as $$
 begin
-  return private.spicy_plan_for(private.self_love_me(), p_invite);
+  return private.spicy_with_for(private.self_love_me(), p_other);
 end $$;
 
 -- Yes moves the chat once the other says yes too; no (false) takes my yes back.
-create or replace function public.spicy_yes(p_invite uuid, p_yes boolean)
+create or replace function public.spicy_yes(p_other uuid, p_yes boolean)
 returns jsonb language plpgsql security definer set search_path = public as $$
 declare
   me uuid := private.self_love_me();
 begin
-  if not coalesce((private.spicy_plan_for(me, p_invite) ->> 'open')::boolean, false) then
-    raise exception using errcode = 'PL130', message = 'Spicy opens only on a kept plan, when you both have it on.';
+  if not coalesce((private.spicy_with_for(me, p_other) ->> 'open')::boolean, false) then
+    raise exception using errcode = 'PL130', message = 'Spicy opens only when you both have it on.';
   end if;
   if coalesce(p_yes, false) then
-    insert into private.spicy_yes (invite_id, user_id) values (p_invite, me) on conflict do nothing;
+    insert into private.spicy_yes (user_id, other_id) values (me, p_other) on conflict do nothing;
   else
-    delete from private.spicy_yes where invite_id = p_invite and user_id = me;
+    delete from private.spicy_yes where user_id = me and other_id = p_other;
   end if;
-  return private.spicy_plan_for(me, p_invite);
+  return private.spicy_with_for(me, p_other);
 end $$;
 
 revoke all on function public.my_spicy(), public.save_spicy(boolean, boolean, text, text, text, text[]), public.spicy_off(),
-  public.spicy_plan(uuid), public.spicy_yes(uuid, boolean) from public, anon;
+  public.spicy_with(uuid), public.spicy_yes(uuid, boolean) from public, anon;
 grant execute on function public.my_spicy(), public.save_spicy(boolean, boolean, text, text, text, text[]), public.spicy_off(),
-  public.spicy_plan(uuid), public.spicy_yes(uuid, boolean) to authenticated;
+  public.spicy_with(uuid), public.spicy_yes(uuid, boolean) to authenticated;
 
 -- ---------------------------------------------------------------------------------------------
 -- The data download, format 8: as in 20261125000001_self_love.sql, plus Spicy mode.
@@ -264,7 +263,7 @@ begin
       'pause_and_reset', (select jsonb_build_object('paused_until', s.paused_until, 'reset_started', s.reset_started, 'reset_done', s.reset_done) from private.self_love s where s.user_id = me)),
     -- Spicy mode (D103): my own usernames, boundaries and yeses. The other person's are theirs.
     'spicy', (select jsonb_build_object('discord', s.discord, 'telegram', s.telegram, 'signal', s.signal, 'boundaries', to_jsonb(s.boundaries), 'adult_at', s.adult_at, 'rules_at', s.rules_at, 'since', s.updated_at,
-                'yes', coalesce((select jsonb_agg(jsonb_build_object('invite', y.invite_id, 'at', y.at) order by y.at) from private.spicy_yes y where y.user_id = me), '[]'))
+                'yes', coalesce((select jsonb_agg(jsonb_build_object('with', y.other_id, 'at', y.at) order by y.at) from private.spicy_yes y where y.user_id = me), '[]'))
               from private.spicy s where s.user_id = me)
   );
 end $$;

@@ -1,6 +1,6 @@
 /**
  * Spicy mode (D103): the parts the Spicy page, Me and a kept plan share. The safety rules, the
- * entry on Me, and the hand-off on a plan. What shows comes from the server (spicy_plan): this
+ * entry on Me, and the hand-off on a card or a plan. What shows comes from the server (spicy_with): this
  * file never decides that two people may see each other's usernames.
  */
 import { Feather } from '@expo/vector-icons';
@@ -68,26 +68,26 @@ export function SpicyEntry() {
 }
 
 /**
- * On a kept plan. Nothing at all unless the server says it is open (kept, one-on-one, nobody
- * blocked, both of us on). Then: their boundaries, the reminder, and my yes. Their usernames only
+ * On someone's card or a plan with them. Nothing at all unless the server says it is open (both of
+ * us on, a card I can see, nobody blocked). Then: their boundaries, the reminder, and my yes. Their usernames only
  * once we both said yes, Discord first.
  */
-export function SpicyHandoff({ inviteId, otherId, name }: { inviteId: string; otherId: string; name: string }) {
+export function SpicyHandoff({ otherId, name, route }: { otherId: string; name: string; route: string }) {
   const [plan, setPlan] = useState<SpicyPlan>(spicyClosed);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   useEffect(() => {
-    backend.spicyPlan(inviteId).then(setPlan, quiet('spicy.plan'));
-  }, [inviteId]);
+    backend.spicyWith(otherId).then(setPlan, quiet('spicy.with'));
+  }, [otherId]);
   if (!plan.open) return null;
 
   const answer = async (yes: boolean) => {
     setBusy(true);
     setError('');
     try {
-      setPlan(await backend.spicyYes(inviteId, yes));
+      setPlan(await backend.spicyYes(otherId, yes));
     } catch (e) {
-      setError(shown(e, '/plan/[id]'));
+      setError(shown(e, route));
     }
     setBusy(false);
   };
@@ -145,7 +145,7 @@ export function SpicyHandoff({ inviteId, otherId, name }: { inviteId: string; ot
         ? <Button kind="quiet" label={t('spicy.takeBack')} busy={busy} onPress={() => answer(false)} />
         : <Button icon="zap" label={t('spicy.yes')} busy={busy} onPress={() => answer(true)} />}
       <T v="caption" c={color.textMute}>{t('spicy.stop', { name })}</T>
-      <Button kind="ghost" icon="flag" label={t('spicy.report', { name })} onPress={() => router.push(`/report/${otherId}?invite=${inviteId}`)} />
+      <Button kind="ghost" icon="flag" label={t('spicy.report', { name })} onPress={() => router.push(`/report/${otherId}`)} />
     </View>
   );
 }

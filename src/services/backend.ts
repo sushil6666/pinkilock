@@ -179,12 +179,13 @@ export interface Backend {
   /** One tap: off, and the usernames, boundaries and every yes are gone. */
   spicyOff(): Promise<Spicy>;
   /**
-   * On one plan: open only on a kept one-on-one plan when we both have it on. Their usernames come
-   * only when we both said yes; nothing ever says that they said no.
+   * With one person, from day one: open only when we both have it on and I can see their card
+   * (Discover showed them, or we share an ask or plan), nobody blocked. Their usernames come only
+   * when we both said yes; nothing ever says that they said no.
    */
-  spicyPlan(inviteId: string): Promise<SpicyPlan>;
-  /** Yes, move our chat; false takes my yes back. PL130 when the plan is not open. */
-  spicyYes(inviteId: string, yes: boolean): Promise<SpicyPlan>;
+  spicyWith(profileId: string): Promise<SpicyPlan>;
+  /** Yes, move our chat; false takes my yes back. PL130 when it is not open. */
+  spicyYes(profileId: string, yes: boolean): Promise<SpicyPlan>;
 
   subscribe(listener: (e: BackendEvent) => void): () => void;
 

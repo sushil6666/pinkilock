@@ -4,6 +4,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { LockedReveal } from '@/components/LockedReveal';
+import { SpicyHandoff } from '@/components/Spicy';
 import { Portrait } from '@/components/Portrait';
 import { Spark } from '@/components/Spark';
 import { TrustBadge } from '@/components/TrustBadge';
@@ -88,6 +89,7 @@ export default function ProfileScreen() {
 
         {person.tagline ? <T v="heading">{person.tagline}</T> : null}
         {me && me.id !== person.id ? <Spark me={me} person={person} /> : null}
+        {me && me.id !== person.id ? <SpicyHandoff otherId={person.id} name={person.name} route="/profile/[id]" /> : null}
         <Vouches person={person} />
         {person.vibes.length > 0 && <View style={styles.wrap}>{person.vibes.map((v) => <Chip key={v} label={v} />)}</View>}
 

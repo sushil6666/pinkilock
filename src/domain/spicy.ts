@@ -4,14 +4,14 @@
  * a yes to "I am 18 or older", a yes to the safety rules, and a Discord username (first choice), a
  * Telegram username or a Signal username. Never a phone number.
  *
- * It shows only between two people who both have it on, and only on a one-on-one plan that was
- * kept (the same gate as the reveal, private.revealed_to): there each can see the other's
- * boundaries and say yes to moving the chat. Only when both said yes does either see the other's
+ * It shows only between two people who both have it on, from day one (no plan needed): on the
+ * card of someone Discover showed me, or someone I share an ask or a plan with, nobody blocked.
+ * There each can see the other's boundaries and say yes to moving the chat. Only when both said yes does either see the other's
  * username, Discord first. Nobody is ever told that the other said no or has not answered.
  * Pinkilock hosts no chat and no explicit content; the chat happens in Discord or Telegram.
  *
  * The same rules are in SQL (supabase/migrations/20261125000002_spicy.sql: save_spicy, spicy_off,
- * spicy_plan, spicy_yes); the mock follows these. SPICY_HANDLE_CASES is the shared table
+ * spicy_with, spicy_yes); the mock follows these. SPICY_HANDLE_CASES is the shared table
  * (tests/db/spicy_cases.sql is generated from it: UPDATE_CASES=1 npm run test:unit).
  *
  * Pure TypeScript: no React Native, so unit tests load it in plain Node.
@@ -25,7 +25,7 @@ export const isBoundary = (b: unknown): b is Boundary => typeof b === 'string' &
 
 /** The safety rules, in src/i18n as `spicy.rules.r1` to `rN`. All shown before turning on. */
 export const SAFETY_RULES = 8;
-/** The ones shown again on a plan, just before a yes: phone number, face, where you are, money. */
+/** The ones shown again just before a yes: phone number, face, where you are, money. */
 export const HANDOFF_RULES = [1, 2, 3, 4] as const;
 
 export type SpicyApp = 'discord' | 'telegram' | 'signal';
@@ -45,9 +45,9 @@ export interface Spicy {
 
 export const spicyOff: Spicy = { on: false, discord: null, telegram: null, signal: null, boundaries: [], since: null };
 
-/** Spicy on one plan, as the server answers it for me. */
+/** Spicy with one person, as the server answers it for me. */
 export interface SpicyPlan {
-  /** True only on a kept one-on-one plan, nobody blocked, when we both have Spicy on. */
+  /** True only when we both have Spicy on, I can see their card, and nobody blocked. */
   open: boolean;
   /** I said yes to moving the chat. */
   myYes: boolean;

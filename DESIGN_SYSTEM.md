@@ -152,7 +152,7 @@ Font scaling is allowed up to 1.3x (`maxFontSizeMultiplier`) so layouts hold on 
   on the right at `columnMax`. `read` stops at `readMax` (760). The logo stays top centre. Phones
   and narrow windows keep the phone layout.
 - **Spicy mode** (D103): existing tokens only. Its own things are pink (`pinkWash` behind `pinkDeep`:
-  the Me entry card with a `zap` icon, the "on" panel, the hand-off on a plan); the safety rules sit on
+  the Me entry card with a `zap` icon, the "on" panel, the hand-off on a card or a plan); the safety rules sit on
   gold (`goldWash` behind `goldDeep`) with a `shield` before each. Boundaries are chips, pink when
   picked, and pink tags on a plan. The words stay tasteful: "Spicy", never "naughty" or explicit.
 - **Self love** (D101): the private page uses the existing tokens only. Its own things are gold
