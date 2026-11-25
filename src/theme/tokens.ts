@@ -4,6 +4,8 @@
  */
 import { Easing } from 'react-native-reanimated';
 import type { TextStyle } from 'react-native';
+import { script } from '../i18n';
+import { scriptFamilies, type Weight } from './scriptFonts';
 
 export const color = {
   bg: '#241A63',
@@ -57,15 +59,23 @@ export const depth = 5;
 
 export const radius = { chip: 6, card: 14, sheet: 28, pill: 999 } as const;
 
+/**
+ * In a browser showing a language in another script, each face is followed by that script's Noto
+ * at the same weight (src/theme/scriptFonts.web.ts), so Latin letters stay Inter Tight and the rest
+ * read in Noto. On a phone the system finds the script's font by itself.
+ */
+const families = scriptFamilies(script());
+const face = (name: string, weight: Weight) => (families ? `${name}, ${families[weight]}` : name);
+
 export const font = {
-  display: 'InterTight_800ExtraBold',
-  /** The wordmark only: the logo's "pinkilock" in a true italic. */
+  display: face('InterTight_800ExtraBold', 800),
+  /** The wordmark only: the logo's "pinkilock" in a true italic. Always Latin. */
   displayItalic: 'InterTight_800ExtraBold_Italic',
-  regular: 'InterTight_400Regular',
-  medium: 'InterTight_500Medium',
-  bold: 'InterTight_700Bold',
-  hand: 'CaveatBrush_400Regular',
-} as const;
+  regular: face('InterTight_400Regular', 400),
+  medium: face('InterTight_500Medium', 500),
+  bold: face('InterTight_700Bold', 700),
+  hand: face('CaveatBrush_400Regular', 700),
+};
 
 const tabular: TextStyle = { fontVariant: ['tabular-nums'] };
 
@@ -94,3 +104,16 @@ export const motion = {
     back: { damping: 20, stiffness: 180, mass: 1 },
   },
 } as const;
+
+/**
+ * Indian and Arabic scripts stack marks above and below the letters, so they need taller lines
+ * than Latin, and letter spacing pulls their joined letters apart. Applied by `T` on top of
+ * whatever style a screen gives, read at render so a language picked on a phone counts at once.
+ */
+const LINE_SCALE: Partial<Record<ReturnType<typeof script>, number>> = { Arab: 1.4, Olck: 1.15, Mtei: 1.15 };
+export function scriptText(flat: TextStyle): TextStyle | null {
+  const s = script();
+  if (s === 'Latn') return null;
+  const k = LINE_SCALE[s] ?? 1.3;
+  return { letterSpacing: 0, ...(flat.lineHeight ? { lineHeight: Math.round(flat.lineHeight * k) } : null) };
+}

@@ -50,6 +50,8 @@ export default function InviteScreen() {
   // Replace, so the plan that follows a lock does not sit on top of this now-stale ask.
   const toLock = () => router.replace(`/lock/${invite.id}`);
   const toDiscover = <Button kind="ghost" icon="compass" label={t('ask.backToDiscover')} onPress={() => router.replace('/(tabs)')} />;
+  /** After a no or an ask that ran out: the way to Bounce back (D101), as well as Discover. */
+  const bounce = (after: 'no' | 'expired') => <><Button kind="ghost" icon="sunrise" label={t('bounce.noticeOpen')} onPress={() => router.push({ pathname: '/self-love/bounce-back', params: { after, invite: invite.id } })} />{toDiscover}</>;
 
   const pass = async () => {
     setBusy(true);
@@ -83,7 +85,7 @@ export default function InviteScreen() {
     footer = <Button kind="ghost" label={t(iSent ? 'ask.takeBack' : 'ask.pullBack')} onPress={() => setSheet(true)} />;
   } else if (double && invite.status === 'declined' && invite.declinedBy !== meId) {
     head = [t('ask.namePassed', { name: decliner?.name ?? t('common.someone') }), t('ask.doubleOffBody')];
-    footer = toDiscover;
+    footer = bounce('no');
   } else if (role === 'first') {
     head = [t('ask.wantsToLock', { name }), t('ask.youGoFirst', { name })];
     footer = <><Button icon="lock" label={t('ask.lockIt')} onPress={toLock} /><Button kind="ghost" label={t('ask.pass')} onPress={() => setSheet(true)} /></>;
@@ -103,13 +105,13 @@ export default function InviteScreen() {
     head = invite.declinedBy === meId
       ? [t('ask.youClosed'), t('ask.noPromise')]
       : [t('ask.namePassed', { name }), t('ask.noPromiseSlot')];
-    footer = toDiscover;
+    footer = invite.declinedBy === meId ? toDiscover : bounce('no');
   } else if (invite.status === 'ended') {
     head = [t('ask.ended'), t('ask.endedBody')];
     footer = toDiscover;
   } else {
     head = [t('ask.ranOut'), t(iSent ? 'ask.ranOutMine' : 'ask.ranOutTheirs')];
-    footer = toDiscover;
+    footer = iSent ? bounce('expired') : toDiscover;
   }
 
   return (

@@ -32,6 +32,8 @@ const TITLES: Record<string, Key | null> = {
   safety: 'titles.safety',
   'vouch/[token]': 'titles.vouchForAFriend',
   'duo/[token]': 'titles.joinADuo',
+  'self-love': 'titles.selfLove',
+  'self-love/bounce-back': 'titles.bounceBack',
   '+not-found': 'titles.notFound',
 };
 

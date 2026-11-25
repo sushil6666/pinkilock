@@ -55,6 +55,10 @@ With no keys set, the app runs on ten made-up people who answer by themselves. A
    Cards marked "Has a duo" (Zoya, Aanya, Arjun and their friends) can then be asked out on a double:
    in the ask, pick **Double, with Rhea**. The other three put a pinky out together; you seal it. On the
    plan, check in with the code from either person on the other side, and the reveal opens for each.
+10. **Self love**: in **Me**, tap the gold **Self love** card for today's kind line, a mood check-in
+    with your week and streak, solo plans in your city, the gratitude jar and your boundaries. Only
+    you see it. **Bounce back** (from there, or from an ask someone passed on) has a kind note, a
+    3-day reset, a private journal, a pause from Discover, and help lines.
 
 ## Run the backend locally (Docker)
 
@@ -192,12 +196,15 @@ The same screens run in a browser; there is no second site.
 EXPO_PUBLIC_BACKEND= npx expo export -p web --output-dir dist/web   # mock data, no keys
 npx serve dist/web --single                                         # any server that answers every path with index.html
 # then open /?lang=en-XA (every word accented and a third longer) or /?lang=ar-XB (right to left)
+# or a real language: /?lang=hi, /?lang=ta, /?lang=ur (D102; all machine drafts until reviewed)
 node scripts/make-icons.mjs                                         # redraw the icons and the share picture
 node scripts/make-loops.mjs                                         # redraw the clay animations (needs ffmpeg)
 ```
 
 It is one page, so whatever serves it must fall back to `index.html` for every path (a reload on
-`/plans` must work). Each screen has its own page title, a visitor with no profile is led to
+`/plans` must work). The globe button at the top of the first screen and on Me picks one of 23
+languages (English and the 22 scheduled languages of India); a browser fetches only the current
+language's Noto font. Each screen has its own page title, a visitor with no profile is led to
 onboarding from any link, and an unknown address shows a not-found screen. It is the website:
 **Web deploy** publishes it from `main` to Cloudflare Pages at pinkilock.com (`OPERATIONS.md`,
 "The website"). `node scripts/check-web-bundle.mjs dist/web` checks a build for anything secret.

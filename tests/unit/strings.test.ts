@@ -11,7 +11,9 @@ import { join, relative } from 'node:path';
 import { test } from 'node:test';
 import { IDEAS } from '../../src/domain/ideas';
 import { en } from '../../src/i18n/en';
-import { fmtDistance, fmtTime, setLocale, t } from '../../src/i18n';
+import { fmtDistance, fmtTime, isRtl, language, script, setLocale, t } from '../../src/i18n';
+import { LANGUAGES, suggestedLanguages } from '../../src/i18n/languages';
+import { TRANSLATIONS } from '../../src/i18n/langs';
 
 const root = join(__dirname, '..', '..');
 const walk = (dir: string): string[] =>
@@ -111,4 +113,65 @@ test('every plan option opens to what you do, where, the cost and why it works',
   const info = en.ideaInfo.ideas as Record<string, Record<string, string>>;
   for (const idea of IDEAS) for (const part of ['what', 'where', 'cost', 'why']) assert.ok(info[idea.id]?.[part], `${idea.id} has no "${part}" in ideaInfo`);
   assert.deepEqual(Object.keys(info).sort(), IDEAS.map((i) => i.id).sort(), 'ideaInfo names an idea that does not exist');
+});
+
+// ── The languages of India (D102). ───────────────────────────────────────────────────────────
+
+const PLURAL = /\.(zero|one|two|few|many|other)$/;
+const englishLeaves = new Map(leaves(en));
+
+test('every language is listed once, has a file, and is marked for review until a native speaker signs it off', () => {
+  const tags = LANGUAGES.map((l) => l.tag);
+  assert.equal(new Set(tags).size, tags.length, 'a language is listed twice');
+  assert.equal(tags.length, 23, 'English and the 22 scheduled languages');
+  assert.deepEqual(Object.keys(TRANSLATIONS).sort(), tags.filter((t) => t !== 'en').sort(), 'a language without a file, or a file without a language');
+  for (const l of LANGUAGES) if (l.tag !== 'en') assert.equal(l.reviewed, false, `${l.tag} says it was reviewed: record who reviewed it in docs/decisions.md first`);
+});
+
+test('every translated string keeps the English placeholders, and names no key English lacks', () => {
+  for (const [tag, strings] of Object.entries(TRANSLATIONS)) {
+    for (const [key, text] of leaves(strings)) {
+      const base = key.replace(PLURAL, '');
+      const english = englishLeaves.get(key) ?? englishLeaves.get(`${base}.other`) ?? englishLeaves.get(`${base}.one`);
+      assert.ok(english !== undefined, `${tag} ${key} is not a key in en.ts`);
+      assert.deepEqual(holes(text), holes(english!), `${tag} ${key} placeholders`);
+      assert.ok(text.trim(), `${tag} ${key} is empty`);
+    }
+  }
+});
+
+test('Hindi covers every screen string (errors and plan-option notes still fall back to English)', () => {
+  const hi = new Set(leaves(TRANSLATIONS.hi).map(([k]) => k));
+  const missing = [...englishLeaves.keys()].filter((k) => !k.startsWith('errors.') && !k.startsWith('ideaInfo.') && !hi.has(k));
+  assert.deepEqual(missing, [], 'Hindi is missing these');
+});
+
+test('every language translates the picker and the tab bar, so anyone can find their way back', () => {
+  for (const [tag, strings] of Object.entries(TRANSLATIONS)) {
+    const has = new Set(leaves(strings).map(([k]) => k));
+    for (const key of ['language.title', 'language.pick', 'tabs.me']) assert.ok(has.has(key), `${tag} lacks ${key}`);
+  }
+});
+
+test('picking a language sets its script, direction and Latin digits', () => {
+  setLocale('hi');
+  assert.equal(language(), 'hi');
+  assert.equal(script(), 'Deva');
+  assert.equal(t('tabs.me'), 'मैं');
+  assert.match(fmtTime(Date.UTC(2026, 10, 18, 14, 5), 'UTC'), /2:05|14:05/, 'Latin digits, whatever the language');
+  setLocale('mr');
+  assert.match(fmtTime(Date.UTC(2026, 10, 18, 14, 5), 'UTC'), /[0-9]/, 'Marathi keeps 0 to 9 too');
+  setLocale('ur');
+  assert.equal(isRtl(), true);
+  assert.equal(script(), 'Arab');
+  setLocale('sat');
+  assert.equal(t('checkIn.button'), 'Check in', 'a key a draft lacks shows in English');
+  setLocale('en');
+  assert.equal(script(), 'Latn');
+});
+
+test('the picker suggests the language in use, the phone\'s, then the state\'s', () => {
+  assert.deepEqual(suggestedLanguages('en', 'en-IN', 'Odisha').map((l) => l.tag), ['en', 'or']);
+  assert.deepEqual(suggestedLanguages('en', 'hi-IN', 'Jammu and Kashmir').map((l) => l.tag), ['en', 'hi', 'ur', 'ks', 'doi']);
+  assert.deepEqual(suggestedLanguages('ta', 'en-GB').map((l) => l.tag), ['ta', 'en']);
 });

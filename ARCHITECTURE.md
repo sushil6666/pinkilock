@@ -321,7 +321,8 @@ in the SQL editor (`select * from reports where reviewed_at is null`).
 
 **Export and deletion.** `export_my_data()` returns one JSON document: account (id, phone),
 profile, contact, trust score, my invites (the other person by id only), passes, blocks, reports
-I made, devices, notifications sent to me, and my events. Reports about me are not in it, nor
+I made, devices, notifications sent to me, my events, and Self love (moods, notes, the pause and
+the reset; format 7). Reports about me are not in it, nor
 anyone else's contact. `delete_my_account()` ends my live invites, removes my id from every events
 row (and clears what the phone sent with `app_open`), then deletes the auth user; everything that
 references the profile cascades, and reports keep their row with my id set to null. The other
@@ -493,6 +494,20 @@ what the server did (`OPERATIONS.md`, "Trace a bug").
 weekday evenings. Asks can still pick any time; the composer marks the times inside the other
 person's windows (`src/domain/freeWindows.ts`, in the phone's time zone).
 
+### Self love and Bounce back
+
+A private page reached from Me (D101). `private.self_moods` (one mood a day), `private.self_notes`
+(gratitude, journal and boundary notes, 300 characters, three gratitude notes a day, 200 in all)
+and `private.self_love` (the Discover pause and the 3-day reset) are readable by no client role and
+not by the analytics worker. The app uses only `my_self_love`, `save_mood`, `add_self_note`,
+`remove_self_note`, `pause_discover` (1 to 14 days, 0 ends it), `start_reset` and `do_reset_step`
+(a step opens on its own day), each about the caller and each answering with the whole state. "Today"
+is the day in the person's city. `discover()` leaves out anyone whose pause has not ended; plans and
+asks already made carry on. The kind lines, the self-care steps and the solo ideas are words in
+`src/i18n/en.ts`; solo plans are venues of the person's city (`soloPlans` in
+`src/domain/selfLove.ts`). Nothing from Self love is logged or pushed. Bounce back is offered on an
+ask someone said no to or that ran out, and on Asks, Sent, for three days afterwards.
+
 ### Friend vouches
 
 A person makes a link (`create_vouch_link`: three a day, each good for 7 days and three friends); a
@@ -585,7 +600,15 @@ date in person, from the city's `time_zone`, never from where a phone seems to b
 is in miles where the
 viewer's profile country uses them (US, UK, Liberia, Myanmar), or the phone's region before
 there is a profile. The language comes
-from the phone, or `?lang=` in a browser. On a phone a right-to-left language flips the layout
+from the person's choice in the language picker (D102; kept on the device: localStorage in a
+browser, read before the first frame, AsyncStorage on a phone, read before the splash screen
+goes), else the phone, and `?lang=` in a browser wins over both. `src/i18n/languages.ts` lists
+English and the 22 scheduled languages with their script, direction, the states where each is
+the main language (the picker suggests those first) and whether a native speaker has reviewed
+it; `src/i18n/langs/` holds the translations. Indian languages keep the digits 0 to 9. In a
+browser the current script's Noto font is loaded after Inter Tight in every font stack
+(`src/theme/scriptFonts.web.ts`); a phone falls back to its own system font, so the app ships
+none. `T` opens up line heights and drops letter spacing for non-Latin scripts. On a phone a right-to-left language flips the layout
 from the next start; in a browser `<html>` gets `lang` and `dir`. Two pseudo-languages exist only
 for testing: `en-XA` (accented and a third longer) shows any text that skipped `t()` and any label
 that will not fit, and `ar-XB` checks the mirrored layout. `tests/unit/strings.test.ts` fails on

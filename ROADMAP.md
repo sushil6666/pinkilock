@@ -84,6 +84,12 @@ someone, and delete their account, on both platforms, against the production pro
   from lists; contact apps by region; a country picker for phone sign-in; every word on screen in a
   strings file, with dates, times, numbers and distance in the phone's own format, and right to left
   wired. A real second language waits for a native speaker.
+- [x] **Hindi and the languages of every state** (D102): English plus the 22 scheduled languages,
+  each in its own script with a Noto font on the web, Urdu, Kashmiri and Sindhi right to left. A
+  language picker on the welcome screen, the website's header and Me suggests the phone's language
+  and the person's state's first. Hindi covers every screen; the others cover the first screens.
+  All are machine drafts: a native speaker must review each before launch (O13). Still English:
+  catalogue rows, error messages and pushes. Needs a new Android build.
 - [x] **Twenty cities across India** (D083): the eight metros (Mumbai, Delhi NCR, Bengaluru,
   Hyderabad, Chennai, Kolkata, Pune, Ahmedabad) and twelve tier-2 cities, each with its areas and
   busy public places to meet (237 in all). People pick their city at sign-up and can move on Me,
@@ -96,6 +102,10 @@ someone, and delete their account, on both platforms, against the production pro
   with about 2,290 areas and 686 places to meet. Metros stay one tap; every other city is found by
   a search (name, old name, state or area) or by picking the state, then the city. The new lists
   were written without a local check and need one before launch.
+
+- [x] **Self love and Bounce back** (D101): a private page for the person alone (kind line, solo
+  plans, mood check-in with streak and gold badge, gratitude jar, boundaries) and, after a no, a kind
+  note, a 3-day reset, a private journal, a pause from Discover and help lines (Tele-MANAS 14416).
 
 - [x] **Photos behind the lock** (D088): up to three photos on Me, stored in a private Supabase
   Storage bucket by the `photo` Edge Function, which strips their metadata and draws the picture

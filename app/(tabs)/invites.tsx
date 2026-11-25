@@ -8,7 +8,9 @@ import { Button } from '@/components/ui/Button';
 import { Grid } from '@/components/ui/Columns';
 import { Screen } from '@/components/ui/Screen';
 import { T } from '@/components/ui/T';
-import { MAX_OPEN_ASKS, isOpen, otherId } from '@/domain/invites';
+import { DAY, MAX_OPEN_ASKS, isOpen, otherId } from '@/domain/invites';
+import { BOUNCE_DAYS } from '@/domain/selfLove';
+import { Feather } from '@expo/vector-icons';
 import type { Invite } from '@/domain/types';
 import { haptic } from '@/lib/haptics';
 import { useNow } from '@/lib/useNow';
@@ -30,6 +32,9 @@ export default function Invites() {
   const mine = (i: Invite) => (side === 'in' ? i.fromId !== meId : i.fromId === meId);
   const open = invites.filter((i) => mine(i) && isOpen(i)).sort((a, b) => a.expiresAt - b.expiresAt);
   const closed = invites.filter((i) => mine(i) && (i.status === 'declined' || i.status === 'expired' || i.status === 'ended')).sort((a, b) => (b.resolvedAt ?? 0) - (a.resolvedAt ?? 0));
+  // Bounce back (D101): an ask of mine that someone else said no to, or that ran out, lately.
+  const stung = invites.find((i) => i.fromId === meId && ((i.status === 'declined' && i.declinedBy && i.declinedBy !== meId) || i.status === 'expired')
+    && (i.resolvedAt ?? 0) > now - BOUNCE_DAYS * DAY);
   const counts = { in: invites.filter((i) => i.fromId !== meId && isOpen(i)).length, out: invites.filter((i) => i.fromId === meId && isOpen(i)).length };
 
   const row = (i: Invite, k: number) => (
@@ -51,6 +56,18 @@ export default function Invites() {
       </View>
 
       <View key={side} style={{ gap: space.md, marginTop: space.lg }}>
+        {side === 'out' && stung ? (
+          <View style={styles.bounce}>
+            <View style={{ flexDirection: 'row', gap: space.md }}>
+              <Feather name="sunrise" size={20} color={color.pink} style={{ marginTop: 2 }} />
+              <View style={{ flex: 1, gap: 2 }}>
+                <T v="bodyBold">{t('bounce.notice')}</T>
+                <T v="caption" c={color.textDim}>{t('bounce.noticeBody')}</T>
+              </View>
+            </View>
+            <Button kind="ghost" icon="arrow-right" label={t('bounce.noticeOpen')} onPress={() => router.push({ pathname: '/self-love/bounce-back', params: { after: stung.status === 'expired' ? 'expired' : 'no', invite: stung.id } })} />
+          </View>
+        ) : null}
         {side === 'out' && <T v="caption" c={color.textDim}>{t('asks.openOf', { count: counts.out, max: MAX_OPEN_ASKS })}</T>}
         <Grid>{open.map(row)}</Grid>
         {open.length === 0 && (
@@ -71,5 +88,6 @@ const styles = StyleSheet.create({
   seg: { flexDirection: 'row', borderWidth: 1, borderColor: color.line, borderRadius: radius.card, padding: 4, gap: 4 },
   segBtn: { flex: 1, minHeight: 44, alignItems: 'center', justifyContent: 'center', borderRadius: radius.card - 4 },
   segOn: { backgroundColor: color.pink },
+  bounce: { gap: space.md, borderWidth: 1, borderColor: color.pinkDeep, backgroundColor: color.pinkWash, borderRadius: radius.card, padding: space.lg },
   empty: { borderWidth: 1, borderColor: color.line, borderRadius: radius.card, padding: space.xl, gap: space.md, backgroundColor: color.surface },
 });
