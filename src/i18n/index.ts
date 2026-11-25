@@ -11,7 +11,9 @@
  * Pure TypeScript: no React Native here, so unit tests load it in plain Node.
  */
 import { en } from './en';
+import { LANGUAGES, languageInfo, type Script } from './languages';
 import { pseudo } from './pseudo';
+import { TRANSLATIONS } from './langs';
 
 export type Strings = typeof en;
 /** A string with a form per plural category; `other` is always there. */
@@ -41,14 +43,17 @@ interface Lang {
   strings: Translation;
 }
 
-/** Languages people can get. A new one is a file here, reviewed by a native speaker (WP9). */
-const LANGS: Lang[] = [{ tag: 'en', rtl: false, strings: en }];
+/**
+ * Languages people can get: English and the 22 scheduled languages of India (D102), each a file in
+ * `langs/`, listed in `languages.ts`. Drafts until a native speaker reviews them (WP9).
+ */
+const LANGS: Lang[] = LANGUAGES.map((l) => ({ tag: l.tag, rtl: l.rtl, strings: l.tag === 'en' ? en : TRANSLATIONS[l.tag] ?? {} }));
 /** Only when asked for by name. */
 const PSEUDO: Lang[] = [
   { tag: 'en-XA', rtl: false, strings: pseudo(en, 'long') },
   { tag: 'ar-XB', rtl: true, strings: pseudo(en, 'rtl') },
 ];
-const RTL_LANGS = ['ar', 'fa', 'he', 'ur', 'ps', 'yi', 'dv', 'ckb'];
+const RTL_LANGS = ['ar', 'fa', 'he', 'ur', 'ks', 'sd', 'ps', 'yi', 'dv', 'ckb'];
 
 /** The best language we have for a BCP 47 tag: exact, then the language alone, then English. */
 export function pickLang(tag: string): Lang {
@@ -61,7 +66,7 @@ export function pickLang(tag: string): Lang {
 
 export const isRtlTag = (tag: string) => RTL_LANGS.includes(tag.toLowerCase().split('-')[0]) || tag === 'ar-XB';
 
-function deviceLocale(): string {
+export function deviceLocale(): string {
   try {
     return Intl.DateTimeFormat().resolvedOptions().locale || 'en';
   } catch {
@@ -70,11 +75,27 @@ function deviceLocale(): string {
   }
 }
 
-/** `?lang=en-XA` in a browser, or EXPO_PUBLIC_LANG, wins over the phone's own language. */
+/** Where the picker keeps the person's choice: localStorage in a browser, AsyncStorage on a phone. */
+export const LANG_KEY = 'pinkilock.lang';
+
+/** A browser's saved choice, read at once so the first frame is already in it. */
+function savedInBrowser(): string | null {
+  try {
+    return (globalThis as { localStorage?: Storage }).localStorage?.getItem(LANG_KEY) ?? null;
+  } catch {
+    // Storage blocked (private mode, a sandboxed frame): the phone's language will do.
+    return null;
+  }
+}
+
+/**
+ * `?lang=en-XA` in a browser, or EXPO_PUBLIC_LANG, wins over a saved choice, which wins over the
+ * phone's own language. On a phone the saved choice is read at start (app/_layout.tsx).
+ */
 function asked(): string | null {
   const loc = (globalThis as { location?: { search?: string } }).location;
   const fromUrl = loc?.search ? new URLSearchParams(loc.search).get('lang') : null;
-  return fromUrl || process.env.EXPO_PUBLIC_LANG || null;
+  return fromUrl || process.env.EXPO_PUBLIC_LANG || savedInBrowser() || null;
 }
 
 let lang: Lang = LANGS[0];
@@ -86,13 +107,25 @@ let formats = 'en';
  */
 export function setLocale(tag: string, formatTag?: string) {
   lang = pickLang(tag);
-  formats = formatTag ?? (lang.tag.includes('-X') ? 'en' : tag);
+  formats = formatTag ?? (lang.tag.includes('-X') ? 'en' : indian(tag));
+}
+
+/**
+ * An Indian language reads dates the Indian way and keeps the digits everyone types (0 to 9), so a
+ * check-in code or a score looks the same on both phones whatever each one is set to.
+ */
+function indian(tag: string): string {
+  const info = languageInfo(tag);
+  if (!info || info.tag === 'en') return tag;
+  return `${tag.includes('-') ? tag : `${tag}-IN`}-u-nu-latn`;
 }
 
 setLocale(asked() ?? deviceLocale());
 
 export const language = () => lang.tag;
 export const isRtl = () => lang.rtl;
+/** The script the current language is written in; Latin for English and the pseudo-languages. */
+export const script = (): Script => (lang.tag.includes('-X') ? 'Latn' : languageInfo(lang.tag)?.script ?? 'Latn');
 /** The locale dates, times and numbers are written in. */
 export const formatLocale = () => formats;
 

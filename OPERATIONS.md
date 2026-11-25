@@ -615,3 +615,13 @@ From `ROADMAP.md`, Phase 3. All of these must be true first:
 - [ ] `PROD_*` variables set, and a `production` build tested on Android and iOS
 - [ ] Push checked on real devices on both platforms
 - [ ] A privacy policy published, and store data-safety forms filled in
+- [ ] Every language offered has been read by a native speaker (D102, O13), or is taken out of
+      `src/i18n/languages.ts` for launch
+
+### Languages
+
+The translations in `src/i18n/langs/` are machine drafts (D102). To sign one off: a native speaker
+reads every string in the running app (`?lang=hi` on the web build, or the picker), fixes the
+file, fills the keys it leaves out, and then `reviewed` goes to true in `src/i18n/languages.ts`
+with a row in `docs/decisions.md` naming the reviewer. `npm run test:unit` checks that every
+string keeps the English placeholders. Nothing about languages needs a secret or a workflow.

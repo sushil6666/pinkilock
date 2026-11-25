@@ -38,6 +38,8 @@ import { WherePicker, areaOk } from '@/components/WherePicker';
 import { shareOrCopy } from '@/lib/shareOrCopy';
 import * as Linking from 'expo-linking';
 import { t } from '@/i18n';
+import { LanguagePicker } from '@/components/LanguagePicker';
+import { openCities } from '@/domain/countries';
 
 export default function Me() {
   const me = useStore((s) => s.me);
@@ -304,6 +306,9 @@ export default function Me() {
       <T v="label" c={color.textDim} style={styles.section}>{t('me.unlocksTitle')}</T>
       <ContactPanel />
       <MyPhotos />
+
+      <T v="label" c={color.textDim} style={styles.section}>{t('language.title')}</T>
+      <LanguagePicker look="row" state={openCities().find((c) => c.name === me.city)?.state} />
 
       <T v="label" c={color.textDim} style={styles.section}>{t('me.account')}</T>
       <View style={styles.panel}>

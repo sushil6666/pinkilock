@@ -9,8 +9,8 @@ import { Stack, router, usePathname, useSegments, type ErrorBoundaryProps } from
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import * as SystemUI from 'expo-system-ui';
-import { useEffect, useMemo } from 'react';
-import { I18nManager, Platform, StyleSheet, View } from 'react-native';
+import { useEffect, useMemo, useState } from 'react';
+import { Platform, StyleSheet, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { CaptchaHost } from '@/components/captcha/CaptchaHost';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -26,19 +26,21 @@ import { shown } from '@/lib/report';
 import { needsProfile, titleFor } from '@/lib/routes';
 import { setPageTitle } from '@/lib/web';
 import { space } from '@/theme/tokens';
-import { isRtl, language, t } from '@/i18n';
+import { isRtl, language, script, t } from '@/i18n';
+import { loadSavedLanguage } from '@/lib/language';
+import { scriptFontFiles } from '@/theme/scriptFonts';
 
 SplashScreen.preventAutoHideAsync().catch(quiet('/_layout'));
 
 // The writing direction follows the language (WP9). A browser page says it on <html>; a phone
-// flips its layout, which takes effect from the next start.
+// flips its layout from the next start, once the saved choice is read (src/lib/language.ts).
 if (Platform.OS === 'web') {
   document.documentElement.lang = language();
   document.documentElement.dir = isRtl() ? 'rtl' : 'ltr';
-} else if (I18nManager.isRTL !== isRtl()) {
-  I18nManager.allowRTL(isRtl());
-  I18nManager.forceRTL(isRtl());
 }
+
+/** The current language's script font, in a browser only (src/theme/scriptFonts.web.ts). Read once. */
+const SCRIPT_FONTS = scriptFontFiles(script());
 
 /**
  * A crash in any screen lands here instead of a white screen: it is reported once, with a code
@@ -58,7 +60,12 @@ export function ErrorBoundary({ error, retry }: ErrorBoundaryProps) {
 }
 
 export default function RootLayout() {
-  const [fontsLoaded, fontError] = useFonts({ InterTight_800ExtraBold, InterTight_800ExtraBold_Italic, CaveatBrush_400Regular, InterTight_400Regular, InterTight_500Medium, InterTight_700Bold });
+  const [fontsLoaded, fontError] = useFonts({ InterTight_800ExtraBold, InterTight_800ExtraBold_Italic, CaveatBrush_400Regular, InterTight_400Regular, InterTight_500Medium, InterTight_700Bold, ...SCRIPT_FONTS });
+  // A phone's saved language is read before anything shows (a browser has it already).
+  const [langReady, setLangReady] = useState(Platform.OS === 'web');
+  useEffect(() => {
+    if (!langReady) loadSavedLanguage().catch(quiet('/_layout')).finally(() => setLangReady(true));
+  }, [langReady]);
   const ready = useStore((s) => s.ready);
   const boot = useStore((s) => s.boot);
   const onboarded = useStore((s) => !!s.me);
@@ -75,7 +82,7 @@ export default function RootLayout() {
     if (onboarded) startPush();
   }, [onboarded]);
 
-  const up = (fontsLoaded || !!fontError) && ready;
+  const up = (fontsLoaded || !!fontError) && ready && langReady;
   useEffect(() => {
     if (up) SplashScreen.hideAsync().catch(quiet('/_layout'));
   }, [up]);
