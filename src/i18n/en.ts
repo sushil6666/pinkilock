@@ -752,6 +752,17 @@ export const en = {
     start: 'Go to the start',
   },
 
+  /** The language picker, on the welcome screen, the website's front page and Me (D102). */
+  language: {
+    title: 'Language',
+    pick: 'Pick your language',
+    suggested: 'Suggested for you',
+    all: 'All languages',
+    draft: 'Translations are early drafts. Some screens are still in English.',
+    current: 'Language: {name}. Tap to change',
+    switching: 'Switching…',
+  },
+
   gate: { noConnect: 'Could not connect', noSignal: 'No signal, no promises.' },
   crash: { title: 'That\nbroke.' },
   legal: { version: 'Version {version}', safetyCall: 'Safety page: call {numbers}', or: '{a} or {b}' },

@@ -17,6 +17,7 @@ import { NightSky } from './NightSky';
 import { Button } from './ui/Button';
 import { T } from './ui/T';
 import { t } from '../i18n';
+import { LanguagePicker } from './LanguagePicker';
 
 const STEPS = [
   ['1', 'welcome.step1', '-1.6deg'],
@@ -77,6 +78,7 @@ function Places() {
 export function Welcome() {
   return (
     <View style={{ gap: space.xl }}>
+      <LanguagePicker />
       <NightSky>
         <Loop name="pinkyLock" />
         <Scribble wide={false} />

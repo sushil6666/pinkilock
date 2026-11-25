@@ -269,3 +269,11 @@ fall flat or offend elsewhere. Lay text out to grow: a label may run a third lon
 language, so rows of chips wrap and one-line labels truncate rather than push off the screen.
 Open the web build with `?lang=en-XA` to see every screen a third longer before calling a layout
 done.
+
+Other scripts (D102): Latin letters stay Inter Tight, and each Indian script reads in its Noto
+font at the same weight (on a phone, the system's own). Lines open up by about a third (Arabic
+script by two fifths) and letter spacing is dropped, so marks above and below the letters never
+clip; `T` does this by itself. Digits stay 0 to 9. The language picker is a small pill with a
+globe and the language's own name, top left on the welcome screen and the website's header, and
+a row on Me; its list writes every language in its own script. Machine-drafted translations may
+ship to staging, never to launch, until a native speaker has read them.

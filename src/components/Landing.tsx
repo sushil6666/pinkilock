@@ -14,6 +14,7 @@ import { VENUES, type Venue } from '@/domain/venues';
 import { webOnly } from '@/lib/web';
 import { color, font, radius, space, wideMax } from '@/theme/tokens';
 import { Logo } from './Logo';
+import { LanguagePicker } from './LanguagePicker';
 import { Loop } from './Loop';
 import { NightSky } from './NightSky';
 import { Notes, Scribble } from './Welcome';
@@ -70,7 +71,7 @@ export function Landing({ onStart }: { onStart: () => void }) {
     <View style={{ gap: space.x5 * 2 }}>
       <View style={styles.nav} {...webOnly({ role: 'navigation' as const })}>
         {/* The logo sits in the middle, as on every app screen: a side on each hand, equal width. */}
-        <View style={styles.navSide} />
+        <View style={styles.navSide}><LanguagePicker /></View>
         <Logo size={22} />
         <View style={[styles.navSide, styles.navRight]}>
           <Button kind="quiet" icon="log-in" label={t('landing.signIn')} onPress={signIn} />

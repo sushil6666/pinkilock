@@ -600,7 +600,15 @@ date in person, from the city's `time_zone`, never from where a phone seems to b
 is in miles where the
 viewer's profile country uses them (US, UK, Liberia, Myanmar), or the phone's region before
 there is a profile. The language comes
-from the phone, or `?lang=` in a browser. On a phone a right-to-left language flips the layout
+from the person's choice in the language picker (D102; kept on the device: localStorage in a
+browser, read before the first frame, AsyncStorage on a phone, read before the splash screen
+goes), else the phone, and `?lang=` in a browser wins over both. `src/i18n/languages.ts` lists
+English and the 22 scheduled languages with their script, direction, the states where each is
+the main language (the picker suggests those first) and whether a native speaker has reviewed
+it; `src/i18n/langs/` holds the translations. Indian languages keep the digits 0 to 9. In a
+browser the current script's Noto font is loaded after Inter Tight in every font stack
+(`src/theme/scriptFonts.web.ts`); a phone falls back to its own system font, so the app ships
+none. `T` opens up line heights and drops letter spacing for non-Latin scripts. On a phone a right-to-left language flips the layout
 from the next start; in a browser `<html>` gets `lang` and `dir`. Two pseudo-languages exist only
 for testing: `en-XA` (accented and a third longer) shows any text that skipped `t()` and any label
 that will not fit, and `ar-XB` checks the mirrored layout. `tests/unit/strings.test.ts` fails on
