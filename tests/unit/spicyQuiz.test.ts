@@ -89,7 +89,7 @@ test('every term section and question has words, in English and Hindi', () => {
 
 test('the terms say what Sushil asked for: phone, face, camera, photos, money, evidence, where to report, consent, no-shows', () => {
   const words = JSON.stringify(en.spicyQuiz.terms);
-  for (const w of ['phone number', 'full face', 'camera', 'intimate photos', 'Do not pay', 'screenshots', '1930', 'cybercrime.gov.in', 'StopNCII.org', 'Stop means stop', 'I felt unsafe', 'missed call']) assert.ok(words.includes(w), w);
+  for (const w of ['phone number', 'full face', 'camera', 'audio only', 'never recorded', 'intimate photos', 'Do not pay', 'screenshots', '1930', 'cybercrime.gov.in', 'StopNCII.org', 'Stop means stop', 'I felt unsafe', 'missed call']) assert.ok(words.includes(w), w);
 });
 
 test('the words never say anything explicit (store listing rules)', () => {

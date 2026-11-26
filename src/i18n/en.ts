@@ -1088,15 +1088,15 @@ export const en = {
       },
       role: {
         title: 'What Pinkilock does, and does not',
-        body: 'Pinkilock only passes on usernames, once you both say yes and the match is unlocked. The chat happens in Discord, Telegram or Signal, under their rules. Pinkilock cannot see, keep or delete anything said or sent there.',
+        body: 'Spicy calls happen inside Pinkilock: audio only, never video, never recorded. Your Discord, Telegram or Signal username shows only after a call that counted as kept, and only if you both choose to share. Either of you can stop sharing at any time. Pinkilock cannot see, keep or delete anything said or sent in those apps.',
       },
       private: {
         title: 'Keep yourself private',
         body: 'Never share your phone number, your full face, your full name, where you live, work or study, or your live location. Usernames only.',
       },
       voice: {
-        title: 'Voice only. Camera off.',
-        body: 'Never turn on your camera on Discord, Telegram or Signal, not even for a moment. Calls stay voice only. Video can be recorded without you knowing.',
+        title: 'Audio only. Camera never on.',
+        body: 'A Spicy call in Pinkilock is audio only: there is no video, and nothing is recorded. If you move to Discord, Telegram or Signal later, never turn on your camera there, not even for a moment. Video can be recorded without you knowing.',
       },
       photos: {
         title: 'No intimate photos or videos',
@@ -1116,7 +1116,7 @@ export const en = {
       },
       calls: {
         title: 'Calls and no-shows',
-        body: 'Turn up for a Spicy call you agreed to, or move it in time. A missed call lowers your Trust Score and costs your part of the unlock. Leaving because you felt unsafe never counts against you.',
+        body: 'Turn up for a Spicy call you agreed to, or move it in time. The minutes come from the call itself. A missed call lowers your Trust Score and costs your part of the unlock. Leaving because you felt unsafe never counts against you.',
       },
       credits: {
         title: 'Credits',
@@ -1142,11 +1142,11 @@ export const en = {
         why: 'A phone number leads to your real name, your UPI and your home. Keep to usernames, wherever you chat.',
       },
       camera: {
-        ask: 'On Discord, Telegram or Signal, they ask you to turn your camera on, just for a minute. What do you do?',
+        ask: 'You shared usernames after a kept call. Now, on Discord, Telegram or Signal, they ask you to turn your camera on, just for a minute. What do you do?',
         a: 'Turn it on, but keep my face out of view.',
         b: 'Turn it on if they turn theirs on first.',
         c: 'Keep the camera off. Voice only, every time.',
-        why: 'Video can be recorded without you knowing, and a minute is enough. Spicy calls are voice only.',
+        why: 'Video can be recorded without you knowing, and a minute is enough. That is why Spicy calls in Pinkilock are audio only.',
       },
       photos: {
         ask: 'They ask for a private photo and promise to delete it. What do you do?',
