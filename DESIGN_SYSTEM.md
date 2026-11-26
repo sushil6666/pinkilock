@@ -162,6 +162,12 @@ Font scaling is allowed up to 1.3x (`maxFontSizeMultiplier`) so layouts hold on 
   or `line` dot for whether the other person has the app open. "I felt unsafe or uncomfortable" is
   on screen for the whole call, and the words always say that leaving is allowed. Long button labels
   wrap to two lines (`Button`'s `wrap`) rather than being cut.
+- **Talk mode** (D108): existing tokens only, and calm. The AI is `moon`: a `cpu` icon and an
+  outlined "AI · not a person" badge on its card, its title and every reply, plus a line above the
+  message box that never scrolls away. A real listener is gold (`goldWash` behind `goldDeep`), as is
+  a call that rings or runs. The help lines sit in a `surface` card with `life-buoy`; after a mention
+  of self-harm they turn `flare` with the call button primary. The chat uses `read` on a desktop (no
+  pinkies beside it: Talk mode is not dating).
 - **Spicy mode** (D103): existing tokens only. Its own things are pink (`pinkWash` behind `pinkDeep`:
   the Me entry card with a `zap` icon, the "on" panel, the hand-off on a card or a plan); the safety rules sit on
   gold (`goldWash` behind `goldDeep`) with a `shield` before each. Boundaries are chips, pink when

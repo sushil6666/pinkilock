@@ -8,6 +8,7 @@ import { IdeaChip } from '@/components/IdeaChip';
 import { MyFace, useMyFace } from '@/components/MyFace';
 import { MyPhotos } from '@/components/MyPhotos';
 import { SpicyEntry } from '@/components/Spicy';
+import { TalkEntry } from '@/components/Talk';
 import { WalletEntry } from '@/components/Wallet';
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
@@ -38,6 +39,7 @@ import { FREE_WINDOWS } from '@/domain/freeWindows';
 import { Vouches } from '@/components/Vouches';
 import { WherePicker, areaOk } from '@/components/WherePicker';
 import { shareOrCopy } from '@/lib/shareOrCopy';
+import { openStorePage } from '@/lib/review';
 import * as Linking from 'expo-linking';
 import { t } from '@/i18n';
 import { LanguagePicker } from '@/components/LanguagePicker';
@@ -271,6 +273,7 @@ export default function Me() {
         </View>
         <Feather name="chevron-right" size={20} color={color.textDim} />
       </Pressable>
+      <TalkEntry />
       <WalletEntry />
       <SpicyEntry />
       <View style={{ marginTop: space.lg, gap: space.sm }}>
@@ -362,6 +365,12 @@ export default function Me() {
 
       <T v="label" c={color.textDim} style={styles.section}>{t('me.help')}</T>
       <T v="caption" c={color.textDim} style={{ marginBottom: space.md }}>{t('me.helpBody')}</T>
+      {Platform.OS !== 'web' ? (
+        <View style={{ gap: space.xs }}>
+          <Button kind="ghost" icon="star" label={t('review.rate')} onPress={() => void openStorePage()} />
+          <T v="caption" c={color.textMute}>{t('review.rateBody')}</T>
+        </View>
+      ) : null}
       <Button kind="ghost" icon="life-buoy" label={t('me.shareDiagnostics')} busy={busy === 'diagnostics'} onPress={shareDiagnostics} />
       <T v="caption" c={color.textMute} selectable style={{ marginTop: space.md }}>{t('me.version', { build: buildLabel })}</T>
 

@@ -352,3 +352,21 @@ test('Spicy call times (D106): no timer of anyone else\'s, and no settling a cal
   assert.equal((await x.backend.spicyCall(y.id)).status, 'none', 'and no call to see');
   refused(await signedOut.rpc('spicy_call', { p_other: y.id }), 'signed out, there is no call to read');
 });
+
+test('Talk mode (D108, D109): nothing of anyone else\'s, no free credits or payouts, over the API too', async () => {
+  for (const t of ['talk_people', 'talk_listeners', 'talk_calls', 'talk_payouts', 'talk_reports', 'talk_referrals', 'talk_ai_chats']) {
+    refused(await raw.schema('private' as 'public').from(t).select('*'), `reading ${t}`);
+  }
+  refused(await raw.schema('private' as 'public').from('talk_listeners').insert({ user_id: x.id, first_name: 'Me', sex: 'woman', accepts: 'anyone', topics: ['lonely'], status: 'verified' }), 'making myself a verified listener');
+  // Only the Edge Function (service role) may charge the AI, make a voice room, run KYC, approve or pay.
+  const none = '00000000-0000-0000-0000-000000000000';
+  refused(await raw.rpc('talk_ai_turn', { p_user: x.id, p_chat: null, p_text: 'hi' }), 'charging the AI for anyone');
+  refused(await raw.rpc('talk_voice_room', { p_user: x.id, p_call: none }), 'getting a voice room');
+  refused(await raw.rpc('talk_kyc_done', { p_user: x.id, p_account: 'acc_x', p_last4: '1234' }), 'saying KYC passed');
+  refused(await raw.rpc('talk_listener_decide', { p_user: x.id, p_status: 'verified' }), 'approving myself');
+  refused(await raw.rpc('talk_payouts_claim', { p_limit: 10 }), 'claiming payouts');
+  refused(await raw.rpc('talk_payout_done', { p_call: none, p_transfer: 'trf_x' }), 'saying a payout went');
+  await assert.rejects(x.backend.talkEnd(none), (e: unknown) => e instanceof AppError && e.code === 'PL170', 'no ending a call that is not mine');
+  await assert.rejects(x.backend.claimReferral('ABCDEFGH'), (e: unknown) => e instanceof AppError, 'no made-up referral code');
+  refused(await signedOut.rpc('talk_state'), 'signed out, there is no Talk mode to read');
+});

@@ -11,6 +11,7 @@ import { fail } from '../domain/errors';
 import { peopleOf } from '../domain/invites';
 import { shown } from '../lib/report';
 import { quiet } from '../lib/log';
+import { claimKeptReferral } from '../lib/referral';
 import type { Wallet } from '../domain/wallet';
 
 interface State {
@@ -135,6 +136,8 @@ export const useStore = create<State>((set, get) => {
 
     async completeOnboarding(input) {
       set(fromSnapshot(await backend.completeOnboarding(input)));
+      // A friend's invite link opened before the profile existed (D109).
+      void claimKeptReferral(backend);
     },
     async saveAvailability(windows) {
       await apply(backend.saveAvailability(windows));

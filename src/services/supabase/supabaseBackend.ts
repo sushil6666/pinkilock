@@ -18,6 +18,10 @@ import { log, quiet } from '../../lib/log';
 import { isMood, type NoteKind, type SelfLove } from '../../domain/selfLove';
 import { MAX_CALLS, isCallMinutes, noCall, type CallAnswer, type CallOutcome, type CallStatus, type SpicyCall } from '../../domain/calls';
 import { isBoundary, type Spicy, type SpicyPlan } from '../../domain/spicy';
+import {
+  ACCEPTS, SEXES, TOPICS, WANTS, aiHistory, checkAiMessage, checkKyc, checkListener, emptyTalk, referralCode,
+  type Accepts, type ListenerCard, type ListenerStatus, type Sex, type Talk, type TalkCallEnd, type TalkOpen, type Topic, type Want,
+} from '../../domain/talk';
 import { REWARD_KINDS, TREAT_ITEMS, emptyWallet, topUpsHere, type LedgerKind, type RewardKind, type TreatItem, type TreatPartner, type Wallet } from '../../domain/wallet';
 import type { openCheckout } from '../../lib/razorpay';
 import type { Backend, BackendEvent, Changes, Notice, Snapshot } from '../backend';
@@ -71,6 +75,43 @@ function callFrom(raw: unknown): SpicyCall {
     answerUntil: ms((r.answer_until as string | null) ?? null), outcome: (r.outcome as CallOutcome | null) ?? null, fault,
     refunded: typeof r.refunded === 'number' ? r.refunded : 0, stoppedByMe: !!r.stopped_by_me,
     callsLeft: typeof r.calls_left === 'number' ? r.calls_left : MAX_CALLS,
+  };
+}
+
+/** talk_state() and its siblings (D108). */
+function talkFrom(raw: unknown, open: TalkOpen): Talk {
+  type RawCall = { id: string; status: string; listening: boolean; name: string; length: number; free: boolean; started_at: string | null; together: number;
+    they_here: boolean; end: string | null; charged: number; refunded: number };
+  type RawListener = { status: string; first_name: string; sex: string; accepts: string; topics: string[]; available_until: string | null; code_version: number;
+    bank_last4: string | null; calls: number; paid_out: number; pending: number };
+  const r = (raw ?? {}) as {
+    sex?: string | null; want?: string; pass_until?: string | null; ai_today?: number; free_call?: string; free_reason?: string | null;
+    profile?: { face?: boolean; handle?: boolean; plans?: boolean }; referral_code?: string; friends_joined?: number; friends_verified?: number;
+    paid?: number; balance?: number; listener?: RawListener | null; call?: RawCall | null;
+  };
+  const sex = (x: unknown): Sex => (SEXES.includes(x as Sex) ? (x as Sex) : 'unsaid');
+  const l = r.listener;
+  const c = r.call;
+  return {
+    ...emptyTalk(),
+    sex: r.sex ? sex(r.sex) : null,
+    want: WANTS.includes(r.want as Want) ? (r.want as Want) : 'anyone',
+    passUntil: ms(r.pass_until ?? null), aiToday: r.ai_today ?? 0,
+    freeCall: r.free_call === 'ready' || r.free_call === 'used' ? r.free_call : 'locked',
+    freeReason: r.free_reason === 'referral' || r.free_reason === 'profile' ? r.free_reason : null,
+    profile: { face: !!r.profile?.face, handle: !!r.profile?.handle, plans: !!r.profile?.plans },
+    referralCode: r.referral_code ?? '', friendsJoined: r.friends_joined ?? 0, friendsVerified: r.friends_verified ?? 0,
+    paid: r.paid ?? 0, balance: r.balance ?? 0,
+    listener: l ? {
+      status: l.status as ListenerStatus, firstName: l.first_name, sex: sex(l.sex), accepts: ACCEPTS.includes(l.accepts as Accepts) ? (l.accepts as Accepts) : 'anyone',
+      topics: (l.topics ?? []).filter((x): x is Topic => (TOPICS as readonly string[]).includes(x)), availableUntil: ms(l.available_until), codeVersion: l.code_version,
+      bankLast4: l.bank_last4, calls: l.calls ?? 0, paidOut: l.paid_out ?? 0, pending: l.pending ?? 0,
+    } : null,
+    call: c ? {
+      id: c.id, status: c.status === 'live' || c.status === 'done' ? c.status : 'ringing', listening: !!c.listening, name: c.name ?? '', length: c.length, free: !!c.free,
+      startedAt: ms(c.started_at), together: c.together ?? 0, theyHere: !!c.they_here, end: (c.end as TalkCallEnd | null) ?? null, charged: c.charged ?? 0, refunded: c.refunded ?? 0,
+    } : null,
+    open,
   };
 }
 
@@ -293,6 +334,44 @@ export function createSupabaseBackend(url: string, anonKey: string, storage: Ses
     const out = (await res.json().catch(() => ({}))) as T & { code?: string; message?: string };
     if (!res.ok) throw fromServer({ code: out.code ?? 'PC002', message: out.message ?? '' }, trace);
     return out;
+  }
+
+  /** One call to the `talk` Edge Function (D108): the AI, voice rooms and Route; the app holds none of their keys. */
+  async function talkFunction<T = unknown>(body: Row): Promise<T> {
+    const trace = activeTrace() ?? newTrace();
+    const { data } = await db.auth.getSession();
+    log.info('talk.fn', { action: body.action, trace });
+    let res: Response;
+    try {
+      res = await fetch(`${url.replace(/\/$/, '')}/functions/v1/talk`, {
+        method: 'POST',
+        headers: { ...(data.session ? { Authorization: `Bearer ${data.session.access_token}` } : {}), apikey: anonKey, 'Content-Type': 'application/json', 'x-trace-id': trace },
+        body: JSON.stringify(body),
+      });
+    } catch {
+      throw new AppError('PC001', undefined, trace);
+    }
+    const out = (await res.json().catch(() => ({}))) as T & { code?: string; message?: string };
+    if (!res.ok) throw fromServer({ code: out.code ?? 'PC002', message: out.message ?? '' }, trace);
+    return out;
+  }
+  /** What the function has keys for; asked once, then kept (a deploy changes it, a reload picks it up). */
+  let talkOpen: TalkOpen | null = null;
+  async function talkStatus(): Promise<TalkOpen> {
+    if (talkOpen) return talkOpen;
+    try {
+      const r = await talkFunction<Partial<TalkOpen>>({ action: 'status' });
+      talkOpen = { ai: !!r.ai, voice: !!r.voice, payouts: !!r.payouts };
+    } catch (e) {
+      quiet('talk.status')(e);
+      return { ai: false, voice: false, payouts: false };
+    }
+    return talkOpen;
+  }
+  async function talkRpc(fn: string, args?: Row): Promise<Talk> {
+    await uid();
+    const [raw, open] = await Promise.all([rpc(fn, args), talkStatus()]);
+    return talkFrom(raw, open);
   }
 
   async function uid(): Promise<string> {
@@ -898,6 +977,47 @@ export function createSupabaseBackend(url: string, anonKey: string, storage: Ses
       await uid();
       return callFrom(await rpc('spicy_call_answer', { p_other: profileId, p_answer: answer }));
     },
+
+    talk: () => talkRpc('talk_state'),
+    talkStatus,
+    talkSettings: (sex, want) => talkRpc('talk_settings', { p_sex: sex, p_want: want }),
+    async talkAi(chat, history, text) {
+      await uid();
+      const body = checkAiMessage(text);
+      return talkFunction<{ chat: string; reply: string; harm: boolean; charged: number }>({ action: 'ai', chat, history: aiHistory(history), text: body });
+    },
+    talkAiPass: () => talkRpc('talk_ai_pass'),
+    async talkListeners() {
+      await uid();
+      const rows = (await rpc<{ id: string; first_name: string; sex: string; topics: string[]; calls: number }[]>('talk_listeners')) ?? [];
+      return rows.map((r): ListenerCard => ({
+        id: r.id, firstName: r.first_name, sex: SEXES.includes(r.sex as Sex) ? (r.sex as Sex) : 'unsaid',
+        topics: (r.topics ?? []).filter((x): x is Topic => (TOPICS as readonly string[]).includes(x)), calls: r.calls ?? 0,
+      }));
+    },
+    talkCall: (listenerId, length, free) => talkRpc('talk_call', { p_listener: listenerId, p_length: length, p_free: free }),
+    talkAnswer: (callId, yes) => talkRpc('talk_answer', { p_call: callId, p_yes: yes }),
+    talkBeat: (callId) => talkRpc('talk_beat', { p_call: callId }),
+    talkEnd: (callId) => talkRpc('talk_end', { p_call: callId }),
+    talkReport: (callId, reason) => talkRpc('talk_report', { p_call: callId, p_reason: reason }),
+    talkBlock: (callId) => talkRpc('talk_block', { p_call: callId }),
+    async talkVoice(callId) {
+      await uid();
+      if (!(await talkStatus()).voice) return null;
+      return talkFunction<{ url: string; token: string }>({ action: 'voice', call: callId });
+    },
+    talkListenerApply: (input) => {
+      const ok = checkListener(input);
+      return talkRpc('talk_listener_apply', { p_first_name: ok.firstName, p_sex: ok.sex, p_accepts: ok.accepts, p_topics: ok.topics, p_code_version: 1 });
+    },
+    async talkListenerKyc(kyc) {
+      await uid();
+      if (!(await talkStatus()).payouts) throw new AppError('PL173');
+      await talkFunction({ action: 'kyc', ...checkKyc(kyc) });
+      return talkRpc('talk_state');
+    },
+    talkListenerAvailable: (on) => talkRpc('talk_listener_available', { p_on: on }),
+    claimReferral: (code) => talkRpc('talk_claim_referral', { p_code: referralCode(code) }),
 
     async wallet() {
       await uid();

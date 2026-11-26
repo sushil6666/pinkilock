@@ -1,4 +1,4 @@
--- Talk mode (D107), the free first call (D108). "Feeling alone? Talk to someone": an AI companion
+-- Talk mode (D108), the free first call (D109). "Feeling alone? Talk to someone": an AI companion
 -- and verified listeners, next to Self love. The same rules are in src/domain/talk.ts (the mock
 -- follows it); tests/db/talk_cases.sql runs the shared tables through both.
 --
@@ -21,7 +21,7 @@
 --   * Payouts: 60% of what a call is worth to the listener, less TDS (194-O), through Razorpay
 --     Route; 40% to Pinkilock, GST included (private.talk_split). Held for 7 days first. Payout rows
 --     stay for the books when an account goes, without the person's id.
---   * The free first call (D108): once, up to 15 minutes, unlocked by a friend who joined with my
+--   * The free first call (D109): once, up to 15 minutes, unlocked by a friend who joined with my
 --     link and verified (a phone or an email), or by a finished profile (a checked face photo, a
 --     verified handle, a plan I am up for). Pinkilock pays the listener for it. Never for a rating.
 --   * Credits move only through private.wallet_move (20261125000003_wallet.sql).
@@ -411,14 +411,14 @@ begin
 end $$;
 revoke all on function private.talk_state(uuid) from public, anon, authenticated;
 
--- My open call by id, on my side: PL166 otherwise.
+-- My open call by id, on my side: PL170 otherwise.
 create or replace function private.talk_my_call(p_user uuid, p_call uuid)
 returns private.talk_calls language plpgsql security definer set search_path = public as $$
 declare
   c private.talk_calls;
 begin
   select * into c from private.talk_calls where id = p_call and p_user in (caller, listener) and status <> 'done' for update;
-  if not found then raise exception using errcode = 'PL166', message = 'There is no call to do that on right now.'; end if;
+  if not found then raise exception using errcode = 'PL170', message = 'There is no call to do that on right now.'; end if;
   return c;
 end $$;
 revoke all on function private.talk_my_call(uuid, uuid) from public, anon, authenticated;
@@ -443,7 +443,7 @@ declare
 begin
   if p_sex is null or p_sex not in ('woman', 'man', 'unsaid') or p_want is null or p_want not in ('opposite', 'same', 'anyone')
     or (p_sex = 'unsaid' and p_want <> 'anyone') then
-    raise exception using errcode = 'PL154', message = 'Tell us who you are and whom you would like to talk to.';
+    raise exception using errcode = 'PL158', message = 'Tell us who you are and whom you would like to talk to.';
   end if;
   perform private.talk_person(me);
   update private.talk_people set sex = p_sex, want = p_want where user_id = me;
@@ -457,7 +457,7 @@ declare
   me uuid := private.self_love_me();
   p private.talk_people := private.talk_person(me);
 begin
-  if p.pass_until > now() then raise exception using errcode = 'PL172', message = 'Your day pass is still on.'; end if;
+  if p.pass_until > now() then raise exception using errcode = 'PL176', message = 'Your day pass is still on.'; end if;
   perform private.wallet_spend(me, 'talk_pass', 49, 'pass:' || to_char(now() at time zone 'utc', 'YYYYMMDDHH24MISS'));
   update private.talk_people set pass_until = now() + interval '24 hours' where user_id = me;
   return private.talk_state(me);
@@ -470,7 +470,7 @@ declare
   me uuid := private.self_love_me();
   p private.talk_people := private.talk_person(me);
 begin
-  if p.sex is null then raise exception using errcode = 'PL154', message = 'Tell us who you are and whom you would like to talk to.'; end if;
+  if p.sex is null then raise exception using errcode = 'PL158', message = 'Tell us who you are and whom you would like to talk to.'; end if;
   return coalesce((select jsonb_agg(jsonb_build_object('id', l.user_id, 'first_name', l.first_name, 'sex', l.sex, 'topics', to_jsonb(l.topics),
       'calls', (select count(*) from private.talk_calls x where x.listener = l.user_id and x.together > 0)) order by l.verified_at)
     from private.talk_listeners l
@@ -491,19 +491,19 @@ declare
   cid uuid;
 begin
   perform private.talk_sweep();
-  if p.sex is null then raise exception using errcode = 'PL154', message = 'Tell us who you are and whom you would like to talk to.'; end if;
+  if p.sex is null then raise exception using errcode = 'PL158', message = 'Tell us who you are and whom you would like to talk to.'; end if;
   if not p_free and (p_length is null or p_length not in (10, 20, 30)) then
-    raise exception using errcode = 'PL156', message = 'Pick a call length: 10, 20 or 30 minutes.';
+    raise exception using errcode = 'PL160', message = 'Pick a call length: 10, 20 or 30 minutes.';
   end if;
-  if p_free and p.free_call <> 'ready' then raise exception using errcode = 'PL167', message = 'Your free call is not unlocked yet.'; end if;
+  if p_free and p.free_call <> 'ready' then raise exception using errcode = 'PL171', message = 'Your free call is not unlocked yet.'; end if;
   if exists (select 1 from private.talk_calls where me in (caller, listener) and status <> 'done') then
-    raise exception using errcode = 'PL170', message = 'You are on a call already.';
+    raise exception using errcode = 'PL174', message = 'You are on a call already.';
   end if;
   select * into l from private.talk_listeners where user_id = p_listener for update;
   if not found or l.status <> 'verified' or not coalesce(l.available_until > now(), false) or p_listener = me
     or not private.talk_match(p.sex, p.want, l.sex, l.accepts) or private.talk_blocked(me, p_listener)
     or exists (select 1 from private.talk_calls where listener = p_listener and status <> 'done') then
-    raise exception using errcode = 'PL155', message = 'That listener is not free right now. Try another.';
+    raise exception using errcode = 'PL159', message = 'That listener is not free right now. Try another.';
   end if;
   insert into private.talk_calls (caller, listener, length, free, hold) values (me, p_listener, len, p_free, case when p_free then 0 else len * 10 end)
     returning id into cid;
@@ -523,7 +523,7 @@ declare
   me uuid := private.self_love_me();
   c private.talk_calls := private.talk_my_call(me, p_call);
 begin
-  if c.listener <> me or c.status <> 'ringing' then raise exception using errcode = 'PL166', message = 'There is no call to do that on right now.'; end if;
+  if c.listener <> me or c.status <> 'ringing' then raise exception using errcode = 'PL170', message = 'There is no call to do that on right now.'; end if;
   if p_yes then
     update private.talk_calls set status = 'live', started_at = now(), beat_listener = now() where id = c.id;
   else
@@ -567,13 +567,13 @@ declare
   other uuid;
 begin
   if p_reason is null or p_reason not in ('sexual', 'contact', 'meet', 'money', 'abuse', 'unsafe', 'other') then
-    raise exception using errcode = 'PL173', message = 'Pick what happened.';
+    raise exception using errcode = 'PL177', message = 'Pick what happened.';
   end if;
   -- An open call, or one that ended in the last day.
   select * into c from private.talk_calls where id = p_call and me in (caller, listener) and (status <> 'done' or ended_at > now() - interval '24 hours');
-  if not found then raise exception using errcode = 'PL166', message = 'There is no call to do that on right now.'; end if;
+  if not found then raise exception using errcode = 'PL170', message = 'There is no call to do that on right now.'; end if;
   if (select count(*) from private.talk_reports where reporter = me and at > now() - interval '1 day') >= 5 then
-    raise exception using errcode = 'PL173', message = 'Pick what happened.';
+    raise exception using errcode = 'PL177', message = 'Pick what happened.';
   end if;
   other := case when me = c.caller then c.listener else c.caller end;
   if exists (select 1 from private.talk_reports where call_id = c.id and reporter = me) then return private.talk_state(me); end if;
@@ -595,7 +595,7 @@ declare
   c private.talk_calls;
 begin
   select * into c from private.talk_calls where id = p_call and me in (caller, listener) and (status <> 'done' or ended_at > now() - interval '24 hours');
-  if not found then raise exception using errcode = 'PL166', message = 'There is no call to do that on right now.'; end if;
+  if not found then raise exception using errcode = 'PL170', message = 'There is no call to do that on right now.'; end if;
   insert into private.talk_blocks (user_id, other) values (me, case when me = c.caller then c.listener else c.caller end) on conflict do nothing;
   if c.status <> 'done' then perform private.talk_settle(c.id, 'blocked', me); end if;
   return private.talk_state(me);
@@ -610,18 +610,18 @@ declare
   cur private.talk_listeners;
 begin
   if not private.is_linked(me) or (select age from profiles where id = me) < 18 then
-    raise exception using errcode = 'PL163', message = 'Listeners are 18 or older, with a phone or an email on the account.';
+    raise exception using errcode = 'PL167', message = 'Listeners are 18 or older, with a phone or an email on the account.';
   end if;
   if name !~ '^[[:alpha:]][[:alpha:]''-]{1,19}$' or p_sex is null or p_sex not in ('woman', 'man', 'unsaid') or p_accepts is null or p_accepts not in ('women', 'men', 'anyone') then
-    raise exception using errcode = 'PL160', message = 'Use your first name, and say who you are and whom you take calls from.';
+    raise exception using errcode = 'PL164', message = 'Use your first name, and say who you are and whom you take calls from.';
   end if;
   if p_topics is null or cardinality(p_topics) not between 1 and 4 or cardinality(p_topics) <> (select count(distinct x) from unnest(p_topics) x)
     or not p_topics <@ array['lonely', 'stress', 'breakup', 'family', 'work', 'exams', 'new_city', 'just_talk'] then
-    raise exception using errcode = 'PL161', message = 'Pick 1 to 4 things you can talk about.';
+    raise exception using errcode = 'PL165', message = 'Pick 1 to 4 things you can talk about.';
   end if;
-  if p_code_version is distinct from 1 then raise exception using errcode = 'PL162', message = 'Agree to the listener code first.'; end if;
+  if p_code_version is distinct from 1 then raise exception using errcode = 'PL166', message = 'Agree to the listener code first.'; end if;
   select * into cur from private.talk_listeners where user_id = me;
-  if cur.status = 'removed' then raise exception using errcode = 'PL165', message = 'You are not a verified listener yet.'; end if;
+  if cur.status = 'removed' then raise exception using errcode = 'PL169', message = 'You are not a verified listener yet.'; end if;
   insert into private.talk_listeners (user_id, first_name, sex, accepts, topics, code_version)
   values (me, name, p_sex, p_accepts, p_topics, p_code_version)
   on conflict (user_id) do update set first_name = excluded.first_name, sex = excluded.sex, accepts = excluded.accepts, topics = excluded.topics,
@@ -636,7 +636,7 @@ declare
   me uuid := private.self_love_me();
 begin
   if p_on and not exists (select 1 from private.talk_listeners where user_id = me and status = 'verified') then
-    raise exception using errcode = 'PL165', message = 'You are not a verified listener yet.';
+    raise exception using errcode = 'PL169', message = 'You are not a verified listener yet.';
   end if;
   update private.talk_listeners set available_until = case when p_on then now() + interval '2 hours' end where user_id = me;
   return private.talk_state(me);
@@ -654,7 +654,7 @@ begin
     or exists (select 1 from private.talk_referrals where friend = me)
     or exists (select 1 from private.talk_referrals where friend = them and referrer = me)
     or (select created_at from auth.users where id = me) < now() - interval '7 days' then
-    raise exception using errcode = 'PL168', message = 'That invite link does not work for this account.';
+    raise exception using errcode = 'PL172', message = 'That invite link does not work for this account.';
   end if;
   insert into private.talk_referrals (friend, referrer) values (me, them);
   return private.talk_state(me);
@@ -686,14 +686,14 @@ begin
     raise exception using errcode = 'PL002', message = 'Finish setting up first.';
   end if;
   if p_text is null or char_length(btrim(p_text)) = 0 or char_length(p_text) > 800 then
-    raise exception using errcode = 'PL158', message = 'Write something, up to 800 characters.';
+    raise exception using errcode = 'PL162', message = 'Write something, up to 800 characters.';
   end if;
   p := private.talk_person(p_user);
-  if p.last_ai_at > now() - interval '2 seconds' then raise exception using errcode = 'PL159', message = 'One message at a time.'; end if;
+  if p.last_ai_at > now() - interval '2 seconds' then raise exception using errcode = 'PL163', message = 'One message at a time.'; end if;
   today := private.local_today(p_user);
   select messages into n from private.talk_ai_days where user_id = p_user and day = today;
   if coalesce(n, 0) >= 250 then
-    raise exception using errcode = 'PL171', message = 'That is a lot of talking for one day. The AI is back tomorrow, or try a listener.';
+    raise exception using errcode = 'PL175', message = 'That is a lot of talking for one day. The AI is back tomorrow, or try a listener.';
   end if;
   select * into ch from private.talk_ai_chats where id = p_chat and user_id = p_user and last_at > now() - interval '6 hours' for update;
   if not found then
@@ -722,15 +722,16 @@ returns void language sql security definer set search_path = public as $$
   update private.talk_ai_chats set harm = true where id = p_chat and user_id = p_user;
 $$;
 
--- For the function to make a voice room: the call must be mine and live. The room is the call's id.
+-- For the function to make a voice room: the call must be mine and live. The room is talk_<call id>
+-- (the shared LiveKit webhook routes rooms by that prefix).
 create or replace function public.talk_voice_room(p_user uuid, p_call uuid)
 returns jsonb language plpgsql security definer set search_path = public as $$
 declare
   c private.talk_calls;
 begin
   select * into c from private.talk_calls where id = p_call and p_user in (caller, listener) and status = 'live';
-  if not found then raise exception using errcode = 'PL166', message = 'There is no call to do that on right now.'; end if;
-  return jsonb_build_object('room', 'talk-' || c.id, 'identity', case when p_user = c.caller then 'caller' else 'listener' end,
+  if not found then raise exception using errcode = 'PL170', message = 'There is no call to do that on right now.'; end if;
+  return jsonb_build_object('room', 'talk_' || c.id, 'identity', case when p_user = c.caller then 'caller' else 'listener' end,
     'name', case when p_user = c.caller then private.talk_first_name(c.caller) else (select first_name from private.talk_listeners where user_id = c.listener) end,
     'minutes', c.length);
 end $$;
@@ -742,7 +743,7 @@ declare
   l private.talk_listeners;
 begin
   select * into l from private.talk_listeners where user_id = p_user;
-  if not found or l.status not in ('applied', 'checking') then raise exception using errcode = 'PL165', message = 'You are not a verified listener yet.'; end if;
+  if not found or l.status not in ('applied', 'checking') then raise exception using errcode = 'PL169', message = 'You are not a verified listener yet.'; end if;
   return (select jsonb_build_object('first_name', l.first_name, 'email', nullif(u.email, ''), 'phone', nullif(u.phone, ''), 'account', l.route_account)
     from auth.users u where u.id = p_user);
 end $$;
@@ -760,7 +761,7 @@ returns void language plpgsql security definer set search_path = public as $$
 begin
   if p_status not in ('verified', 'paused', 'removed') then raise exception using errcode = 'PC002', message = 'verified, paused or removed'; end if;
   if p_status = 'verified' and not exists (select 1 from private.talk_listeners where user_id = p_user and route_account is not null) then
-    raise exception using errcode = 'PL165', message = 'You are not a verified listener yet.';
+    raise exception using errcode = 'PL169', message = 'You are not a verified listener yet.';
   end if;
   update private.talk_listeners set status = p_status, verified_at = case when p_status = 'verified' then coalesce(verified_at, now()) else verified_at end,
     available_until = case when p_status = 'verified' then available_until end
@@ -838,7 +839,7 @@ begin
   if me is null then raise exception using errcode = 'PL001', message = 'Sign in first.'; end if;
   return private.export_my_data_10() || jsonb_build_object(
     'format', 'pinkilock-export-11',
-    -- Talk mode (D107): my settings, AI chats (minutes and flags; the words were never kept), my
+    -- Talk mode (D108): my settings, AI chats (minutes and flags; the words were never kept), my
     -- calls (the other person by first name only), my listener record and payouts, referrals, blocks.
     -- Reports I made are listed; reports about me are not part of an export.
     'talk', jsonb_build_object(

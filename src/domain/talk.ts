@@ -1,5 +1,5 @@
 /**
- * Talk mode (D107): "Feeling alone? Talk to someone." A quiet corner next to Self love, for when
+ * Talk mode (D108): "Feeling alone? Talk to someone." A quiet corner next to Self love, for when
  * someone wants to be listened to. It is not dating and it never touches Spicy mode: nothing here
  * reads, writes or links to it, and nothing from Talk mode is ever shown on a card.
  *
@@ -19,11 +19,11 @@
  *     on the line are charged, and the rest come back. Of what a call is worth, 60% is the
  *     listener's and 40% Pinkilock's, with GST on Pinkilock's part; TDS under section 194-O is held
  *     from the listener's payout. Payouts go through Razorpay Route. A CA checks all of it (O17).
- *   * The first call with a person is free (D108), once: unlocked by a friend who joins with my
+ *   * The first call with a person is free (D109), once: unlocked by a friend who joins with my
  *     link and verifies, or by a finished profile (a checked face photo, a verified handle and plans
  *     I am up for). Never for a rating or a review.
  *
- * The same rules are in SQL (supabase/migrations/20261126000002_talk.sql); the mock follows these.
+ * The same rules are in SQL (supabase/migrations/20261126000003_talk.sql); the mock follows these.
  * MATCH_CASES, HARM_CASES and SPLIT_CASES are shared with SQL through tests/db/talk_cases.sql
  * (generated: UPDATE_CASES=1 npm run test:unit).
  *
@@ -61,7 +61,7 @@ export const RING_SECONDS = 60;
 export const TALK_BEAT_SECONDS = 20;
 /** No check-in from either side for this long ends the call. */
 export const TALK_GONE_SECONDS = 90;
-/** A good call, for the review ask (D109): this many minutes together, ended normally, nobody reported. */
+/** A good call, for the review ask (D110): this many minutes together, ended normally, nobody reported. */
 export const GOOD_CALL_MINUTES = 5;
 
 export type Sex = 'woman' | 'man' | 'unsaid';
@@ -209,11 +209,11 @@ export const SPLIT_CASES: readonly [number, number, number, number, number, numb
 /** Credits held for a call of this length, from bought credits; a free call holds none. */
 export function callHold(length: number, free: boolean): number {
   if (free) return 0;
-  if (!(CALL_LENGTHS as readonly number[]).includes(length)) fail('PL156');
+  if (!(CALL_LENGTHS as readonly number[]).includes(length)) fail('PL160');
   return length * LISTENER_PER_MINUTE;
 }
 
-// --- The free first call (D108) ----------------------------------------------------------------
+// --- The free first call (D109) ----------------------------------------------------------------
 export type FreeCall = 'locked' | 'ready' | 'used';
 export type FreeReason = 'referral' | 'profile';
 
@@ -340,10 +340,10 @@ export interface AiReply {
   charged: number;
 }
 
-/** A message to send: trimmed, not empty, not too long (PL158). */
+/** A message to send: trimmed, not empty, not too long (PL162). */
 export function checkAiMessage(text: string): string {
   const t = text.trim();
-  if (!t || t.length > AI_MESSAGE_MAX) fail('PL158');
+  if (!t || t.length > AI_MESSAGE_MAX) fail('PL162');
   return t;
 }
 
@@ -373,32 +373,42 @@ export interface ListenerInput {
 /** As the checks in talk_listener_apply. */
 export function checkListener(input: ListenerInput): ListenerInput {
   const firstName = input.firstName.trim();
-  if (!/^\p{L}[\p{L}\p{M} '-]{1,19}$/u.test(firstName) || firstName.includes(' ')) fail('PL160');
-  if (!SEXES.includes(input.sex) || !ACCEPTS.includes(input.accepts)) fail('PL160');
+  if (!/^\p{L}[\p{L}\p{M} '-]{1,19}$/u.test(firstName) || firstName.includes(' ')) fail('PL164');
+  if (!SEXES.includes(input.sex) || !ACCEPTS.includes(input.accepts)) fail('PL164');
   const topics = TOPICS.filter((x) => input.topics.includes(x));
-  if (topics.length < 1 || topics.length > MAX_TOPICS || topics.length !== new Set(input.topics).size) fail('PL161');
-  if (!input.code) fail('PL162');
+  if (topics.length < 1 || topics.length > MAX_TOPICS || topics.length !== new Set(input.topics).size) fail('PL165');
+  if (!input.code) fail('PL166');
   return { ...input, firstName, topics };
 }
 
-/** Bank details go straight to Razorpay; only the last four digits of the account come back. */
+/** Bank details and the address go straight to Razorpay; only the last four digits of the account come back. */
 export interface KycInput {
   pan: string;
   account: string;
   ifsc: string;
   /** As on the bank account. */
   holder: string;
+  street: string;
+  city: string;
+  state: string;
+  pin: string;
 }
 export const PAN = /^[A-Z]{5}[0-9]{4}[A-Z]$/;
 export const IFSC = /^[A-Z]{4}0[A-Z0-9]{6}$/;
+/** As the checks in the `talk` Edge Function (PL168). */
 export function checkKyc(k: KycInput): KycInput {
   const pan = k.pan.trim().toUpperCase();
   const ifsc = k.ifsc.trim().toUpperCase();
   const account = k.account.replace(/\s/g, '');
   const holder = k.holder.trim();
-  if (!PAN.test(pan) || !IFSC.test(ifsc) || !/^\d{9,18}$/.test(account) || holder.length < 3 || holder.length > 60) fail('PL164');
-  return { pan, ifsc, account, holder };
+  const [street, city, state, pin] = [k.street.trim(), k.city.trim(), k.state.trim(), k.pin.trim()];
+  if (!PAN.test(pan) || !IFSC.test(ifsc) || !/^\d{9,18}$/.test(account) || holder.length < 3 || holder.length > 60) fail('PL168');
+  if (!street || !city || !state || !/^\d{6}$/.test(pin)) fail('PL168');
+  return { pan, ifsc, account, holder, street, city, state, pin };
 }
+
+export type TalkReportReason = 'sexual' | 'contact' | 'meet' | 'money' | 'abuse' | 'unsafe' | 'other';
+export const TALK_REPORT_REASONS: readonly TalkReportReason[] = ['sexual', 'contact', 'meet', 'money', 'abuse', 'unsafe', 'other'];
 
 /** The topics the caller wants, if any: listeners who cover them come first. */
 export function sortListeners(list: readonly ListenerCard[], topics: readonly Topic[]): ListenerCard[] {

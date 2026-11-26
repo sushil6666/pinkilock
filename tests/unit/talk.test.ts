@@ -1,5 +1,5 @@
 /**
- * Talk mode (D107) and the free first call (D108). The matching, the self-harm check and the
+ * Talk mode (D108) and the free first call (D109). The matching, the self-harm check and the
  * payout split exist twice (SQL and src/domain/talk.ts) and must agree: tests/db/talk_cases.sql is
  * generated from MATCH_CASES, HARM_CASES and SPLIT_CASES and run through the SQL by tests/db/talk.sql.
  * Regenerate: UPDATE_CASES=1 npm run test:unit
@@ -14,6 +14,8 @@ import {
   checkListener, freeReason, mentionsHarm, referralCode, sortListeners, talkMatch, talkSplit,
 } from '../../src/domain/talk';
 import { en } from '../../src/i18n/en';
+import { REVIEW_GAP_DAYS, mayAsk } from '../../src/domain/review';
+import { HARM_NOTE, SYSTEM, toMessages } from '../../supabase/functions/talk/companion';
 
 const ROOT = join(__dirname, '..', '..');
 const q = (s: string) => `'${s.replace(/'/g, "''")}'`;
@@ -25,7 +27,7 @@ const codeOf = (fn: () => unknown): string => {
     return e instanceof AppError ? e.code : String(e);
   }
 };
-const migration = readFileSync(join(ROOT, 'supabase', 'migrations', '20261126000002_talk.sql'), 'utf8');
+const migration = readFileSync(join(ROOT, 'supabase', 'migrations', '20261126000003_talk.sql'), 'utf8');
 
 test('listeners match as the shared table says', () => {
   for (const [sex, want, lsex, accepts, ok] of MATCH_CASES) assert.equal(talkMatch(sex, want, lsex, accepts), ok, JSON.stringify([sex, want, lsex, accepts]));
@@ -77,8 +79,8 @@ test('an AI message costs a minute once, and nothing with a pass or after a ment
   assert.equal(aiCharge({ passUntil: now + 1, harm: false, minutePaid: false }, now), 0);
   assert.equal(aiCharge({ passUntil: now - 1, harm: false, minutePaid: false }, now), AI_PER_MINUTE);
   assert.equal(aiCharge({ passUntil: null, harm: true, minutePaid: false }, now), 0);
-  assert.equal(codeOf(() => checkAiMessage('   ')), 'PL158');
-  assert.equal(codeOf(() => checkAiMessage('x'.repeat(801))), 'PL158');
+  assert.equal(codeOf(() => checkAiMessage('   ')), 'PL162');
+  assert.equal(codeOf(() => checkAiMessage('x'.repeat(801))), 'PL162');
   assert.equal(checkAiMessage('  hi  '), 'hi');
   const long = Array.from({ length: 40 }, (_, i) => ({ role: i % 2 ? ('ai' as const) : ('me' as const), text: `m${i}` }));
   assert.equal(aiHistory(long).length, AI_HISTORY);
@@ -89,7 +91,7 @@ test('a call holds bought credits for its length; a free one holds none', () => 
   assert.equal(callHold(10, false), 100);
   assert.equal(callHold(30, false), 300);
   assert.equal(callHold(15, true), 0);
-  assert.equal(codeOf(() => callHold(15, false)), 'PL156');
+  assert.equal(codeOf(() => callHold(15, false)), 'PL160');
 });
 
 test('the free call opens by a verified friend or a finished profile, never anything else', () => {
@@ -104,15 +106,16 @@ test('the free call opens by a verified friend or a finished profile, never anyt
 test('a listener applies with a first name, 1 to 4 topics and the whole code', () => {
   const ok = { firstName: ' Asha ', sex: 'woman' as const, accepts: 'anyone' as const, topics: ['lonely' as const], code: true };
   assert.equal(checkListener(ok).firstName, 'Asha');
-  assert.equal(codeOf(() => checkListener({ ...ok, firstName: 'Asha Rao' })), 'PL160');
-  assert.equal(codeOf(() => checkListener({ ...ok, firstName: '@asha' })), 'PL160');
-  assert.equal(codeOf(() => checkListener({ ...ok, topics: [] })), 'PL161');
-  assert.equal(codeOf(() => checkListener({ ...ok, topics: ['lonely', 'stress', 'work', 'exams', 'family'] })), 'PL161');
-  assert.equal(codeOf(() => checkListener({ ...ok, code: false })), 'PL162');
-  assert.deepEqual(checkKyc({ pan: 'abcde1234f', account: '1234 5678 9012', ifsc: 'hdfc0001234', holder: 'Asha Rao' }),
-    { pan: 'ABCDE1234F', account: '123456789012', ifsc: 'HDFC0001234', holder: 'Asha Rao' });
-  assert.equal(codeOf(() => checkKyc({ pan: 'ABCDE1234', account: '123456789012', ifsc: 'HDFC0001234', holder: 'Asha Rao' })), 'PL164');
-  assert.equal(codeOf(() => checkKyc({ pan: 'ABCDE1234F', account: '12', ifsc: 'HDFC0001234', holder: 'Asha Rao' })), 'PL164');
+  assert.equal(codeOf(() => checkListener({ ...ok, firstName: 'Asha Rao' })), 'PL164');
+  assert.equal(codeOf(() => checkListener({ ...ok, firstName: '@asha' })), 'PL164');
+  assert.equal(codeOf(() => checkListener({ ...ok, topics: [] })), 'PL165');
+  assert.equal(codeOf(() => checkListener({ ...ok, topics: ['lonely', 'stress', 'work', 'exams', 'family'] })), 'PL165');
+  assert.equal(codeOf(() => checkListener({ ...ok, code: false })), 'PL166');
+  const kyc = { pan: 'abcde1234f', account: '1234 5678 9012', ifsc: 'hdfc0001234', holder: 'Asha Rao', street: '12 Hill Road', city: 'Mumbai', state: 'Maharashtra', pin: '400050' };
+  assert.deepEqual(checkKyc(kyc), { ...kyc, pan: 'ABCDE1234F', account: '123456789012', ifsc: 'HDFC0001234' });
+  assert.equal(codeOf(() => checkKyc({ ...kyc, pan: 'ABCDE1234' })), 'PL168');
+  assert.equal(codeOf(() => checkKyc({ ...kyc, account: '12' })), 'PL168');
+  assert.equal(codeOf(() => checkKyc({ ...kyc, pin: '4000' })), 'PL168');
 });
 
 test('listeners who cover my topics come first', () => {
@@ -145,4 +148,32 @@ test('the AI is always called AI on screen, and the code is spelled out', () => 
   assert.match(en.talk.aiLabel, /\bAI\b/);
   assert.match(en.talk.aiNotPerson, /\bAI\b/);
   for (const rule of LISTENER_CODE) assert.ok(en.talk.code[rule], `the listener code has words for ${rule}`);
+});
+
+test('the companion is told it is an AI, never to flirt, and where help is', () => {
+  assert.match(SYSTEM, /You are an AI, not a person/);
+  assert.match(SYSTEM, /Never flirt/);
+  assert.match(SYSTEM, /sexual roleplay/);
+  assert.match(SYSTEM, /14416/);
+  assert.match(SYSTEM, /\[\[HELP\]\]/);
+  assert.match(HARM_NOTE, /14416/);
+});
+
+test('the chat goes to the model starting with the person, ending with the new message', () => {
+  const msgs = toMessages([{ role: 'ai', text: 'Hi, I am an AI.' }, { role: 'me', text: 'hey' }, { role: 'me', text: 'you there?' }, { role: 'ai', text: 'Yes.' }], 'ok');
+  assert.deepEqual(msgs.map((m) => m.role), ['user', 'assistant', 'user']);
+  assert.equal(msgs[0].content, 'hey\n\nyou there?');
+  assert.equal(msgs[2].content, 'ok');
+  assert.deepEqual(toMessages([], 'hello'), [{ role: 'user', content: 'hello' }]);
+});
+
+test('the store review is asked at most once in 60 days, and is never a step for anything', () => {
+  const day = 86_400_000;
+  assert.equal(mayAsk(null, 0), true);
+  assert.equal(mayAsk(0, (REVIEW_GAP_DAYS - 1) * day), false);
+  assert.equal(mayAsk(0, REVIEW_GAP_DAYS * day), true);
+  // Neither the free call nor a finished profile knows about reviews.
+  const talkSrc = readFileSync(join(ROOT, 'src', 'domain', 'talk.ts'), 'utf8');
+  assert.ok(!/review|rating/i.test(talkSrc.match(/export function freeReason[\s\S]*?\n}/)![0]), 'the free call never asks for a review');
+  assert.ok(!/review|rating/i.test(migration.match(/function private\.talk_person[\s\S]*?\$\$;/)![0]), 'nor does the SQL');
 });

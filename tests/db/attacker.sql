@@ -524,7 +524,7 @@ select t.ok(t.fails($$select private.call_settle(gen_random_uuid(), 'no_show', '
   and t.fails($$select private.call_state(gen_random_uuid(), gen_random_uuid())$$), 'X cannot settle a call, run the sweep or read another''s call state');
 reset role;
 
--- D107, D108: Talk mode. X cannot read any Talk table, charge or flag an AI chat, make a voice room,
+-- D108, D109: Talk mode. X cannot read any Talk table, charge or flag an AI chat, make a voice room,
 -- mark themselves KYC-checked or verified, take a payout, answer or end a call that is not X's, or
 -- claim their own referral link.
 set role authenticated;
@@ -538,9 +538,9 @@ select t.ok(t.fails(format($$select talk_ai_turn(%L, null, 'hi')$$, :'y')) and t
   and t.fails(format($$select talk_kyc_done(%L, 'acc_ATTACK12345', '0000')$$, :'x')) and t.fails(format($$select talk_listener_decide(%L, 'verified')$$, :'x'))
   and t.fails('select * from talk_payouts_claim(100)') and t.fails($$select talk_payout_done(gen_random_uuid(), 'trf_1')$$),
   'X cannot charge someone''s AI chat, make a voice room, verify themselves or touch a payout');
-select t.ok(t.sqlstate(format('select talk_answer(%L, true)', gen_random_uuid())) = 'PL166' and t.sqlstate(format('select talk_end(%L)', gen_random_uuid())) = 'PL166'
-  and t.sqlstate(format($$select talk_report(%L, 'abuse')$$, gen_random_uuid())) = 'PL166' and t.sqlstate(format('select talk_beat(%L)', gen_random_uuid())) = 'PL166',
+select t.ok(t.sqlstate(format('select talk_answer(%L, true)', gen_random_uuid())) = 'PL170' and t.sqlstate(format('select talk_end(%L)', gen_random_uuid())) = 'PL170'
+  and t.sqlstate(format($$select talk_report(%L, 'abuse')$$, gen_random_uuid())) = 'PL170' and t.sqlstate(format('select talk_beat(%L)', gen_random_uuid())) = 'PL170',
   'X cannot answer, end, check in on or report a call that is not X''s');
-select t.ok(t.sqlstate(format('select talk_claim_referral(%L)', (talk_state() ->> 'referral_code'))) = 'PL168' and t.sqlstate('select talk_listener_available(true)') = 'PL165'
-  and t.sqlstate(format('select talk_call(%L, 10, true)', :'y')) = 'PL154', 'X cannot use their own link, take calls unverified, or ring someone who is not a listener');
+select t.ok(t.sqlstate(format('select talk_claim_referral(%L)', (talk_state() ->> 'referral_code'))) = 'PL172' and t.sqlstate('select talk_listener_available(true)') = 'PL169'
+  and t.sqlstate(format('select talk_call(%L, 10, true)', :'y')) = 'PL158', 'X cannot use their own link, take calls unverified, or ring someone who is not a listener');
 reset role;

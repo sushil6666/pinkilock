@@ -1,4 +1,4 @@
--- Talk mode (D107) and the free first call (D108), after calls.sql. People of their own: Asha (a
+-- Talk mode (D108) and the free first call (D109), after calls.sql. People of their own: Asha (a
 -- caller, a woman), Lata (a listener, a woman, takes calls from anyone), Manu (a listener, a man,
 -- takes calls from men only), Ravi (a caller, a man), Fiza (joins with Asha's link) and Kiran
 -- (anonymous, cannot listen).
@@ -36,29 +36,29 @@ select t.ok(t.fails('select * from private.talk_people') and t.fails('select * f
 select t.as_user(:'a');
 select t.ok((select talk_state() ->> 'sex') is null and (select talk_state() ->> 'free_call') = 'locked'
   and (select talk_state() ->> 'referral_code') ~ '^[ABCDEFGHJKMNPQRSTUVWXYZ23456789]{8}$', 'a new caller: no settings, the free call locked, a referral code');
-select t.ok(t.sqlstate('select talk_listeners()') = 'PL154', 'no listeners before I say who I am (PL154)');
-select t.ok(t.sqlstate($$select talk_settings('unsaid', 'opposite')$$) = 'PL154' and t.sqlstate($$select talk_settings('other', 'anyone')$$) = 'PL154',
-  '"opposite" and "same" need woman or man (PL154)');
+select t.ok(t.sqlstate('select talk_listeners()') = 'PL158', 'no listeners before I say who I am (PL158)');
+select t.ok(t.sqlstate($$select talk_settings('unsaid', 'opposite')$$) = 'PL158' and t.sqlstate($$select talk_settings('other', 'anyone')$$) = 'PL158',
+  '"opposite" and "same" need woman or man (PL158)');
 select talk_settings('woman', 'anyone');
 
 -- Listeners: an adult with a phone or an email, a first name, topics, the code.
 select t.as_user(:'k');
-select t.ok(t.sqlstate($$select talk_listener_apply('Kiran', 'man', 'anyone', array['lonely'], 1)$$) = 'PL163', 'an anonymous account cannot listen (PL163)');
+select t.ok(t.sqlstate($$select talk_listener_apply('Kiran', 'man', 'anyone', array['lonely'], 1)$$) = 'PL167', 'an anonymous account cannot listen (PL167)');
 select t.as_user(:'l');
-select t.ok(t.sqlstate($$select talk_listener_apply('Lata Rao', 'woman', 'anyone', array['lonely'], 1)$$) = 'PL160'
-  and t.sqlstate($$select talk_listener_apply('L@ta', 'woman', 'anyone', array['lonely'], 1)$$) = 'PL160', 'a first name only, with no symbols (PL160)');
-select t.ok(t.sqlstate($$select talk_listener_apply('Lata', 'woman', 'anyone', array['dating'], 1)$$) = 'PL161'
-  and t.sqlstate($$select talk_listener_apply('Lata', 'woman', 'anyone', '{}'::text[], 1)$$) = 'PL161', 'topics from the list, one to four (PL161)');
-select t.ok(t.sqlstate($$select talk_listener_apply('Lata', 'woman', 'anyone', array['lonely'], 0)$$) = 'PL162', 'the code must be agreed (PL162)');
+select t.ok(t.sqlstate($$select talk_listener_apply('Lata Rao', 'woman', 'anyone', array['lonely'], 1)$$) = 'PL164'
+  and t.sqlstate($$select talk_listener_apply('L@ta', 'woman', 'anyone', array['lonely'], 1)$$) = 'PL164', 'a first name only, with no symbols (PL164)');
+select t.ok(t.sqlstate($$select talk_listener_apply('Lata', 'woman', 'anyone', array['dating'], 1)$$) = 'PL165'
+  and t.sqlstate($$select talk_listener_apply('Lata', 'woman', 'anyone', '{}'::text[], 1)$$) = 'PL165', 'topics from the list, one to four (PL165)');
+select t.ok(t.sqlstate($$select talk_listener_apply('Lata', 'woman', 'anyone', array['lonely'], 0)$$) = 'PL166', 'the code must be agreed (PL166)');
 select t.ok((talk_listener_apply('Lata', 'woman', 'anyone', array['lonely', 'breakup'], 1) -> 'listener' ->> 'status') = 'applied', 'Lata applied');
-select t.ok(t.sqlstate('select talk_listener_available(true)') = 'PL165', 'not verified: cannot take calls yet (PL165)');
+select t.ok(t.sqlstate('select talk_listener_available(true)') = 'PL169', 'not verified: cannot take calls yet (PL169)');
 select t.ok(t.fails($$select talk_kyc_done(auth.uid(), 'acc_FAKE123456', '1234')$$) and t.fails($$select talk_listener_decide(auth.uid(), 'verified')$$),
   'and cannot mark herself checked or verified');
 select t.as_user(:'m');
 select talk_listener_apply('Manu', 'man', 'men', array['work'], 1);
 reset role;
 -- The Edge Function after Razorpay Route's KYC, then a person at Pinkilock.
-select t.ok(t.sqlstate($$select talk_listener_decide('00000000-0000-0000-0000-00000007a1c2', 'verified')$$) = 'PL165', 'no verifying before the bank is checked');
+select t.ok(t.sqlstate($$select talk_listener_decide('00000000-0000-0000-0000-00000007a1c2', 'verified')$$) = 'PL169', 'no verifying before the bank is checked');
 select talk_kyc_done(:'l', 'acc_LATA123456', '4321');
 select talk_kyc_done(:'m', 'acc_MANU123456', '9876');
 select talk_listener_decide(:'l', 'verified');
@@ -76,26 +76,26 @@ select talk_settings('woman', 'opposite');
 select t.ok(jsonb_array_length(talk_listeners()) = 0, 'with "opposite", Manu still does not take calls from her');
 select talk_settings('woman', 'same');
 select t.ok(jsonb_array_length(talk_listeners()) = 1, 'with "same", Lata');
-select t.ok(t.sqlstate(format('select talk_call(%L, 10, false)', :'m')) = 'PL155', 'calling Manu anyway is refused (PL155)');
+select t.ok(t.sqlstate(format('select talk_call(%L, 10, false)', :'m')) = 'PL159', 'calling Manu anyway is refused (PL159)');
 select t.as_user(:'r');
 select talk_settings('man', 'anyone');
 select t.ok(jsonb_array_length(talk_listeners()) = 2, 'Ravi sees both');
 select t.ok(t.sqlstate(format('select talk_call(%L, 20, false)', :'m')) = 'PL139', 'a call is paid from bought credits: Ravi has 50 (PL139)');
-select t.ok(t.sqlstate(format('select talk_call(%L, 25, false)', :'m')) = 'PL156', 'a length off the list (PL156)');
-select t.ok(t.sqlstate(format('select talk_call(%L, 10, true)', :'m')) = 'PL167', 'no free call before it is unlocked (PL167)');
+select t.ok(t.sqlstate(format('select talk_call(%L, 25, false)', :'m')) = 'PL160', 'a length off the list (PL160)');
+select t.ok(t.sqlstate(format('select talk_call(%L, 10, true)', :'m')) = 'PL171', 'no free call before it is unlocked (PL171)');
 
 -- A call: 300 held for 30 minutes; the timer; only minutes together are charged.
 select t.as_user(:'a');
 select t.ok((talk_call(:'l', 30, false) -> 'call' ->> 'status') = 'ringing' and (my_wallet() ->> 'paid')::int = 100, 'Asha rings Lata: 300 bought credits held');
-select t.ok(t.sqlstate(format('select talk_call(%L, 10, false)', :'l')) = 'PL170', 'one call at a time (PL170)');
+select t.ok(t.sqlstate(format('select talk_call(%L, 10, false)', :'l')) = 'PL174', 'one call at a time (PL174)');
 select t.ok(jsonb_array_length(talk_listeners()) = 0, 'a listener on a call is not listed');
 reset role;
 create temp table c1 as select id from private.talk_calls where caller = :'a' and status = 'ringing';
 grant select on c1 to authenticated;
 set role authenticated;
 select t.as_user(:'r');
-select t.ok(t.sqlstate(format('select talk_answer(%L, true)', (select id from c1))) = 'PL166' and t.sqlstate(format('select talk_beat(%L)', (select id from c1))) = 'PL166',
-  'Ravi cannot answer or check in on a call that is not his (PL166)');
+select t.ok(t.sqlstate(format('select talk_answer(%L, true)', (select id from c1))) = 'PL170' and t.sqlstate(format('select talk_beat(%L)', (select id from c1))) = 'PL170',
+  'Ravi cannot answer or check in on a call that is not his (PL170)');
 select t.as_user(:'l');
 select t.ok((talk_state() -> 'call' ->> 'name') = 'Asha' and (talk_state() -> 'call' ->> 'listening')::boolean, 'Lata sees it ringing, from "Asha" (first name only)');
 select t.ok((talk_answer((select id from c1), true) -> 'call' ->> 'status') = 'live', 'Lata picks up');
@@ -110,7 +110,7 @@ select t.ok((talk_state() -> 'call' ->> 'together')::int = 7 and (talk_state() -
 select t.ok((talk_end((select id from c1)) -> 'call' ->> 'end') = 'talked', 'Asha hangs up: talked');
 select t.ok((my_wallet() ->> 'paid')::int = 330 and (talk_state() -> 'call' ->> 'charged')::int = 70 and (talk_state() -> 'call' ->> 'refunded')::int = 230,
   '70 charged for 7 minutes, 230 back');
-select t.ok(t.sqlstate(format('select talk_beat(%L)', (select id from c1))) = 'PL166', 'an ended call takes no more check-ins (PL166)');
+select t.ok(t.sqlstate(format('select talk_beat(%L)', (select id from c1))) = 'PL170', 'an ended call takes no more check-ins (PL170)');
 reset role;
 select t.ok((select (status, minutes, gross, host, tds, payout, free) = ('waiting', 7, 5320, 3192, 6, 3186, false) from private.talk_payouts where call_id = (select id from c1)),
   'the payout waits 7 days: 60% of 7 minutes, less TDS');
@@ -118,7 +118,7 @@ select t.ok((select route_account = 'acc_LATA123456' from private.talk_payouts w
 -- A report after the call holds it for a person.
 set role authenticated;
 select t.as_user(:'a');
-select t.ok(t.sqlstate(format($$select talk_report(%L, 'flirty')$$, (select id from c1))) = 'PL173', 'a report needs a reason from the list (PL173)');
+select t.ok(t.sqlstate(format($$select talk_report(%L, 'flirty')$$, (select id from c1))) = 'PL177', 'a report needs a reason from the list (PL177)');
 select talk_report((select id from c1), 'contact');
 reset role;
 select t.ok((select status from private.talk_payouts where call_id = (select id from c1)) = 'held' and (select count(*) from private.talk_reports where reporter = :'a') = 1,
@@ -155,16 +155,16 @@ select t.ok((talk_state() -> 'call' ->> 'end') = 'blocked' and (my_wallet() ->> 
 
 -- The free first call: a friend joins with my link and verifies.
 select t.as_user(:'f');
-select t.ok(t.sqlstate($$select talk_claim_referral('ZZZZZZZZ')$$) = 'PL168', 'an unknown code (PL168)');
+select t.ok(t.sqlstate($$select talk_claim_referral('ZZZZZZZZ')$$) = 'PL172', 'an unknown code (PL172)');
 reset role;
 create temp table codes as select user_id, code from private.talk_referral_codes;
 grant select on codes to authenticated;
 set role authenticated;
 select t.as_user(:'a');
-select t.ok(t.sqlstate(format('select talk_claim_referral(%L)', (select code from codes where user_id = :'a'))) = 'PL168', 'never my own link (PL168)');
+select t.ok(t.sqlstate(format('select talk_claim_referral(%L)', (select code from codes where user_id = :'a'))) = 'PL172', 'never my own link (PL172)');
 select t.as_user(:'f');
 select t.ok((talk_claim_referral(lower((select code from codes where user_id = :'a'))) ->> 'free_call') = 'locked', 'Fiza joins with Asha''s link');
-select t.ok(t.sqlstate(format('select talk_claim_referral(%L)', (select code from codes where user_id = :'a'))) = 'PL168', 'only once (PL168)');
+select t.ok(t.sqlstate(format('select talk_claim_referral(%L)', (select code from codes where user_id = :'a'))) = 'PL172', 'only once (PL172)');
 select t.as_user(:'a');
 select t.ok((talk_state() ->> 'friends_joined')::int = 1 and (talk_state() ->> 'friends_verified')::int = 0 and (talk_state() ->> 'free_call') = 'locked',
   'Fiza has not verified: Asha''s free call stays locked');
@@ -176,7 +176,7 @@ select t.as_user(:'r');
 reset role;
 update auth.users set created_at = now() - interval '8 days' where id = :'r';
 set role authenticated;
-select t.ok(t.sqlstate(format('select talk_claim_referral(%L)', (select code from codes where user_id = :'m'))) = 'PL168', 'a week after joining, a link is too late (PL168)');
+select t.ok(t.sqlstate(format('select talk_claim_referral(%L)', (select code from codes where user_id = :'m'))) = 'PL172', 'a week after joining, a link is too late (PL172)');
 
 -- The free call: 15 minutes, no credits held, Pinkilock pays the listener; used once it connects.
 reset role;
@@ -204,7 +204,7 @@ reset role;
 create temp table chat as select (talk_ai_turn(:'a', null, 'I feel lonely in this new city') ->> 'chat')::uuid as id;
 select t.ok((select (credits) from private.talk_ai_minutes where chat_id = (select id from chat)) = 3
   and (select earned from private.wallets where user_id = :'a') = 17, 'the first message costs a minute (3), earned credits first');
-select t.ok(t.sqlstate(format($$select talk_ai_turn(%L, %L, 'and work is hard')$$, :'a', (select id from chat))) = 'PL159', 'one message at a time (PL159)');
+select t.ok(t.sqlstate(format($$select talk_ai_turn(%L, %L, 'and work is hard')$$, :'a', (select id from chat))) = 'PL163', 'one message at a time (PL163)');
 update private.talk_people set last_ai_at = now() - interval '5 seconds' where user_id = :'a';
 select t.ok((talk_ai_turn(:'a', (select id from chat), 'and work is hard') ->> 'charged')::int = 0, 'the same minute is not charged twice');
 update private.talk_ai_minutes set minute = minute - interval '1 minute' where chat_id = (select id from chat);
@@ -218,16 +218,16 @@ select t.ok(not exists (select 1 from information_schema.columns where table_sch
   'the words are never stored');
 update private.talk_ai_days set messages = 250 where user_id = :'a';
 update private.talk_people set last_ai_at = now() - interval '5 seconds' where user_id = :'a';
-select t.ok(t.sqlstate(format($$select talk_ai_turn(%L, null, 'hi')$$, :'a')) = 'PL171', 'a day''s fair use (PL171)');
+select t.ok(t.sqlstate(format($$select talk_ai_turn(%L, null, 'hi')$$, :'a')) = 'PL175', 'a day''s fair use (PL175)');
 
 -- The day pass.
 set role authenticated;
 select t.as_user(:'a');
-select t.ok((talk_ai_pass() ->> 'pass_until') is not null and t.sqlstate('select talk_ai_pass()') = 'PL172', 'a day pass (49), once at a time (PL172)');
+select t.ok((talk_ai_pass() ->> 'pass_until') is not null and t.sqlstate('select talk_ai_pass()') = 'PL176', 'a day pass (49), once at a time (PL176)');
 
 -- Voice: only the two on a live call get a room.
 reset role;
-select t.ok(t.sqlstate(format('select talk_voice_room(%L, %L)', :'r', (select id from c1))) = 'PL166', 'no room for a call that is over, or not mine');
+select t.ok(t.sqlstate(format('select talk_voice_room(%L, %L)', :'r', (select id from c1))) = 'PL170', 'no room for a call that is over, or not mine');
 
 -- The data download, and deleting an account.
 set role authenticated;
