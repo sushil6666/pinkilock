@@ -122,19 +122,22 @@ someone, and delete their account, on both platforms, against the production pro
   in-app call timer counts a minute only while both apps are open; a no-show or an early drop costs
   the person who missed it a Trust Score drop and their part of the unlock, and the one who showed
   gets their own part back. "I felt unsafe or uncomfortable" ends a call at any time with no blame.
-  When the timer cannot tell, both are asked. Later: an in-app audio call (Agora or LiveKit) if
-  disputes pile up.
+  When the timer cannot tell, both are asked.
+- [x] **Spicy calls in the app** (D111): the call is a voice call inside Pinkilock (LiveKit, shared
+  with Talk mode), never video and never recorded, and its minutes come from the room. Usernames show
+  only after a kept call, when both choose to share. Waiting on the LiveKit secrets (O19), a new phone
+  build, and the lawyer's view (O14, O20).
 - [x] **Talk mode** (D108): "Feeling alone? Talk to someone": an AI companion (always labelled AI,
   help lines on any mention of self-harm) and verified listeners by voice in the app (no video),
   paid 60% through Razorpay Route. The free first call (D109) opens by a friend who joins or a
   finished profile; the store review prompt (D110) shows after happy moments, with no reward. Built
   behind switches; waiting on LiveKit and Razorpay Route (O19), a CA's view (O17), and a lawyer's and
-  a mental-health adviser's review (O18) before launch. Next: the in-app voice client (LiveKit).
+  a mental-health adviser's review (O18) before launch. The in-app voice client is `src/lib/voice.ts` (D111).
 - [x] **Pink Gold** (D115, D116): the paid membership, with a badge on members' cards (Discover,
   profile, Me). Plans of 1, 3, 6 and 12 months and Boosts (1 or 6) through Razorpay on the website;
   members get 15 open asks, 2 free Boosts a month and a place right after boosted cards. Phone apps
   after Play Billing (O15). Members also see everyone who asked them at once and get early access to
-  cities marked `early`. Next: a free Saathi session a month (after #97).
+  cities marked `early`. Next: a free Saathi session a month.
 
 - [x] **Photos behind the lock** (D088): up to three photos on Me, stored in a private Supabase
   Storage bucket by the `photo` Edge Function, which strips their metadata and draws the picture

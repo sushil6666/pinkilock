@@ -323,7 +323,7 @@ in the SQL editor (`select * from reports where reviewed_at is null`).
 profile, contact, trust score, my invites (the other person by id only), passes, blocks, reports
 I made, devices, notifications sent to me, my events, and Self love (moods, notes, the pause and
 the reset), Spicy mode (my usernames, boundaries, yeses and unlocks), and the wallet (balances, ledger, orders,
-stakes and treats), my Spicy call times, and Talk mode (my settings, AI chat minutes and flags but
+stakes and treats), my Spicy call times (and, from format 12, my time on each voice call and whom I shared usernames with), and Talk mode (my settings, AI chat minutes and flags but
 never the words, calls, referrals, and as a listener my application and payouts; format 11). Reports about me are not in it, nor
 anyone else's contact. `delete_my_account()` ends my live invites, removes my id from every events
 row (and clears what the phone sent with `app_open`), then deletes the auth user; everything that
@@ -561,6 +561,21 @@ refuses without a pass for it (PL154), and `private.spicy_with_for` is closed un
 passed it, so changing the terms pauses every match (no yes, unlock or call) until each passes again.
 The key and the marking are mirrored in `src/domain/spicyQuiz.ts`; `QUIZ_CASES` is the shared table
 (`tests/db/spicy_quiz_cases.sql`).
+**The call itself is in the app, audio only (D111).** While the timer is open, **Join the call**
+asks the `voice` Edge Function for a room; it checks the person's sign-in, asks
+`spicy_voice_room(user, other)` (service role only: Spicy open, both yes, unlocked, a set call in its
+hour, not ended), and mints a LiveKit token for `spicy_<call id>` that may publish the microphone and
+nothing else (`supabase/functions/_shared/livekit.ts`, shared with Talk mode). The app joins with
+`src/lib/voice.ts` (livekit-client on the web; `@livekit/react-native` WebRTC on phones), never asks
+for the camera, and shows mute, leave and "I felt unsafe or uncomfortable". LiveKit posts signed
+`participant_joined` / `participant_left` / `room_finished` webhooks to the same `voice` function,
+which hands Spicy rooms to `spicy_voice_event` (times clamped to the last ten minutes) and so to
+`private.spicy_call_voice`. `private.call_minute_rows` reads the minutes from those sessions once
+anyone reached the room, else from the check-ins; `call_together`, `call_timer_settle` and
+`call_state` use it. `talk_<call id>` rooms go to `talk_voice_event` once Talk mode has one.
+Usernames: `private.spicy_with_for` is now a wrapper over `private.spicy_with_base` that shows
+Discord, Telegram and Signal only after a call with outcome `talked` and when both have a row in
+`private.spicy_shares` (`spicy_share`); triggers drop shares on Spicy off, a yes taken back or a block.
 
 ### Wallet
 
@@ -629,13 +644,16 @@ goes, kept for the books), `talk_blocks` and `talk_reports`.
   `talkMatch` / `talk_match` (caller's opposite, same or anyone against the listener's women, men or
   anyone), `mentionsHarm` / `mentions_harm` (one word list) and `talkSplit` / `talk_split` (credits
   to paise at 76 per credit, 60% to the host, GST inside Pinkilock's 40%, TDS 0.1% under 194-O).
-- **The app** calls `talk_state`, `talk_settings`, `talk_ai_pass`, `talk_listeners`, `talk_call`
+- **The app** calls `talk_state`, `talk_settings`, `talk_ai_session` (60 credits for up to 15 minutes
+  on a chat, D114; again in its last 2 minutes; free on a flagged chat), `talk_listeners`, `talk_call`
   (holds bought credits for the length, PL139 when short), `talk_answer`, `talk_beat`, `talk_end`,
   `talk_report`, `talk_block`, `talk_listener_apply`, `talk_listener_available` and
   `talk_claim_referral` (PL158 to PL177). `talk_sweep` (pg_cron, every minute) ends calls nobody
   answered, that ran their length, or where someone left; it charges only minutes both were present.
-- **The `talk` Edge Function** holds every key: `ai` (checks and charges through `talk_ai_turn`,
-  then asks the model with the instructions in `supabase/functions/talk/companion.ts`; the reply's
+- **The `talk` Edge Function** holds every key: `ai` (checks through `talk_ai_turn` that the chat has paid time,
+  a day pass bought before D114, or a mention of self-harm, which always goes,
+  then asks the model with the instructions in `supabase/functions/talk/companion.ts` and the tone the
+  phone sent, warm or flirty, always warm once the chat is flagged (D113); the reply's
   help marker sets `talk_ai_flag`), `voice` (a LiveKit token for `talk_<call id>` from
   `talk_voice_room`: microphone only, no data, no recording), `kyc` (PAN, bank and address straight to
   Razorpay Route's linked accounts; only the last four digits come back, `talk_kyc_done`), and

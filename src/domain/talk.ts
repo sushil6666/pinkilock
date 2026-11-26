@@ -3,8 +3,10 @@
  * someone wants to be listened to. It is not dating and it never touches Spicy mode: nothing here
  * reads, writes or links to it, and nothing from Talk mode is ever shown on a card.
  *
- *   * The AI companion: there day and night, cheaper. Always labelled AI, it never says or hints that
- *     it is a person, never flirts and never takes part in sexual roleplay. It is paid by the minute
+ *   * The AI companion (Saathi): there day and night, cheaper. Always labelled AI, it never says or
+ *     hints that it is a person. Warm by default; a person may choose the Flirty tone (D113): light,
+ *     playful flirting and a little romance, never sexual, back to warm the moment the chat mentions
+ *     self-harm. Listeners never flirt (the listener code). It is paid by the minute
  *     (a minute counts when I sent something in it) or with a day pass. When someone mentions
  *     self-harm or suicide, charging stops for the rest of that chat, the reply points to Tele-MANAS
  *     14416 and other help lines, and it offers a person. The words are never stored: the chat lives
@@ -30,14 +32,21 @@
  * Pure TypeScript: no React Native, so unit tests load it in plain Node.
  */
 import { fail } from './errors';
+import { PACKS, type Pack } from './wallet';
 
 const MINUTE = 60_000;
 const HOUR = 60 * MINUTE;
 
 // --- The AI companion --------------------------------------------------------------------------
-/** Credits for each minute in which I sent something. */
-export const AI_PER_MINUTE = 3;
-/** Or a day of the companion for this, however much I write. */
+/**
+ * Saathi sessions (D114): 60 credits (about ₹60) for up to 15 minutes, paid up front from the
+ * wallet. In the last AI_CONTINUE_MINUTES, or after the time is up, continue for another session.
+ * As private talk_ai_session / talk_ai_turn in SQL.
+ */
+export const AI_SESSION_CREDITS = 60;
+export const AI_SESSION_MINUTES = 15;
+export const AI_CONTINUE_MINUTES = 2;
+/** The day pass of D108 is no longer sold (D114); a pass already bought still runs its day. */
 export const AI_PASS = 49;
 export const AI_PASS_HOURS = 24;
 /** What one message can hold, how much of the chat goes with each one, and a day's fair use. */
@@ -336,9 +345,28 @@ export interface AiReply {
   reply: string;
   /** A mention of self-harm: show the help lines and the person. Charging has stopped for this chat. */
   harm: boolean;
-  /** Credits taken for this message (0 with a pass, in a minute already paid, or after a mention). */
+  /** Credits taken for this message: always 0 now, the session paid for it (D114). */
   charged: number;
+  /** The session runs until then (null with a pass, or in a chat that mentioned self-harm). */
+  paidUntil: number | null;
 }
+
+/** A session, started or continued (D114). `free`: nothing to pay (a pass, or a chat that mentioned self-harm). */
+export interface AiSession {
+  chat: string;
+  paidUntil: number | null;
+  charged: number;
+  free: boolean;
+}
+
+/**
+ * Saathi's tone (D113), picked on the phone: warm (the default) or flirty (light, playful flirting
+ * and a little romance from an AI; never sexual, never claiming real feelings). Only for the AI:
+ * listeners never flirt. A chat that has mentioned self-harm is always warm.
+ */
+export type AiTone = 'warm' | 'flirty';
+export const AI_TONES: readonly AiTone[] = ['warm', 'flirty'];
+export const aiToneFor = (tone: unknown, harm: boolean): AiTone => (!harm && tone === 'flirty' ? 'flirty' : 'warm');
 
 /** A message to send: trimmed, not empty, not too long (PL162). */
 export function checkAiMessage(text: string): string {
@@ -352,11 +380,27 @@ export function aiHistory(turns: readonly AiTurn[]): AiTurn[] {
   return turns.slice(-AI_HISTORY).map((x) => ({ role: x.role, text: x.text.slice(0, AI_MESSAGE_MAX * 2) }));
 }
 
-/** As private.talk_ai_charge in SQL: what one message costs. */
-export function aiCharge(o: { passUntil: number | null; harm: boolean; minutePaid: boolean }, now: number): number {
-  if (o.harm || o.minutePaid || (o.passUntil !== null && o.passUntil > now)) return 0;
-  return AI_PER_MINUTE;
+/** As talk_ai_turn in SQL: may a message go now? Time left, a day pass, or a chat that mentioned self-harm (never cut off). */
+export function aiMayTalk(o: { passUntil: number | null; harm: boolean; paidUntil: number | null }, now: number): boolean {
+  return o.harm || (o.passUntil !== null && o.passUntil > now) || (o.paidUntil !== null && o.paidUntil > now);
 }
+
+/** As talk_ai_session in SQL: a session can be bought before the first one, or in its last minutes (PL182 otherwise). */
+export function aiMayContinue(paidUntil: number | null, now: number): boolean {
+  return paidUntil === null || paidUntil - now <= AI_CONTINUE_MINUTES * MINUTE;
+}
+export const AI_SESSION_MS = AI_SESSION_MINUTES * MINUTE;
+
+/** The smallest pack that lets this balance pay for one more session (null when it already can). */
+export function packToContinue(balance: number): Pack | null {
+  const short = AI_SESSION_CREDITS - balance;
+  if (short <= 0) return null;
+  return PACKS.find((p) => p.credits >= short) ?? PACKS[PACKS.length - 1];
+}
+
+/** Whole minutes left on a session, rounded up (0 once it is over). */
+export const aiMinutesLeft = (paidUntil: number | null, now: number): number =>
+  paidUntil === null ? 0 : Math.max(0, Math.ceil((paidUntil - now) / MINUTE));
 
 export const minuteOf = (t: number): number => Math.floor(t / MINUTE) * MINUTE;
 export const AI_PASS_MS = AI_PASS_HOURS * HOUR;

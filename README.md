@@ -63,19 +63,22 @@ With no keys set, the app runs on ten made-up people who answer by themselves. A
     terms**, agree, and pass the 5-question quiz (all five right; a miss shows what to read again,
     D107). Then tick 18+ and the rules, add a Discord username (or Telegram, or Signal) and pick boundaries; the mock account needs a
     phone or an email first (**Me**, sign-in, code `123456`). On the card (or a plan) of Aanya, Kabir, Ira,
-    Zoya or Rhea (who have it on in the mock) you see their boundaries and **Yes, move our
-    chat**; say yes, then unlock the match with credits (600, or 300 each; D105) and their username
-    shows. Then **Set up a call**: pick a length and some times (the mock's person takes your first
-    one), and the in-app timer runs while the call is on (D106).
+    Zoya or Rhea (who have it on in the mock) you see their boundaries and **Yes, I'd like a
+    call**; say yes, then unlock the match with credits (600, or 300 each; D105). Then **Set up a
+    call**: pick a length and some times (the mock's person takes your first one). From five minutes
+    before the start, **Join the call** opens an in-app voice call, audio only (D111; the mock's room
+    is silent). After a call that counted, **Share my usernames** shows theirs (the mock's person
+    always shares back).
     **Turn off** wipes it.
 12. **Wallet** (D104): in **Me**, tap the gold **Wallet** card. The mock is Razorpay's test mode on the
     web: tap a pack and the credits arrive at once. Spend them on a boost or an extra open ask; open a
     locked plan to **Stake 50 credits** or to treat the other person to a coffee (the mock pretends
     there is a partner café). Rewards: keep a plan, rate it, open the app 7 days in a row. Live,
     top-ups stay off until the Razorpay keys are secrets (`OPERATIONS.md`, "Wallet").
-13. **Talk to someone** (D108): in **Me**, tap **Talk to someone**. Chat with the **AI companion**
-    (always labelled AI; the mock answers from a few kind lines, and "I want to die" or similar shows
-    the help lines and makes the chat free). **Talk to a real person**: say who you are and whom you
+13. **Talk to someone** (D108): in **Me**, tap **Talk to someone**. Chat with **Saathi**, the AI companion
+    (always labelled AI, D112; pick the Warm or Flirty tone, D113; the mock answers from a few kind lines, and "I want to die" or similar shows
+    the help lines and makes the chat free). Saathi costs 60 credits for up to 15 minutes, and 60 more to
+    continue near the end (D114). **Talk to a real person**: say who you are and whom you
     would like to talk to, pick a length (or your free first call, D109: tap **Pretend a friend
     joined** to unlock it) and call a listener. The mock listener picks up and the timer runs; there
     is no sound in the mock. **Become a listener**: apply, fill in the KYC form (any valid-looking

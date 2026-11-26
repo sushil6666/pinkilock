@@ -1,6 +1,9 @@
 /**
- * Spicy call times (D106): once a Spicy match is unlocked, the two people set up one call in
- * Discord, Telegram or Signal, and Pinkilock checks that it happened.
+ * Spicy call times (D106): once a Spicy match is unlocked, the two people set up one call, and
+ * Pinkilock checks that it happened. Since D111 (Sushil, 2026-11-26) the call itself happens in
+ * Pinkilock, audio only: no camera, no video, nothing recorded. The minutes come from the voice
+ * room (LiveKit tells the server who was connected when); the app's check-ins count only when
+ * nobody ever reached the room.
  *
  *   * Each person picks up to eight times that suit them (on the hour or half hour, from an hour to
  *     a week ahead) and a minimum length: 5, 10, 15 or 30 minutes. The first time both picked is the
@@ -87,6 +90,10 @@ export interface SpicyCall {
   meHere: boolean;
   theyHere: boolean;
   myEnded: boolean;
+  /** D111: a voice room was opened for this call, and who is connected to it right now. */
+  voice: boolean;
+  meOnCall: boolean;
+  theyOnCall: boolean;
   /** Can I move it for free right now. */
   canMoveFree: boolean;
   /** The confirm fallback. */
@@ -106,7 +113,7 @@ export interface SpicyCall {
 
 export const noCall: SpicyCall = {
   id: null, status: 'none', mySlots: [], theirSlots: [], myMinutes: null, theirMinutes: null, noOverlap: false, startsAt: null, minutes: null,
-  together: 0, myStarted: false, theirStarted: false, meHere: false, theyHere: false, myEnded: false, canMoveFree: false, myAnswer: null,
+  together: 0, myStarted: false, theirStarted: false, meHere: false, theyHere: false, myEnded: false, voice: false, meOnCall: false, theyOnCall: false, canMoveFree: false, myAnswer: null,
   answerUntil: null, outcome: null, fault: null, refunded: 0, stoppedByMe: false, callsLeft: MAX_CALLS,
 };
 
@@ -248,3 +255,6 @@ export const ANSWER_CASES: readonly [CallAnswer | null, CallAnswer | null, boole
 ];
 
 export const BEAT_MS = BEAT_SECONDS * 1000;
+
+/** The stand-in voice room the mock answers (D111): src/lib/voice.ts plays it as silence. */
+export const MOCK_VOICE_URL = 'mock://voice';

@@ -208,10 +208,10 @@ select t.ok(not has_table_privilege('pinkilock_analytics', 'private.spicy_calls'
 select t.ok((select jobname from cron.job where command like '%call_sweep%') = 'pinkilock-calls', 'the sweep runs on a schedule');
 set role authenticated;
 select t.as_user(:'d');
-select t.ok((select export_my_data() ->> 'format') = 'pinkilock-export-11'
+select t.ok((select export_my_data() ->> 'format') = 'pinkilock-export-12'
   and (select jsonb_array_length(export_my_data() -> 'spicy' -> 'calls')) = 3
   and (select count(*) from jsonb_array_elements(export_my_data() -> 'spicy' -> 'calls') x where (x ->> 'counted_against_me')::boolean) = 2,
-  'the data download (format 11) has my calls and which counted against me');
+  'the data download (format 12) has my calls and which counted against me');
 
 -- Turning Spicy off stops an open call.
 select t.as_user(:'g');

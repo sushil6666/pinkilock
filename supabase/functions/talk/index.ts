@@ -5,7 +5,7 @@
  *   POST {action: 'ai', chat, history, text}      signed in: one message to the AI companion.
  *                                                 talk_ai_turn checks and charges first (and runs the
  *                                                 self-harm check); then Claude answers. Nothing of
- *                                                 the chat is stored or logged. {chat, reply, harm, charged}
+ *                                                 the chat is stored or logged. {chat, reply, harm, charged, paid_until}
  *   POST {action: 'voice', call}                  signed in, on a live call: a LiveKit token for the
  *                                                 call's room, microphone only, never recorded. {url, token}
  *   POST {action: 'kyc', pan, account, ifsc, holder, street, city, state, pin}
@@ -29,16 +29,14 @@
  * Logs carry ids, actions, results and traces: never a message, a reply, a PAN or a bank detail.
  */
 import Anthropic from 'npm:@anthropic-ai/sdk@1.9.0';
-import { HARM_NOTE, SYSTEM, toMessages, type Turn } from './companion.ts';
+import { systemFor, toMessages, type Turn } from './companion.ts';
+import { LK_URL, VOICE_ON, livekitToken } from '../_shared/livekit.ts';
 
 const BASE = (Deno.env.get('SUPABASE_URL') ?? '').replace(/\/$/, '');
 const SERVICE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
 const HOOK_SECRET = Deno.env.get('PUSH_HOOK_SECRET') ?? '';
 const AI_KEY = Deno.env.get('ANTHROPIC_API_KEY') ?? '';
-const MODEL = Deno.env.get('TALK_MODEL') ?? 'claude-opus-5-5';
-const LK_URL = Deno.env.get('LIVEKIT_URL') ?? '';
-const LK_KEY = Deno.env.get('LIVEKIT_API_KEY') ?? '';
-const LK_SECRET = Deno.env.get('LIVEKIT_API_SECRET') ?? '';
+const MODEL = Deno.env.get('TALK_MODEL') ?? 'claude-haiku-5-5';
 const RZP_ID = Deno.env.get('RAZORPAY_KEY_ID') ?? '';
 const RZP_SECRET = Deno.env.get('RAZORPAY_KEY_SECRET') ?? '';
 const ROUTE = (Deno.env.get('TALK_ROUTE') ?? '') === 'on' && !!RZP_ID && !!RZP_SECRET;
@@ -82,7 +80,7 @@ const HELP = '[[HELP]]';
 /** When the whole fallback chain declines, or the model fails: a kind reply that points somewhere real. */
 const SAFE_REPLY = "I'm an AI, and I couldn't answer that one well. If things feel heavy, Tele-MANAS (14416) is free and open all day and night, and a real listener is one tap away.";
 
-async function companion(history: Turn[], text: string, harm: boolean): Promise<{ reply: string; flagged: boolean }> {
+async function companion(history: Turn[], text: string, harm: boolean, tone: 'warm' | 'flirty'): Promise<{ reply: string; flagged: boolean }> {
   const response = await claude!.beta.messages.create({
     model: MODEL,
     max_tokens: 2048,
@@ -90,7 +88,8 @@ async function companion(history: Turn[], text: string, harm: boolean): Promise<
     output_config: { effort: 'low' },
     betas: ['server-side-fallback-2026-07-01'],
     fallbacks: 'default',
-    system: [{ type: 'text', text: SYSTEM, cache_control: { type: 'ephemeral' } }, ...(harm ? [{ type: 'text' as const, text: HARM_NOTE }] : [])],
+    // The fixed rules are cached; the tone (D113) and the help note follow them.
+    system: systemFor(tone, harm).map((text, i) => (i === 0 ? { type: 'text' as const, text, cache_control: { type: 'ephemeral' as const } } : { type: 'text' as const, text })),
     messages: toMessages(history, text),
   });
   if (response.stop_reason === 'refusal') return { reply: SAFE_REPLY, flagged: false };
@@ -100,21 +99,7 @@ async function companion(history: Turn[], text: string, harm: boolean): Promise<
   return { reply: out.replaceAll(HELP, '').trim() || SAFE_REPLY, flagged };
 }
 
-// --- LiveKit: an access token is a JWT signed with the API secret ------------------------------
-const b64url = (bytes: Uint8Array) => btoa(String.fromCharCode(...bytes)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
-const enc = (o: unknown) => b64url(new TextEncoder().encode(JSON.stringify(o)));
-async function livekitToken(room: string, identity: string, name: string, minutes: number): Promise<string> {
-  const now = Math.floor(Date.now() / 1000);
-  const head = enc({ alg: 'HS256', typ: 'JWT' });
-  const body = enc({
-    iss: LK_KEY, sub: identity, name, nbf: now - 10, exp: now + (minutes + 10) * 60,
-    // Voice only: the microphone, nothing else, and no data channel. Nothing starts a recording.
-    video: { room, roomJoin: true, canPublish: true, canSubscribe: true, canPublishData: false, canPublishSources: ['microphone'] },
-  });
-  const key = await crypto.subtle.importKey('raw', new TextEncoder().encode(LK_SECRET), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
-  const sig = new Uint8Array(await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(`${head}.${body}`)));
-  return `${head}.${body}.${b64url(sig)}`;
-}
+// --- LiveKit: the token comes from ../_shared/livekit.ts (shared with Spicy calls in `voice`).
 
 // --- Razorpay Route ----------------------------------------------------------------------------
 const rzpAuth = () => `Basic ${btoa(`${RZP_ID}:${RZP_SECRET}`)}`;
@@ -195,7 +180,7 @@ Deno.serve(async (req) => {
   if (req.method !== 'POST') return refuse('PC002', 405);
   const trace = (req.headers.get('x-trace-id') ?? '').replace(/[^0-9A-Z]/g, '').slice(0, 8) || 'none';
   const body = (await req.json().catch(() => ({}))) as { action?: string; chat?: string | null; history?: Turn[]; text?: string; call?: string } & Kyc;
-  if (body.action === 'status') return json({ ai: !!claude, voice: !!(LK_URL && LK_KEY && LK_SECRET), payouts: ROUTE });
+  if (body.action === 'status') return json({ ai: !!claude, voice: VOICE_ON, payouts: ROUTE });
 
   const bearer = (req.headers.get('Authorization') ?? '').replace(/^Bearer /, '');
   if (body.action === 'payouts') {
@@ -211,13 +196,15 @@ Deno.serve(async (req) => {
     if (!claude) return refuse('PL161');
     const text = typeof body.text === 'string' ? body.text : '';
     const chat = typeof body.chat === 'string' && /^[0-9a-f-]{36}$/.test(body.chat) ? body.chat : null;
-    const turn = await rpc<{ chat: string; harm: boolean; charged: number }>('talk_ai_turn', { p_user: user.id, p_chat: chat, p_text: text }, trace);
+    const turn = await rpc<{ chat: string; harm: boolean; charged: number; paid_until: string | null }>('talk_ai_turn', { p_user: user.id, p_chat: chat, p_text: text }, trace);
     if (turn.error || !turn.data) return fromDb(turn.error ?? {});
     const history = Array.isArray(body.history) ? body.history.slice(-16) : [];
     let reply = SAFE_REPLY;
     let harm = turn.data.harm;
     try {
-      const out = await companion(history, text, harm);
+      // Flirty only when the person picked it and the chat has never mentioned self-harm (D113).
+      const tone = !harm && body.tone === 'flirty' ? 'flirty' : 'warm';
+      const out = await companion(history, text, harm, tone);
       reply = out.reply;
       if (out.flagged && !harm) {
         harm = true;
@@ -227,11 +214,11 @@ Deno.serve(async (req) => {
       console.log(JSON.stringify({ event: 'talk.ai', user: user.id, result: 'model_failed', error: e instanceof Error ? e.name : 'error', trace }));
     }
     console.log(JSON.stringify({ event: 'talk.ai', user: user.id, chat: turn.data.chat, harm, charged: turn.data.charged, trace }));
-    return json({ chat: turn.data.chat, reply, harm, charged: turn.data.charged });
+    return json({ chat: turn.data.chat, reply, harm, charged: turn.data.charged, paid_until: turn.data.paid_until });
   }
 
   if (body.action === 'voice') {
-    if (!(LK_URL && LK_KEY && LK_SECRET)) return refuse('PL173');
+    if (!VOICE_ON) return refuse('PL173');
     const room = await rpc<{ room: string; identity: string; name: string; minutes: number }>('talk_voice_room', { p_user: user.id, p_call: body.call ?? null }, trace);
     if (room.error || !room.data) return fromDb(room.error ?? {});
     const token = await livekitToken(room.data.room, room.data.identity, room.data.name, room.data.minutes);

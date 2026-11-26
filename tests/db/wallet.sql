@@ -249,9 +249,9 @@ select t.ok((select jsonb_array_length(my_wallet() -> 'treats')) = 0, 'after a b
 
 -- The data download carries the wallet, and the worker cannot read it.
 select t.as_user(:'w');
-select t.ok((select export_my_data() ->> 'format') = 'pinkilock-export-11'
+select t.ok((select export_my_data() ->> 'format') = 'pinkilock-export-12'
   and (select jsonb_array_length(export_my_data() -> 'wallet' -> 'orders')) = 3
-  and (select (export_my_data() -> 'wallet' ->> 'paid')::int) = 695, 'the data download (format 11) has the wallet and its orders');
+  and (select (export_my_data() -> 'wallet' ->> 'paid')::int) = 695, 'the data download (format 12) has the wallet and its orders');
 reset role;
 select t.ok(not has_table_privilege('pinkilock_analytics', 'private.wallets', 'select') and not has_table_privilege('pinkilock_analytics', 'private.wallet_ledger', 'select')
   and not has_table_privilege('pinkilock_analytics', 'private.wallet_orders', 'select'), 'the analytics worker cannot read the wallet');
@@ -293,10 +293,10 @@ select spicy_pay(:'z', 'half');
 select t.ok((select spicy_with(:'z') ->> 'discord') is null, 'half paid again, still waiting on Z');
 -- Tired of waiting, Y pays the other 300 too (Sushil, 2026-11-25).
 select spicy_pay(:'z', 'full');
-select t.ok((select spicy_with(:'z') ->> 'discord') = 'zoya.r' and (select spicy_with(:'z') -> 'unlock' ->> 'done')::boolean
-  and (select my_wallet() ->> 'paid')::int = 400, 'the one who paid half can pay the other half; then the usernames show');
+select t.ok((select spicy_with(:'z') -> 'unlock' ->> 'done')::boolean and (select spicy_with(:'z') ->> 'discord') is null
+  and (select my_wallet() ->> 'paid')::int = 400, 'the one who paid half can pay the other half; then it is unlocked (usernames wait for a kept call, D111)');
 select t.as_user(:'z');
-select t.ok((select spicy_with(:'y') ->> 'discord') = 'yash.k' and (select my_wallet() ->> 'paid')::int = 250, 'for both, and Z paid nothing and got nothing');
+select t.ok((select spicy_with(:'y') -> 'unlock' ->> 'done')::boolean and (select my_wallet() ->> 'paid')::int = 250, 'for both, and Z paid nothing and got nothing');
 select t.ok(t.sqlstate(format($$select spicy_pay(%L, 'full')$$, :'y')) = 'PL145', 'nothing more to pay once unlocked (PL145)');
 select t.ok(t.fails('select * from private.spicy_unlocks'), 'no client can read the unlocks');
 select spicy_off();
