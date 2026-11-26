@@ -171,9 +171,10 @@ select t.ok(not exists (select 1 from public.events where actor_id in (:'e', :'f
 set role authenticated;
 
 -- Moving inside the last hour counts as a miss: F's. E paid it all, so E gets the 600 back.
-select spicy_call_pick(:'e', array[(select s3 from at_slot)], 10);
+select spicy_call_pick(:'e', array[(select s3 from at_slot)], 5);
 select t.as_user(:'e');
 select spicy_call_pick(:'f', array[(select s3 from at_slot)], 10);
+select t.ok((select (spicy_call(:'f') ->> 'minutes')::int) = 5, 'five minutes is the shortest length on offer (Sushil, 2026-11-26)');
 reset role;
 update private.spicy_calls set starts_at = now() + interval '30 minutes' where a = :'e' and b = :'f' and status = 'set';
 set role authenticated;

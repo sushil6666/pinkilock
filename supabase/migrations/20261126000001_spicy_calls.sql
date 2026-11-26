@@ -4,7 +4,7 @@
 -- tests/db/call_cases.sql runs the shared tables through both.
 --
 --   * Each picks 1 to 8 times (on the hour or half hour, an hour to a week ahead) and a minimum
---     length of 10, 15 or 30 minutes. The first time both picked is the call; the shorter length
+--     length of 5, 10, 15 or 30 minutes. The first time both picked is the call; the shorter length
 --     is the minimum.
 --   * The timer: while the call runs, the open app checks in (spicy_call_beat) every 20 seconds.
 --     One row per person per minute. A minute counts when both have a row for it. We never hear,
@@ -28,10 +28,10 @@ create table private.spicy_calls (
   status text not null default 'picking' check (status in ('picking', 'set', 'asking', 'done')),
   slots_a timestamptz[] not null default '{}',
   slots_b timestamptz[] not null default '{}',
-  minutes_a int check (minutes_a in (10, 15, 30)),
-  minutes_b int check (minutes_b in (10, 15, 30)),
+  minutes_a int check (minutes_a in (5, 10, 15, 30)),
+  minutes_b int check (minutes_b in (5, 10, 15, 30)),
   starts_at timestamptz,
-  minutes int check (minutes in (10, 15, 30)),
+  minutes int check (minutes in (5, 10, 15, 30)),
   moves_a int not null default 0,
   moves_b int not null default 0,
   started_a timestamptz,
@@ -292,8 +292,8 @@ begin
   if c.status <> 'picking' then
     raise exception using errcode = 'PL150', message = 'There is no call to do that on right now.';
   end if;
-  if p_minutes is null or not (p_minutes = any (array[10, 15, 30])) then
-    raise exception using errcode = 'PL147', message = 'Pick a call length: 10, 15 or 30 minutes.';
+  if p_minutes is null or not (p_minutes = any (array[5, 10, 15, 30])) then
+    raise exception using errcode = 'PL147', message = 'Pick a call length: 5, 10, 15 or 30 minutes.';
   end if;
   v_slots := array(select distinct t from unnest(coalesce(p_slots, '{}')) t order by t);
   if cardinality(v_slots) = 0 or cardinality(v_slots) > 8 then

@@ -533,7 +533,7 @@ account) and one on `blocks` give back what was paid while it is not yet unlocke
 **Call times (D106).** On an unlocked match the two set up a call in Discord, Telegram or Signal,
 and Pinkilock checks that it happened. `private.spicy_calls` (one open call per pair, three per
 match) holds each person's times (1 to 8, on the half hour, an hour to a week ahead) and minimum
-(10, 15 or 30; the shorter applies). `spicy_call_pick` sets the call at the first time both picked.
+(5, 10, 15 or 30; the shorter applies). `spicy_call_pick` sets the call at the first time both picked.
 The **in-app call timer**: while the call's hour is open and the app is in front, the app calls
 `spicy_call_beat` every 20 seconds, which writes one row per person per minute to
 `private.spicy_call_minutes`; a minute counts when both have a row for it. Nothing of the call

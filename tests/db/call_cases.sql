@@ -4,6 +4,8 @@ insert into call_cases (minutes, together, mins_a, mins_b, last_a, last_b, outco
   (15, 15, 15, 15, 16, 16, 'talked', null),
   (15, 20, 22, 21, 30, 29, 'talked', null),
   (10, 10, 12, 10, 12, 10, 'talked', null),
+  (5, 5, 5, 6, 5, 6, 'talked', null),
+  (5, 3, 3, 9, 3, 9, 'dropped', 'a'),
   (30, 29, 30, 30, 32, 31, 'unclear', null),
   (15, 0, 0, 0, null, null, 'both_missed', 'both'),
   (15, 0, 0, 12, null, 14, 'no_show', 'a'),

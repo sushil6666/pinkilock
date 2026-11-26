@@ -3,7 +3,7 @@
  * Discord, Telegram or Signal, and Pinkilock checks that it happened.
  *
  *   * Each person picks up to eight times that suit them (on the hour or half hour, from an hour to
- *     a week ahead) and a minimum length: 10, 15 or 30 minutes. The first time both picked is the
+ *     a week ahead) and a minimum length: 5, 10, 15 or 30 minutes. The first time both picked is the
  *     call, and the shorter of the two lengths is the minimum. Both see it before the call.
  *   * The in-app call timer (Sushil, 2026-11-26): during the call both keep Pinkilock open and tap
  *     Start. While it is open and in front, the app checks in with the server every 20 seconds. A
@@ -33,7 +33,7 @@ const HOUR = 60 * MINUTE;
 const DAY = 24 * HOUR;
 
 /** The minimum lengths on offer. The shorter of the two picks applies. */
-export const CALL_MINUTES = [10, 15, 30] as const;
+export const CALL_MINUTES = [5, 10, 15, 30] as const;
 export type CallMinutes = (typeof CALL_MINUTES)[number];
 /** Times start on the hour or half hour. */
 export const SLOT_MINUTES = 30;
@@ -212,6 +212,8 @@ export const CALL_CASES: readonly [number, number, number, number, number | null
   [15, 15, 15, 15, 16, 16, 'talked', null],
   [15, 20, 22, 21, 30, 29, 'talked', null],
   [10, 10, 12, 10, 12, 10, 'talked', null],
+  [5, 5, 5, 6, 5, 6, 'talked', null],
+  [5, 3, 3, 9, 3, 9, 'dropped', 'a'],
   [30, 29, 30, 30, 32, 31, 'unclear', null],
   [15, 0, 0, 0, null, null, 'both_missed', 'both'],
   [15, 0, 0, 12, null, 14, 'no_show', 'a'],

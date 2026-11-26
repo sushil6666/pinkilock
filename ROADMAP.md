@@ -117,7 +117,7 @@ someone, and delete their account, on both platforms, against the production pro
   place), and rewards for kept plans, verified profiles, ratings, vouches and streaks. Never cash.
   Waiting on Razorpay keys, Play Billing for the apps (O15) and a legal and tax view (O16).
 - [x] **Spicy call times** (D106): on an unlocked match, both pick times and a minimum call length
-  (10, 15 or 30 minutes; the shorter applies), and the first time both picked is the call. The
+  (5, 10, 15 or 30 minutes; the shorter applies), and the first time both picked is the call. The
   in-app call timer counts a minute only while both apps are open; a no-show or an early drop costs
   the person who missed it a Trust Score drop and their part of the unlock, and the one who showed
   gets their own part back. "I felt unsafe or uncomfortable" ends a call at any time with no blame.
