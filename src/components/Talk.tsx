@@ -13,6 +13,7 @@ import { haptic } from '../lib/haptics';
 import { quiet } from '../lib/log';
 import { shown } from '../lib/report';
 import { askForReview } from '../lib/review';
+import { joinVoice, type VoiceCall } from '../lib/voice';
 import { backend } from '../services';
 import { color, radius, space } from '../theme/tokens';
 import { fmtNumber, fmtTime, t } from '../i18n';
@@ -125,16 +126,38 @@ export function CallPanel({ talk, busy, error, run, route }: {
   const [reporting, setReporting] = useState(false);
   const [reason, setReason] = useState<TalkReportReason | null>(null);
   const [voice, setVoice] = useState<'off' | 'on' | null>(null);
+  const [muted, setMuted] = useState(false);
+  const room = useRef<VoiceCall | null>(null);
   const asked = useRef<string | null>(null);
   const id = call?.id;
   const live = call?.status === 'live';
+  // The sound (D111's src/lib/voice.ts): joined while the call is live, left when it is not.
   useEffect(() => {
     if (!live || !id) return;
-    backend.talkVoice(id).then((v) => setVoice(v ? 'on' : 'off'), (e) => {
+    let gone = false;
+    backend.talkVoice(id).then(async (v) => {
+      if (!v || gone) return setVoice(v ? null : 'off');
+      const joined = await joinVoice(v, { onState: (s) => s === 'ended' && setVoice(null) });
+      if (gone) return joined.leave();
+      room.current = joined;
+      setVoice('on');
+    }).catch((e) => {
       quiet('talk.voice')(e);
       setVoice('off');
     });
+    return () => {
+      gone = true;
+      const r = room.current;
+      room.current = null;
+      setMuted(false);
+      if (r) r.leave().catch(quiet('talk.voice.leave'));
+    };
   }, [live, id]);
+  const mute = () => {
+    const r = room.current;
+    if (!r) return;
+    r.mute(!muted).then(() => setMuted(!muted), quiet('talk.voice.mute'));
+  };
   useEffect(() => {
     if (call?.status === 'done' && call.end === 'talked' && !call.listening && call.together >= GOOD_CALL_MINUTES && asked.current !== call.id) {
       asked.current = call.id;
@@ -198,6 +221,7 @@ export function CallPanel({ talk, busy, error, run, route }: {
       <T v="caption" c={color.textDim}>{t('talk.ofLength', { n: call.length })}</T>
       <T v="caption" c={color.textDim}>{t('talk.liveBody')}</T>
       {voice === 'off' ? <T v="caption" c={color.textMute}>{t('talk.voiceStub')}</T> : null}
+      {voice === 'on' ? <Chip label={t(muted ? 'calls.unmute' : 'calls.mute')} selected={muted} onPress={mute} /> : null}
       <Button kind="danger" icon="phone-off" label={t('talk.hangUp')} busy={busy === 'end'} onPress={() => run('end', () => backend.talkEnd(call.id))} />
       <View style={styles.row}>
         <Chip label={t('talk.report')} onPress={() => setReporting(true)} />

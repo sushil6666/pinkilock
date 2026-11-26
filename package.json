@@ -1,6 +1,6 @@
 {
   "name": "pinkilock",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "private": true,
   "main": "expo-router/entry",
   "scripts": {
@@ -38,6 +38,9 @@
     "@expo-google-fonts/noto-sans-telugu": "^0.4.2",
     "@expo/metro-runtime": "~58.0.17",
     "@expo/vector-icons": "^15.0.2",
+    "@livekit/react-native": "^3.2.0",
+    "@livekit/react-native-expo-plugin": "^1.2.0",
+    "@livekit/react-native-webrtc": "^150.2.0",
     "@react-native-async-storage/async-storage": "2.2.0",
     "@supabase/supabase-js": "^2.119.0",
     "aes-js": "^3.1.2",
@@ -68,6 +71,7 @@
     "expo-store-review": "~58.0.3",
     "expo-system-ui": "~58.0.7",
     "expo-updates": "~58.0.22",
+    "livekit-client": "^2.25.0",
     "react": "19.3.0",
     "react-dom": "19.3.0",
     "react-native": "0.88.1",

@@ -232,9 +232,9 @@ select t.ok(t.sqlstate(format('select talk_voice_room(%L, %L)', :'r', (select id
 -- The data download, and deleting an account.
 set role authenticated;
 select t.as_user(:'a');
-select t.ok((export_my_data() ->> 'format') = 'pinkilock-export-11' and jsonb_array_length(export_my_data() -> 'talk' -> 'calls') >= 2
+select t.ok((export_my_data() ->> 'format') = 'pinkilock-export-12' and jsonb_array_length(export_my_data() -> 'talk' -> 'calls') >= 2
   and jsonb_array_length(export_my_data() -> 'talk' -> 'ai_chats') = 1 and jsonb_array_length(export_my_data() -> 'talk' -> 'reports_made') = 1
-  and (export_my_data() -> 'wallet' ->> 'paid') is not null, 'the download (format 11) has Talk mode, and everything before it');
+  and (export_my_data() -> 'wallet' ->> 'paid') is not null, 'the download (format 12) has Talk mode, and everything before it');
 select t.as_user(:'l');
 select t.ok((export_my_data() -> 'talk' -> 'listener' ->> 'first_name') = 'Lata' and jsonb_array_length(export_my_data() -> 'talk' -> 'listener' -> 'payouts') = 2,
   'a listener''s download has her payouts');

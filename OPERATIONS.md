@@ -157,6 +157,15 @@ the certificate is present).
 
 ### The app on the phone
 
+Version 0.4.0 adds in-app voice calls (D111, and Talk mode, D108): `@livekit/react-native` with its
+WebRTC module and Expo plugin, the microphone permission (`RECORD_AUDIO`; on iOS the microphone line
+and background audio so a call keeps going with the screen off), and `expo-store-review`. A new
+binary: no over-the-air update reaches 0.3.x builds, and a 0.3.x build says calls need the new
+version. The camera is never used for a call; the voice token cannot publish video at all.
+Note: `expo-image-picker`'s `cameraPermission: false` blocks `android.permission.CAMERA` for the whole
+app (it shows as `tools:node="remove"` in `npx expo config --type introspect`), which also takes it
+from `expo-camera`'s face photo on Android. This predates D111 and is not changed here.
+
 Version 0.3.0 is the Expo SDK 58 upgrade (React Native 0.88, D094): a new binary, and no
 over-the-air update reaches 0.2.0 builds, whose native side is SDK 52. Android draws the app edge to
 edge; the `expo-navigation-bar` plugin in `app.json` keeps the bar's buttons light with no scrim.
@@ -596,6 +605,19 @@ starts_at from private.spicy_calls where outcome in ('disputed', 'unsettled') or
 The timer rows are `private.spicy_call_minutes` (minutes only, nothing of the call). A missed call
 shows on the Trust Score as `call_missed` events once the analytics worker has run.
 
+**The voice call (D111).** Spicy calls use the same LiveKit project and secrets as Talk mode (below):
+`LIVEKIT_URL`, `LIVEKIT_API_KEY`, `LIVEKIT_API_SECRET`. Without them, **Join the call** says in-app
+calls are not switched on yet (PL179). Two more steps in LiveKit Cloud:
+
+1. **Settings, Webhooks, Add**: URL `https://<project ref>.supabase.co/functions/v1/voice`, signed
+   with the same API key. This is the one webhook for the project (Spicy and Talk rooms both). Without
+   it, calls still work but their minutes fall back to the app's check-ins.
+2. Keep recording (egress) and ingress off. Nothing in Pinkilock starts one.
+
+A phone build made before this change has no voice module: build a new APK (EAS) after merging.
+To see a call's sessions in the SQL editor: `select user_id, joined_at, left_at from
+private.spicy_call_voice where call_id = '<id>' order by joined_at`.
+
 ### Wallet
 
 Credits (D104) are a closed loop: nothing in the app or the database can pay a person, and
@@ -647,7 +669,8 @@ public: never paste a key in a chat, an issue or a file.
    the variable `TALK_MODEL` picks a cheaper model. It is charged in credits (3 a minute or 49 a day).
 2. **Voice calls**: make a project at [cloud.livekit.io](https://cloud.livekit.io) (Mumbai region),
    **Settings, Keys, Create key**, and add the secrets `LIVEKIT_URL` (the `wss://` address),
-   `LIVEKIT_API_KEY` and `LIVEKIT_API_SECRET`. Turn off recording (egress) in the project.
+   `LIVEKIT_API_KEY` and `LIVEKIT_API_SECRET`. Turn off recording (egress) in the project. Spicy calls
+   use the same keys, and need the webhook from "Spicy call times" above (D111).
 3. **Listener sign-up and payouts** use Razorpay Route on the same Razorpay account as the wallet:
    ask Razorpay to activate **Route** (Dashboard, Route), then add the secret `TALK_ROUTE` = `on`.
    Optional variables `TALK_ROUTE_CATEGORY` and `TALK_ROUTE_SUBCATEGORY` set the business type sent

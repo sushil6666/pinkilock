@@ -197,6 +197,10 @@ jobs:
           echo "- Wallet top-ups: $mode${WEBHOOK_SECRET:+, webhook on}" >> "$GITHUB_STEP_SUMMARY"
       - name: Deploy the talk function
         run: npx supabase functions deploy talk --use-api --no-verify-jwt
+      - name: Deploy the voice function (Spicy calls in the app, and the LiveKit webhook)
+        # D111. Uses the same LIVEKIT_* secrets as Talk mode (set in the next step). Without them,
+        # Spicy calls say in-app calls are not switched on yet (PL179).
+        run: npx supabase functions deploy voice --use-api --no-verify-jwt
       - name: Talk mode switches (voice, listener payouts), once the keys exist
         # D108. The AI companion uses ANTHROPIC_API_KEY (set by the line review step below). Voice
         # calls need LiveKit; listener sign-up and payouts need Razorpay Route turned on for the

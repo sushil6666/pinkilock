@@ -23,7 +23,7 @@ import { ALL_CONSENTS, CITIES, openCities } from '../../domain/countries';
 const cityCountry = (city: string) => CITIES.find((c) => c.name === city)?.country ?? 'IN';
 import { FREE_WINDOWS } from '../../domain/freeWindows';
 import { DAY } from '../../domain/invites';
-import {
+import { MOCK_VOICE_URL,
   ANSWER_HOURS, CALL_WINDOW_MINUTES, MAX_CALLS, answerVerdict, callVerdict, canMoveFree, checkPicks, firstOverlap, noCall, timerOpen, togetherMinutes,
   type CallAnswer, type CallMinutes, type CallOutcome, type SpicyCall,
 } from '../../domain/calls';
@@ -75,6 +75,8 @@ interface Db {
   spicyYes?: string[];
   /** Spicy terms (D107): when I passed the quiz, by terms version. */
   spicyPassed?: Record<number, number>;
+  /** D111: whom I chose to share my usernames with, after a kept call. The made-up people always share back. */
+  spicyShares?: string[];
   /** The wallet (D104), as the server's tables hold it. */
   wallet?: MockWallet;
   /** Spicy call times (D106), by the other person, oldest first. */
@@ -108,6 +110,9 @@ interface MockCall {
   refunded: number;
   stoppedByMe: boolean;
   at: number;
+  /** D111: a voice room was opened, and who is on it (the made-up person joins when I do). */
+  voice?: boolean;
+  myOn?: boolean;
 }
 
 interface MockWallet {
@@ -413,7 +418,11 @@ export function createMockBackend(options: { captcha?: () => Promise<string | un
     const w = walletOf(d);
     const done = myYes && w.spicyDone.includes(them);
     const unlock = { mine: w.spicyPaid[them] ?? 0, theirs: 0, done: w.spicyDone.includes(them) };
-    return { open: true, myYes, mutual: myYes, theirBoundaries: theirs.boundaries, unlock, discord: done ? theirs.discord : null, telegram: done ? theirs.telegram : null, signal: done ? theirs.signal : null };
+    // D111: the usernames wait for a kept call and for both to share (the made-up person always does).
+    const keptCall = done && (d.spicyCalls?.[them] ?? []).some((c) => c.outcome === 'talked');
+    const myShare = !!d.spicyShares?.includes(them);
+    const shown = keptCall && myShare;
+    return { open: true, myYes, mutual: myYes, theirBoundaries: theirs.boundaries, unlock, keptCall, myShare, discord: shown ? theirs.discord : null, telegram: shown ? theirs.telegram : null, signal: shown ? theirs.signal : null };
   }
 
 
@@ -551,7 +560,8 @@ export function createMockBackend(options: { captcha?: () => Promise<string | un
       id: c.id, status: c.status, mySlots: c.mySlots, theirSlots: c.theirSlots, myMinutes: c.myMinutes, theirMinutes: c.theirMinutes,
       noOverlap: c.status === 'picking' && c.mySlots.length > 0 && c.theirSlots.length > 0, startsAt: c.startsAt, minutes: c.minutes,
       together: togetherMinutes(c.myMins, c.theirMins), myStarted: c.myMins.length > 0, theirStarted: c.theirMins.length > 0,
-      meHere: here(c.myBeat), theyHere: here(c.theirBeat), myEnded: c.ended,
+      meHere: c.voice ? !!c.myOn : here(c.myBeat), theyHere: c.voice ? !!c.myOn : here(c.theirBeat), myEnded: c.ended,
+      voice: !!c.voice, meOnCall: !!c.myOn, theyOnCall: !!c.myOn,
       canMoveFree: c.status === 'set' && c.startsAt !== null && canMoveFree(c.moves, c.startsAt, now), myAnswer: c.myAnswer,
       answerUntil: c.askedAt !== null ? c.askedAt + ANSWER_HOURS * 3_600_000 : null, outcome: c.outcome, fault: c.fault, refunded: c.refunded,
       stoppedByMe: c.stoppedByMe, callsLeft: Math.max(MAX_CALLS - list.length, 0),
@@ -573,6 +583,7 @@ export function createMockBackend(options: { captcha?: () => Promise<string | un
   function callStop(d: Db, them: string) {
     const c = openCall(d, them);
     if (c) callSettle(d, them, c, 'stopped', null);
+    if (d.spicyShares) d.spicyShares = d.spicyShares.filter((id) => id !== them);
   }
   // --- Talk mode (D108), as in supabase/migrations/20261126000003_talk.sql: see mockTalk.ts. ---
   let talkDb: Db | null = null;
@@ -872,6 +883,7 @@ export function createMockBackend(options: { captcha?: () => Promise<string | un
     spicyCallEnd: (profileId, unsafe) =>
       callChange(profileId, (d, c, now) => {
         if (!c) fail('PL150');
+        c.myOn = false;
         if (unsafe) return callSettle(d, profileId, c, 'unsafe', null, true);
         if (c.status !== 'set' || now < c.startsAt! - 5 * MINUTE_MS) fail('PL150');
         c.ended = true;
@@ -885,6 +897,28 @@ export function createMockBackend(options: { captcha?: () => Promise<string | un
         else if (anyway) callSettle(d, profileId, c, 'moved_late', 'me');
         else fail('PL151');
       }),
+    async spicyVoice(profileId) {
+      // As spicy_voice_room: a set call whose timer is open, that I have not ended. The stand-in
+      // room plays nothing (src/lib/voice.ts); the made-up person is on it as soon as I am.
+      await callChange(profileId, (_d, c, now) => {
+        if (!c || c.status !== 'set' || c.ended) fail('PL150');
+        if (!timerOpen(c.startsAt!, now)) fail('PL153');
+        c.voice = true;
+        c.myOn = true;
+      });
+      return { url: MOCK_VOICE_URL, token: 'mock' };
+    },
+    async spicyShare(profileId, share) {
+      const d = await load();
+      await wait(LATENCY);
+      const plan = mockSpicyPlan(d, profileId);
+      if (!plan.open) fail('PL130');
+      if (share && !plan.keptCall) fail('PL178');
+      const rest = (d.spicyShares ?? []).filter((id) => id !== profileId);
+      d.spicyShares = share ? [...rest, profileId] : rest;
+      save();
+      return mockSpicyPlan(d, profileId);
+    },
     spicyCallAnswer: (profileId, answer) =>
       callChange(profileId, (d, c) => {
         if (!c || c.status !== 'asking' || c.myAnswer) fail('PL150');
