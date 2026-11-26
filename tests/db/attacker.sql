@@ -64,7 +64,7 @@ select t.ok((select string_agg(column_name, ',' order by column_name) from infor
 select t.ok((select string_agg(n.nspname || '.' || p.proname, ' ' order by n.nspname, p.proname)
     from pg_proc p join pg_namespace n on n.oid = p.pronamespace
     where n.nspname in ('public', 'private', 'analytics') and has_function_privilege('authenticated', p.oid, 'execute'))
-  = 'private.blocked_pair private.face_visible private.has_duo private.on_invite private.revealed_to private.shares_invite private.vouch_summary public.add_self_note public.bail public.block_user public.check_in public.create_duo_link public.create_vouch_link public.date_feedback public.decline_invite public.decline_treat public.delete_my_account public.discover public.do_reset_step public.duo_link_name public.export_my_data public.file_privacy_request public.give_consents public.join_duo public.leave_duo public.log_client_error public.log_event public.my_blocks public.my_checkin_code public.my_consents public.my_contact_flags public.my_line_review public.my_moderation public.my_self_love public.my_spicy public.my_wallet public.offer_pinky public.pass_profile public.pause_discover public.rate_date public.register_push_token public.remove_photo public.remove_self_note public.report_bad_contact public.report_user public.restore_passes public.save_availability public.save_mood public.save_profile public.save_spicy public.send_invite public.spicy_call public.spicy_call_answer public.spicy_call_beat public.spicy_call_end public.spicy_call_move public.spicy_call_pick public.spicy_off public.spicy_pay public.spicy_with public.spicy_yes public.start_contact_check public.start_reset public.treat_options public.treat_plan public.unblock_user public.unregister_push_token public.vouch public.vouch_link_name public.wallet_boost public.wallet_extra_ask public.wallet_stake public.wallet_visit',
+  = 'private.blocked_pair private.face_visible private.has_duo private.on_invite private.revealed_to private.shares_invite private.vouch_summary public.add_self_note public.bail public.block_user public.check_in public.create_duo_link public.create_vouch_link public.date_feedback public.decline_invite public.decline_treat public.delete_my_account public.discover public.do_reset_step public.duo_link_name public.export_my_data public.file_privacy_request public.give_consents public.join_duo public.leave_duo public.log_client_error public.log_event public.my_blocks public.my_checkin_code public.my_consents public.my_contact_flags public.my_line_review public.my_moderation public.my_self_love public.my_spicy public.my_wallet public.offer_pinky public.pass_profile public.pause_discover public.rate_date public.register_push_token public.remove_photo public.remove_self_note public.report_bad_contact public.report_user public.restore_passes public.save_availability public.save_mood public.save_profile public.save_spicy public.send_invite public.spicy_call public.spicy_call_answer public.spicy_call_beat public.spicy_call_end public.spicy_call_move public.spicy_call_pick public.spicy_off public.spicy_pay public.spicy_with public.spicy_yes public.start_contact_check public.start_reset public.talk_ai_pass public.talk_answer public.talk_beat public.talk_block public.talk_call public.talk_claim_referral public.talk_end public.talk_listener_apply public.talk_listener_available public.talk_listeners public.talk_report public.talk_settings public.talk_state public.treat_options public.treat_plan public.unblock_user public.unregister_push_token public.vouch public.vouch_link_name public.wallet_boost public.wallet_extra_ask public.wallet_stake public.wallet_visit',
   'a signed-in user can call exactly these functions and no others');
 select t.ok(not exists (select 1 from pg_proc p join pg_namespace n on n.oid = p.pronamespace
     where n.nspname in ('public', 'private', 'analytics') and has_function_privilege('anon', p.oid, 'execute')),
@@ -522,4 +522,25 @@ select t.ok(t.sqlstate(format('select spicy_call_beat(%L)', :'y')) = 'PL130' and
 select t.ok((spicy_call(:'y') ->> 'status') = 'none', 'and X sees no call with Y');
 select t.ok(t.fails($$select private.call_settle(gen_random_uuid(), 'no_show', 'a')$$) and t.fails('select private.call_sweep()')
   and t.fails($$select private.call_state(gen_random_uuid(), gen_random_uuid())$$), 'X cannot settle a call, run the sweep or read another''s call state');
+reset role;
+
+-- D107, D108: Talk mode. X cannot read any Talk table, charge or flag an AI chat, make a voice room,
+-- mark themselves KYC-checked or verified, take a payout, answer or end a call that is not X's, or
+-- claim their own referral link.
+set role authenticated;
+select t.as_user(:'x');
+select t.ok(t.fails('select * from private.talk_calls') and t.fails('select * from private.talk_listeners') and t.fails('select * from private.talk_payouts')
+  and t.fails('select * from private.talk_reports') and t.fails('select * from private.talk_ai_chats') and t.fails('select * from private.talk_referrals')
+  and t.fails(format($$insert into private.talk_listeners (user_id, status, first_name, sex, accepts, topics, code_version) values (%L, 'verified', 'Xav', 'man', 'anyone', array['work'], 1)$$, :'x')),
+  'X cannot read or write any Talk table');
+select t.ok(t.fails(format($$select talk_ai_turn(%L, null, 'hi')$$, :'y')) and t.fails(format('select talk_ai_flag(%L, null)', :'x'))
+  and t.fails(format('select talk_voice_room(%L, gen_random_uuid())', :'x')) and t.fails(format('select talk_kyc_start(%L)', :'x'))
+  and t.fails(format($$select talk_kyc_done(%L, 'acc_ATTACK12345', '0000')$$, :'x')) and t.fails(format($$select talk_listener_decide(%L, 'verified')$$, :'x'))
+  and t.fails('select * from talk_payouts_claim(100)') and t.fails($$select talk_payout_done(gen_random_uuid(), 'trf_1')$$),
+  'X cannot charge someone''s AI chat, make a voice room, verify themselves or touch a payout');
+select t.ok(t.sqlstate(format('select talk_answer(%L, true)', gen_random_uuid())) = 'PL166' and t.sqlstate(format('select talk_end(%L)', gen_random_uuid())) = 'PL166'
+  and t.sqlstate(format($$select talk_report(%L, 'abuse')$$, gen_random_uuid())) = 'PL166' and t.sqlstate(format('select talk_beat(%L)', gen_random_uuid())) = 'PL166',
+  'X cannot answer, end, check in on or report a call that is not X''s');
+select t.ok(t.sqlstate(format('select talk_claim_referral(%L)', (talk_state() ->> 'referral_code'))) = 'PL168' and t.sqlstate('select talk_listener_available(true)') = 'PL165'
+  and t.sqlstate(format('select talk_call(%L, 10, true)', :'y')) = 'PL154', 'X cannot use their own link, take calls unverified, or ring someone who is not a listener');
 reset role;
