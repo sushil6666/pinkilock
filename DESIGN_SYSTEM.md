@@ -156,6 +156,12 @@ Font scaling is allowed up to 1.3x (`maxFontSizeMultiplier`) so layouts hold on 
   `gold` card with the code in `display` and `onGold`. Rewards use `gift` (pink) until done
   (`check-circle`, gold). Spicy's unlock keeps Spicy's pink panel with a gold meter. The words say
   "credits", never "money" or "coins", and always that credits are never cash.
+- **Spicy voice calls** (D111): inside the timer card, **Join the call** is the primary button
+  (`phone-call`); once on the call, full-width ghost **Mute** / **Unmute** (`mic`, `mic-off`) and
+  **Leave the call** (`phone-off`), a pink line when muted, a gold "Connecting…" line, and a small
+  `mic` line in `textMute`: voice only, never the camera, never recorded. After a kept call, "Keep in
+  touch somewhere else?" is a `label` with a ghost **Share my usernames** (`share-2`); the usernames
+  appear in the same `surface` cards as before, with a quiet **Stop sharing** under them.
 - **Spicy call times** (D106): a gold panel (`goldWash`, `goldDeep`) inside Spicy's pink one, with a
   `phone` eyebrow. Times and lengths are `Chip`s; the set call sits in a `surface` card with
   `phone-call`; the timer shows "n of m min together" in `title` gold over a gold meter, and a gold

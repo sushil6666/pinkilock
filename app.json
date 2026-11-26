@@ -4,16 +4,20 @@
     "slug": "pinkilock",
     "owner": "pinkilock",
     "scheme": "pinkilock",
-    "version": "0.3.0",
+    "version": "0.4.0",
     "orientation": "portrait",
     "userInterfaceStyle": "dark",
     "backgroundColor": "#241A63",
     "ios": {
       "bundleIdentifier": "com.pinkilock.app",
-      "supportsTablet": false
+      "supportsTablet": false,
+      "infoPlist": {
+        "UIBackgroundModes": ["audio"]
+      }
     },
     "android": {
       "package": "com.pinkilock.app",
+      "permissions": ["android.permission.RECORD_AUDIO", "android.permission.MODIFY_AUDIO_SETTINGS", "android.permission.BLUETOOTH_CONNECT"],
       "softwareKeyboardLayoutMode": "resize",
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
@@ -54,20 +58,20 @@
         }
       ],
       "expo-secure-store",
+      "@livekit/react-native-expo-plugin",
       [
         "expo-image-picker",
         {
           "photosPermission": "Pinkilock uses a photo you pick for your profile, shown only after a kept promise.",
           "cameraPermission": false,
-          "microphonePermission": false
+          "microphonePermission": "Pinkilock uses the microphone only during a voice call you join. Calls are audio only and never recorded."
         }
       ],
       [
         "expo-camera",
         {
           "cameraPermission": "Pinkilock uses the front camera to take the photo of your face shown on your card.",
-          "microphonePermission": false,
-          "recordAudioAndroid": false,
+          "microphonePermission": "Pinkilock uses the microphone only during a voice call you join. Calls are audio only and never recorded.",
           "barcodeScannerEnabled": false
         }
       ],

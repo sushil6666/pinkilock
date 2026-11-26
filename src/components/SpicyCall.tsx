@@ -5,6 +5,10 @@
  * what it says, and checks in every BEAT_SECONDS while the app is open and in front during the call.
  *
  * Leaving is always allowed: "I felt unsafe or uncomfortable" is on screen for the whole call.
+ *
+ * D111: the call itself happens here, audio only (src/lib/voice.ts): Join asks the `voice` Edge
+ * Function for a microphone-only room, and the server counts the minutes from who was connected.
+ * The check-ins keep running underneath, for when nobody could reach the room.
  */
 import { Feather } from '@expo/vector-icons';
 import { router } from 'expo-router';
@@ -13,6 +17,7 @@ import { AppState, StyleSheet, View } from 'react-native';
 import { BEAT_MS, CALL_MINUTES, MAX_SLOTS, SLOT_DAYS, noCall, slotsOn, timerOpen, type CallAnswer, type CallMinutes, type SpicyCall } from '../domain/calls';
 import { haptic } from '../lib/haptics';
 import { cancelCallReminders, scheduleCallReminders } from '../lib/callReminder';
+import { joinVoice, type VoiceCall, type VoiceState } from '../lib/voice';
 import { quiet } from '../lib/log';
 import { shown } from '../lib/report';
 import { backend } from '../services';
@@ -27,7 +32,7 @@ import { T } from './ui/T';
 const DAY = 86_400_000;
 const when = (at: number) => `${fmtDay(at)}, ${fmtTime(at)}`;
 
-export function SpicyCallPanel({ otherId, name, route }: { otherId: string; name: string; route: string }) {
+export function SpicyCallPanel({ otherId, name, route, onSettled }: { otherId: string; name: string; route: string; onSettled?: () => void }) {
   const [call, setCall] = useState<SpicyCall>(noCall);
   const [loaded, setLoaded] = useState(false);
   const [busy, setBusy] = useState('');
@@ -35,12 +40,31 @@ export function SpicyCallPanel({ otherId, name, route }: { otherId: string; name
   const [now, setNow] = useState(Date.now());
   const [again, setAgain] = useState(false);
   const block = useStore((s) => s.block);
+  // The voice call on this device (D111).
+  const voiceRef = useRef<VoiceCall | null>(null);
+  const [voice, setVoice] = useState<VoiceState | 'off'>('off');
+  const [muted, setMuted] = useState(false);
+  const [otherOn, setOtherOn] = useState(false);
+  const leaveVoice = useCallback(async () => {
+    const v = voiceRef.current;
+    voiceRef.current = null;
+    setVoice('off');
+    setMuted(false);
+    setOtherOn(false);
+    if (v) await v.leave().catch(quiet('voice.leave'));
+  }, []);
+  useEffect(() => () => { leaveVoice(); }, [leaveVoice]);
 
   const load = useCallback(() => backend.spicyCall(otherId).then((c) => { setCall(c); setLoaded(true); }, quiet('calls.load')), [otherId]);
   useEffect(() => { load(); }, [load]);
 
   const open = call.status === 'set' && call.startsAt !== null && timerOpen(call.startsAt, now);
-  const running = open && call.myStarted && !call.myEnded;
+  const onCall = voice !== 'off' && voice !== 'ended';
+  const running = open && (call.myStarted || onCall) && !call.myEnded;
+  // The call is over (or I ended it, or it closed): leave the room.
+  useEffect(() => {
+    if ((!open || call.myEnded) && voiceRef.current) leaveVoice();
+  }, [open, call.myEnded, leaveVoice]);
 
   // A clock for the countdown and the timer window; quicker while the call is near.
   useEffect(() => {
@@ -72,6 +96,14 @@ export function SpicyCallPanel({ otherId, name, route }: { otherId: string; name
       sub.remove();
     };
   }, [running]);
+  // A call that ended may open the usernames choice: let the Spicy panel ask again.
+  const lastOutcome = useRef(call.outcome);
+  useEffect(() => {
+    if (call.outcome !== lastOutcome.current) {
+      lastOutcome.current = call.outcome;
+      if (call.outcome) onSettled?.();
+    }
+  }, [call.outcome, onSettled]);
   // Reminders on this phone, once the call is set.
   useEffect(() => {
     if (!call.id) return;
@@ -92,11 +124,46 @@ export function SpicyCallPanel({ otherId, name, route }: { otherId: string; name
     }
     setBusy('');
   };
+  const join = async () => {
+    setBusy('start');
+    setError('');
+    try {
+      const room = await backend.spicyVoice(otherId);
+      voiceRef.current = await joinVoice(room, {
+        onState: (s) => { setVoice(s); if (s === 'ended') voiceRef.current = null; },
+        onOther: setOtherOn,
+      });
+      haptic.success();
+      // The check-ins as well, for when the room could not count (they never add to voice minutes).
+      backend.spicyCallBeat(otherId).then(setCall, quiet('calls.beat'));
+    } catch (e) {
+      haptic.warning();
+      await leaveVoice();
+      setError(shown(e, route));
+    }
+    setBusy('');
+  };
+  const mute = async () => {
+    const v = voiceRef.current;
+    if (!v) return;
+    try {
+      await v.mute(!muted);
+      setMuted(!muted);
+    } catch (e) {
+      setError(shown(e, route));
+    }
+  };
+  const leave = (unsafe: boolean) => async () => {
+    await leaveVoice();
+    await run(unsafe ? 'unsafe' : 'end', () => backend.spicyCallEnd(otherId, unsafe))();
+  };
+  const theyOn = otherOn || call.theyOnCall || (!call.voice && call.theyHere);
+
   if (!loaded) return null;
 
   const unsafe = (
     <View style={styles.unsafe}>
-      <Button kind="ghost" icon="shield" wrap label={t('calls.unsafe')} busy={busy === 'unsafe'} onPress={run('unsafe', () => backend.spicyCallEnd(otherId, true))} />
+      <Button kind="ghost" icon="shield" wrap label={t('calls.unsafe')} busy={busy === 'unsafe'} onPress={leave(true)} />
       <T v="caption" c={color.textDim}>{t('calls.unsafeNote')}</T>
     </View>
   );
@@ -124,16 +191,28 @@ export function SpicyCallPanel({ otherId, name, route }: { otherId: string; name
               <View style={{ flex: Math.max(call.minutes! - call.together, 0) }} />
             </View>
             <View style={styles.row}>
-              <View style={[styles.dot, { backgroundColor: call.theyHere ? color.gold : color.line }]} />
-              <T v="caption" c={color.textDim}>{t(call.theyHere ? 'calls.theyHere' : 'calls.theyAway', { name })}</T>
+              <View style={[styles.dot, { backgroundColor: theyOn ? color.gold : color.line }]} />
+              <T v="caption" c={color.textDim}>{t(theyOn ? 'calls.theyHere' : 'calls.theyAway', { name })}</T>
             </View>
+            {voice === 'connecting' || voice === 'reconnecting' ? <T v="caption" c={color.gold}>{t(voice === 'connecting' ? 'calls.connecting' : 'calls.reconnecting')}</T> : null}
             {call.myEnded ? <T v="caption" c={color.textDim}>{t('calls.ended')}</T>
-              : running ? (
+              : onCall ? (
                 <>
-                  <Button kind="ghost" icon="phone-off" label={t('calls.end')} busy={busy === 'end'} onPress={run('end', () => backend.spicyCallEnd(otherId, false))} />
+                  <Button kind="ghost" icon={muted ? 'mic-off' : 'mic'} label={t(muted ? 'calls.unmute' : 'calls.mute')} onPress={mute} />
+                  <Button kind="ghost" icon="phone-off" label={t('calls.end')} busy={busy === 'end'} onPress={leave(false)} />
+                  {muted ? <T v="caption" c={color.pink}>{t('calls.muted', { name })}</T> : null}
                   {call.together < call.minutes! ? <T v="caption" c={color.textMute}>{t('calls.endEarlyNote', { n: call.minutes! })}</T> : null}
                 </>
-              ) : <Button icon="phone-call" label={t('calls.start')} busy={busy === 'start'} onPress={run('start', () => backend.spicyCallBeat(otherId))} />}
+              ) : (
+                <>
+                  <Button icon="phone-call" label={t(call.myStarted ? 'calls.rejoin' : 'calls.start')} busy={busy === 'start'} onPress={join} />
+                  {running ? <Button kind="quiet" icon="phone-off" label={t('calls.end')} busy={busy === 'end'} onPress={leave(false)} /> : null}
+                </>
+              )}
+            <View style={styles.row}>
+              <Feather name="mic" size={14} color={color.textMute} />
+              <T v="caption" c={color.textMute} style={{ flex: 1 }}>{t('calls.voiceOnly')}</T>
+            </View>
           </View>
         ) : (
           <>

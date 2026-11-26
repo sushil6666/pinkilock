@@ -66,9 +66,9 @@ function quizResultFrom(raw: unknown): QuizResult {
 
 /** spicy_with() and spicy_yes(). */
 function spicyPlanFrom(raw: unknown): SpicyPlan {
-  const r = (raw ?? {}) as { open?: boolean; my_yes?: boolean; mutual?: boolean; their_boundaries?: string[]; unlock?: { mine?: number; theirs?: number; done?: boolean }; discord?: string | null; telegram?: string | null; signal?: string | null };
+  const r = (raw ?? {}) as { open?: boolean; my_yes?: boolean; mutual?: boolean; their_boundaries?: string[]; unlock?: { mine?: number; theirs?: number; done?: boolean }; kept_call?: boolean; my_share?: boolean; discord?: string | null; telegram?: string | null; signal?: string | null };
   const unlock = { mine: r.unlock?.mine ?? 0, theirs: r.unlock?.theirs ?? 0, done: !!r.unlock?.done };
-  return { open: !!r.open, myYes: !!r.my_yes, mutual: !!r.mutual, theirBoundaries: (r.their_boundaries ?? []).filter(isBoundary), unlock, discord: r.discord ?? null, telegram: r.telegram ?? null, signal: r.signal ?? null };
+  return { open: !!r.open, myYes: !!r.my_yes, mutual: !!r.mutual, theirBoundaries: (r.their_boundaries ?? []).filter(isBoundary), unlock, keptCall: !!r.kept_call, myShare: !!r.my_share, discord: r.discord ?? null, telegram: r.telegram ?? null, signal: r.signal ?? null };
 }
 
 /** spicy_call() and its siblings (D106). */
@@ -85,7 +85,7 @@ function callFrom(raw: unknown): SpicyCall {
     mySlots: list(r.my_slots), theirSlots: list(r.their_slots), myMinutes: mins(r.my_minutes), theirMinutes: mins(r.their_minutes),
     noOverlap: !!r.no_overlap, startsAt: ms((r.starts_at as string | null) ?? null), minutes: typeof r.minutes === 'number' ? r.minutes : null,
     together: typeof r.together === 'number' ? r.together : 0, myStarted: !!r.my_started, theirStarted: !!r.their_started,
-    meHere: !!r.me_here, theyHere: !!r.they_here, myEnded: !!r.my_ended, canMoveFree: !!r.can_move_free, myAnswer: answer,
+    meHere: !!r.me_here, theyHere: !!r.they_here, myEnded: !!r.my_ended, voice: !!r.voice, meOnCall: !!r.me_on_call, theyOnCall: !!r.they_on_call, canMoveFree: !!r.can_move_free, myAnswer: answer,
     answerUntil: ms((r.answer_until as string | null) ?? null), outcome: (r.outcome as CallOutcome | null) ?? null, fault,
     refunded: typeof r.refunded === 'number' ? r.refunded : 0, stoppedByMe: !!r.stopped_by_me,
     callsLeft: typeof r.calls_left === 'number' ? r.calls_left : MAX_CALLS,
@@ -351,13 +351,13 @@ export function createSupabaseBackend(url: string, anonKey: string, storage: Ses
   }
 
   /** One call to the `talk` Edge Function (D108): the AI, voice rooms and Route; the app holds none of their keys. */
-  async function talkFunction<T = unknown>(body: Row): Promise<T> {
+  async function talkFunction<T = unknown>(body: Row, fn: 'talk' | 'voice' = 'talk'): Promise<T> {
     const trace = activeTrace() ?? newTrace();
     const { data } = await db.auth.getSession();
-    log.info('talk.fn', { action: body.action, trace });
+    log.info(`${fn}.fn`, { action: body.action, trace });
     let res: Response;
     try {
-      res = await fetch(`${url.replace(/\/$/, '')}/functions/v1/talk`, {
+      res = await fetch(`${url.replace(/\/$/, '')}/functions/v1/${fn}`, {
         method: 'POST',
         headers: { ...(data.session ? { Authorization: `Bearer ${data.session.access_token}` } : {}), apikey: anonKey, 'Content-Type': 'application/json', 'x-trace-id': trace },
         body: JSON.stringify(body),
@@ -999,6 +999,16 @@ export function createSupabaseBackend(url: string, anonKey: string, storage: Ses
     async spicyCallAnswer(profileId, answer) {
       await uid();
       return callFrom(await rpc('spicy_call_answer', { p_other: profileId, p_answer: answer }));
+    },
+    async spicyVoice(profileId) {
+      await uid();
+      const room = await talkFunction<{ url?: string; token?: string }>({ action: 'spicy', other: profileId }, 'voice');
+      if (!room.url || !room.token) throw new AppError('PL179');
+      return { url: room.url, token: room.token };
+    },
+    async spicyShare(profileId, share) {
+      await uid();
+      return spicyPlanFrom(await rpc('spicy_share', { p_other: profileId, p_share: share }));
     },
 
     talk: () => talkRpc('talk_state'),

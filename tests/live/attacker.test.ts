@@ -382,3 +382,12 @@ test('Talk mode (D108, D109): nothing of anyone else\'s, no free credits or payo
   await assert.rejects(x.backend.claimReferral('ABCDEFGH'), (e: unknown) => e instanceof AppError, 'no made-up referral code');
   refused(await signedOut.rpc('talk_state'), 'signed out, there is no Talk mode to read');
 });
+
+test('Spicy calls in the app (D111): no voice room, no invented minutes and no usernames, over the API too', async () => {
+  refused(await raw.rpc('spicy_voice_room', { p_user: x.id, p_other: y.id }), 'asking for a voice room without the Edge Function');
+  refused(await raw.rpc('spicy_voice_event', { p_room: 'spicy_00000000-0000-0000-0000-000000000000', p_user: x.id, p_event: 'participant_joined', p_at: new Date().toISOString() }), 'reporting a join');
+  refused(await raw.schema('private' as 'public').from('spicy_call_voice').select('*'), 'reading the voice sessions');
+  refused(await raw.schema('private' as 'public').from('spicy_shares').insert({ user_id: x.id, other_id: y.id }), 'writing a share');
+  await assert.rejects(x.backend.spicyShare(y.id, true), (e: unknown) => e instanceof AppError && e.code === 'PL130', 'no sharing usernames Spicy does not open');
+  await assert.rejects(x.backend.spicyVoice(y.id), (e: unknown) => e instanceof AppError && ['PL130', 'PL179'].includes(e.code), 'no voice room for a call Spicy does not open');
+});
