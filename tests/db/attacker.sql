@@ -64,7 +64,7 @@ select t.ok((select string_agg(column_name, ',' order by column_name) from infor
 select t.ok((select string_agg(n.nspname || '.' || p.proname, ' ' order by n.nspname, p.proname)
     from pg_proc p join pg_namespace n on n.oid = p.pronamespace
     where n.nspname in ('public', 'private', 'analytics') and has_function_privilege('authenticated', p.oid, 'execute'))
-  = 'private.blocked_pair private.face_visible private.has_duo private.on_invite private.revealed_to private.shares_invite private.vouch_summary public.add_self_note public.bail public.block_user public.check_in public.create_duo_link public.create_vouch_link public.date_feedback public.decline_invite public.decline_treat public.delete_my_account public.discover public.do_reset_step public.duo_link_name public.export_my_data public.file_privacy_request public.give_consents public.join_duo public.leave_duo public.log_client_error public.log_event public.my_blocks public.my_checkin_code public.my_consents public.my_contact_flags public.my_line_review public.my_moderation public.my_self_love public.my_spicy public.my_wallet public.offer_pinky public.pass_profile public.pass_spicy_quiz public.pause_discover public.rate_date public.register_push_token public.remove_photo public.remove_self_note public.report_bad_contact public.report_user public.restore_passes public.save_availability public.save_mood public.save_profile public.save_spicy public.send_invite public.spicy_off public.spicy_pay public.spicy_terms public.spicy_with public.spicy_yes public.start_contact_check public.start_reset public.treat_options public.treat_plan public.unblock_user public.unregister_push_token public.vouch public.vouch_link_name public.wallet_boost public.wallet_extra_ask public.wallet_stake public.wallet_visit',
+  = 'private.blocked_pair private.face_visible private.has_duo private.on_invite private.revealed_to private.shares_invite private.vouch_summary public.add_self_note public.bail public.block_user public.check_in public.create_duo_link public.create_vouch_link public.date_feedback public.decline_invite public.decline_treat public.delete_my_account public.discover public.do_reset_step public.duo_link_name public.export_my_data public.file_privacy_request public.give_consents public.join_duo public.leave_duo public.log_client_error public.log_event public.my_blocks public.my_checkin_code public.my_consents public.my_contact_flags public.my_line_review public.my_moderation public.my_self_love public.my_spicy public.my_wallet public.offer_pinky public.pass_profile public.pass_spicy_quiz public.pause_discover public.rate_date public.register_push_token public.remove_photo public.remove_self_note public.report_bad_contact public.report_user public.restore_passes public.save_availability public.save_mood public.save_profile public.save_spicy public.send_invite public.spicy_call public.spicy_call_answer public.spicy_call_beat public.spicy_call_end public.spicy_call_move public.spicy_call_pick public.spicy_off public.spicy_pay public.spicy_terms public.spicy_with public.spicy_yes public.start_contact_check public.start_reset public.treat_options public.treat_plan public.unblock_user public.unregister_push_token public.vouch public.vouch_link_name public.wallet_boost public.wallet_extra_ask public.wallet_stake public.wallet_visit',
   'a signed-in user can call exactly these functions and no others');
 select t.ok(not exists (select 1 from pg_proc p join pg_namespace n on n.oid = p.pronamespace
     where n.nspname in ('public', 'private', 'analytics') and has_function_privilege('anon', p.oid, 'execute')),
@@ -519,4 +519,18 @@ select t.ok(t.sqlstate(format('select wallet_stake(%L)', gen_random_uuid())) = '
   'X cannot stake or treat a plan that is not X''s');
 select t.ok(t.sqlstate(format($$select spicy_pay(%L, 'full')$$, :'y')) = 'PL130', 'X cannot pay to see Y''s usernames when Spicy is not open between them');
 select t.ok((my_wallet() ->> 'paid')::int = 0 and t.sqlstate('select wallet_boost()') = 'PL132', 'X has no credits to spend, and none appear');
+reset role;
+
+-- D106: Spicy call times. X cannot read the calls or the timer, check in for a call that is not
+-- X's, settle one, answer for someone else, or run the sweep.
+set role authenticated;
+select t.as_user(:'x');
+select t.ok(t.fails('select * from private.spicy_calls') and t.fails('select * from private.spicy_call_minutes')
+  and t.fails(format($$insert into private.spicy_call_minutes (call_id, user_id, minute) values (gen_random_uuid(), %L, now())$$, :'x')), 'X cannot read or write the calls or the timer');
+select t.ok(t.sqlstate(format('select spicy_call_beat(%L)', :'y')) = 'PL130' and t.sqlstate(format($$select spicy_call_answer(%L, 'they_missed')$$, :'y')) = 'PL130'
+  and t.sqlstate(format('select spicy_call_end(%L, true)', :'y')) = 'PL130' and t.sqlstate(format('select spicy_call_move(%L, true)', :'y')) = 'PL130',
+  'X cannot check in, answer, end or move a call with Y when Spicy is not open between them');
+select t.ok((spicy_call(:'y') ->> 'status') = 'none', 'and X sees no call with Y');
+select t.ok(t.fails($$select private.call_settle(gen_random_uuid(), 'no_show', 'a')$$) and t.fails('select private.call_sweep()')
+  and t.fails($$select private.call_state(gen_random_uuid(), gen_random_uuid())$$), 'X cannot settle a call, run the sweep or read another''s call state');
 reset role;

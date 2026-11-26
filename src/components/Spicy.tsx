@@ -15,6 +15,7 @@ import { shown } from '../lib/report';
 import { backend } from '../services';
 import { color, radius, space } from '../theme/tokens';
 import { t, type Key } from '../i18n';
+import { SpicyCallPanel } from './SpicyCall';
 import { Button } from './ui/Button';
 import { Tag } from './ui/Chip';
 import { ErrorText } from './ui/ErrorText';
@@ -138,6 +139,7 @@ export function SpicyHandoff({ otherId, name, route }: { otherId: string; name: 
               <T v="caption" c={color.textDim}>{t('spicy.signalHow')}</T>
             </View>
           ) : null}
+          <SpicyCallPanel otherId={otherId} name={name} route={route} />
         </>
       ) : (
         <T c={color.textDim}>{t('spicy.planBody', { name })}</T>

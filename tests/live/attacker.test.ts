@@ -352,3 +352,15 @@ test('The wallet (D104, D105): no credits from nowhere, nothing of anyone else\'
   await assert.rejects(x.backend.spicyPay(y.id, 'full'), (e: unknown) => e instanceof AppError && e.code === 'PL130', 'no paying for usernames Spicy does not open');
   refused(await signedOut.rpc('my_wallet'), 'signed out, there is no wallet to read');
 });
+
+test('Spicy call times (D106): no timer of anyone else\'s, and no settling a call, over the API too', async () => {
+  refused(await raw.schema('private' as 'public').from('spicy_calls').select('*'), 'reading any call');
+  refused(await raw.schema('private' as 'public').from('spicy_call_minutes').insert({ call_id: '00000000-0000-0000-0000-000000000000', user_id: x.id, minute: new Date().toISOString() }), 'writing timer minutes');
+  refused(await raw.rpc('call_settle', { p_call: '00000000-0000-0000-0000-000000000000', p_outcome: 'no_show', p_fault: 'a' }), 'settling a call');
+  refused(await raw.rpc('call_sweep'), 'running the sweep');
+  const closed = (e: unknown) => e instanceof AppError && e.code === 'PL130';
+  await assert.rejects(x.backend.spicyCallBeat(y.id), closed, 'no checking in on a call Spicy does not open');
+  await assert.rejects(x.backend.spicyCallAnswer(y.id, 'they_missed'), closed, 'no answering for a call Spicy does not open');
+  assert.equal((await x.backend.spicyCall(y.id)).status, 'none', 'and no call to see');
+  refused(await signedOut.rpc('spicy_call', { p_other: y.id }), 'signed out, there is no call to read');
+});

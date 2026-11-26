@@ -6,6 +6,7 @@
  * to one rpc() or select() (ARCHITECTURE.md section 8) and `subscribe` to a Realtime channel.
  */
 import type { Mood, NoteKind, SelfLove } from '../domain/selfLove';
+import type { CallAnswer, CallMinutes, SpicyCall } from '../domain/calls';
 import type { Spicy, SpicyInput, SpicyPlan } from '../domain/spicy';
 import type { QuizResult, SpicyTerms } from '../domain/spicyQuiz';
 import type { SpicyShare, TopUpStatus, TreatItem, TreatPartner, Wallet } from '../domain/wallet';
@@ -206,6 +207,24 @@ export interface Backend {
    * pay the rest. Never goes to the other person; comes back if the match closes before it is paid.
    */
   spicyPay(profileId: string, share: SpicyShare): Promise<SpicyPlan>;
+
+  /**
+   * Spicy call times (D106), on an unlocked match only (PL130 when Spicy is not open, PL149 before
+   * the unlock). Each picks times and a minimum length; the first time both picked is the call and
+   * the shorter length applies. The in-app timer counts a minute only when both apps checked in
+   * during it. What happened, and who it counts against, is decided on the server.
+   */
+  spicyCall(profileId: string): Promise<SpicyCall>;
+  /** My times (1 to 8, on the half hour, an hour to a week ahead) and my minimum. PL147, PL148, PL152. */
+  spicyCallPick(profileId: string, slots: number[], minutes: CallMinutes): Promise<SpicyCall>;
+  /** The open app checks in during the call (every BEAT_SECONDS). PL153 outside the timer's hour. */
+  spicyCallBeat(profileId: string): Promise<SpicyCall>;
+  /** I am done; with `unsafe` ("I felt unsafe or uncomfortable") it ends for both at once and counts against nobody. */
+  spicyCallEnd(profileId: string, unsafe: boolean): Promise<SpicyCall>;
+  /** The free move (once, an hour or more ahead); otherwise PL151, or with `anyway` it counts as my miss. */
+  spicyCallMove(profileId: string, anyway: boolean): Promise<SpicyCall>;
+  /** The confirm fallback, when the timer could not tell. */
+  spicyCallAnswer(profileId: string, answer: CallAnswer): Promise<SpicyCall>;
 
   /**
    * The credits wallet (D104): a closed loop. Credits are bought (Razorpay) or earned, and spent

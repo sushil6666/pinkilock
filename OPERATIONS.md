@@ -588,6 +588,14 @@ set up (address `test-<id>@e2e.pinkilock.invalid`, a domain that never receives 
 them at the end. A cancelled run can leave some behind: `delete from auth.users where email like
 '%@e2e.pinkilock.invalid'`.
 
+### Spicy call times
+
+Nothing to set up: the migration schedules `pinkilock-calls` (every minute, `private.call_sweep()`).
+To look at a disputed call, in the SQL editor: `select id, status, outcome, fault, answer_a, answer_b,
+starts_at from private.spicy_calls where outcome in ('disputed', 'unsettled') order by settled_at desc`.
+The timer rows are `private.spicy_call_minutes` (minutes only, nothing of the call). A missed call
+shows on the Trust Score as `call_missed` events once the analytics worker has run.
+
 ### Wallet
 
 Credits (D104) are a closed loop: nothing in the app or the database can pay a person, and

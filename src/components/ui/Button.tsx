@@ -17,6 +17,8 @@ interface Props {
   busy?: boolean;
   style?: StyleProp<ViewStyle>;
   accessibilityHint?: string;
+  /** Let a long label take two lines instead of cutting it short (words that must be read whole). */
+  wrap?: boolean;
 }
 
 /** The slab under each kind: what the button stands on, and what shows below it. */
@@ -27,7 +29,7 @@ const SLAB: Record<Kind, string | null> = { primary: color.goldDeep, ghost: colo
  * under a finger, a mouse or a key, then springs back. A button that cannot be pressed sits sunk,
  * level with its slab, so it reads as not there yet without fading to a muddy colour.
  */
-export function Button({ label, onPress, kind = 'primary', icon, disabled, busy, style, accessibilityHint }: Props) {
+export function Button({ label, onPress, kind = 'primary', icon, disabled, busy, style, accessibilityHint, wrap }: Props) {
   const off = disabled || busy;
   const slab = SLAB[kind];
   const sink = useSharedValue(off ? 1 : 0);
@@ -63,7 +65,7 @@ export function Button({ label, onPress, kind = 'primary', icon, disabled, busy,
         {busy ? <ActivityIndicator color={fg} /> : (
           <>
             {icon && <Feather name={icon} size={18} color={fg} />}
-            <T v="bodyBold" c={fg} numberOfLines={1}>{label}</T>
+            <T v="bodyBold" c={fg} numberOfLines={wrap ? 2 : 1} style={wrap ? { flexShrink: 1, textAlign: 'center', paddingVertical: space.sm } : undefined}>{label}</T>
           </>
         )}
       </Animated.View>

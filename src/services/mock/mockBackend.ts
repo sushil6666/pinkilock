@@ -23,6 +23,10 @@ import { ALL_CONSENTS, CITIES, openCities } from '../../domain/countries';
 const cityCountry = (city: string) => CITIES.find((c) => c.name === city)?.country ?? 'IN';
 import { FREE_WINDOWS } from '../../domain/freeWindows';
 import { DAY } from '../../domain/invites';
+import {
+  ANSWER_HOURS, CALL_WINDOW_MINUTES, MAX_CALLS, answerVerdict, callVerdict, canMoveFree, checkPicks, firstOverlap, noCall, timerOpen, togetherMinutes,
+  type CallAnswer, type CallMinutes, type CallOutcome, type SpicyCall,
+} from '../../domain/calls';
 import { checkSpicy, spicyClosed, spicyOff, type Boundary, type Spicy } from '../../domain/spicy';
 import { SPICY_TERMS_VERSION, checkQuiz } from '../../domain/spicyQuiz';
 import { PAUSE_MAX_DAYS, RESET_DAYS, checkSelfNote, dayOf, emptySelfLove, isMood, stepOpen, type SelfLove } from '../../domain/selfLove';
@@ -72,6 +76,35 @@ interface Db {
   spicyPassed?: Record<number, number>;
   /** The wallet (D104), as the server's tables hold it. */
   wallet?: MockWallet;
+  /** Spicy call times (D106), by the other person, oldest first. */
+  spicyCalls?: Record<string, MockCall[]>;
+}
+
+/** A call as private.spicy_calls holds it, from my side. The made-up person is always on time. */
+interface MockCall {
+  id: string;
+  status: 'picking' | 'set' | 'asking' | 'done';
+  mySlots: number[];
+  theirSlots: number[];
+  myMinutes: CallMinutes | null;
+  theirMinutes: CallMinutes | null;
+  startsAt: number | null;
+  minutes: number | null;
+  moves: number;
+  /** Minute starts on the timer. */
+  myMins: number[];
+  theirMins: number[];
+  myBeat: number | null;
+  theirBeat: number | null;
+  ended: boolean;
+  askedAt: number | null;
+  myAnswer: CallAnswer | null;
+  theirAnswer: CallAnswer | null;
+  outcome: CallOutcome | null;
+  fault: 'me' | 'them' | 'both' | null;
+  refunded: number;
+  stoppedByMe: boolean;
+  at: number;
 }
 
 interface MockWallet {
@@ -307,6 +340,7 @@ export function createMockBackend(options: { captcha?: () => Promise<string | un
     if (!d.me) fail('PL002');
     if (profileId === ME_ID) fail('PL010');
     if (!isBlocked(d, profileId)) d.blocked = [...(d.blocked ?? []), { id: profileId, at: now }];
+    callStop(d, profileId);
     const theirs = d.invites.filter((i) => rules.peopleOf(i).includes(profileId));
     for (const i of theirs) {
       put(d, rules.endForBlock(i, now));
@@ -467,6 +501,75 @@ export function createMockBackend(options: { captcha?: () => Promise<string | un
     if (!paid || w.spicyDone.includes(them)) return;
     move(w, 'spicy_back', paid, 0, `${them}:${Date.now()}:${Math.random()}`);
     delete w.spicyPaid[them];
+  }
+
+  // --- Spicy call times (D106), as in supabase/migrations/20261126000001_spicy_calls.sql. ----
+  const MINUTE_MS = 60_000;
+  const callsWith = (d: Db, them: string): MockCall[] => ((d.spicyCalls ??= {})[them] ??= []);
+  const openCall = (d: Db, them: string) => callsWith(d, them).find((c) => c.status !== 'done');
+  /** As private.call_settle: the miss counts against whoever missed; the one who showed gets their own part back, once per match. */
+  function callSettle(d: Db, them: string, c: MockCall, outcome: CallOutcome, fault: MockCall['fault'], stoppedByMe = false) {
+    const w = walletOf(d);
+    if ((fault === 'me' || fault === 'both') && d.me) d.me = { ...d.me, flaked: d.me.flaked + 1 };
+    if (fault === 'them') {
+      const part = w.spicyPaid[them] ?? 0;
+      if (part > 0 && move(w, 'spicy_back', part, 0, `call:${them}`)) c.refunded = part;
+    }
+    Object.assign(c, { status: 'done', outcome, fault, stoppedByMe });
+  }
+  /** What the sweep does: the hour is over, or the answers have closed. */
+  function callSweep(d: Db, now: number) {
+    for (const [them, list] of Object.entries(d.spicyCalls ?? {})) {
+      for (const c of list) {
+        if (c.status === 'set' && c.startsAt !== null && now >= c.startsAt + CALL_WINDOW_MINUTES * MINUTE_MS) callTimer(d, them, c, now);
+        if (c.status === 'asking' && c.askedAt !== null && now >= c.askedAt + ANSWER_HOURS * 3_600_000) callAnswers(d, them, c, true);
+      }
+    }
+  }
+  function callTimer(d: Db, them: string, c: MockCall, now: number) {
+    const last = (mins: number[]) => (mins.length ? (Math.max(...mins) - c.startsAt!) / MINUTE_MS : null);
+    const v = callVerdict({ minutes: c.minutes!, together: togetherMinutes(c.myMins, c.theirMins), minsA: c.myMins.length, minsB: c.theirMins.length, lastA: last(c.myMins), lastB: last(c.theirMins) });
+    if (v.outcome === 'unclear') Object.assign(c, { status: 'asking', askedAt: now });
+    else callSettle(d, them, c, v.outcome, v.fault === 'a' ? 'me' : v.fault === 'b' ? 'them' : v.fault);
+  }
+  function callAnswers(d: Db, them: string, c: MockCall, closed: boolean) {
+    const v = answerVerdict(c.myAnswer, c.theirAnswer, false, false, closed);
+    if (v.outcome !== 'wait') callSettle(d, them, c, v.outcome, v.fault === 'a' ? 'me' : v.fault === 'b' ? 'them' : v.fault);
+  }
+  function callView(d: Db, them: string, now = Date.now()): SpicyCall {
+    const plan = mockSpicyPlan(d, them);
+    if (!plan.open || !plan.mutual || !plan.unlock.done) return { ...noCall, callsLeft: 0 };
+    callSweep(d, now);
+    const list = callsWith(d, them);
+    const c = openCall(d, them) ?? list[list.length - 1];
+    if (!c) return noCall;
+    const here = (t: number | null) => t !== null && t > now - 45_000;
+    return {
+      id: c.id, status: c.status, mySlots: c.mySlots, theirSlots: c.theirSlots, myMinutes: c.myMinutes, theirMinutes: c.theirMinutes,
+      noOverlap: c.status === 'picking' && c.mySlots.length > 0 && c.theirSlots.length > 0, startsAt: c.startsAt, minutes: c.minutes,
+      together: togetherMinutes(c.myMins, c.theirMins), myStarted: c.myMins.length > 0, theirStarted: c.theirMins.length > 0,
+      meHere: here(c.myBeat), theyHere: here(c.theirBeat), myEnded: c.ended,
+      canMoveFree: c.status === 'set' && c.startsAt !== null && canMoveFree(c.moves, c.startsAt, now), myAnswer: c.myAnswer,
+      answerUntil: c.askedAt !== null ? c.askedAt + ANSWER_HOURS * 3_600_000 : null, outcome: c.outcome, fault: c.fault, refunded: c.refunded,
+      stoppedByMe: c.stoppedByMe, callsLeft: Math.max(MAX_CALLS - list.length, 0),
+    };
+  }
+  async function callChange(them: string, work: (d: Db, c: MockCall | undefined, now: number) => void): Promise<SpicyCall> {
+    const d = await load();
+    await wait(LATENCY);
+    const plan = mockSpicyPlan(d, them);
+    if (!plan.open) fail('PL130');
+    if (!plan.mutual || !plan.unlock.done) fail('PL149');
+    const now = Date.now();
+    callSweep(d, now);
+    work(d, openCall(d, them), now);
+    save();
+    return callView(d, them, now);
+  }
+  /** Leaving Spicy, a yes taken back, or a block: an open call stops, and counts against nobody. */
+  function callStop(d: Db, them: string) {
+    const c = openCall(d, them);
+    if (c) callSettle(d, them, c, 'stopped', null);
   }
   return {
     kind: 'mock',
@@ -634,7 +737,10 @@ export function createMockBackend(options: { captcha?: () => Promise<string | un
       const d = await load();
       await wait(LATENCY);
       if (!d.me) fail('PL002');
-      for (const them of d.spicyYes ?? []) spicyRefund(d, them);
+      for (const them of d.spicyYes ?? []) {
+        spicyRefund(d, them);
+        callStop(d, them);
+      }
       delete d.spicy;
       delete d.spicyYes;
       save();
@@ -651,7 +757,10 @@ export function createMockBackend(options: { captcha?: () => Promise<string | un
       if (!mockSpicyPlan(d, profileId).open) fail('PL130');
       const mine = (d.spicyYes ?? []).filter((id) => id !== profileId);
       d.spicyYes = yes ? [...mine, profileId] : mine;
-      if (!yes) spicyRefund(d, profileId);
+      if (!yes) {
+        spicyRefund(d, profileId);
+        callStop(d, profileId);
+      }
       save();
       return mockSpicyPlan(d, profileId);
     },
@@ -690,6 +799,65 @@ export function createMockBackend(options: { captcha?: () => Promise<string | un
       save();
       return mockSpicyPlan(d, profileId);
     },
+
+    async spicyCall(profileId) {
+      const d = await load();
+      await wait(LATENCY);
+      const view = callView(d, profileId);
+      save();
+      return view;
+    },
+    spicyCallPick: (profileId, slots, minutes) =>
+      callChange(profileId, (d, open, now) => {
+        const list = callsWith(d, profileId);
+        if (!open && list.length >= MAX_CALLS) fail('PL152');
+        if (open && open.status !== 'picking') fail('PL150');
+        const picks = checkPicks(slots, minutes, now);
+        const c: MockCall = open ?? {
+          id: `call_${now.toString(36)}`, status: 'picking', mySlots: [], theirSlots: [], myMinutes: null, theirMinutes: null, startsAt: null, minutes: null,
+          moves: 0, myMins: [], theirMins: [], myBeat: null, theirBeat: null, ended: false, askedAt: null, myAnswer: null, theirAnswer: null, outcome: null,
+          fault: null, refunded: 0, stoppedByMe: false, at: now,
+        };
+        if (!open) list.push(c);
+        Object.assign(c, { mySlots: picks, myMinutes: minutes });
+        // The made-up person picks my first time and 15 minutes (there is nobody to wait for).
+        if (!c.theirSlots.length) Object.assign(c, { theirSlots: [picks[0]], theirMinutes: 15 });
+        const first = firstOverlap(c.mySlots, c.theirSlots, now);
+        if (first !== null && c.theirMinutes) Object.assign(c, { status: 'set', startsAt: first, minutes: Math.min(minutes, c.theirMinutes) });
+      }),
+    spicyCallBeat: (profileId) =>
+      callChange(profileId, (_d, c, now) => {
+        if (!c || c.status !== 'set' || c.ended) fail('PL150');
+        if (!timerOpen(c.startsAt!, now)) fail('PL153');
+        const minute = Math.floor(now / MINUTE_MS) * MINUTE_MS;
+        // The made-up person keeps their app open for the whole call.
+        if (!c.myMins.includes(minute)) c.myMins.push(minute);
+        if (!c.theirMins.includes(minute)) c.theirMins.push(minute);
+        c.myBeat = now;
+        c.theirBeat = now;
+      }),
+    spicyCallEnd: (profileId, unsafe) =>
+      callChange(profileId, (d, c, now) => {
+        if (!c) fail('PL150');
+        if (unsafe) return callSettle(d, profileId, c, 'unsafe', null, true);
+        if (c.status !== 'set' || now < c.startsAt! - 5 * MINUTE_MS) fail('PL150');
+        c.ended = true;
+        // The made-up person ends when I do.
+        callTimer(d, profileId, c, now);
+      }),
+    spicyCallMove: (profileId, anyway) =>
+      callChange(profileId, (d, c, now) => {
+        if (!c || c.status !== 'set') fail('PL150');
+        if (canMoveFree(c.moves, c.startsAt!, now)) Object.assign(c, { status: 'picking', mySlots: [], theirSlots: [], startsAt: null, minutes: null, moves: c.moves + 1 });
+        else if (anyway) callSettle(d, profileId, c, 'moved_late', 'me');
+        else fail('PL151');
+      }),
+    spicyCallAnswer: (profileId, answer) =>
+      callChange(profileId, (d, c) => {
+        if (!c || c.status !== 'asking' || c.myAnswer) fail('PL150');
+        c.myAnswer = answer;
+        callAnswers(d, profileId, c, false);
+      }),
 
     async wallet() {
       const d = await load();
@@ -1050,7 +1218,8 @@ export function createMockBackend(options: { captcha?: () => Promise<string | un
         blocks: (d.blocked ?? []).map((b) => ({ profile: b.id, at: new Date(b.at).toISOString() })),
         reports_made: (d.reports ?? []).map((r) => ({ profile: r.profileId, reason: r.reason, detail: r.detail, at: new Date(r.at).toISOString() })),
         devices: (d.pushTokens ?? []).map(() => ({ platform: 'this phone' })),
-        spicy: d.spicy ? { discord: d.spicy.discord, telegram: d.spicy.telegram, signal: d.spicy.signal, boundaries: d.spicy.boundaries, since: d.spicy.since ? new Date(d.spicy.since).toISOString() : null, yes: (d.spicyYes ?? []).map((who) => ({ with: who })) } : null,
+        spicy: d.spicy ? { discord: d.spicy.discord, telegram: d.spicy.telegram, signal: d.spicy.signal, boundaries: d.spicy.boundaries, since: d.spicy.since ? new Date(d.spicy.since).toISOString() : null, yes: (d.spicyYes ?? []).map((who) => ({ with: who })),
+          calls: Object.entries(d.spicyCalls ?? {}).flatMap(([who, list]) => list.map((c) => ({ with: who, my_times: c.mySlots.map((x) => new Date(x).toISOString()), my_minimum: c.myMinutes, starts_at: c.startsAt ? new Date(c.startsAt).toISOString() : null, minimum: c.minutes, my_minutes_on_timer: c.myMins.length, my_answer: c.myAnswer, outcome: c.outcome, counted_against_me: c.fault === 'me' || c.fault === 'both', credits_back: c.refunded }))) } : null,
         self_love: d.selfLove ? { moods: d.selfLove.moods, notes: d.selfLove.notes.map(({ kind, body, day, at }) => ({ kind, body, day, at: new Date(at).toISOString() })), paused_until: d.selfLove.pausedUntil, reset: d.selfLove.reset } : null,
       }, null, 2);
     },

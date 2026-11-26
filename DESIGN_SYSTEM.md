@@ -156,6 +156,12 @@ Font scaling is allowed up to 1.3x (`maxFontSizeMultiplier`) so layouts hold on 
   `gold` card with the code in `display` and `onGold`. Rewards use `gift` (pink) until done
   (`check-circle`, gold). Spicy's unlock keeps Spicy's pink panel with a gold meter. The words say
   "credits", never "money" or "coins", and always that credits are never cash.
+- **Spicy call times** (D106): a gold panel (`goldWash`, `goldDeep`) inside Spicy's pink one, with a
+  `phone` eyebrow. Times and lengths are `Chip`s; the set call sits in a `surface` card with
+  `phone-call`; the timer shows "n of m min together" in `title` gold over a gold meter, and a gold
+  or `line` dot for whether the other person has the app open. "I felt unsafe or uncomfortable" is
+  on screen for the whole call, and the words always say that leaving is allowed. Long button labels
+  wrap to two lines (`Button`'s `wrap`) rather than being cut.
 - **Spicy mode** (D103): existing tokens only. Its own things are pink (`pinkWash` behind `pinkDeep`:
   the Me entry card with a `zap` icon, the "on" panel, the hand-off on a card or a plan); the safety rules sit on
   gold (`goldWash` behind `goldDeep`) with a `shield` before each. Boundaries are chips, pink when
