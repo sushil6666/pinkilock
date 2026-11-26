@@ -10,8 +10,8 @@ import { join } from 'node:path';
 import { test } from 'node:test';
 import { AppError } from '../../src/domain/errors';
 import {
-  AI_PER_MINUTE, AI_HISTORY, aiToneFor, HARM_CASES, HARM_PHRASES, LISTENER_CODE, MATCH_CASES, SPLIT_CASES, aiCharge, aiHistory, callHold, checkAiMessage, checkKyc,
-  checkListener, freeReason, mentionsHarm, referralCode, sortListeners, talkMatch, talkSplit,
+  AI_CONTINUE_MINUTES, AI_SESSION_CREDITS, AI_SESSION_MS, AI_HISTORY, aiToneFor, HARM_CASES, HARM_PHRASES, LISTENER_CODE, MATCH_CASES, SPLIT_CASES, aiHistory, aiMayContinue, aiMayTalk, aiMinutesLeft, callHold, checkAiMessage, checkKyc,
+  checkListener, freeReason, mentionsHarm, packToContinue, referralCode, sortListeners, talkMatch, talkSplit,
 } from '../../src/domain/talk';
 import { en } from '../../src/i18n/en';
 import { REVIEW_GAP_DAYS, mayAsk } from '../../src/domain/review';
@@ -72,13 +72,25 @@ test('the SQL copy of the shared tables is up to date', () => {
   assert.equal(readFileSync(file, 'utf8'), want, 'tests/db/talk_cases.sql is stale: UPDATE_CASES=1 npm run test:unit');
 });
 
-test('an AI message costs a minute once, and nothing with a pass or after a mention', () => {
-  const now = 1_000_000;
-  assert.equal(aiCharge({ passUntil: null, harm: false, minutePaid: false }, now), AI_PER_MINUTE);
-  assert.equal(aiCharge({ passUntil: null, harm: false, minutePaid: true }, now), 0);
-  assert.equal(aiCharge({ passUntil: now + 1, harm: false, minutePaid: false }, now), 0);
-  assert.equal(aiCharge({ passUntil: now - 1, harm: false, minutePaid: false }, now), AI_PER_MINUTE);
-  assert.equal(aiCharge({ passUntil: null, harm: true, minutePaid: false }, now), 0);
+test('Saathi needs a paid session, a pass or a mention; a session can be continued only near its end', () => {
+  const now = 1_000_000_000;
+  const M = 60_000;
+  assert.equal(AI_SESSION_CREDITS, 60);
+  assert.equal(AI_SESSION_MS, 15 * M);
+  assert.equal(aiMayTalk({ passUntil: null, harm: false, paidUntil: null }, now), false);
+  assert.equal(aiMayTalk({ passUntil: null, harm: false, paidUntil: now + 1 }, now), true);
+  assert.equal(aiMayTalk({ passUntil: null, harm: false, paidUntil: now - 1 }, now), false);
+  assert.equal(aiMayTalk({ passUntil: now + 1, harm: false, paidUntil: null }, now), true);
+  assert.equal(aiMayTalk({ passUntil: null, harm: true, paidUntil: now - 1 }, now), true, 'never cut off after a mention of self-harm');
+  assert.equal(aiMayContinue(null, now), true);
+  assert.equal(aiMayContinue(now + 10 * M, now), false);
+  assert.equal(aiMayContinue(now + AI_CONTINUE_MINUTES * M, now), true);
+  assert.equal(aiMayContinue(now - M, now), true);
+  assert.equal(aiMinutesLeft(now + 14 * M + 1, now), 15);
+  assert.equal(aiMinutesLeft(now - 1, now), 0);
+  assert.equal(packToContinue(60), null);
+  assert.equal(packToContinue(20)?.id, 'p49');
+  assert.equal(packToContinue(0)?.id, 'p99');
   assert.equal(codeOf(() => checkAiMessage('   ')), 'PL162');
   assert.equal(codeOf(() => checkAiMessage('x'.repeat(801))), 'PL162');
   assert.equal(checkAiMessage('  hi  '), 'hi');

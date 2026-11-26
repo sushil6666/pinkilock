@@ -1007,7 +1007,13 @@ export function createSupabaseBackend(url: string, anonKey: string, storage: Ses
     async talkAi(chat, history, text, tone) {
       await uid();
       const body = checkAiMessage(text);
-      return talkFunction<{ chat: string; reply: string; harm: boolean; charged: number }>({ action: 'ai', chat, history: aiHistory(history), text: body, tone });
+      const r = await talkFunction<{ chat: string; reply: string; harm: boolean; charged: number; paid_until: string | null }>({ action: 'ai', chat, history: aiHistory(history), text: body, tone });
+      return { chat: r.chat, reply: r.reply, harm: r.harm, charged: r.charged, paidUntil: r.paid_until ? Date.parse(r.paid_until) : null };
+    },
+    async talkAiSession(chat) {
+      await uid();
+      const r = await rpc<{ chat: string; paid_until: string | null; charged: number; free: boolean }>('talk_ai_session', { p_chat: chat });
+      return { chat: r.chat, paidUntil: r.paid_until ? Date.parse(r.paid_until) : null, charged: r.charged, free: r.free };
     },
     talkAiPass: () => talkRpc('talk_ai_pass'),
     async talkListeners() {

@@ -644,7 +644,8 @@ Talk mode (D108) has three parts, each off until its keys are GitHub secrets. Th
 public: never paste a key in a chat, an issue or a file.
 
 1. **The AI companion** uses `ANTHROPIC_API_KEY` (already a secret for review lines). Optional:
-   the variable `TALK_MODEL` picks a cheaper model. It is charged in credits (3 a minute or 49 a day).
+   the variable `TALK_MODEL` picks another model (the default is Haiku 5.5, D114). It is paid in credits:
+   60 for up to 15 minutes, and 60 more to continue (D114).
 2. **Voice calls**: make a project at [cloud.livekit.io](https://cloud.livekit.io) (Mumbai region),
    **Settings, Keys, Create key**, and add the secrets `LIVEKIT_URL` (the `wss://` address),
    `LIVEKIT_API_KEY` and `LIVEKIT_API_SECRET`. Turn off recording (egress) in the project.

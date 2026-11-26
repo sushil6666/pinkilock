@@ -604,12 +604,14 @@ goes, kept for the books), `talk_blocks` and `talk_reports`.
   `talkMatch` / `talk_match` (caller's opposite, same or anyone against the listener's women, men or
   anyone), `mentionsHarm` / `mentions_harm` (one word list) and `talkSplit` / `talk_split` (credits
   to paise at 76 per credit, 60% to the host, GST inside Pinkilock's 40%, TDS 0.1% under 194-O).
-- **The app** calls `talk_state`, `talk_settings`, `talk_ai_pass`, `talk_listeners`, `talk_call`
+- **The app** calls `talk_state`, `talk_settings`, `talk_ai_session` (60 credits for up to 15 minutes
+  on a chat, D114; again in its last 2 minutes; free on a flagged chat), `talk_listeners`, `talk_call`
   (holds bought credits for the length, PL139 when short), `talk_answer`, `talk_beat`, `talk_end`,
   `talk_report`, `talk_block`, `talk_listener_apply`, `talk_listener_available` and
   `talk_claim_referral` (PL158 to PL177). `talk_sweep` (pg_cron, every minute) ends calls nobody
   answered, that ran their length, or where someone left; it charges only minutes both were present.
-- **The `talk` Edge Function** holds every key: `ai` (checks and charges through `talk_ai_turn`,
+- **The `talk` Edge Function** holds every key: `ai` (checks through `talk_ai_turn` that the chat has paid time,
+  a day pass bought before D114, or a mention of self-harm, which always goes,
   then asks the model with the instructions in `supabase/functions/talk/companion.ts` and the tone the
   phone sent, warm or flirty, always warm once the chat is flagged (D113); the reply's
   help marker sets `talk_ai_flag`), `voice` (a LiveKit token for `talk_<call id>` from

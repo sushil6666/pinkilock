@@ -75,7 +75,8 @@ With no keys set, the app runs on ten made-up people who answer by themselves. A
     top-ups stay off until the Razorpay keys are secrets (`OPERATIONS.md`, "Wallet").
 13. **Talk to someone** (D108): in **Me**, tap **Talk to someone**. Chat with **Saathi**, the AI companion
     (always labelled AI, D112; pick the Warm or Flirty tone, D113; the mock answers from a few kind lines, and "I want to die" or similar shows
-    the help lines and makes the chat free). **Talk to a real person**: say who you are and whom you
+    the help lines and makes the chat free). Saathi costs 60 credits for up to 15 minutes, and 60 more to
+    continue near the end (D114). **Talk to a real person**: say who you are and whom you
     would like to talk to, pick a length (or your free first call, D109: tap **Pretend a friend
     joined** to unlock it) and call a listener. The mock listener picks up and the timer runs; there
     is no sound in the mock. **Become a listener**: apply, fill in the KYC form (any valid-looking

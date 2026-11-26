@@ -197,33 +197,49 @@ reset role;
 select t.ok((select free and minutes = 1 and payout = 455 from private.talk_payouts where listener = :'l' order by at desc limit 1), 'and Lata is paid for it');
 set role authenticated;
 
--- The AI companion: only the Edge Function may charge, and a mention stops charging.
+-- Saathi (D114): 60 credits buy up to 15 minutes; only the Edge Function sends a message; a mention
+-- of self-harm makes the chat free and is never refused for time.
 select t.as_user(:'a');
-select t.ok(t.fails(format($$select talk_ai_turn(%L, null, 'hi')$$, :'a')) and t.fails(format('select talk_ai_flag(%L, null)', :'a')), 'a client cannot charge or flag an AI chat');
+select t.ok(t.fails(format($$select talk_ai_turn(%L, null, 'hi')$$, :'a')) and t.fails(format('select talk_ai_flag(%L, null)', :'a')), 'a client cannot send to or flag an AI chat');
+select t.ok(t.sqlstate('select talk_ai_pass()') = 'PL183', 'the day pass is no longer sold (PL183)');
 reset role;
-create temp table chat as select (talk_ai_turn(:'a', null, 'I feel lonely in this new city') ->> 'chat')::uuid as id;
-select t.ok((select (credits) from private.talk_ai_minutes where chat_id = (select id from chat)) = 3
-  and (select earned from private.wallets where user_id = :'a') = 17, 'the first message costs a minute (3), earned credits first');
-select t.ok(t.sqlstate(format($$select talk_ai_turn(%L, %L, 'and work is hard')$$, :'a', (select id from chat))) = 'PL163', 'one message at a time (PL163)');
+select paid + earned as before_ai from private.wallets where user_id = :'a' \gset
+select t.ok(t.sqlstate(format($$select talk_ai_turn(%L, null, 'I feel lonely in this new city')$$, :'a')) = 'PL181', 'no message before a session is paid (PL181)');
+set role authenticated;
+select t.as_user(:'a');
+select talk_ai_session(null) ->> 'chat' as ai_chat \gset
+select t.ok(t.sqlstate(format('select talk_ai_session(%L)', :'ai_chat')) = 'PL182', 'no second session while more than 2 minutes are left (PL182)');
+reset role;
+select t.ok((select paid + earned from private.wallets where user_id = :'a') = :before_ai - 60
+  and (select sessions = 1 and paid_until between now() + interval '14 minutes' and now() + interval '15 minutes' from private.talk_ai_chats where id = :'ai_chat'),
+  'a session: 60 credits for 15 minutes');
+select t.ok((talk_ai_turn(:'a', :'ai_chat', 'I feel lonely in this new city') ->> 'charged')::int = 0, 'messages in a session cost nothing more');
+select t.ok(t.sqlstate(format($$select talk_ai_turn(%L, %L, 'and work is hard')$$, :'a', :'ai_chat')) = 'PL163', 'one message at a time (PL163)');
+-- Near the end: continue, and the new 15 minutes start where the old ones end.
+update private.talk_ai_chats set paid_until = now() + interval '1 minute' where id = :'ai_chat';
+set role authenticated;
+select t.as_user(:'a');
+select t.ok((talk_ai_session(:'ai_chat') ->> 'charged')::int = 60, 'in the last 2 minutes, continue for 60 more');
+reset role;
+select t.ok((select sessions = 2 and paid_until between now() + interval '15 minutes' and now() + interval '16 minutes' from private.talk_ai_chats where id = :'ai_chat')
+  and (select paid + earned from private.wallets where user_id = :'a') = :before_ai - 120, 'the same chat goes on, 16 minutes from now');
+-- Time up: a plain message is refused, a mention of self-harm goes and makes the chat free.
+update private.talk_ai_chats set paid_until = now() - interval '1 minute' where id = :'ai_chat';
 update private.talk_people set last_ai_at = now() - interval '5 seconds' where user_id = :'a';
-select t.ok((talk_ai_turn(:'a', (select id from chat), 'and work is hard') ->> 'charged')::int = 0, 'the same minute is not charged twice');
-update private.talk_ai_minutes set minute = minute - interval '1 minute' where chat_id = (select id from chat);
+select t.ok(t.sqlstate(format($$select talk_ai_turn(%L, %L, 'and work is hard')$$, :'a', :'ai_chat')) = 'PL181', 'time up: a message waits for a continue (PL181)');
+select t.ok((talk_ai_turn(:'a', :'ai_chat', 'sometimes I want to die') ->> 'harm')::boolean, 'a mention of self-harm goes even when the time is up, and flags the chat');
 update private.talk_people set last_ai_at = now() - interval '5 seconds' where user_id = :'a';
-select t.ok((talk_ai_turn(:'a', (select id from chat), 'sometimes I want to die') ->> 'harm')::boolean, 'a mention of self-harm flags the chat');
-update private.talk_ai_minutes set minute = minute - interval '1 minute' where chat_id = (select id from chat);
-update private.talk_people set last_ai_at = now() - interval '5 seconds' where user_id = :'a';
-select t.ok((talk_ai_turn(:'a', (select id from chat), 'ok') ->> 'charged')::int = 0 and (select earned from private.wallets where user_id = :'a') = 17,
-  'and charges nothing for the rest of it');
+select t.ok((talk_ai_turn(:'a', :'ai_chat', 'ok') ->> 'charged')::int = 0, 'and the rest of that chat needs no session');
+set role authenticated;
+select t.as_user(:'a');
+select t.ok((talk_ai_session(:'ai_chat') ->> 'free')::boolean, 'a session on that chat is free');
+reset role;
+select t.ok((select paid + earned from private.wallets where user_id = :'a') = :before_ai - 120, 'and charges nothing');
 select t.ok(not exists (select 1 from information_schema.columns where table_schema = 'private' and table_name like 'talk_ai%' and column_name in ('body', 'text', 'message', 'content')),
   'the words are never stored');
 update private.talk_ai_days set messages = 250 where user_id = :'a';
 update private.talk_people set last_ai_at = now() - interval '5 seconds' where user_id = :'a';
 select t.ok(t.sqlstate(format($$select talk_ai_turn(%L, null, 'hi')$$, :'a')) = 'PL175', 'a day''s fair use (PL175)');
-
--- The day pass.
-set role authenticated;
-select t.as_user(:'a');
-select t.ok((talk_ai_pass() ->> 'pass_until') is not null and t.sqlstate('select talk_ai_pass()') = 'PL176', 'a day pass (49), once at a time (PL176)');
 
 -- Voice: only the two on a live call get a room.
 reset role;

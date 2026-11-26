@@ -161,6 +161,10 @@ export const ERRORS = {
   PL175: 'That is a lot of talking for one day. The AI is back tomorrow, or try a listener.',
   PL176: 'Your day pass is still on.',
   PL177: 'Pick what happened.',
+  // Saathi sessions (D114). PL178 to PL180 are Spicy voice (#96).
+  PL181: 'Your time with Saathi is up. Continue for another 15 minutes to keep talking.',
+  PL182: 'You still have time with Saathi. You can continue in the last 2 minutes.',
+  PL183: 'The day pass is no longer sold. Start a 15-minute session instead.',
 
   PA001: 'Phone sign-in is not switched on yet.',
   PA002: 'Email sign-in is not switched on yet.',

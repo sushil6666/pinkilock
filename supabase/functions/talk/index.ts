@@ -5,7 +5,7 @@
  *   POST {action: 'ai', chat, history, text}      signed in: one message to the AI companion.
  *                                                 talk_ai_turn checks and charges first (and runs the
  *                                                 self-harm check); then Claude answers. Nothing of
- *                                                 the chat is stored or logged. {chat, reply, harm, charged}
+ *                                                 the chat is stored or logged. {chat, reply, harm, charged, paid_until}
  *   POST {action: 'voice', call}                  signed in, on a live call: a LiveKit token for the
  *                                                 call's room, microphone only, never recorded. {url, token}
  *   POST {action: 'kyc', pan, account, ifsc, holder, street, city, state, pin}
@@ -35,7 +35,7 @@ const BASE = (Deno.env.get('SUPABASE_URL') ?? '').replace(/\/$/, '');
 const SERVICE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
 const HOOK_SECRET = Deno.env.get('PUSH_HOOK_SECRET') ?? '';
 const AI_KEY = Deno.env.get('ANTHROPIC_API_KEY') ?? '';
-const MODEL = Deno.env.get('TALK_MODEL') ?? 'claude-opus-5-5';
+const MODEL = Deno.env.get('TALK_MODEL') ?? 'claude-haiku-5-5';
 const LK_URL = Deno.env.get('LIVEKIT_URL') ?? '';
 const LK_KEY = Deno.env.get('LIVEKIT_API_KEY') ?? '';
 const LK_SECRET = Deno.env.get('LIVEKIT_API_SECRET') ?? '';
@@ -212,7 +212,7 @@ Deno.serve(async (req) => {
     if (!claude) return refuse('PL161');
     const text = typeof body.text === 'string' ? body.text : '';
     const chat = typeof body.chat === 'string' && /^[0-9a-f-]{36}$/.test(body.chat) ? body.chat : null;
-    const turn = await rpc<{ chat: string; harm: boolean; charged: number }>('talk_ai_turn', { p_user: user.id, p_chat: chat, p_text: text }, trace);
+    const turn = await rpc<{ chat: string; harm: boolean; charged: number; paid_until: string | null }>('talk_ai_turn', { p_user: user.id, p_chat: chat, p_text: text }, trace);
     if (turn.error || !turn.data) return fromDb(turn.error ?? {});
     const history = Array.isArray(body.history) ? body.history.slice(-16) : [];
     let reply = SAFE_REPLY;
@@ -230,7 +230,7 @@ Deno.serve(async (req) => {
       console.log(JSON.stringify({ event: 'talk.ai', user: user.id, result: 'model_failed', error: e instanceof Error ? e.name : 'error', trace }));
     }
     console.log(JSON.stringify({ event: 'talk.ai', user: user.id, chat: turn.data.chat, harm, charged: turn.data.charged, trace }));
-    return json({ chat: turn.data.chat, reply, harm, charged: turn.data.charged });
+    return json({ chat: turn.data.chat, reply, harm, charged: turn.data.charged, paid_until: turn.data.paid_until });
   }
 
   if (body.action === 'voice') {
