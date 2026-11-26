@@ -259,6 +259,7 @@ select t.ok(not exists (select 1 from pg_proc p join pg_namespace s on s.oid = p
 reset role;
 update public.profiles set city = 'Wallettown' where id = :'z';
 insert into private.spicy (user_id, discord, adult_at, rules_at) values (:'y', 'yash.k', now(), now()), (:'z', 'zoya.r', now(), now());
+insert into public.consents (user_id, kind, version) values (:'y', 'spicy', 'spicy-' || private.spicy_terms_version()), (:'z', 'spicy', 'spicy-' || private.spicy_terms_version());
 insert into private.discover_seen (user_id, card_id) values (:'y', :'z'), (:'z', :'y');
 update private.wallets set paid = 1000 where user_id = :'y';
 insert into private.wallets (user_id, paid) values (:'z', 250) on conflict (user_id) do update set paid = 250;

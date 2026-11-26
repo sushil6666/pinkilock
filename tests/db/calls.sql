@@ -14,6 +14,8 @@ insert into public.profiles (id, name, age, area, city) values (:'c', 'Chandni',
   (:'e', 'Esha', 26, 'Juhu', 'Calltown'), (:'f', 'Farhan', 28, 'Andheri West', 'Calltown'), (:'g', 'Gita', 24, 'Versova', 'Calltown');
 insert into private.spicy (user_id, discord, adult_at, rules_at)
   select u, 'person.' || right(u::text, 1), now(), now() from unnest(array[:'c', :'d', :'e', :'f', :'g']::uuid[]) u;
+-- D107: they passed the quiz on the Spicy terms in force (tests/db/spicy_quiz.sql checks it).
+insert into public.consents (user_id, kind, version) select u, 'spicy', 'spicy-' || private.spicy_terms_version() from unnest(array[:'c', :'d', :'e', :'f', :'g']::uuid[]) u;
 insert into private.discover_seen (user_id, card_id) values (:'c', :'d'), (:'d', :'c'), (:'e', :'f'), (:'f', :'e'), (:'c', :'g'), (:'g', :'c');
 insert into private.wallets (user_id, paid) values (:'c', 600), (:'d', 600), (:'e', 600), (:'f', 600);
 create temp table at_slot as select date_trunc('hour', now()) + interval '3 hours' as s3, date_trunc('hour', now()) + interval '4 hours' as s4,

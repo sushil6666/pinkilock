@@ -10,6 +10,7 @@ insert into public.profiles (id, name, age, area, city) values (:'h', 'Hema', 25
   (:'k', 'Kavya', 24, 'Juhu', 'Voicetown');
 insert into private.spicy (user_id, discord, adult_at, rules_at)
   select u, 'person.' || right(u::text, 2), now(), now() from unnest(array[:'h', :'j', :'k']::uuid[]) u;
+insert into public.consents (user_id, kind, version) select u, 'spicy', 'spicy-' || private.spicy_terms_version() from unnest(array[:'h', :'j', :'k']::uuid[]) u;
 insert into private.discover_seen (user_id, card_id) values (:'h', :'j'), (:'j', :'h'), (:'h', :'k'), (:'k', :'h');
 insert into private.spicy_yes (user_id, other_id) values (:'h', :'j'), (:'j', :'h'), (:'h', :'k'), (:'k', :'h');
 
