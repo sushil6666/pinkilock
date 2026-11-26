@@ -59,8 +59,9 @@ With no keys set, the app runs on ten made-up people who answer by themselves. A
     with your week and streak, solo plans in your city, the gratitude jar and your boundaries. Only
     you see it. **Bounce back** (from there, or from an ask someone passed on) has a kind note, a
     3-day reset, a private journal, a pause from Discover, and help lines.
-11. **Spicy mode**: in **Me**, tap the pink **Spicy mode** card. Read the safety rules, tick 18+ and
-    the rules, add a Discord username (or Telegram, or Signal) and pick boundaries; the mock account needs a
+11. **Spicy mode**: in **Me**, tap the pink **Spicy mode** card. Read the safety rules and the **Spicy
+    terms**, agree, and pass the 5-question quiz (all five right; a miss shows what to read again,
+    D107). Then tick 18+ and the rules, add a Discord username (or Telegram, or Signal) and pick boundaries; the mock account needs a
     phone or an email first (**Me**, sign-in, code `123456`). On the card (or a plan) of Aanya, Kabir, Ira,
     Zoya or Rhea (who have it on in the mock) you see their boundaries and **Yes, move our
     chat**; say yes, then unlock the match with credits (600, or 300 each; D105) and their username

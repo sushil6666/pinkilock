@@ -17,6 +17,7 @@ import type { Account, BlockedPerson, CodeKind, ContactCheck, Invite, MyContact,
 import { log, quiet } from '../../lib/log';
 import { isMood, type NoteKind, type SelfLove } from '../../domain/selfLove';
 import { isBoundary, type Spicy, type SpicyPlan } from '../../domain/spicy';
+import { SPICY_QUIZ, type QuizQuestion, type QuizResult, type SpicyTerms } from '../../domain/spicyQuiz';
 import { REWARD_KINDS, TREAT_ITEMS, emptyWallet, topUpsHere, type LedgerKind, type RewardKind, type TreatItem, type TreatPartner, type Wallet } from '../../domain/wallet';
 import type { openCheckout } from '../../lib/razorpay';
 import type { Backend, BackendEvent, Changes, Notice, Snapshot } from '../backend';
@@ -43,6 +44,19 @@ function selfLoveFrom(raw: unknown): SelfLove {
 function spicyFrom(raw: unknown): Spicy {
   const r = (raw ?? {}) as { on?: boolean; discord?: string | null; telegram?: string | null; signal?: string | null; boundaries?: string[]; since?: string | null };
   return { on: !!r.on, discord: r.discord ?? null, telegram: r.telegram ?? null, signal: r.signal ?? null, boundaries: (r.boundaries ?? []).filter(isBoundary), since: ms(r.since ?? null) };
+}
+
+/** spicy_terms(). */
+function spicyTermsFrom(raw: unknown): SpicyTerms {
+  const r = (raw ?? {}) as { version?: number; passed?: boolean; passed_at?: string | null; outdated?: boolean };
+  return { version: r.version ?? 0, passed: !!r.passed, passedAt: ms(r.passed_at ?? null), outdated: !!r.outdated };
+}
+
+/** pass_spicy_quiz(). */
+function quizResultFrom(raw: unknown): QuizResult {
+  const r = (raw ?? {}) as { passed?: boolean; wrong?: string[] };
+  const ids: readonly string[] = SPICY_QUIZ.map((q) => q.id);
+  return { passed: !!r.passed, wrong: (r.wrong ?? []).filter((w): w is QuizQuestion => ids.includes(w)) };
 }
 
 /** spicy_with() and spicy_yes(). */
@@ -845,6 +859,15 @@ export function createSupabaseBackend(url: string, anonKey: string, storage: Ses
     async spicyYes(profileId, yes) {
       await uid();
       return spicyPlanFrom(await rpc('spicy_yes', { p_other: profileId, p_yes: yes }));
+    },
+
+    async spicyTerms() {
+      await uid();
+      return spicyTermsFrom(await rpc('spicy_terms'));
+    },
+    async passSpicyQuiz(version, agree, answers) {
+      await uid();
+      return quizResultFrom(await rpc('pass_spicy_quiz', { p_version: version, p_agree: agree, p_answers: answers }));
     },
 
     async spicyPay(profileId, share) {

@@ -1076,6 +1076,112 @@ export const en = {
     openWallet: 'Open my wallet',
   },
 
+  spicyQuiz: {
+    gateTitle: 'Before Spicy mode turns on',
+    gateBody: 'Read the Spicy terms, agree to them, then answer {n} quick questions about them. Get every one right and Spicy mode opens.',
+    termsTitle: 'Spicy terms',
+    termsVersion: 'Version {v}',
+    terms: {
+      adults: {
+        title: 'For adults, by choice',
+        body: 'Spicy mode is only for people 18 or older who both choose it. It stays off until you turn it on, and one tap turns it off and wipes it. Anyone under 18 is removed and reported.',
+      },
+      role: {
+        title: 'What Pinkilock does, and does not',
+        body: 'Pinkilock only passes on usernames, once you both say yes and the match is unlocked. The chat happens in Discord, Telegram or Signal, under their rules. Pinkilock cannot see, keep or delete anything said or sent there.',
+      },
+      private: {
+        title: 'Keep yourself private',
+        body: 'Never share your phone number, your full face, your full name, where you live, work or study, or your live location. Usernames only.',
+      },
+      voice: {
+        title: 'Voice only. Camera off.',
+        body: 'Never turn on your camera on Discord, Telegram or Signal, not even for a moment. Calls stay voice only. Video can be recorded without you knowing.',
+      },
+      photos: {
+        title: 'No intimate photos or videos',
+        body: 'Never send intimate photos or videos, and never ask for them. Anything you send can be saved, screenshotted or shared, even a disappearing message. Most blackmail starts this way.',
+      },
+      consent: {
+        title: 'Consent at every step',
+        body: 'A yes to moving the chat is a yes to talking, nothing more. Keep to each other\'s boundaries and ask before anything new. Stop means stop: either of you can leave at any time, with no reason and no blame. On a Spicy call, "I felt unsafe" ends it at once.',
+      },
+      threats: {
+        title: 'If someone threatens you',
+        body: 'Do not pay, and do not send anything more. Keep screenshots and their username, then block them and report them here and in the app you were using. Call the cyber crime helpline on 1930 or report at cybercrime.gov.in. StopNCII.org can help stop private images from spreading.',
+      },
+      never: {
+        title: 'Never allowed',
+        body: 'Anyone under 18. Sharing anyone\'s photos, chats or calls without their consent. Recording a call. Asking for or offering money, gifts or paid content. Pressure, threats or harassment. Any of these ends your account, and we may report it to the police.',
+      },
+      calls: {
+        title: 'Calls and no-shows',
+        body: 'Turn up for a Spicy call you agreed to, or move it in time. A missed call lowers your Trust Score and costs your part of the unlock. Leaving because you felt unsafe never counts against you.',
+      },
+      credits: {
+        title: 'Credits',
+        body: 'The unlock is paid in bought credits to Pinkilock, never to the other person. Once a match is unlocked, those credits do not come back.',
+      },
+      changes: {
+        title: 'When these terms change',
+        body: 'We ask you to read them again and retake the quiz. Spicy mode pauses until you do.',
+      },
+    },
+    agree: 'I am 18 or older, I have read the Spicy terms, and I agree to them.',
+    start: 'Start the quiz',
+    progress: 'Question {n} of {total}',
+    back: 'Back',
+    next: 'Next',
+    check: 'Check my answers',
+    q: {
+      phone: {
+        ask: 'Your match asks for your phone number, so it is easier to talk. What do you do?',
+        a: 'Share it. They seem genuine.',
+        b: 'Say no. Usernames only, never a phone number.',
+        c: 'Share it on Signal, since Signal is private.',
+        why: 'A phone number leads to your real name, your UPI and your home. Keep to usernames, wherever you chat.',
+      },
+      camera: {
+        ask: 'On Discord, Telegram or Signal, they ask you to turn your camera on, just for a minute. What do you do?',
+        a: 'Turn it on, but keep my face out of view.',
+        b: 'Turn it on if they turn theirs on first.',
+        c: 'Keep the camera off. Voice only, every time.',
+        why: 'Video can be recorded without you knowing, and a minute is enough. Spicy calls are voice only.',
+      },
+      photos: {
+        ask: 'They ask for a private photo and promise to delete it. What do you do?',
+        a: 'Never send intimate photos or videos, to anyone.',
+        b: 'Send one, as long as my face is not in it.',
+        c: 'Send it as a disappearing message.',
+        why: 'Anything sent can be saved or screenshotted, even a disappearing message. This is how most blackmail starts.',
+      },
+      threat: {
+        ask: 'Someone says they will share your chats or photos unless you pay. What do you do?',
+        a: 'Pay once, so that it stops.',
+        b: 'Do not pay. Keep screenshots, block them, and report at cybercrime.gov.in or on 1930.',
+        c: 'Delete everything and tell nobody.',
+        why: 'Paying almost never ends it: they ask again. Keep the evidence, block, and report. StopNCII.org can help stop images from spreading.',
+      },
+      stop: {
+        ask: 'Partway through a chat or a call, you feel uncomfortable. What can you do?',
+        a: 'Nothing. I already said yes.',
+        b: 'Wait for the call to end, then leave.',
+        c: 'Stop at once: leave, block, or tap "I felt unsafe". No reason needed.',
+        why: 'A yes to moving the chat is not a yes to anything else. Either of you can stop at any time, with no blame.',
+      },
+    },
+    passTitle: 'You passed',
+    passBody: 'All {n} right. Spicy mode is ready to turn on below.',
+    failTitle: '{right} of {total} right',
+    failBody: 'You need all {total}. Here is what to look at again, then read the terms once more and retry.',
+    yourMiss: 'Worth another look',
+    again: 'Read the terms again',
+    outdatedTitle: 'The Spicy terms changed',
+    outdatedBody: 'Spicy mode is paused until you read the new terms and pass the quiz again. Nobody sees it on your card meanwhile.',
+    passedNote: 'Spicy terms version {v}, quiz passed.',
+    reread: 'Read the Spicy terms',
+  },
+
   wallet: {
     title: 'Wallet',
     eyebrow: 'Credits, never cash',

@@ -318,12 +318,24 @@ test('Spicy mode (D103): nothing of anyone else\'s, over the API too', async () 
   refused(await raw.schema('private' as 'public').from('spicy_yes').select('*'), 'reading anyone\'s yes');
   // A phone number never goes in as a username, whoever asks.
   await assert.rejects(x.backend.saveSpicy({ adult: true, rules: true, discord: '+91 98765 43210', telegram: '', signal: '', boundaries: [] }),
-    (e: unknown) => e instanceof AppError && (e.code === 'PL123' || e.code === 'PL128'), 'no phone number as a username');
+    (e: unknown) => e instanceof AppError && ['PL123', 'PL128', 'PL154'].includes(e.code), 'no phone number as a username');
   // Someone I was never shown, and share nothing with, is closed and cannot be said yes to.
   const closed = await raw.rpc('spicy_with', { p_other: '00000000-0000-0000-0000-000000000000' });
   assert.deepEqual(closed.data, { open: false }, 'a stranger says nothing');
   await assert.rejects(x.backend.spicyYes('00000000-0000-0000-0000-000000000000', true), (e: unknown) => e instanceof AppError && e.code === 'PL130', 'and takes no yes');
   refused(await signedOut.rpc('my_spicy'), 'signed out, there is no Spicy to read');
+});
+
+test('Spicy terms and quiz (D107): no pass without the right answers, over the API too', async () => {
+  const miss = await x.backend.passSpicyQuiz(1, true, ['a', 'a', 'a', 'a', 'a']);
+  assert.equal(miss.passed, false, 'wrong answers do not pass');
+  assert.equal((await x.backend.spicyTerms()).passed, false, 'and nothing was kept');
+  await assert.rejects(x.backend.passSpicyQuiz(0, true, ['b', 'c', 'a', 'b', 'c']), (e: unknown) => e instanceof AppError && e.code === 'PL155', 'not for old terms');
+  await assert.rejects(x.backend.passSpicyQuiz(1, false, ['b', 'c', 'a', 'b', 'c']), (e: unknown) => e instanceof AppError && e.code === 'PL156', 'not without the yes');
+  // The pass is a consent row, which no client may write, and give_consents does not take it.
+  refused(await raw.from('consents').insert({ user_id: x.id, kind: 'spicy', version: 'spicy-1' }), 'writing a pass by hand');
+  refused(await raw.rpc('give_consents', { p_kinds: ['spicy'] }), 'giving a pass as a consent');
+  refused(await raw.rpc('spicy_quiz_key' as 'spicy_terms'), 'reading the answer key');
 });
 
 test('The wallet (D104, D105): no credits from nowhere, nothing of anyone else\'s, over the API too', async () => {

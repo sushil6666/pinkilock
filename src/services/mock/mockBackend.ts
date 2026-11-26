@@ -24,6 +24,7 @@ const cityCountry = (city: string) => CITIES.find((c) => c.name === city)?.count
 import { FREE_WINDOWS } from '../../domain/freeWindows';
 import { DAY } from '../../domain/invites';
 import { checkSpicy, spicyClosed, spicyOff, type Boundary, type Spicy } from '../../domain/spicy';
+import { SPICY_TERMS_VERSION, checkQuiz } from '../../domain/spicyQuiz';
 import { PAUSE_MAX_DAYS, RESET_DAYS, checkSelfNote, dayOf, emptySelfLove, isMood, stepOpen, type SelfLove } from '../../domain/selfLove';
 import { VOUCH_MAX_PICKS, VOUCH_PHRASES } from '../../domain/vouches';
 import {
@@ -67,6 +68,8 @@ interface Db {
   /** Spicy mode (D103), mine; absent is off. And the people I said yes to. */
   spicy?: Spicy;
   spicyYes?: string[];
+  /** Spicy terms (D107): when I passed the quiz, by terms version. */
+  spicyPassed?: Record<number, number>;
   /** The wallet (D104), as the server's tables hold it. */
   wallet?: MockWallet;
 }
@@ -362,10 +365,13 @@ export function createMockBackend(options: { captcha?: () => Promise<string | un
     return selfOf(d);
   }
 
-  /** As spicy_with_for in SQL: closed unless both on, a card I can see, nobody blocked. Every made-up card is one I can see. */
+  /** As private.spicy_passed: a pass for the terms in force. The made-up people have all passed. */
+  const spicyPassed = (d: Db) => !!d.spicyPassed?.[SPICY_TERMS_VERSION];
+
+  /** As spicy_with_for in SQL: closed unless both on (and past the quiz), a card I can see, nobody blocked. Every made-up card is one I can see. */
   function mockSpicyPlan(d: Db, them: string) {
     const theirs = SPICY_PEOPLE[them];
-    if (!d.me || !d.spicy?.on || !theirs || isBlocked(d, them) || !d.profiles.some((p) => p.id === them)) return spicyClosed;
+    if (!d.me || !d.spicy?.on || !spicyPassed(d) || !theirs || isBlocked(d, them) || !d.profiles.some((p) => p.id === them)) return spicyClosed;
     const myYes = !!d.spicyYes?.includes(them);
     const w = walletOf(d);
     const done = myYes && w.spicyDone.includes(them);
@@ -617,7 +623,10 @@ export function createMockBackend(options: { captcha?: () => Promise<string | un
       await wait(LATENCY);
       if (!d.me) fail('PL002');
       if (d.me.age < 18) fail('PL127');
-      d.spicy = { on: true, ...checkSpicy(input, !!(d.phone || d.email)), since: Date.now() };
+      if (!input.adult || !input.rules) fail('PL127');
+      if (!(d.phone || d.email)) fail('PL128');
+      if (!spicyPassed(d)) fail('PL154');
+      d.spicy = { on: true, ...checkSpicy(input, true), since: Date.now() };
       save();
       return d.spicy;
     },
@@ -645,6 +654,25 @@ export function createMockBackend(options: { captcha?: () => Promise<string | un
       if (!yes) spicyRefund(d, profileId);
       save();
       return mockSpicyPlan(d, profileId);
+    },
+
+    async spicyTerms() {
+      const d = await load();
+      await wait(LATENCY);
+      if (!d.me) fail('PL002');
+      const at = d.spicyPassed?.[SPICY_TERMS_VERSION] ?? null;
+      return { version: SPICY_TERMS_VERSION, passed: at !== null, passedAt: at, outdated: at === null && Object.keys(d.spicyPassed ?? {}).length > 0 };
+    },
+    async passSpicyQuiz(version, agree, answers) {
+      const d = await load();
+      await wait(LATENCY);
+      if (!d.me) fail('PL002');
+      const result = checkQuiz(version, agree, answers);
+      if (result.passed) {
+        d.spicyPassed = { ...d.spicyPassed, [SPICY_TERMS_VERSION]: d.spicyPassed?.[SPICY_TERMS_VERSION] ?? Date.now() };
+        save();
+      }
+      return result;
     },
 
     async spicyPay(profileId, share) {
