@@ -124,7 +124,7 @@ test('the call text is in English and Hindi', () => {
 
 test('in-app calls are voice only: no camera, screen or recording anywhere in the call code (D111)', () => {
   const read = (p: string) => readFileSync(join(__dirname, '..', '..', p), 'utf8');
-  for (const p of ['src/lib/voice.ts', 'src/lib/voiceSetup.ts', 'src/lib/voiceSetup.native.ts', 'src/components/SpicyCall.tsx', 'supabase/functions/voice/index.ts']) {
+  for (const p of ['src/lib/voice.ts', 'src/lib/voiceSetup.ts', 'src/lib/voiceSetup.native.ts', 'src/components/SpicyCall.tsx', 'src/components/Talk.tsx', 'supabase/functions/voice/index.ts']) {
     const code = read(p).replace(/\/\*[\s\S]*?\*\/|\/\/.*$/gm, '');
     for (const bad of [/setCameraEnabled/, /setScreenShareEnabled/, /createLocalVideoTrack/, /createLocalTracks/, /expo-camera/, /getDisplayMedia/, /video:\s*true/i, /egress/i, /record/i]) {
       assert.ok(!bad.test(code), `${p} must not use ${bad}`);
