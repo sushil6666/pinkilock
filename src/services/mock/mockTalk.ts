@@ -7,9 +7,9 @@
  */
 import { fail } from '../../domain/errors';
 import {
-  AI_GAP_SECONDS, AI_MESSAGES_PER_DAY, AI_PASS, AI_PASS_MS, CALL_LENGTHS, CODE_VERSION, FREE_CALL_MINUTES, LISTENER_PER_MINUTE, REFERRAL_CODE, RING_SECONDS,
-  TALK_GONE_SECONDS, aiCharge, callHold, checkAiMessage, checkKyc, checkListener, emptyTalk, freeReason, mentionsHarm, minuteOf, referralCode, talkMatch, talkSplit,
-  type Accepts, type CallLength, type FreeCall, type FreeReason, type ListenerCard, type ListenerStatus, type ProfileDone, type Sex, type Talk, type TalkCall,
+  AI_GAP_SECONDS, AI_MESSAGES_PER_DAY,  CALL_LENGTHS, CODE_VERSION, FREE_CALL_MINUTES, LISTENER_PER_MINUTE, REFERRAL_CODE, RING_SECONDS,
+  TALK_GONE_SECONDS, AI_SESSION_CREDITS, AI_SESSION_MS, aiMayContinue, aiMayTalk, aiToneFor, callHold, checkAiMessage, checkKyc, checkListener, emptyTalk, freeReason, mentionsHarm, minuteOf, referralCode, talkMatch, talkSplit,
+  type AiTone, type Accepts, type CallLength, type FreeCall, type FreeReason, type ListenerCard, type ListenerStatus, type ProfileDone, type Sex, type Talk, type TalkCall,
   type TalkCallEnd, type TalkReportReason, type Topic, type Want,
 } from '../../domain/talk';
 import { dayOf } from '../../domain/selfLove';
@@ -61,7 +61,7 @@ export interface MockTalkDb {
   freeReason: FreeReason | null;
   aiDays: Record<string, number>;
   lastAi: number;
-  chats: Record<string, { harm: boolean; minutes: number[]; messages: number; at: number }>;
+  chats: Record<string, { harm: boolean; minutes: number[]; messages: number; at: number; paidUntil?: number | null; sessions?: number }>;
   calls: MockTalkCall[];
   blocks: string[];
   reports: { call: string; reason: TalkReportReason; at: number }[];
@@ -103,7 +103,7 @@ export function emptyMockTalk(): MockTalkDb {
 }
 
 export function createMockTalk(ctx: MockTalkContext): Pick<Backend,
-  'talk' | 'talkStatus' | 'talkSettings' | 'talkAi' | 'talkAiPass' | 'talkListeners' | 'talkCall' | 'talkAnswer' | 'talkBeat' | 'talkEnd' | 'talkReport' | 'talkBlock'
+  'talk' | 'talkStatus' | 'talkSettings' | 'talkAi' | 'talkAiSession' | 'talkAiPass' | 'talkListeners' | 'talkCall' | 'talkAnswer' | 'talkBeat' | 'talkEnd' | 'talkReport' | 'talkBlock'
   | 'talkVoice' | 'talkListenerApply' | 'talkListenerKyc' | 'talkListenerAvailable' | 'claimReferral'> & { demoFriendJoins(): Promise<Talk> } {
   const together = (c: MockTalkCall) => Math.min(c.myMins.filter((m) => c.theirMins.includes(m)).length, c.length);
 
@@ -180,11 +180,20 @@ export function createMockTalk(ctx: MockTalkContext): Pick<Backend,
       .map(({ accepts: _a, ...card }) => card);
 
   /** The mock companion: a few kind lines, by the same rules as the real one. */
-  function mockReply(text: string, harm: boolean, n: number): string {
+  function chatFor(tk: MockTalkDb, chat: string | null, now: number): string {
+    if (chat && tk.chats[chat] && now - tk.chats[chat].at < 6 * 60 * MINUTE) return chat;
+    const id = newId('chat');
+    tk.chats[id] = { harm: false, minutes: [], messages: 0, at: now, paidUntil: null, sessions: 0 };
+    return id;
+  }
+
+  function mockReply(text: string, harm: boolean, n: number, tone: AiTone): string {
     const low = text.toLowerCase();
     if (harm) return t('talk.mock.harm');
     if (/\b(human|real person|bot|are you real|robot|ai\?)\b/.test(low)) return t('talk.mock.isAi');
-    if (/\b(love you|date me|sexy|kiss|flirt|girlfriend|boyfriend|hot)\b/.test(low)) return t('talk.mock.noFlirt');
+    // Never sexual, whatever the tone (D113).
+    if (/\b(sex|sexy|nude|nudes|naked|horny)\b/.test(low)) return t('talk.mock.noSexual');
+    if (/\b(love you|date me|kiss|flirt|girlfriend|boyfriend|hot|cute|beautiful|handsome)\b/.test(low)) return t(tone === 'flirty' ? 'talk.mock.flirty' : 'talk.mock.noFlirt');
     if (/\b(person|someone real|listener|talk to a human)\b/.test(low)) return t('talk.mock.person');
     const lines = ['talk.mock.l1', 'talk.mock.l2', 'talk.mock.l3', 'talk.mock.l4'] as const;
     return t(lines[n % lines.length]);
@@ -202,37 +211,39 @@ export function createMockTalk(ctx: MockTalkContext): Pick<Backend,
         if (!['woman', 'man', 'unsaid'].includes(sex) || !['opposite', 'same', 'anyone'].includes(want) || (sex === 'unsaid' && want !== 'anyone')) fail('PL158');
         Object.assign(tk, { sex, want });
       }),
-    async talkAi(chat, history, text) {
+    async talkAi(chat, history, text, tone) {
       const { talk: tk, now } = await ctx.open();
       tick(tk, now);
       const body = checkAiMessage(text);
       if (now - tk.lastAi < AI_GAP_SECONDS * 1000) fail('PL163');
       const day = dayOf(now);
       if ((tk.aiDays[day] ?? 0) >= AI_MESSAGES_PER_DAY) fail('PL175');
-      let id = chat && tk.chats[chat] && now - tk.chats[chat].at < 6 * 60 * MINUTE ? chat : null;
-      if (!id) {
-        id = newId('chat');
-        tk.chats[id] = { harm: false, minutes: [], messages: 0, at: now };
-      }
+      const id = chatFor(tk, chat, now);
       const ch = tk.chats[id];
       if (!ch.harm && mentionsHarm(body)) ch.harm = true;
+      if (!aiMayTalk({ passUntil: tk.passUntil, harm: ch.harm, paidUntil: ch.paidUntil ?? null }, now)) fail('PL181');
       const minute = minuteOf(now);
-      const cost = aiCharge({ passUntil: tk.passUntil, harm: ch.harm, minutePaid: ch.minutes.includes(minute) }, now);
-      if (cost) ctx.spend('talk_ai', cost, `${id}:${minute}`);
       if (!ch.minutes.includes(minute)) ch.minutes.push(minute);
       Object.assign(ch, { messages: ch.messages + 1, at: now });
       tk.aiDays = { [day]: (tk.aiDays[day] ?? 0) + 1 };
       tk.lastAi = now;
       ctx.save();
       await new Promise((r) => setTimeout(r, 700));
-      return { chat: id, reply: mockReply(body, ch.harm, history.length), harm: ch.harm, charged: cost };
+      return { chat: id, reply: mockReply(body, ch.harm, history.length, aiToneFor(tone, ch.harm)), harm: ch.harm, charged: 0, paidUntil: ch.paidUntil ?? null };
     },
-    talkAiPass: () =>
-      change((tk, now) => {
-        if (tk.passUntil && tk.passUntil > now) fail('PL176');
-        ctx.spend('talk_pass', AI_PASS, `pass:${now}`);
-        tk.passUntil = now + AI_PASS_MS;
-      }),
+    async talkAiSession(chat) {
+      const { talk: tk, now } = await ctx.open();
+      const id = chatFor(tk, chat, now);
+      const ch = tk.chats[id];
+      if (ch.harm || (tk.passUntil !== null && tk.passUntil > now)) return { chat: id, paidUntil: ch.paidUntil ?? null, charged: 0, free: true };
+      if (!aiMayContinue(ch.paidUntil ?? null, now)) fail('PL182');
+      ctx.spend('talk_ai', AI_SESSION_CREDITS, `${id}:s${(ch.sessions ?? 0) + 1}`);
+      Object.assign(ch, { paidUntil: Math.max(ch.paidUntil ?? now, now) + AI_SESSION_MS, sessions: (ch.sessions ?? 0) + 1, at: now });
+      ctx.save();
+      return { chat: id, paidUntil: ch.paidUntil!, charged: AI_SESSION_CREDITS, free: false };
+    },
+    // No longer sold (D114); a pass already bought still runs its day.
+    talkAiPass: () => change(() => fail('PL183')),
     async talkListeners() {
       const { talk: tk, now } = await ctx.open();
       tick(tk, now);

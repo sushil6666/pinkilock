@@ -16,7 +16,7 @@ import { Columns } from '@/components/ui/Columns';
 import { ErrorText } from '@/components/ui/ErrorText';
 import { Screen } from '@/components/ui/Screen';
 import { T } from '@/components/ui/T';
-import { AI_PASS, AI_PER_MINUTE, FREE_CALL_MINUTES, LISTENER_PER_MINUTE } from '@/domain/talk';
+import { AI_SESSION_CREDITS, AI_SESSION_MINUTES, FREE_CALL_MINUTES, LISTENER_PER_MINUTE } from '@/domain/talk';
 import { shareOrCopy } from '@/lib/shareOrCopy';
 import { backend } from '@/services';
 import { color, radius, space } from '@/theme/tokens';
@@ -53,15 +53,9 @@ export default function TalkHub() {
         </View>
         <T c={color.textDim}>{t('talk.aiBody')}</T>
         <T v="caption" c={color.textDim}>
-          {pass ? t('talk.aiPassOn', { time: until(pass) }) : `${t('talk.aiPrice', { n: AI_PER_MINUTE })} ${t('talk.aiPassPrice', { n: AI_PASS })}`}
+          {pass ? t('talk.aiPassOn', { time: until(pass) }) : t('talk.aiPrice', { n: AI_SESSION_CREDITS, m: AI_SESSION_MINUTES })}
         </T>
-        <View style={styles.row}>
-          <Button icon="message-circle" label={t('talk.aiOpen')} onPress={() => router.push('/talk/ai')} />
-          {!pass && state.open.ai ? (
-            <Button kind="ghost" label={t('talk.aiPass', { n: AI_PASS })} busy={busy === 'pass'} disabled={state.balance < AI_PASS}
-              onPress={() => run('pass', () => backend.talkAiPass())} />
-          ) : null}
-        </View>
+        <Button icon="message-circle" label={t('talk.aiOpen')} onPress={() => router.push('/talk/ai')} />
       </Animated.View>
 
       <Animated.View entering={FadeInDown.duration(320).delay(60)} style={[panel, styles.person]}>

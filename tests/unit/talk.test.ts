@@ -10,12 +10,12 @@ import { join } from 'node:path';
 import { test } from 'node:test';
 import { AppError } from '../../src/domain/errors';
 import {
-  AI_PER_MINUTE, AI_HISTORY, HARM_CASES, HARM_PHRASES, LISTENER_CODE, MATCH_CASES, SPLIT_CASES, aiCharge, aiHistory, callHold, checkAiMessage, checkKyc,
-  checkListener, freeReason, mentionsHarm, referralCode, sortListeners, talkMatch, talkSplit,
+  AI_CONTINUE_MINUTES, AI_SESSION_CREDITS, AI_SESSION_MS, AI_HISTORY, aiToneFor, HARM_CASES, HARM_PHRASES, LISTENER_CODE, MATCH_CASES, SPLIT_CASES, aiHistory, aiMayContinue, aiMayTalk, aiMinutesLeft, callHold, checkAiMessage, checkKyc,
+  checkListener, freeReason, mentionsHarm, packToContinue, referralCode, sortListeners, talkMatch, talkSplit,
 } from '../../src/domain/talk';
 import { en } from '../../src/i18n/en';
 import { REVIEW_GAP_DAYS, mayAsk } from '../../src/domain/review';
-import { HARM_NOTE, SYSTEM, toMessages } from '../../supabase/functions/talk/companion';
+import { HARM_NOTE, SYSTEM, TONE_FLIRTY, TONE_WARM, systemFor, toMessages } from '../../supabase/functions/talk/companion';
 
 const ROOT = join(__dirname, '..', '..');
 const q = (s: string) => `'${s.replace(/'/g, "''")}'`;
@@ -72,13 +72,25 @@ test('the SQL copy of the shared tables is up to date', () => {
   assert.equal(readFileSync(file, 'utf8'), want, 'tests/db/talk_cases.sql is stale: UPDATE_CASES=1 npm run test:unit');
 });
 
-test('an AI message costs a minute once, and nothing with a pass or after a mention', () => {
-  const now = 1_000_000;
-  assert.equal(aiCharge({ passUntil: null, harm: false, minutePaid: false }, now), AI_PER_MINUTE);
-  assert.equal(aiCharge({ passUntil: null, harm: false, minutePaid: true }, now), 0);
-  assert.equal(aiCharge({ passUntil: now + 1, harm: false, minutePaid: false }, now), 0);
-  assert.equal(aiCharge({ passUntil: now - 1, harm: false, minutePaid: false }, now), AI_PER_MINUTE);
-  assert.equal(aiCharge({ passUntil: null, harm: true, minutePaid: false }, now), 0);
+test('Saathi needs a paid session, a pass or a mention; a session can be continued only near its end', () => {
+  const now = 1_000_000_000;
+  const M = 60_000;
+  assert.equal(AI_SESSION_CREDITS, 60);
+  assert.equal(AI_SESSION_MS, 15 * M);
+  assert.equal(aiMayTalk({ passUntil: null, harm: false, paidUntil: null }, now), false);
+  assert.equal(aiMayTalk({ passUntil: null, harm: false, paidUntil: now + 1 }, now), true);
+  assert.equal(aiMayTalk({ passUntil: null, harm: false, paidUntil: now - 1 }, now), false);
+  assert.equal(aiMayTalk({ passUntil: now + 1, harm: false, paidUntil: null }, now), true);
+  assert.equal(aiMayTalk({ passUntil: null, harm: true, paidUntil: now - 1 }, now), true, 'never cut off after a mention of self-harm');
+  assert.equal(aiMayContinue(null, now), true);
+  assert.equal(aiMayContinue(now + 10 * M, now), false);
+  assert.equal(aiMayContinue(now + AI_CONTINUE_MINUTES * M, now), true);
+  assert.equal(aiMayContinue(now - M, now), true);
+  assert.equal(aiMinutesLeft(now + 14 * M + 1, now), 15);
+  assert.equal(aiMinutesLeft(now - 1, now), 0);
+  assert.equal(packToContinue(60), null);
+  assert.equal(packToContinue(20)?.id, 'p49');
+  assert.equal(packToContinue(0)?.id, 'p99');
   assert.equal(codeOf(() => checkAiMessage('   ')), 'PL162');
   assert.equal(codeOf(() => checkAiMessage('x'.repeat(801))), 'PL162');
   assert.equal(checkAiMessage('  hi  '), 'hi');
@@ -143,20 +155,38 @@ test('Talk mode never touches Spicy mode', () => {
   assert.ok(!/spicy/i.test(JSON.stringify(en.talk)), 'no word about Spicy in Talk mode');
 });
 
-test('the AI is always called AI on screen, and the code is spelled out', () => {
-  assert.match(en.talk.aiTitle, /\bAI\b/);
+test('Saathi is always labelled AI on screen, and the code is spelled out', () => {
+  // The companion is named Saathi (Sushil, 2026-11-26), and the AI label goes with it everywhere.
+  assert.equal(en.talk.aiTitle, 'Saathi');
+  assert.match(en.talk.aiThem, /\bAI\b/);
+  assert.match(en.talk.aiHello, /\bAI\b/);
   assert.match(en.talk.aiLabel, /\bAI\b/);
   assert.match(en.talk.aiNotPerson, /\bAI\b/);
   for (const rule of LISTENER_CODE) assert.ok(en.talk.code[rule], `the listener code has words for ${rule}`);
 });
 
-test('the companion is told it is an AI, never to flirt, and where help is', () => {
+test('the companion is told it is an AI, never sexual, and where help is', () => {
   assert.match(SYSTEM, /You are an AI, not a person/);
-  assert.match(SYSTEM, /Never flirt/);
+  assert.match(SYSTEM, /Never anything sexual/);
   assert.match(SYSTEM, /sexual roleplay/);
+  assert.match(SYSTEM, /Never mention or suggest Spicy mode/);
   assert.match(SYSTEM, /14416/);
   assert.match(SYSTEM, /\[\[HELP\]\]/);
   assert.match(HARM_NOTE, /14416/);
+});
+
+test('Saathi flirts only when the person picked Flirty, and never after a mention of self-harm (D113)', () => {
+  assert.deepEqual(systemFor('warm', false), [SYSTEM, TONE_WARM]);
+  assert.deepEqual(systemFor('flirty', false), [SYSTEM, TONE_FLIRTY]);
+  assert.deepEqual(systemFor('flirty', true), [SYSTEM, TONE_WARM, HARM_NOTE]);
+  assert.match(TONE_WARM, /Do not flirt/);
+  assert.match(TONE_FLIRTY, /never sexual/);
+  assert.match(TONE_FLIRTY, /still an AI/);
+  assert.equal(aiToneFor('flirty', false), 'flirty');
+  assert.equal(aiToneFor('flirty', true), 'warm');
+  assert.equal(aiToneFor('anything else', false), 'warm');
+  // Listeners never flirt: the listener code keeps its rule.
+  assert.ok((LISTENER_CODE as readonly string[]).includes('flirt'));
 });
 
 test('the chat goes to the model starting with the person, ending with the new message', () => {

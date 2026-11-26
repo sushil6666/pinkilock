@@ -10,7 +10,7 @@ import type { CallAnswer, CallMinutes, SpicyCall } from '../domain/calls';
 import type { Spicy, SpicyInput, SpicyPlan } from '../domain/spicy';
 import type { QuizResult, SpicyTerms } from '../domain/spicyQuiz';
 import type { SpicyShare, TopUpStatus, TreatItem, TreatPartner, Wallet } from '../domain/wallet';
-import type { AiReply, AiTurn, CallLength, KycInput, ListenerCard, ListenerInput, Sex, Talk, TalkOpen, TalkReportReason, Want } from '../domain/talk';
+import type { AiReply, AiSession, AiTone, AiTurn, CallLength, KycInput, ListenerCard, ListenerInput, Sex, Talk, TalkOpen, TalkReportReason, Want } from '../domain/talk';
 import type { Account, BlockedPerson, ContactCheck, Invite, MyContact, MyPhoto, NewInvite, NewReport, OnboardingInput, CodeKind, CodeMode, PickedPhoto, Profile, Reveal } from '../domain/types';
 
 export interface Snapshot {
@@ -275,10 +275,17 @@ export interface Backend {
   talkSettings(sex: Sex, want: Want): Promise<Talk>;
   /**
    * One message to the AI companion. The chat is held by the phone and sent with each message (the
-   * last AI_HISTORY turns); the server keeps none of it. PL161 when the AI is not set up.
+   * last AI_HISTORY turns); the server keeps none of it. PL161 when the AI is not set up. `tone` is
+   * Saathi's tone (D113); a chat that mentioned self-harm is warm whatever is sent.
    */
-  talkAi(chat: string | null, history: AiTurn[], text: string): Promise<AiReply & { chat: string }>;
-  /** A day of the AI for AI_PASS credits (PL176 while one is on). */
+  talkAi(chat: string | null, history: AiTurn[], text: string, tone: AiTone): Promise<AiReply & { chat: string }>;
+  /**
+   * Start, or continue, a Saathi session (D114): AI_SESSION_CREDITS for AI_SESSION_MINUTES, from the
+   * wallet (PL132 when short: top up, then try again; the chat stays). Free with a pass or after a
+   * mention of self-harm. PL182 when there is still more than AI_CONTINUE_MINUTES left.
+   */
+  talkAiSession(chat: string | null): Promise<AiSession>;
+  /** The day pass: no longer sold (PL183, D114). */
   talkAiPass(): Promise<Talk>;
   /** Listeners free now who take calls from me, as I asked. */
   talkListeners(): Promise<ListenerCard[]>;

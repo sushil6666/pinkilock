@@ -164,6 +164,10 @@ export const ERRORS = {
   PL178: 'Usernames can be shared after a call that counted.',
   PL179: 'In-app calls are not switched on yet.',
   PL180: 'The call needs your microphone. Allow it for Pinkilock in your settings, then join again.',
+  // Saathi sessions (D114). PL178 to PL180 above are Spicy voice (D111).
+  PL181: 'Your time with Saathi is up. Continue for another 15 minutes to keep talking.',
+  PL182: 'You still have time with Saathi. You can continue in the last 2 minutes.',
+  PL183: 'The day pass is no longer sold. Start a 15-minute session instead.',
 
   PA001: 'Phone sign-in is not switched on yet.',
   PA002: 'Email sign-in is not switched on yet.',
