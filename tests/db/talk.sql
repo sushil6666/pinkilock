@@ -5,12 +5,12 @@
 \set ON_ERROR_STOP on
 \pset tuples_only on
 \ir talk_cases.sql
-\set a '00000000-0000-0000-0000-00000007a1c1'
-\set l '00000000-0000-0000-0000-00000007a1c2'
-\set m '00000000-0000-0000-0000-00000007a1c3'
-\set r '00000000-0000-0000-0000-00000007a1c4'
-\set f '00000000-0000-0000-0000-00000007a1c5'
-\set k '00000000-0000-0000-0000-00000007a1c6'
+\set a '00000000-0000-0000-0000-0000000da1c1'
+\set l '00000000-0000-0000-0000-0000000da1c2'
+\set m '00000000-0000-0000-0000-0000000da1c3'
+\set r '00000000-0000-0000-0000-0000000da1c4'
+\set f '00000000-0000-0000-0000-0000000da1c5'
+\set k '00000000-0000-0000-0000-0000000da1c6'
 insert into auth.users (id, email, is_anonymous) values (:'a', 'asha@example.test', false), (:'l', 'lata@example.test', false), (:'m', 'manu@example.test', false),
   (:'r', 'ravi@example.test', false), (:'f', null, true), (:'k', null, true);
 insert into public.profiles (id, name, age, area, city) values (:'a', 'Asha Rao', 25, 'Bandra West', 'Talktown'), (:'l', 'Lata', 31, 'Khar West', 'Talktown'),
@@ -58,7 +58,7 @@ select t.as_user(:'m');
 select talk_listener_apply('Manu', 'man', 'men', array['work'], 1);
 reset role;
 -- The Edge Function after Razorpay Route's KYC, then a person at Pinkilock.
-select t.ok(t.sqlstate($$select talk_listener_decide('00000000-0000-0000-0000-00000007a1c2', 'verified')$$) = 'PL169', 'no verifying before the bank is checked');
+select t.ok(t.sqlstate($$select talk_listener_decide('00000000-0000-0000-0000-0000000da1c2', 'verified')$$) = 'PL169', 'no verifying before the bank is checked');
 select talk_kyc_done(:'l', 'acc_LATA123456', '4321');
 select talk_kyc_done(:'m', 'acc_MANU123456', '9876');
 select talk_listener_decide(:'l', 'verified');

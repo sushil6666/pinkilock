@@ -172,6 +172,11 @@ Font scaling is allowed up to 1.3x (`maxFontSizeMultiplier`) so layouts hold on 
   the Me entry card with a `zap` icon, the "on" panel, the hand-off on a card or a plan); the safety rules sit on
   gold (`goldWash` behind `goldDeep`) with a `shield` before each. Boundaries are chips, pink when
   picked, and pink tags on a plan. The words stay tasteful: "Spicy", never "naughty" or explicit.
+  The terms and quiz (D107) take the form's place until passed, in a `surface` panel edged
+  `pinkDeep`: each terms section has its own icon, gold, or `flare` for the "never" ones (privacy,
+  camera, photos, threats, never allowed); a quiz question shows one at a time with a pink progress
+  bar and options as rows that turn gold (`goldWash` behind `gold`) when picked. A pass is a gold
+  panel with `check-circle`; a miss lists each missed question with its reason by a gold `shield`.
 - **Self love** (D101): the private page uses the existing tokens only. Its own things are gold
   (`goldWash` behind `goldDeep`: the kind line in the hand font in `moon`, the Me entry card, done
   reset steps, the gold-week badge filled `gold`), and Bounce back is pink (`pinkWash` behind

@@ -15,6 +15,9 @@ insert into auth.users (id, is_anonymous) values (:'d', true);
 insert into public.profiles (id, name, age, area) values (:'a', 'Asha', 25, 'Bandra'), (:'b', 'Bilal', 26, 'Khar'), (:'c', 'Chirag', 27, 'Juhu'), (:'d', 'Dia', 24, 'Juhu'), (:'e', 'Esha', 23, 'Juhu');
 -- Day one: Discover showed A and B to each other. C asked A out; nothing is kept yet.
 insert into private.discover_seen (user_id, card_id) values (:'a', :'b'), (:'b', :'a');
+-- D107: the quiz on the Spicy terms comes before any of this (tests/db/spicy_quiz.sql checks it);
+-- these people passed it for the terms in force.
+insert into public.consents (user_id, kind, version) select u, 'spicy', 'spicy-' || private.spicy_terms_version() from unnest(array[:'a', :'b', :'c', :'d', :'e']::uuid[]) u;
 insert into public.invites (from_id, to_id, idea_id, minutes, starts_at, expires_at, place, status)
   values (:'c', :'a', 'boba_run', 25, now() + interval '2 days', now() + interval '1 day', 'Carter Road', 'sent');
 

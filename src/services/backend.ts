@@ -8,6 +8,7 @@
 import type { Mood, NoteKind, SelfLove } from '../domain/selfLove';
 import type { CallAnswer, CallMinutes, SpicyCall } from '../domain/calls';
 import type { Spicy, SpicyInput, SpicyPlan } from '../domain/spicy';
+import type { QuizResult, SpicyTerms } from '../domain/spicyQuiz';
 import type { SpicyShare, TopUpStatus, TreatItem, TreatPartner, Wallet } from '../domain/wallet';
 import type { AiReply, AiTurn, CallLength, KycInput, ListenerCard, ListenerInput, Sex, Talk, TalkOpen, TalkReportReason, Want } from '../domain/talk';
 import type { Account, BlockedPerson, ContactCheck, Invite, MyContact, MyPhoto, NewInvite, NewReport, OnboardingInput, CodeKind, CodeMode, PickedPhoto, Profile, Reveal } from '../domain/types';
@@ -189,6 +190,17 @@ export interface Backend {
   spicyWith(profileId: string): Promise<SpicyPlan>;
   /** Yes, move our chat; false takes my yes back. PL130 when it is not open. */
   spicyYes(profileId: string, yes: boolean): Promise<SpicyPlan>;
+  /**
+   * The Spicy terms and quiz (D107): where I stand with the terms in force. Spicy turns on, and
+   * stays open on cards and plans, only after a pass for this version.
+   */
+  spicyTerms(): Promise<SpicyTerms>;
+  /**
+   * My answers, one letter per question in SPICY_QUIZ order, for the version I read. All right is a
+   * pass and is kept; otherwise the wrong questions come back and nothing is kept. PL155 when the
+   * terms changed, PL156 without the yes, PL157 when an answer is missing.
+   */
+  passSpicyQuiz(version: number, agree: boolean, answers: string[]): Promise<QuizResult>;
 
   /**
    * Spicy mode's unlock (D105): once we both said yes, 600 bought credits to Pinkilock show the
