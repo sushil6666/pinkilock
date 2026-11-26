@@ -130,7 +130,7 @@ select unblock_user(:'b');
 select export_my_data() -> 'spicy' as sp, export_my_data() ->> 'format' as fmt \gset
 select t.ok((:'sp'::jsonb ->> 'discord') = 'asha.k' and jsonb_array_length(:'sp'::jsonb -> 'yes') = 1 and :'sp'::jsonb ? 'adult_at', 'A''s export holds A''s usernames, yes and when A agreed');
 select t.ok(not (:'sp'::text like '%bilal%'), 'but nothing of B''s');
-select t.ok(:'fmt' = 'pinkilock-export-10', 'in format 10 (the wallet and call times came after Spicy)');
+select t.ok(:'fmt' = 'pinkilock-export-11', 'in format 11 (the wallet, call times and Talk mode came after Spicy)');
 select delete_my_account();
 reset role;
 select t.ok(not exists (select 1 from private.spicy where user_id = :'a') and not exists (select 1 from private.spicy_yes where user_id = :'a'), 'deleting the account removes every Spicy row');

@@ -195,6 +195,33 @@ jobs:
             echo "::notice::RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET are not set, so wallet top-ups stay off"
           fi
           echo "- Wallet top-ups: $mode${WEBHOOK_SECRET:+, webhook on}" >> "$GITHUB_STEP_SUMMARY"
+      - name: Deploy the talk function
+        run: npx supabase functions deploy talk --use-api --no-verify-jwt
+      - name: Talk mode switches (voice, listener payouts), once the keys exist
+        # D108. The AI companion uses ANTHROPIC_API_KEY (set by the line review step below). Voice
+        # calls need LiveKit; listener sign-up and payouts need Razorpay Route turned on for the
+        # Razorpay account (TALK_ROUTE = on). Each stays off until set. OPERATIONS.md, "Talk mode".
+        env:
+          LIVEKIT_URL: ${{ secrets.LIVEKIT_URL }}
+          LIVEKIT_API_KEY: ${{ secrets.LIVEKIT_API_KEY }}
+          LIVEKIT_API_SECRET: ${{ secrets.LIVEKIT_API_SECRET }}
+          TALK_ROUTE: ${{ secrets.TALK_ROUTE }}
+          TALK_MODEL: ${{ vars.TALK_MODEL }}
+          TALK_ROUTE_CATEGORY: ${{ vars.TALK_ROUTE_CATEGORY }}
+          TALK_ROUTE_SUBCATEGORY: ${{ vars.TALK_ROUTE_SUBCATEGORY }}
+        run: |
+          voice=off; route=off; args=()
+          if [ -n "$LIVEKIT_URL" ] && [ -n "$LIVEKIT_API_KEY" ] && [ -n "$LIVEKIT_API_SECRET" ]; then
+            args+=("LIVEKIT_URL=$LIVEKIT_URL" "LIVEKIT_API_KEY=$LIVEKIT_API_KEY" "LIVEKIT_API_SECRET=$LIVEKIT_API_SECRET"); voice=on
+          else
+            npx supabase secrets unset LIVEKIT_URL LIVEKIT_API_KEY LIVEKIT_API_SECRET >/dev/null 2>&1 || true
+          fi
+          if [ "$TALK_ROUTE" = on ]; then args+=("TALK_ROUTE=on"); route=on; else npx supabase secrets unset TALK_ROUTE >/dev/null 2>&1 || true; fi
+          [ -n "$TALK_MODEL" ] && args+=("TALK_MODEL=$TALK_MODEL")
+          [ -n "$TALK_ROUTE_CATEGORY" ] && args+=("TALK_ROUTE_CATEGORY=$TALK_ROUTE_CATEGORY")
+          [ -n "$TALK_ROUTE_SUBCATEGORY" ] && args+=("TALK_ROUTE_SUBCATEGORY=$TALK_ROUTE_SUBCATEGORY")
+          [ ${#args[@]} -gt 0 ] && npx supabase secrets set "${args[@]}" >/dev/null
+          echo "- Talk mode: voice $voice, listener payouts $route (also needs the Razorpay keys)" >> "$GITHUB_STEP_SUMMARY"
       - name: Captcha on sign-in (production, once Turnstile is set up)
         # Gap G22, D091. On only for production and only when both the secret and the site key
         # exist: the site key goes into the app and website builds, and Auth must never ask for a

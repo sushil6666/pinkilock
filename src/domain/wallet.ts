@@ -107,7 +107,8 @@ export function spicyShare(w: Pick<Wallet, 'paid'>, share: SpicyShare, mine: num
   return amount;
 }
 
-export type LedgerKind = 'spicy_unlock' | 'spicy_back' | 'topup' | 'topup_refund' | 'boost' | 'extra_ask' | 'stake' | 'stake_back' | 'stake_lost' | 'treat' | 'treat_back' | 'reward';
+export type LedgerKind = 'spicy_unlock' | 'spicy_back' | 'topup' | 'topup_refund' | 'boost' | 'extra_ask' | 'stake' | 'stake_back' | 'stake_lost' | 'treat' | 'treat_back' | 'reward'
+  | 'talk_ai' | 'talk_pass' | 'talk_hold' | 'talk_back';
 
 export interface LedgerEntry {
   id: string;

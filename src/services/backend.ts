@@ -10,6 +10,7 @@ import type { CallAnswer, CallMinutes, SpicyCall } from '../domain/calls';
 import type { Spicy, SpicyInput, SpicyPlan } from '../domain/spicy';
 import type { QuizResult, SpicyTerms } from '../domain/spicyQuiz';
 import type { SpicyShare, TopUpStatus, TreatItem, TreatPartner, Wallet } from '../domain/wallet';
+import type { AiReply, AiTurn, CallLength, KycInput, ListenerCard, ListenerInput, Sex, Talk, TalkOpen, TalkReportReason, Want } from '../domain/talk';
 import type { Account, BlockedPerson, ContactCheck, Invite, MyContact, MyPhoto, NewInvite, NewReport, OnboardingInput, CodeKind, CodeMode, PickedPhoto, Profile, Reveal } from '../domain/types';
 
 export interface Snapshot {
@@ -254,6 +255,46 @@ export interface Backend {
   treatPlan(inviteId: string, partnerId: string, item: TreatItem): Promise<Wallet>;
   /** The person treated says no thanks; it goes back to the giver. */
   declineTreat(inviteId: string): Promise<Wallet>;
+
+  /**
+   * Talk mode (D108): an AI companion and verified listeners, never linked to Spicy mode or to
+   * anything anyone else can see. Each call answers with the whole of it as it now stands.
+   */
+  talk(): Promise<Talk>;
+  /** What is set up on the server: the AI (a Claude key), voice (LiveKit) and payouts (Route). */
+  talkStatus(): Promise<TalkOpen>;
+  /** Who I am, to match listeners, and whom I would like to talk to (PL158). */
+  talkSettings(sex: Sex, want: Want): Promise<Talk>;
+  /**
+   * One message to the AI companion. The chat is held by the phone and sent with each message (the
+   * last AI_HISTORY turns); the server keeps none of it. PL161 when the AI is not set up.
+   */
+  talkAi(chat: string | null, history: AiTurn[], text: string): Promise<AiReply & { chat: string }>;
+  /** A day of the AI for AI_PASS credits (PL176 while one is on). */
+  talkAiPass(): Promise<Talk>;
+  /** Listeners free now who take calls from me, as I asked. */
+  talkListeners(): Promise<ListenerCard[]>;
+  /** Ring a listener: bought credits for the length are held (none on the free call). */
+  talkCall(listenerId: string, length: CallLength, free: boolean): Promise<Talk>;
+  /** The listener picks up, or says not now. */
+  talkAnswer(callId: string, yes: boolean): Promise<Talk>;
+  /** The open app checks in during the call (every TALK_BEAT_SECONDS). */
+  talkBeat(callId: string): Promise<Talk>;
+  talkEnd(callId: string): Promise<Talk>;
+  talkReport(callId: string, reason: TalkReportReason): Promise<Talk>;
+  talkBlock(callId: string): Promise<Talk>;
+  /** A voice room for a live call, or null where voice is not set up yet. */
+  talkVoice(callId: string): Promise<{ url: string; token: string } | null>;
+  /** Become a listener (PL164 to PL167). */
+  talkListenerApply(input: ListenerInput): Promise<Talk>;
+  /** Identity, PAN and bank, straight to Razorpay Route through the `talk` Edge Function (PL168, PL173). */
+  talkListenerKyc(kyc: KycInput): Promise<Talk>;
+  /** Taking calls for two hours, or not now (PL169 until verified). */
+  talkListenerAvailable(on: boolean): Promise<Talk>;
+  /** A friend's link (D109), within a week of joining, once (PL172). */
+  claimReferral(code: string): Promise<Talk>;
+  /** Mock only: a made-up friend joins with my link and verifies a moment later. */
+  demoFriendJoins?(): Promise<Talk>;
 
   subscribe(listener: (e: BackendEvent) => void): () => void;
 

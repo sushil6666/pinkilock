@@ -73,6 +73,14 @@ With no keys set, the app runs on ten made-up people who answer by themselves. A
     locked plan to **Stake 50 credits** or to treat the other person to a coffee (the mock pretends
     there is a partner café). Rewards: keep a plan, rate it, open the app 7 days in a row. Live,
     top-ups stay off until the Razorpay keys are secrets (`OPERATIONS.md`, "Wallet").
+13. **Talk to someone** (D108): in **Me**, tap **Talk to someone**. Chat with the **AI companion**
+    (always labelled AI; the mock answers from a few kind lines, and "I want to die" or similar shows
+    the help lines and makes the chat free). **Talk to a real person**: say who you are and whom you
+    would like to talk to, pick a length (or your free first call, D109: tap **Pretend a friend
+    joined** to unlock it) and call a listener. The mock listener picks up and the timer runs; there
+    is no sound in the mock. **Become a listener**: apply, fill in the KYC form (any valid-looking
+    PAN and IFSC; the mock verifies you after 3 seconds), take calls, and "Priya" rings 6 seconds
+    later. Live, each part stays off until its keys are set (`OPERATIONS.md`, "Talk mode").
 
 ## Run the backend locally (Docker)
 
