@@ -36,6 +36,7 @@ import {
   type LedgerEntry, type LedgerKind, type RewardKind, type Treat, type TreatPartner, type Wallet,
 } from '../../domain/wallet';
 import { t } from '../../i18n';
+import { createMockTalk, emptyMockTalk, type MockTalkDb } from './mockTalk';
 
 const KEY = 'pinkilock.mock.v1';
 const LATENCY = 280;
@@ -75,6 +76,8 @@ interface Db {
   wallet?: MockWallet;
   /** Spicy call times (D106), by the other person, oldest first. */
   spicyCalls?: Record<string, MockCall[]>;
+  /** Talk mode (D108), mine. */
+  talk?: MockTalkDb;
 }
 
 /** A call as private.spicy_calls holds it, from my side. The made-up person is always on time. */
@@ -565,8 +568,38 @@ export function createMockBackend(options: { captcha?: () => Promise<string | un
     const c = openCall(d, them);
     if (c) callSettle(d, them, c, 'stopped', null);
   }
+  // --- Talk mode (D108), as in supabase/migrations/20261126000003_talk.sql: see mockTalk.ts. ---
+  let talkDb: Db | null = null;
+  const talkPart = createMockTalk({
+    async open() {
+      const d = await load();
+      await wait(LATENCY);
+      if (!d.me) fail('PL002');
+      d.talk ??= emptyMockTalk();
+      talkDb = d;
+      return { talk: d.talk, now: Date.now() };
+    },
+    save,
+    move: (kind, paid, earned, ref) => {
+      move(walletOf(talkDb!), kind, paid, earned, ref);
+    },
+    spend: (kind, cost, ref) => {
+      spend(walletOf(talkDb!), kind, cost, ref);
+    },
+    balance: () => ({ paid: walletOf(talkDb!).paid, earned: walletOf(talkDb!).earned }),
+    profileDone: () => ({
+      face: myFaceList.some((f) => f.status === 'approved' || Date.now() - f.at >= PHOTO_CHECK_MS),
+      handle: !!talkDb?.myContact?.verified,
+      plans: (talkDb?.me?.ideaIds.length ?? 0) > 0,
+    }),
+    linked: () => !!(talkDb?.phone || talkDb?.email),
+    age: () => talkDb?.me?.age ?? 0,
+    blocked: () => false,
+  });
+
   return {
     kind: 'mock',
+    ...talkPart,
 
     async boot() {
       const d = await load();

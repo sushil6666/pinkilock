@@ -123,6 +123,12 @@ someone, and delete their account, on both platforms, against the production pro
   gets their own part back. "I felt unsafe or uncomfortable" ends a call at any time with no blame.
   When the timer cannot tell, both are asked. Later: an in-app audio call (Agora or LiveKit) if
   disputes pile up.
+- [x] **Talk mode** (D108): "Feeling alone? Talk to someone": an AI companion (always labelled AI,
+  help lines on any mention of self-harm) and verified listeners by voice in the app (no video),
+  paid 60% through Razorpay Route. The free first call (D109) opens by a friend who joins or a
+  finished profile; the store review prompt (D110) shows after happy moments, with no reward. Built
+  behind switches; waiting on LiveKit and Razorpay Route (O19), a CA's view (O17), and a lawyer's and
+  a mental-health adviser's review (O18) before launch. Next: the in-app voice client (LiveKit).
 
 - [x] **Photos behind the lock** (D088): up to three photos on Me, stored in a private Supabase
   Storage bucket by the `photo` Edge Function, which strips their metadata and draws the picture

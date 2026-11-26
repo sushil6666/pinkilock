@@ -1,12 +1,14 @@
 /**
  * After a kept promise (WP7): "Worth showing up?" and "See them again?", once. The answers feed
  * the satisfaction figure (build plan, target B) and round two; the other person never sees them,
- * and they never touch a Trust Score. "I felt unsafe" opens the report screen as well.
+ * and they never touch a Trust Score. "I felt unsafe" opens the report screen as well. Once answered
+ * (and not unsafe), the store's own review prompt may show (D110, src/lib/review.ts).
  */
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { View } from 'react-native';
 import { shown } from '../lib/report';
+import { askForReview } from '../lib/review';
 import { backend } from '../services';
 import { color, radius, space } from '../theme/tokens';
 import { Button } from './ui/Button';
@@ -36,8 +38,12 @@ export function DateFeedback({ inviteId, otherId, name, double }: { inviteId: st
     setError('');
     try {
       await backend.rateDate(inviteId, { worth: unsafe ? false : !!worth, again: unsafe ? false : !!again, unsafe });
-      setState(await backend.dateFeedback(inviteId));
+      const next = await backend.dateFeedback(inviteId);
+      setState(next);
       if (unsafe) router.push(`/report/${otherId}`);
+      // The honest review ask (D110): the store's prompt after a kept plan, whatever they answered,
+      // with no question first. Never straight after "I felt unsafe": that is a report, not a moment.
+      else void askForReview(next.roundTwo ? 'match' : 'kept_plan');
     } catch (e) {
       setError(shown(e, '/plan/[id]'));
     }

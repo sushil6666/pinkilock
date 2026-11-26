@@ -323,7 +323,8 @@ in the SQL editor (`select * from reports where reviewed_at is null`).
 profile, contact, trust score, my invites (the other person by id only), passes, blocks, reports
 I made, devices, notifications sent to me, my events, and Self love (moods, notes, the pause and
 the reset), Spicy mode (my usernames, boundaries, yeses and unlocks), and the wallet (balances, ledger, orders,
-stakes and treats), and my Spicy call times (format 10). Reports about me are not in it, nor
+stakes and treats), my Spicy call times, and Talk mode (my settings, AI chat minutes and flags but
+never the words, calls, referrals, and as a listener my application and payouts; format 11). Reports about me are not in it, nor
 anyone else's contact. `delete_my_account()` ends my live invites, removes my id from every events
 row (and clears what the phone sent with `app_open`), then deletes the auth user; everything that
 references the profile cascades, and reports keep their row with my id set to null. The other
@@ -577,6 +578,40 @@ client role and not the analytics worker reads any of its tables:
   role may call these and `redeem_treat` (for a partner's till, later). The website loads Razorpay
   Checkout (`src/lib/razorpay.ts`; `web/_headers` allows its script and frame). The phone apps offer
   no top-up until Play Billing (O15).
+
+### Talk mode
+
+"Feeling alone? Talk to someone" (D108), reached from Me. Never linked to Spicy mode
+(`tests/unit/talk.test.ts` checks the imports, the routes and the words). No client role and not the
+analytics worker reads any of its tables, all in `private`: `talk_people` (my settings, the free
+call), `talk_referral_codes` and `talk_referrals`, `talk_ai_chats`, `talk_ai_minutes` and
+`talk_ai_days` (minutes charged and a flag, never the words), `talk_listeners`, `talk_calls`,
+`talk_minutes` (heartbeat minutes, as D106), `talk_payouts` (the listener set null when the account
+goes, kept for the books), `talk_blocks` and `talk_reports`.
+
+- **Shared rules**, in TypeScript and SQL with shared case tables (`tests/db/talk_cases.sql`):
+  `talkMatch` / `talk_match` (caller's opposite, same or anyone against the listener's women, men or
+  anyone), `mentionsHarm` / `mentions_harm` (one word list) and `talkSplit` / `talk_split` (credits
+  to paise at 76 per credit, 60% to the host, GST inside Pinkilock's 40%, TDS 0.1% under 194-O).
+- **The app** calls `talk_state`, `talk_settings`, `talk_ai_pass`, `talk_listeners`, `talk_call`
+  (holds bought credits for the length, PL139 when short), `talk_answer`, `talk_beat`, `talk_end`,
+  `talk_report`, `talk_block`, `talk_listener_apply`, `talk_listener_available` and
+  `talk_claim_referral` (PL158 to PL177). `talk_sweep` (pg_cron, every minute) ends calls nobody
+  answered, that ran their length, or where someone left; it charges only minutes both were present.
+- **The `talk` Edge Function** holds every key: `ai` (checks and charges through `talk_ai_turn`,
+  then asks the model with the instructions in `supabase/functions/talk/companion.ts`; the reply's
+  help marker sets `talk_ai_flag`), `voice` (a LiveKit token for `talk_<call id>` from
+  `talk_voice_room`: microphone only, no data, no recording), `kyc` (PAN, bank and address straight to
+  Razorpay Route's linked accounts; only the last four digits come back, `talk_kyc_done`), and
+  `payouts` (called hourly by pg_cron through `private.kick_talk_payouts` with the push secret:
+  `talk_payouts_claim` gives payouts a week old and not held by a report, each sent as a Route
+  transfer and recorded by `talk_payout_done`). Without a key, each part answers "off" and the app
+  says so. A person approves a listener with `talk_listener_decide` (service role).
+- **The free first call** (D109) opens in `private.talk_person` from a verified referral or a finished
+  profile (face, handle, plans). The invite link `/r/CODE` is open without a profile; the code waits
+  on the phone (`src/lib/referral.ts`) until onboarding is done.
+- **The review ask** (D110): `src/lib/review.ts` shows the store's prompt after a kept plan, a match or
+  a good listener call, at most once in 60 days (`src/domain/review.ts`), never on the web.
 
 ### Friend vouches
 

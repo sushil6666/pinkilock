@@ -630,6 +630,43 @@ select status, count(*), sum(paise) / 100 as rupees from private.wallet_orders w
 select sum(paid) as bought, sum(earned) as earned from private.wallets;
 ```
 
+### Talk mode
+
+Talk mode (D108) has three parts, each off until its keys are GitHub secrets. The repository is
+public: never paste a key in a chat, an issue or a file.
+
+1. **The AI companion** uses `ANTHROPIC_API_KEY` (already a secret for review lines). Optional:
+   the variable `TALK_MODEL` picks a cheaper model. It is charged in credits (3 a minute or 49 a day).
+2. **Voice calls**: make a project at [cloud.livekit.io](https://cloud.livekit.io) (Mumbai region),
+   **Settings, Keys, Create key**, and add the secrets `LIVEKIT_URL` (the `wss://` address),
+   `LIVEKIT_API_KEY` and `LIVEKIT_API_SECRET`. Turn off recording (egress) in the project.
+3. **Listener sign-up and payouts** use Razorpay Route on the same Razorpay account as the wallet:
+   ask Razorpay to activate **Route** (Dashboard, Route), then add the secret `TALK_ROUTE` = `on`.
+   Optional variables `TALK_ROUTE_CATEGORY` and `TALK_ROUTE_SUBCATEGORY` set the business type sent
+   for each listener (Razorpay's list). Test mode first; live only after the CA's view (O17).
+4. Run **Supabase deploy**. Its summary says which parts are on.
+
+**Approving a listener.** After Razorpay has checked the KYC, the application waits for a person.
+In the SQL editor, as the service role, read it and decide:
+
+```sql
+select user_id, first_name, sex, accepts, topics, status, applied_at from private.talk_listeners where status = 'checking';
+select public.talk_listener_decide('<user id>', 'verified');   -- or 'paused' / 'removed'
+```
+
+**Reports.** A report ends the call, blocks the pair in Talk mode, and holds the listener's payout
+for that call. Read them with `select * from private.talk_reports where handled_at is null`. Pause a
+listener with `talk_listener_decide(..., 'paused')`. A self-harm flag on an AI chat stores no words;
+nobody can read what was said.
+
+Checks, read-only:
+
+```sql
+-- Calls today by how they ended, and payouts waiting or sent.
+select status, end_reason, count(*) from private.talk_calls where rang_at > now() - interval '1 day' group by 1, 2;
+select status, count(*), sum(payout) / 100 as rupees from private.talk_payouts group by status;
+```
+
 ### Retention
 
 `private.retention()` runs daily (pg_cron): finished plans lose their place and line after 90 days,

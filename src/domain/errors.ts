@@ -137,6 +137,26 @@ export const ERRORS = {
   PL151: 'Moving the call now counts as missing it.',
   PL152: 'Three calls with one person is the most.',
   PL153: 'The call timer opens five minutes before the start.',
+  PL158: 'Tell us who you are and whom you would like to talk to.',
+  PL159: 'That listener is not free right now. Try another.',
+  PL160: 'Pick a call length: 10, 20 or 30 minutes.',
+  PL161: 'The AI companion is not open yet. Try again later.',
+  PL162: 'Write something, up to 800 characters.',
+  PL163: 'One message at a time.',
+  PL164: 'Use your first name, and say who you are and whom you take calls from.',
+  PL165: 'Pick 1 to 4 things you can talk about.',
+  PL166: 'Agree to the listener code first.',
+  PL167: 'Listeners are 18 or older, with a phone or an email on the account.',
+  PL168: 'Check the PAN, the account number, the IFSC and the name.',
+  PL169: 'You are not a verified listener yet.',
+  PL170: 'There is no call to do that on right now.',
+  PL171: 'Your free call is not unlocked yet.',
+  PL172: 'That invite link does not work for this account.',
+  PL173: 'Calls with a listener are not open yet.',
+  PL174: 'You are on a call already.',
+  PL175: 'That is a lot of talking for one day. The AI is back tomorrow, or try a listener.',
+  PL176: 'Your day pass is still on.',
+  PL177: 'Pick what happened.',
 
   PA001: 'Phone sign-in is not switched on yet.',
   PA002: 'Email sign-in is not switched on yet.',
@@ -163,9 +183,11 @@ export type ErrorCode = keyof typeof ERRORS;
  * PL codes the app raises itself, about a database answer that is not an error. PL039: a wrong
  * check-in code comes back as the plan unchanged (an error would undo the server's count of wrong
  * tries), and the app names it. PL144: top-ups are off (no Razorpay keys, or a phone app before Play
- * Billing); the `wallet` Edge Function and the app say it, not a migration.
+ * Billing); the `wallet` Edge Function and the app say it, not a migration. PL161 (no Claude key),
+ * PL168 (bank details Razorpay would refuse) and PL173 (no voice provider or no Route) come from the
+ * `talk` Edge Function and the app (D108).
  */
-export const APP_RAISED_PL: readonly ErrorCode[] = ['PL039', 'PL144'];
+export const APP_RAISED_PL: readonly ErrorCode[] = ['PL039', 'PL144', 'PL161', 'PL168', 'PL173'];
 
 /** Refusals that usually mean a block or an account deletion this phone has not heard about yet. */
 export const RESYNC_CODES: readonly ErrorCode[] = ['PL003', 'PL004', 'PL030', 'PL033', 'PL034'];

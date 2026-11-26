@@ -36,6 +36,11 @@ const TITLES: Record<string, Key | null> = {
   'self-love/bounce-back': 'titles.bounceBack',
   spicy: 'titles.spicy',
   wallet: 'titles.wallet',
+  talk: 'titles.talk',
+  'talk/ai': 'titles.talkAi',
+  'talk/listeners': 'titles.talkListeners',
+  'talk/listen': 'titles.talkListen',
+  'r/[code]': 'titles.invite',
   '+not-found': 'titles.notFound',
 };
 
@@ -44,9 +49,10 @@ const TITLES: Record<string, Key | null> = {
  * the terms and privacy policy, which onboarding asks a person to agree to before a profile exists,
  * a friend's vouch link, which is for people who may never join (it shows a first name and a
  * fixed list of phrases, and nothing else), and the safety page, which the terms point to and which
- * holds the emergency numbers: someone in danger should never be asked to sign in first.
+ * holds the emergency numbers: someone in danger should never be asked to sign in first. A friend's
+ * invite link (r/[code]) opens too: it keeps the code for after onboarding and shows nothing about the friend.
  */
-const OPEN = new Set(['', 'onboarding', 'account/sign-in', '+not-found', 'legal/[doc]', 'vouch/[token]', 'safety']);
+const OPEN = new Set(['', 'onboarding', 'account/sign-in', '+not-found', 'legal/[doc]', 'vouch/[token]', 'safety', 'r/[code]']);
 
 const key = (segments: readonly string[]) => segments.join('/');
 
