@@ -80,12 +80,24 @@ insert into private.wallets (user_id, paid) values (:'a', 600);
 set role authenticated;
 select t.as_user(:'a');
 select spicy_pay(:'b', 'full');
-select t.ok((select spicy_with(:'b') @> '{"mutual": true, "discord": "bilal.b", "telegram": null, "signal": "bilal.07", "their_boundaries": ["no_photos"]}'::jsonb), 'both yes and unlocked: A gets B''s Discord and Signal');
+-- D111: calls happen in Pinkilock now; usernames wait for a kept call and for both to choose to share.
+select t.ok((select spicy_with(:'b') @> '{"mutual": true, "kept_call": false, "my_share": false, "discord": null, "signal": null}'::jsonb)
+  and t.sqlstate(format('select spicy_share(%L, true)', :'b')) = 'PL178', 'unlocked: still no usernames, and none to share before a kept call (PL178)');
+reset role;
+insert into private.spicy_calls (a, b, status, outcome, settled_at) values (least(:'a'::uuid, :'b'::uuid), greatest(:'a'::uuid, :'b'::uuid), 'done', 'talked', now());
+set role authenticated;
+select spicy_share(:'b', true);
+select t.ok((select spicy_with(:'b') @> '{"kept_call": true, "my_share": true, "discord": null, "signal": null}'::jsonb), 'a kept call and A chose to share: nothing yet, and A is not told about B');
+select t.as_user(:'b');
+select spicy_share(:'a', true);
+select t.as_user(:'a');
+select t.ok((select spicy_with(:'b') @> '{"mutual": true, "discord": "bilal.b", "telegram": null, "signal": "bilal.07", "their_boundaries": ["no_photos"]}'::jsonb), 'both chose to share after a kept call: A gets B''s Discord and Signal');
 select t.as_user(:'b');
 select t.ok((select spicy_with(:'a') @> '{"mutual": true, "discord": "asha.k", "telegram": "asha_k"}'::jsonb), 'and B gets A''s Discord and Telegram');
 select spicy_yes(:'a', false);
 select t.ok((select spicy_with(:'a') @> '{"my_yes": false, "mutual": false, "discord": null}'::jsonb), 'B takes the yes back: the usernames are hidden again');
 select spicy_yes(:'a', true);
+select t.ok((select spicy_with(:'a') @> '{"mutual": true, "my_share": false, "discord": null}'::jsonb), 'and the shares went with the yes: both choose again');
 
 -- An ask is enough too; someone A was never shown and shares nothing with sees nothing.
 select t.as_user(:'c');

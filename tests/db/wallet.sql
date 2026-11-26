@@ -286,10 +286,10 @@ select spicy_pay(:'z', 'half');
 select t.ok((select spicy_with(:'z') ->> 'discord') is null, 'half paid again, still waiting on Z');
 -- Tired of waiting, Y pays the other 300 too (Sushil, 2026-11-25).
 select spicy_pay(:'z', 'full');
-select t.ok((select spicy_with(:'z') ->> 'discord') = 'zoya.r' and (select spicy_with(:'z') -> 'unlock' ->> 'done')::boolean
-  and (select my_wallet() ->> 'paid')::int = 400, 'the one who paid half can pay the other half; then the usernames show');
+select t.ok((select spicy_with(:'z') -> 'unlock' ->> 'done')::boolean and (select spicy_with(:'z') ->> 'discord') is null
+  and (select my_wallet() ->> 'paid')::int = 400, 'the one who paid half can pay the other half; then it is unlocked (usernames wait for a kept call, D111)');
 select t.as_user(:'z');
-select t.ok((select spicy_with(:'y') ->> 'discord') = 'yash.k' and (select my_wallet() ->> 'paid')::int = 250, 'for both, and Z paid nothing and got nothing');
+select t.ok((select spicy_with(:'y') -> 'unlock' ->> 'done')::boolean and (select my_wallet() ->> 'paid')::int = 250, 'for both, and Z paid nothing and got nothing');
 select t.ok(t.sqlstate(format($$select spicy_pay(%L, 'full')$$, :'y')) = 'PL145', 'nothing more to pay once unlocked (PL145)');
 select t.ok(t.fails('select * from private.spicy_unlocks'), 'no client can read the unlocks');
 select spicy_off();
