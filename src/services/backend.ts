@@ -214,6 +214,14 @@ export interface Backend {
   spicyCallMove(profileId: string, anyway: boolean): Promise<SpicyCall>;
   /** The confirm fallback, when the timer could not tell. */
   spicyCallAnswer(profileId: string, answer: CallAnswer): Promise<SpicyCall>;
+  /**
+   * D111: the voice room for my call with them, while the timer is open: a microphone-only token
+   * from the `voice` Edge Function (PL179 where voice is not set up yet). The mock answers a stand-in
+   * that src/lib/voice.ts plays as silence.
+   */
+  spicyVoice(profileId: string): Promise<{ url: string; token: string }>;
+  /** D111: share my usernames with them (or take that back), only after a kept call (PL178). */
+  spicyShare(profileId: string, share: boolean): Promise<SpicyPlan>;
 
   /**
    * The credits wallet (D104): a closed loop. Credits are bought (Razorpay) or earned, and spent

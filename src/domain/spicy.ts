@@ -60,13 +60,19 @@ export interface SpicyPlan {
    * The usernames come only once it is done.
    */
   unlock: { mine: number; theirs: number; done: boolean };
-  /** Theirs, once mutual and unlocked; Discord first. */
+  /**
+   * D111: calls happen in Pinkilock now. The usernames wait for a call that counted as kept, and
+   * for both of us to choose to share them. I am never told whether they chose to.
+   */
+  keptCall: boolean;
+  myShare: boolean;
+  /** Theirs, once mutual, unlocked, a kept call, and both chose to share; Discord first. */
   discord: string | null;
   telegram: string | null;
   signal: string | null;
 }
 
-export const spicyClosed: SpicyPlan = { open: false, myYes: false, mutual: false, theirBoundaries: [], unlock: { mine: 0, theirs: 0, done: false }, discord: null, telegram: null, signal: null };
+export const spicyClosed: SpicyPlan = { open: false, myYes: false, mutual: false, theirBoundaries: [], unlock: { mine: 0, theirs: 0, done: false }, keptCall: false, myShare: false, discord: null, telegram: null, signal: null };
 
 /** More than six digits anywhere is a phone number, whatever the spaces or dashes between them. */
 export function hasPhoneNumber(typed: string): boolean {

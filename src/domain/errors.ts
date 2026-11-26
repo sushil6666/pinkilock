@@ -157,6 +157,8 @@ export const ERRORS = {
   PL175: 'That is a lot of talking for one day. The AI is back tomorrow, or try a listener.',
   PL176: 'Your day pass is still on.',
   PL177: 'Pick what happened.',
+  PL178: 'Usernames can be shared after a call that counted.',
+  PL179: 'In-app calls are not switched on yet.',
 
   PA001: 'Phone sign-in is not switched on yet.',
   PA002: 'Email sign-in is not switched on yet.',
@@ -185,9 +187,10 @@ export type ErrorCode = keyof typeof ERRORS;
  * tries), and the app names it. PL144: top-ups are off (no Razorpay keys, or a phone app before Play
  * Billing); the `wallet` Edge Function and the app say it, not a migration. PL161 (no Claude key),
  * PL168 (bank details Razorpay would refuse) and PL173 (no voice provider or no Route) come from the
- * `talk` Edge Function and the app (D108).
+ * `talk` Edge Function and the app (D108). PL179 (no voice provider for Spicy calls) comes from the
+ * `voice` Edge Function (D111).
  */
-export const APP_RAISED_PL: readonly ErrorCode[] = ['PL039', 'PL144', 'PL161', 'PL168', 'PL173'];
+export const APP_RAISED_PL: readonly ErrorCode[] = ['PL039', 'PL144', 'PL161', 'PL168', 'PL173', 'PL179'];
 
 /** Refusals that usually mean a block or an account deletion this phone has not heard about yet. */
 export const RESYNC_CODES: readonly ErrorCode[] = ['PL003', 'PL004', 'PL030', 'PL033', 'PL034'];

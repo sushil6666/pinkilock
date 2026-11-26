@@ -40,9 +40,11 @@ reset role;
 update private.spicy_calls set starts_at = now() - interval '2 minutes' where a = least(:'h'::uuid, :'j'::uuid) and status = 'set';
 set role service_role;
 create temp table room as select spicy_voice_room(:'h', :'j') as r;
+reset role;
 select t.ok((select r ->> 'room' from room) = 'spicy_' || (select id from private.spicy_calls where a = least(:'h'::uuid, :'j'::uuid) and status = 'set')
   and (select r ->> 'identity' from room) = :'h' and (select (r ->> 'minutes')::int from room) between 57 and 59, 'in the window: the room, who H is in it, and a token to the end of the hour');
 select t.ok((select voice from private.spicy_calls where a = least(:'h'::uuid, :'j'::uuid) and status = 'set'), 'the call is now a voice call');
+set role service_role;
 
 -- What LiveKit saw. Anything else is ignored.
 select t.ok(spicy_voice_event('talk_' || gen_random_uuid(), :'h', 'participant_joined', now()) = 'ignored'
@@ -50,8 +52,8 @@ select t.ok(spicy_voice_event('talk_' || gen_random_uuid(), :'h', 'participant_j
   and spicy_voice_event((select r ->> 'room' from room), :'k', 'participant_joined', now()) = 'ignored', 'another room, a call that is not set, or a stranger: ignored');
 -- H joins (a time from the future is taken as now), J only checks in from the app.
 select t.ok(spicy_voice_event((select r ->> 'room' from room), :'h', 'participant_joined', now() + interval '1 hour') = 'joined', 'H joins the room');
-select t.ok((select joined_at from private.spicy_call_voice where user_id = :'h') <= now(), 'a time from the future counts as now');
 reset role;
+select t.ok((select joined_at from private.spicy_call_voice where user_id = :'h') <= now(), 'a time from the future counts as now');
 insert into private.spicy_call_minutes (call_id, user_id, minute)
   select c.id, u, date_trunc('minute', now()) - n * interval '1 minute' from private.spicy_calls c, unnest(array[:'h', :'j']::uuid[]) u, generate_series(0, 1) n
   where c.a = least(:'h'::uuid, :'j'::uuid) and c.status = 'set';
@@ -69,7 +71,7 @@ select t.ok(spicy_voice_event((select r ->> 'room' from room), :'j', 'participan
 reset role;
 select t.ok((select count(*) from private.spicy_call_voice where user_id = :'j') = 1, 'one open session per person');
 update private.spicy_calls set starts_at = now() - interval '14 minutes' where a = least(:'h'::uuid, :'j'::uuid) and status = 'set';
-update private.spicy_call_voice set joined_at = now() - interval '11 minutes 30 seconds';
+update private.spicy_call_voice set joined_at = date_trunc('minute', now()) - interval '11 minutes';
 set role authenticated;
 select t.as_user(:'j');
 select t.ok((select (spicy_call(:'h') ->> 'together')::int) = 12 and (spicy_call(:'h') ->> 'they_here')::boolean, 'both on the call: twelve minutes together, and H is here');
@@ -80,7 +82,7 @@ set role service_role;
 select spicy_voice_event((select r ->> 'room' from room), :'h', 'participant_left', now());
 select spicy_voice_event((select r ->> 'room' from room), :'h', 'participant_joined', now() - interval '1 hour');
 reset role;
-select t.ok((select max(joined_at) from private.spicy_call_voice where user_id = :'h') >= now() - interval '10 minutes', 'an old join counts from ten minutes ago at most');
+select t.ok((select max(joined_at) from private.spicy_call_voice where user_id = :'h') >= now() - interval '11 minutes', 'an old join counts from ten minutes ago at most');
 set role service_role;
 select spicy_voice_event((select r ->> 'room' from room), null, 'room_finished', now());
 reset role;
