@@ -382,3 +382,13 @@ test('Talk mode (D108, D109): nothing of anyone else\'s, no free credits or payo
   await assert.rejects(x.backend.claimReferral('ABCDEFGH'), (e: unknown) => e instanceof AppError, 'no made-up referral code');
   refused(await signedOut.rpc('talk_state'), 'signed out, there is no Talk mode to read');
 });
+
+test('Pink Gold (D115): no making myself a member, over the API too', async () => {
+  refused(await raw.schema('private' as 'public').from('pink_gold').select('*'), 'reading who is Pink Gold');
+  refused(await raw.schema('private' as 'public').from('pink_gold').insert({ user_id: x.id }), 'making myself Pink Gold');
+  refused(await raw.schema('private' as 'public').rpc('pink_gold_grant', { p_user: x.id }), 'granting myself Pink Gold');
+  refused(await raw.schema('private' as 'public').rpc('pink_gold_end', { p_user: y.id }), 'ending someone else\'s Pink Gold');
+  const card = await raw.from('profile_cards').select('pink_gold').eq('id', x.id).single();
+  assert.equal(card.error, null, 'my card reads');
+  assert.equal(card.data?.pink_gold, false, 'and says I am not Pink Gold');
+});

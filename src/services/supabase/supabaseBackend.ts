@@ -170,6 +170,7 @@ function toProfile(r: Row): Profile {
     vouchCount: r.vouch_count ?? 0,
     vouchPhrases: r.vouch_phrases ?? [],
     hasDuo: !!r.has_duo,
+    pinkGold: !!r.pink_gold,
   };
 }
 

@@ -15,6 +15,7 @@ import { useEffect, useState } from 'react';
 import { Platform, Pressable, Share, StyleSheet, View } from 'react-native';
 import { Portrait } from '@/components/Portrait';
 import { TrustBadge } from '@/components/TrustBadge';
+import { PinkGold } from '@/components/PinkGold';
 import { Button } from '@/components/ui/Button';
 import { Chip, Tag } from '@/components/ui/Chip';
 import { HoldButton } from '@/components/ui/HoldButton';
@@ -202,6 +203,7 @@ export default function Me() {
         <View style={{ flex: 1 }}>
           <T v="display" numberOfLines={1} adjustsFontSizeToFit>{me.name}</T>
           <T v="caption" c={color.textDim}>{[me.age, me.area ? t('profile.areaCity', { area: me.area, city: me.city }) : me.city, me.pronouns].filter(Boolean).join('  /  ')}</T>
+          {me.pinkGold ? <View style={{ marginTop: space.sm }}><PinkGold person={me} mine /></View> : null}
         </View>
       </View>
 

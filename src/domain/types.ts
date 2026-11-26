@@ -48,6 +48,8 @@ export interface Profile {
   vouchPhrases?: string[];
   /** Whether this person has a duo, so a double can be offered (never with whom). */
   hasDuo?: boolean;
+  /** A Pink Gold member right now (D115): only yes or no, never since when or why. */
+  pinkGold?: boolean;
   /** How many extra photos exist. The photos themselves live behind the reveal. */
   photoCount: number;
   /**

@@ -65,6 +65,13 @@ export const en = {
     record: '{kept} kept  /  {flaked} flaked',
   },
 
+  /** Pink Gold (D115): the name for paid members, kept in Latin letters in every language. */
+  pinkGold: {
+    name: 'Pink Gold',
+    label: '{name} is a Pink Gold member',
+    mine: 'You are a Pink Gold member',
+  },
+
   spark: {
     one: 'A spark',
     click: 'You two click',

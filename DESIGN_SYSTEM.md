@@ -88,6 +88,10 @@ Font scaling is allowed up to 1.3x (`maxFontSizeMultiplier`) so layouts hold on 
   a perforated divider, then who it is with and their trust badge.
 - **TrustBadge**: pill on `onPhoto` with a 1.5px border in its tone and a shield icon, score in tabular figures and the tier name. Gold at 90+,
   white 75 to 89, flare under 55. `size="lg"` adds the kept and flaked counts.
+- **PinkGold**: the paid members' badge (D115). A pill on `onPhoto` with a 1.5px `gold` border, a
+  20px `pink` disc with a `moon` rim holding a star in `onPink`, and "Pink Gold" as a gold label. It
+  sits beside the trust badge on a Discover card, above the name on a profile, and under the name on
+  Me. Nothing shows for anyone who is not a member.
 - **Portrait**: people are shown as a two-colour gradient block with a large glyph and initial, so
   the prototype ships no stock photos of real people. When someone's face has been checked (D095),
   it takes the block's place, `cover`-cropped, under the same bottom fade (`onPhoto`) so the name and

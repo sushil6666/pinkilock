@@ -11,6 +11,7 @@ import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
 import { Portrait } from '@/components/Portrait';
 import { Spark } from '@/components/Spark';
 import { TrustBadge } from '@/components/TrustBadge';
+import { PinkGold } from '@/components/PinkGold';
 import { Button } from '@/components/ui/Button';
 import { Tag } from '@/components/ui/Chip';
 import { Columns } from '@/components/ui/Columns';
@@ -96,7 +97,10 @@ export default function Discover() {
         <Pressable accessibilityRole="button" accessibilityLabel={t('plan.openProfile', { name: person.name })} onPress={() => router.push(`/profile/${person.id}`)} style={[styles.card, desktop && { height: 560 }]}>
           <Portrait name={person.name} palette={person.palette} glyph={person.glyph} faceUrl={person.faceUrl} fill style={StyleSheet.absoluteFill} />
           <View style={styles.cardBody}>
-            <TrustBadge person={person} />
+            <View style={styles.badges}>
+              <TrustBadge person={person} />
+              <PinkGold person={person} />
+            </View>
             <T v="display" numberOfLines={1} adjustsFontSizeToFit>{t('profile.nameAge', { name: person.name, age: person.age })}</T>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
               <Feather name="map-pin" size={14} color={color.textDim} />
@@ -166,6 +170,7 @@ const styles = StyleSheet.create({
   head: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: space.md },
   card: { height: 340, borderRadius: radius.card, overflow: 'hidden', borderWidth: 1, borderColor: color.line, justifyContent: 'flex-end' },
   cardBody: { padding: space.lg, gap: space.sm },
+  badges: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: space.sm },
   vibes: { flexDirection: 'row', flexWrap: 'wrap', gap: space.sm },
   idea: { flexDirection: 'row', alignItems: 'center', gap: space.md, borderWidth: 1, borderColor: color.line, borderRadius: radius.card, backgroundColor: color.surface, padding: space.md, minHeight: 64 },
 });

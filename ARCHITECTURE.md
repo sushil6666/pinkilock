@@ -590,6 +590,17 @@ client role and not the analytics worker reads any of its tables:
   Checkout (`src/lib/razorpay.ts`; `web/_headers` allows its script and frame). The phone apps offer
   no top-up until Play Billing (O15).
 
+### Pink Gold
+
+Pink Gold (D115) is the name for paid members. `private.pink_gold` (no client role can read it)
+holds who is a member, since when and until when; `private.is_pink_gold` gives only yes or no, and
+`public.profile_cards` carries it as `pink_gold`, so the badge reaches exactly the cards a person may
+already see (Discover, a shared plan, their own on Me) and a block hides it like the rest. The app
+reads it as `Profile.pinkGold` and draws `src/components/PinkGold.tsx`; the mock seeds two members.
+Until paid plans exist, the team grants it in SQL (`OPERATIONS.md`, "Pink Gold"). Nothing else reads
+it: not the Discover order, not limits, not Spicy mode. My download has my own `pink_gold` (since,
+until, now), without the team's note.
+
 ### Talk mode
 
 "Feeling alone? Talk to someone" (D108), reached from Me. Never linked to Spicy mode

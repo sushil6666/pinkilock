@@ -59,6 +59,12 @@ export const hi: Translation = {
     record: '{kept} निभाए  /  {flaked} तोड़े',
   },
 
+  pinkGold: {
+    name: 'Pink Gold',
+    label: '{name} Pink Gold सदस्य हैं',
+    mine: 'आप Pink Gold सदस्य हैं',
+  },
+
   spark: {
     one: 'एक चिंगारी',
     click: 'आप दोनों की जमेगी',

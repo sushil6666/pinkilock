@@ -675,6 +675,22 @@ select status, end_reason, count(*) from private.talk_calls where rang_at > now(
 select status, count(*), sum(payout) / 100 as rupees from private.talk_payouts group by status;
 ```
 
+### Pink Gold
+
+Pink Gold (D115) is the name for paid members, shown as a badge on their card. Until the paid plans
+are built, a person on the team makes someone a member in the SQL editor (it runs as the owner; no
+app role can call these):
+
+```sql
+select private.pink_gold_grant('<user id>');                                -- a member until ended
+select private.pink_gold_grant('<user id>', now() + interval '30 days', 'founding member');  -- with an end date and a note
+select private.pink_gold_end('<user id>');                                  -- the badge comes off now
+select user_id, since, until, note from private.pink_gold order by since desc;   -- who is, and was
+```
+
+Running the grant again changes the end date. The note is only for the team; nobody sees it in the
+app or in their download.
+
 ### Retention
 
 `private.retention()` runs daily (pg_cron): finished plans lose their place and line after 90 days,

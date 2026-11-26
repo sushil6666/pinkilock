@@ -130,6 +130,9 @@ someone, and delete their account, on both platforms, against the production pro
   finished profile; the store review prompt (D110) shows after happy moments, with no reward. Built
   behind switches; waiting on LiveKit and Razorpay Route (O19), a CA's view (O17), and a lawyer's and
   a mental-health adviser's review (O18) before launch. Next: the in-app voice client (LiveKit).
+- [x] **Pink Gold** (D115): the name for paid members, and a badge on their card (Discover, profile,
+  Me). Granted by the team in SQL for now. Next: the paid plans (monthly, 3, 6 and 12 months) and
+  Boost packs through Razorpay, web first, phone apps after Play Billing (O15).
 
 - [x] **Photos behind the lock** (D088): up to three photos on Me, stored in a private Supabase
   Storage bucket by the `photo` Edge Function, which strips their metadata and draws the picture
