@@ -172,6 +172,29 @@ jobs:
         run: npx supabase functions deploy photo --use-api --no-verify-jwt
       - name: Deploy the sign-in code function
         run: npx supabase functions deploy auth-code --use-api --no-verify-jwt
+      - name: Deploy the wallet function
+        run: npx supabase functions deploy wallet --use-api --no-verify-jwt
+      - name: Wallet top-ups (Razorpay), once the keys exist
+        # D104. Off until RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET are secrets: the app then says
+        # top-ups are not open yet, and rewards and spending still work. Test keys (rzp_test_...)
+        # move no money. Production may have its own keys: PROD_RAZORPAY_KEY_ID and so on.
+        # OPERATIONS.md, "Wallet", has the steps.
+        env:
+          KEY_ID: ${{ (env.TARGET == 'production' && secrets.PROD_RAZORPAY_KEY_ID) || secrets.RAZORPAY_KEY_ID }}
+          KEY_SECRET: ${{ (env.TARGET == 'production' && secrets.PROD_RAZORPAY_KEY_SECRET) || secrets.RAZORPAY_KEY_SECRET }}
+          WEBHOOK_SECRET: ${{ (env.TARGET == 'production' && secrets.PROD_RAZORPAY_WEBHOOK_SECRET) || secrets.RAZORPAY_WEBHOOK_SECRET }}
+        run: |
+          if [ -n "$KEY_ID" ] && [ -n "$KEY_SECRET" ]; then
+            args=("RAZORPAY_KEY_ID=$KEY_ID" "RAZORPAY_KEY_SECRET=$KEY_SECRET")
+            [ -n "$WEBHOOK_SECRET" ] && args+=("RAZORPAY_WEBHOOK_SECRET=$WEBHOOK_SECRET")
+            npx supabase secrets set "${args[@]}" >/dev/null
+            case "$KEY_ID" in rzp_test_*) mode="on, test mode (no real money)";; *) mode="on, live";; esac
+          else
+            npx supabase secrets unset RAZORPAY_KEY_ID RAZORPAY_KEY_SECRET RAZORPAY_WEBHOOK_SECRET >/dev/null 2>&1 || true
+            mode="off (add RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET)"
+            echo "::notice::RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET are not set, so wallet top-ups stay off"
+          fi
+          echo "- Wallet top-ups: $mode${WEBHOOK_SECRET:+, webhook on}" >> "$GITHUB_STEP_SUMMARY"
       - name: Captcha on sign-in (production, once Turnstile is set up)
         # Gap G22, D091. On only for production and only when both the secret and the site key
         # exist: the site key goes into the app and website builds, and Auth must never ask for a

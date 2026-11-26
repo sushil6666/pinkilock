@@ -580,6 +580,48 @@ set up (address `test-<id>@e2e.pinkilock.invalid`, a domain that never receives 
 them at the end. A cancelled run can leave some behind: `delete from auth.users where email like
 '%@e2e.pinkilock.invalid'`.
 
+### Wallet
+
+Credits (D104) are a closed loop: nothing in the app or the database can pay a person, and
+credits never turn back into money. Top-ups go through Razorpay and stay off until its keys are
+GitHub secrets. Use **test keys first**: they move no money.
+
+1. Make an account at [dashboard.razorpay.com](https://dashboard.razorpay.com) (business type, PAN,
+   bank account; KYC is needed only for live mode). Keep it in **Test mode** for now.
+2. **Account & Settings, API Keys, Generate Test Key.** Copy the Key Id (`rzp_test_...`) and the Key
+   Secret (shown once).
+3. GitHub, **Settings, Secrets and variables, Actions, New repository secret**: `RAZORPAY_KEY_ID`
+   and `RAZORPAY_KEY_SECRET`. Never paste them in a chat, an issue or a file: the repository is public.
+4. Razorpay, **Account & Settings, Webhooks, Add New Webhook**: URL
+   `https://<project ref>.supabase.co/functions/v1/wallet`, a secret you make up (save it as the
+   GitHub secret `RAZORPAY_WEBHOOK_SECRET`), events `payment.captured`, `order.paid` and
+   `refund.processed`.
+5. Razorpay, **Account & Settings, Payment capture**: automatic capture on (credits are added only
+   for captured payments).
+6. Run **Supabase deploy** (Actions). Its summary says "Wallet top-ups: on, test mode". On the
+   website, Me, Wallet, tap a pack and pay with Razorpay's test UPI id `success@razorpay` or a test card.
+7. Live: after Razorpay's KYC and the legal and tax review (O16), make live keys (`rzp_live_...`),
+   put them in the same secrets (or `PROD_RAZORPAY_KEY_ID`, `PROD_RAZORPAY_KEY_SECRET` and
+   `PROD_RAZORPAY_WEBHOOK_SECRET` for production only), add the webhook in live mode too, and deploy.
+
+The phone apps show no top-up: Google Play requires its own billing for digital goods (O15).
+
+**A refund:** refund the payment in the Razorpay dashboard. The `refund.processed` webhook takes
+back what is left of those credits (`wallet_refunded`). **A partner café or cinema** for Treat the
+plan: add a row by hand, `insert into public.treat_partners (id, name, city, items) values
+('cafe_id', 'Name', 'Mumbai', '{coffee,dessert}')`; switch it off with `active = false`, never
+delete it. Until a partner till exists, a voucher is checked with `select redeem_treat('cafe_id',
+'CODE')` as the service role, and the partner is settled outside the app.
+
+Checks, read-only:
+
+```sql
+-- Orders paid today, and any still waiting (abandoned checkouts are normal).
+select status, count(*), sum(paise) / 100 as rupees from private.wallet_orders where created_at > now() - interval '1 day' group by status;
+-- Bought credits held by everyone: what Pinkilock owes in service, for the books.
+select sum(paid) as bought, sum(earned) as earned from private.wallets;
+```
+
 ### Retention
 
 `private.retention()` runs daily (pg_cron): finished plans lose their place and line after 90 days,
@@ -628,6 +670,8 @@ From `ROADMAP.md`, Phase 3. All of these must be true first:
 - [ ] A privacy policy published, and store data-safety forms filled in
 - [ ] Every language offered has been read by a native speaker (D102, O13), or is taken out of
       `src/i18n/languages.ts` for launch
+- [ ] Before live Razorpay keys: the legal and tax view on the wallet and the Spicy unlock (O16),
+      and terms that say credits are never cash and what happens to unused ones
 
 ### Languages
 

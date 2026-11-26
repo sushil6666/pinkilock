@@ -12,6 +12,7 @@ import type { Backend } from './backend';
 import { createMockBackend } from './mock/mockBackend';
 import { encryptedStorage } from '../lib/sessionCrypto';
 import { captchaToken } from '../lib/captcha';
+import { openCheckout } from '../lib/razorpay';
 import { createSupabaseBackend, type SessionStorage } from './supabase/supabaseBackend';
 
 const url = process.env.EXPO_PUBLIC_SUPABASE_URL;
@@ -29,6 +30,6 @@ const sessionStore: SessionStorage = Platform.OS === 'web'
   ? AsyncStorage
   : encryptedStorage(AsyncStorage, SecureStore, (bytes) => Crypto.getRandomBytes(bytes));
 
-export const backend: Backend = (production || wantsLive) && url && key ? createSupabaseBackend(url, key, sessionStore, { captcha: captchaToken }) : createMockBackend({ captcha: captchaToken });
+export const backend: Backend = (production || wantsLive) && url && key ? createSupabaseBackend(url, key, sessionStore, { captcha: captchaToken, platform: Platform.OS, checkout: openCheckout }) : createMockBackend({ captcha: captchaToken });
 
 export type { Backend, BackendEvent, Changes, Notice, PrivacyRequestKind, PushPlatform, Snapshot } from './backend';

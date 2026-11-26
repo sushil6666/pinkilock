@@ -73,7 +73,14 @@ select t.ok((select spicy_with(:'a') @> '{"my_yes": true, "mutual": false, "disc
 select t.as_user(:'a');
 select t.ok((select spicy_with(:'b') @> '{"open": true, "my_yes": false, "mutual": false}'::jsonb), 'A is not told that B said yes');
 select spicy_yes(:'b', true);
-select t.ok((select spicy_with(:'b') @> '{"mutual": true, "discord": "bilal.b", "telegram": null, "signal": "bilal.07", "their_boundaries": ["no_photos"]}'::jsonb), 'both yes: A gets B''s Discord and Signal');
+-- D105: both yes, and the usernames wait for the 600-credit unlock (one pays all, or 300 each).
+select t.ok((select spicy_with(:'b') @> '{"mutual": true, "discord": null, "signal": null, "unlock": {"mine": 0, "theirs": 0, "done": false}}'::jsonb), 'both yes: still no usernames until the match is unlocked');
+reset role;
+insert into private.wallets (user_id, paid) values (:'a', 600);
+set role authenticated;
+select t.as_user(:'a');
+select spicy_pay(:'b', 'full');
+select t.ok((select spicy_with(:'b') @> '{"mutual": true, "discord": "bilal.b", "telegram": null, "signal": "bilal.07", "their_boundaries": ["no_photos"]}'::jsonb), 'both yes and unlocked: A gets B''s Discord and Signal');
 select t.as_user(:'b');
 select t.ok((select spicy_with(:'a') @> '{"mutual": true, "discord": "asha.k", "telegram": "asha_k"}'::jsonb), 'and B gets A''s Discord and Telegram');
 select spicy_yes(:'a', false);
@@ -120,7 +127,7 @@ select unblock_user(:'b');
 select export_my_data() -> 'spicy' as sp, export_my_data() ->> 'format' as fmt \gset
 select t.ok((:'sp'::jsonb ->> 'discord') = 'asha.k' and jsonb_array_length(:'sp'::jsonb -> 'yes') = 1 and :'sp'::jsonb ? 'adult_at', 'A''s export holds A''s usernames, yes and when A agreed');
 select t.ok(not (:'sp'::text like '%bilal%'), 'but nothing of B''s');
-select t.ok(:'fmt' = 'pinkilock-export-8', 'in format 8');
+select t.ok(:'fmt' = 'pinkilock-export-9', 'in format 9 (the wallet came after Spicy)');
 select delete_my_account();
 reset role;
 select t.ok(not exists (select 1 from private.spicy where user_id = :'a') and not exists (select 1 from private.spicy_yes where user_id = :'a'), 'deleting the account removes every Spicy row');

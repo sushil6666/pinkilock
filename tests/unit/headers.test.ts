@@ -23,10 +23,10 @@ test('photos from Supabase Storage can be shown', () => {
   assert.ok(csp.get('img-src')?.includes('https://SUPABASE_HOST'), 'img-src allows the project (signed photo links)');
 });
 
-test('the captcha may load its script and frame, and nothing else comes from another origin', () => {
-  assert.deepEqual(csp.get('script-src'), ["'self'", 'https://challenges.cloudflare.com']);
-  assert.deepEqual(csp.get('frame-src'), ['https://challenges.cloudflare.com']);
-  assert.deepEqual(csp.get('connect-src'), ["'self'", 'https://SUPABASE_HOST', 'wss://SUPABASE_HOST']);
+test('the captcha and Razorpay Checkout (D104) may load their script and frame, and nothing else comes from another origin', () => {
+  assert.deepEqual(csp.get('script-src'), ["'self'", 'https://challenges.cloudflare.com', 'https://checkout.razorpay.com']);
+  assert.deepEqual(csp.get('frame-src'), ['https://challenges.cloudflare.com', 'https://api.razorpay.com', 'https://checkout.razorpay.com']);
+  assert.deepEqual(csp.get('connect-src'), ["'self'", 'https://SUPABASE_HOST', 'wss://SUPABASE_HOST', 'https://api.razorpay.com', 'https://lumberjack.razorpay.com']);
   assert.ok(!csp.get('script-src')?.some((v) => v.includes('unsafe')), 'no inline script, no eval');
   assert.deepEqual(csp.get('frame-ancestors'), ["'none'"], 'nobody may frame the site');
 });

@@ -14,6 +14,7 @@ import { ShareMyDate } from '@/components/ShareMyDate';
 import { AddToCalendar } from '@/components/AddToCalendar';
 import { LockedReveal } from '@/components/LockedReveal';
 import { SpicyHandoff } from '@/components/Spicy';
+import { PlanWallet } from '@/components/Wallet';
 import { Portrait } from '@/components/Portrait';
 import { TrustBadge } from '@/components/TrustBadge';
 import { Button } from '@/components/ui/Button';
@@ -207,6 +208,7 @@ export default function PlanScreen() {
             <LockedReveal person={other} reveal={reveal} hint={t('plan.revealHint', { name })} onFlag={flaggable ? () => backend.reportBadContact(invite.id, other.id) : undefined} />
           </View>
         )}
+        {!double && <PlanWallet inviteId={invite.id} name={name} locked={locked && invite.startsAt > Date.now()} route="/plan/[id]" />}
         {!flaked && !myFlake && !double && <SpicyHandoff otherId={other.id} name={name} route="/plan/[id]" />}
         {!flaked && double && [other, theirFriend].map((p, k) => p ? (
           <View key={p.id} style={{ gap: space.sm }}>

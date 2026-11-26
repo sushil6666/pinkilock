@@ -26,6 +26,9 @@ import { PLACE_MAX, looksLikeContact } from '@/domain/profile';
 import { venueOf, venuePlace, venuesFor } from '@/domain/venues';
 import { suits, windowsLabel } from '@/domain/freeWindows';
 import { t } from '@/i18n';
+import { COSTS, MAX_EXTRA_ASKS, balance } from '@/domain/wallet';
+import { Button } from '@/components/ui/Button';
+import { backend } from '@/services';
 
 // The place stored on a remote ask; the other person reads it as written. i18n: data
 const REMOTE_PLACE = { video: 'Pinkilock video room', game: 'Voice chat in the app' } as const; // i18n: data
@@ -37,6 +40,10 @@ export default function NewInvite() {
   const friend = usePerson(useStore((s) => s.duoId) ?? undefined);
   const openAsks = useStore((s) => s.invites.filter((i) => i.fromId === s.me?.id && isOpen(i)).length);
   const send = useStore((s) => s.sendInvite);
+  // Extra open asks bought with credits (D104): up to two more, each for a day.
+  const wallet = useStore((s) => s.wallet);
+  const setWallet = useStore((s) => s.setWallet);
+  const maxAsks = MAX_OPEN_ASKS + (wallet?.extraAsks ?? 0);
 
   const now = useMemo(() => Date.now(), []);
   const days = useMemo(() => dayOptions(now).filter((option) => slotOptions(option.start, now).length > 0), [now]);
@@ -66,7 +73,7 @@ export default function NewInvite() {
   const remotePlace = idea.kind === 'irl' ? null : REMOTE_PLACE[idea.kind];
   const day = days.find((option) => option.id === dayId);
   const slots = day ? slotOptions(day.start, now) : [];
-  const full = openAsks >= MAX_OPEN_ASKS;
+  const full = openAsks >= maxAsks;
   const asDouble = double && !!friend && !!person.hasDuo;
   
   const venues = remotePlace ? [] : venuesFor(me.city, person.area, me.area);
@@ -93,9 +100,25 @@ export default function NewInvite() {
     }
   };
 
+  const canBuyExtra = full && !!wallet && wallet.extraAsks < MAX_EXTRA_ASKS && balance(wallet) >= COSTS.extra_ask;
+  const buyExtra = async () => {
+    setBusy(true);
+    setError('');
+    try {
+      setWallet(await backend.buyExtraAsk());
+      haptic.success();
+    } catch (e) {
+      haptic.warning();
+      setError(shown(e, '/invite/new'));
+    }
+    setBusy(false);
+  };
   const hint = error || full
-    ? <ErrorText text={error || t('compose.full', { max: MAX_OPEN_ASKS })} />
-    : <T v="caption" c={color.textDim}>{missing || t(asDouble ? 'compose.hoursDouble' : 'compose.hours', { name: person.name, n: openAsks + 1, max: MAX_OPEN_ASKS })}</T>;
+    ? <>
+        <ErrorText text={error || t('compose.full', { max: maxAsks })} />
+        {canBuyExtra ? <Button kind="ghost" icon="star" label={t('wallet.composeExtra', { n: COSTS.extra_ask })} busy={busy} onPress={buyExtra} /> : null}
+      </>
+    : <T v="caption" c={color.textDim}>{missing || t(asDouble ? 'compose.hoursDouble' : 'compose.hours', { name: person.name, n: openAsks + 1, max: maxAsks })}</T>;
 
   return (
     <Screen

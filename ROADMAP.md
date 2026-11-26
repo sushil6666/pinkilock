@@ -109,7 +109,15 @@ someone, and delete their account, on both platforms, against the production pro
 
 - [x] **Spicy mode** (D103): an opt-in for two adults, off by default, with the safety rules, 18+
   and rules yeses, boundaries from a list, and from day one, with a yes from both, a hand-off to
-  Discord (first), Telegram or Signal. Needs a lawyer's view before launch (O14).
+  Discord (first), Telegram or Signal. Needs a lawyer's view before launch (O14). Since D105 a
+  match unlocks for 600 credits (one pays, or 300 each).
+
+- [x] **Credits wallet** (D104): Razorpay top-ups on the website (test mode until the keys are set),
+  boosts, extra open asks, a refundable stake on a plan, Treat the plan (a voucher at a partner
+  place), and rewards for kept plans, verified profiles, ratings, vouches and streaks. Never cash.
+  Waiting on Razorpay keys, Play Billing for the apps (O15) and a legal and tax view (O16).
+- [ ] **Spicy call times**: both pick times and a minimum call length, the app confirms an overlap,
+  then both say whether the call happened; a no-show loses their share of the unlock (next PR).
 
 - [x] **Photos behind the lock** (D088): up to three photos on Me, stored in a private Supabase
   Storage bucket by the `photo` Edge Function, which strips their metadata and draws the picture

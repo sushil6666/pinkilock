@@ -45,7 +45,7 @@ select t.ok((select string_agg(table_schema || '.' || table_name || ':' || privs
     select table_schema, table_name, string_agg(privilege_type, ',' order by privilege_type) as privs
     from information_schema.role_table_grants where grantee = 'authenticated' and table_schema not in ('t', 'storage') group by 1, 2) g)
   = 'public.areas:SELECT public.ask_lines:SELECT public.cities:SELECT public.contact_kinds:SELECT public.countries:SELECT public.duos:SELECT public.feed_nudges:SELECT public.ideas:SELECT public.invites:SELECT public.passes:SELECT public.profile_cards:SELECT '
-    'public.profile_private:SELECT public.pronoun_options:SELECT public.trust_scores:SELECT public.venues:SELECT public.vibes:SELECT',
+    'public.profile_private:SELECT public.pronoun_options:SELECT public.treat_partners:SELECT public.trust_scores:SELECT public.venues:SELECT public.vibes:SELECT',
   'a signed-in user holds exactly these table rights and no others');
 select t.ok(not exists (select 1 from information_schema.role_table_grants where grantee = 'anon' and table_schema <> 'storage'),
   'signed out, there is no right on any table in any schema');
@@ -64,7 +64,7 @@ select t.ok((select string_agg(column_name, ',' order by column_name) from infor
 select t.ok((select string_agg(n.nspname || '.' || p.proname, ' ' order by n.nspname, p.proname)
     from pg_proc p join pg_namespace n on n.oid = p.pronamespace
     where n.nspname in ('public', 'private', 'analytics') and has_function_privilege('authenticated', p.oid, 'execute'))
-  = 'private.blocked_pair private.face_visible private.has_duo private.on_invite private.revealed_to private.shares_invite private.vouch_summary public.add_self_note public.bail public.block_user public.check_in public.create_duo_link public.create_vouch_link public.date_feedback public.decline_invite public.delete_my_account public.discover public.do_reset_step public.duo_link_name public.export_my_data public.file_privacy_request public.give_consents public.join_duo public.leave_duo public.log_client_error public.log_event public.my_blocks public.my_checkin_code public.my_consents public.my_contact_flags public.my_line_review public.my_moderation public.my_self_love public.my_spicy public.offer_pinky public.pass_profile public.pause_discover public.rate_date public.register_push_token public.remove_photo public.remove_self_note public.report_bad_contact public.report_user public.restore_passes public.save_availability public.save_mood public.save_profile public.save_spicy public.send_invite public.spicy_off public.spicy_with public.spicy_yes public.start_contact_check public.start_reset public.unblock_user public.unregister_push_token public.vouch public.vouch_link_name',
+  = 'private.blocked_pair private.face_visible private.has_duo private.on_invite private.revealed_to private.shares_invite private.vouch_summary public.add_self_note public.bail public.block_user public.check_in public.create_duo_link public.create_vouch_link public.date_feedback public.decline_invite public.decline_treat public.delete_my_account public.discover public.do_reset_step public.duo_link_name public.export_my_data public.file_privacy_request public.give_consents public.join_duo public.leave_duo public.log_client_error public.log_event public.my_blocks public.my_checkin_code public.my_consents public.my_contact_flags public.my_line_review public.my_moderation public.my_self_love public.my_spicy public.my_wallet public.offer_pinky public.pass_profile public.pause_discover public.rate_date public.register_push_token public.remove_photo public.remove_self_note public.report_bad_contact public.report_user public.restore_passes public.save_availability public.save_mood public.save_profile public.save_spicy public.send_invite public.spicy_off public.spicy_pay public.spicy_with public.spicy_yes public.start_contact_check public.start_reset public.treat_options public.treat_plan public.unblock_user public.unregister_push_token public.vouch public.vouch_link_name public.wallet_boost public.wallet_extra_ask public.wallet_stake public.wallet_visit',
   'a signed-in user can call exactly these functions and no others');
 select t.ok(not exists (select 1 from pg_proc p join pg_namespace n on n.oid = p.pronamespace
     where n.nspname in ('public', 'private', 'analytics') and has_function_privilege('anon', p.oid, 'execute')),
@@ -493,4 +493,19 @@ select t.ok(t.fails('select * from private.spicy') and t.fails('select * from pr
   'X cannot read or write the Spicy tables, or turn Spicy on for Y');
 select t.ok(t.sqlstate($$select save_spicy(true, true, '98765 43210', '', '', '{}')$$) in ('PL123', 'PL128'), 'X cannot store a phone number as a username');
 select t.ok(t.sqlstate(format('select spicy_yes(%L, true)', gen_random_uuid())) = 'PL130', 'X cannot say yes on a plan that is not X''s');
+reset role;
+
+-- D104, D105: the wallet. X cannot credit themselves, read anyone's wallet, stake or treat a plan
+-- that is not X's, pay a Spicy unlock that is not open, or call what only the Edge Function may.
+set role authenticated;
+select t.as_user(:'x');
+select t.ok(t.fails('select * from private.wallets') and t.fails('select * from private.wallet_ledger') and t.fails('select * from private.wallet_orders')
+  and t.fails('select * from private.spicy_unlocks')
+  and t.fails(format($$insert into private.wallets (user_id, paid) values (%L, 2000)$$, :'x')), 'X cannot read or write any wallet table');
+select t.ok(t.fails(format($$select wallet_open_order(%L, 'p49', 'order_attack1')$$, :'x')) and t.fails($$select wallet_paid('order_attack1', 'pay_1', 4900)$$)
+  and t.fails($$select wallet_refunded('pay_1')$$) and t.fails($$select redeem_treat('any', 'ABCDEFGH')$$), 'X cannot open, pay or refund an order, or use a voucher');
+select t.ok(t.sqlstate(format('select wallet_stake(%L)', gen_random_uuid())) = 'PL135' and t.sqlstate(format($$select treat_plan(%L, 'any', 'coffee')$$, gen_random_uuid())) = 'PL140',
+  'X cannot stake or treat a plan that is not X''s');
+select t.ok(t.sqlstate(format($$select spicy_pay(%L, 'full')$$, :'y')) = 'PL130', 'X cannot pay to see Y''s usernames when Spicy is not open between them');
+select t.ok((my_wallet() ->> 'paid')::int = 0 and t.sqlstate('select wallet_boost()') = 'PL132', 'X has no credits to spend, and none appear');
 reset role;

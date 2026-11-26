@@ -10,6 +10,8 @@ import { backend, type Changes, type Notice, type Snapshot } from '../services';
 import { fail } from '../domain/errors';
 import { peopleOf } from '../domain/invites';
 import { shown } from '../lib/report';
+import { quiet } from '../lib/log';
+import type { Wallet } from '../domain/wallet';
 
 interface State {
   ready: boolean;
@@ -24,6 +26,10 @@ interface State {
   notice: Notice | null;
   /** How I sign in (anonymous until a phone is linked). Loaded by the Me tab. */
   account: Account | null;
+  /** My credits wallet (D104), once loaded; null before. The compose screen reads extra asks from it. */
+  wallet: Wallet | null;
+  setWallet(w: Wallet): void;
+  loadWallet(): Promise<Wallet>;
 
   boot(): Promise<void>;
   completeOnboarding(input: OnboardingInput): Promise<void>;
@@ -104,6 +110,13 @@ export const useStore = create<State>((set, get) => {
     duoId: null,
     notice: null,
     account: null,
+    wallet: null,
+    setWallet: (wallet) => set({ wallet }),
+    async loadWallet() {
+      const wallet = await backend.wallet();
+      set({ wallet });
+      return wallet;
+    },
 
     async boot() {
       if (!subscribed) {
@@ -113,6 +126,8 @@ export const useStore = create<State>((set, get) => {
       try {
         const snap = await backend.boot();
         set({ ...fromSnapshot(snap), ready: true, bootError: null });
+        // Today counts for the wallet streak (D104). Never in the way of the app opening.
+        if (snap.me) backend.walletVisit().then((wallet) => set({ wallet }), quiet('wallet.visit'));
       } catch (e) {
         set({ ready: true, bootError: shown(e, '/boot', 'PC001') });
       }
@@ -176,7 +191,7 @@ export const useStore = create<State>((set, get) => {
     },
     async deleteAccount() {
       const snap = await backend.deleteAccount();
-      set({ ...fromSnapshot(snap), notice: null, account: null });
+      set({ ...fromSnapshot(snap), notice: null, account: null, wallet: null });
     },
     async loadAccount() {
       const account = await backend.account();
@@ -195,10 +210,10 @@ export const useStore = create<State>((set, get) => {
       if (!acct.phone && !acct.email) fail('PA008');
       await stopPush();
       const snap = await backend.signOut();
-      set({ ...fromSnapshot(snap), notice: null, account: null });
+      set({ ...fromSnapshot(snap), notice: null, account: null, wallet: null });
     },
     async demoReset() {
-      set({ ...fromSnapshot(await backend.demoReset()), notice: null });
+      set({ ...fromSnapshot(await backend.demoReset()), notice: null, wallet: null });
     },
     async demoBringForward(inviteId) {
       await apply(backend.demoBringForward(inviteId));

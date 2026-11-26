@@ -115,6 +115,21 @@ export const ERRORS = {
   PL129: 'Pick your boundaries from the list.',
   PL130: 'Spicy opens only when you both have it on.',
   PL131: 'That is not a Signal username: 3 to 32 letters, numbers or _, a dot, then 2 to 9 numbers.',
+  PL132: 'Not enough credits. Top up or earn some first.',
+  PL133: 'Your boost is already on.',
+  PL134: 'You have two extra asks already.',
+  PL135: 'A stake goes on a locked plan before it starts.',
+  PL136: 'Pick a pack from the list.',
+  PL137: 'Your wallet is full. Spend some credits first.',
+  PL138: 'You already staked this plan.',
+  PL139: 'This is paid from bought credits. Top up first.',
+  PL140: 'Treats work on a locked plan with a partner place in your city.',
+  PL141: 'This plan already has a treat.',
+  PL142: 'Two treats a week is plenty.',
+  PL143: 'That treat is not there any more.',
+  PL144: 'Top-ups are not open yet. You can still earn credits.',
+  PL145: 'Your part is paid already.',
+  PL146: 'You both need to say yes first.',
 
   PA001: 'Phone sign-in is not switched on yet.',
   PA002: 'Email sign-in is not switched on yet.',
@@ -140,9 +155,10 @@ export type ErrorCode = keyof typeof ERRORS;
 /**
  * PL codes the app raises itself, about a database answer that is not an error. PL039: a wrong
  * check-in code comes back as the plan unchanged (an error would undo the server's count of wrong
- * tries), and the app names it.
+ * tries), and the app names it. PL144: top-ups are off (no Razorpay keys, or a phone app before Play
+ * Billing); the `wallet` Edge Function and the app say it, not a migration.
  */
-export const APP_RAISED_PL: readonly ErrorCode[] = ['PL039'];
+export const APP_RAISED_PL: readonly ErrorCode[] = ['PL039', 'PL144'];
 
 /** Refusals that usually mean a block or an account deletion this phone has not heard about yet. */
 export const RESYNC_CODES: readonly ErrorCode[] = ['PL003', 'PL004', 'PL030', 'PL033', 'PL034'];
