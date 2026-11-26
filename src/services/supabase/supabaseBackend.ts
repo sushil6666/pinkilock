@@ -16,6 +16,7 @@ import { CHECK_IN_CLOSES_AFTER, isDouble, otherId, peopleOf } from '../../domain
 import type { Account, BlockedPerson, CodeKind, ContactCheck, Invite, MyContact, MyPhoto, PickedPhoto, Profile, Reveal } from '../../domain/types';
 import { log, quiet } from '../../lib/log';
 import { isMood, type NoteKind, type SelfLove } from '../../domain/selfLove';
+import { MAX_CALLS, isCallMinutes, noCall, type CallAnswer, type CallOutcome, type CallStatus, type SpicyCall } from '../../domain/calls';
 import { isBoundary, type Spicy, type SpicyPlan } from '../../domain/spicy';
 import { REWARD_KINDS, TREAT_ITEMS, emptyWallet, topUpsHere, type LedgerKind, type RewardKind, type TreatItem, type TreatPartner, type Wallet } from '../../domain/wallet';
 import type { openCheckout } from '../../lib/razorpay';
@@ -50,6 +51,27 @@ function spicyPlanFrom(raw: unknown): SpicyPlan {
   const r = (raw ?? {}) as { open?: boolean; my_yes?: boolean; mutual?: boolean; their_boundaries?: string[]; unlock?: { mine?: number; theirs?: number; done?: boolean }; discord?: string | null; telegram?: string | null; signal?: string | null };
   const unlock = { mine: r.unlock?.mine ?? 0, theirs: r.unlock?.theirs ?? 0, done: !!r.unlock?.done };
   return { open: !!r.open, myYes: !!r.my_yes, mutual: !!r.mutual, theirBoundaries: (r.their_boundaries ?? []).filter(isBoundary), unlock, discord: r.discord ?? null, telegram: r.telegram ?? null, signal: r.signal ?? null };
+}
+
+/** spicy_call() and its siblings (D106). */
+function callFrom(raw: unknown): SpicyCall {
+  const r = (raw ?? {}) as Record<string, unknown>;
+  const list = (x: unknown) => (Array.isArray(x) ? x.map((v) => ms(String(v)) ?? 0).filter(Boolean) : []);
+  const mins = (x: unknown) => (isCallMinutes(x) ? x : null);
+  const fault = r.fault === 'me' || r.fault === 'them' || r.fault === 'both' ? r.fault : null;
+  const answer = r.my_answer === 'talked' || r.my_answer === 'they_missed' || r.my_answer === 'i_missed' ? (r.my_answer as CallAnswer) : null;
+  return {
+    ...noCall,
+    id: typeof r.id === 'string' ? r.id : null,
+    status: (['picking', 'set', 'asking', 'done'].includes(String(r.status)) ? r.status : 'none') as CallStatus,
+    mySlots: list(r.my_slots), theirSlots: list(r.their_slots), myMinutes: mins(r.my_minutes), theirMinutes: mins(r.their_minutes),
+    noOverlap: !!r.no_overlap, startsAt: ms((r.starts_at as string | null) ?? null), minutes: typeof r.minutes === 'number' ? r.minutes : null,
+    together: typeof r.together === 'number' ? r.together : 0, myStarted: !!r.my_started, theirStarted: !!r.their_started,
+    meHere: !!r.me_here, theyHere: !!r.they_here, myEnded: !!r.my_ended, canMoveFree: !!r.can_move_free, myAnswer: answer,
+    answerUntil: ms((r.answer_until as string | null) ?? null), outcome: (r.outcome as CallOutcome | null) ?? null, fault,
+    refunded: typeof r.refunded === 'number' ? r.refunded : 0, stoppedByMe: !!r.stopped_by_me,
+    callsLeft: typeof r.calls_left === 'number' ? r.calls_left : MAX_CALLS,
+  };
 }
 
 /** my_wallet() and its siblings (D104). */
@@ -850,6 +872,31 @@ export function createSupabaseBackend(url: string, anonKey: string, storage: Ses
     async spicyPay(profileId, share) {
       await uid();
       return spicyPlanFrom(await rpc('spicy_pay', { p_other: profileId, p_share: share }));
+    },
+
+    async spicyCall(profileId) {
+      await uid();
+      return callFrom(await rpc('spicy_call', { p_other: profileId }));
+    },
+    async spicyCallPick(profileId, slots, minutes) {
+      await uid();
+      return callFrom(await rpc('spicy_call_pick', { p_other: profileId, p_slots: slots.map((x) => new Date(x).toISOString()), p_minutes: minutes }));
+    },
+    async spicyCallBeat(profileId) {
+      await uid();
+      return callFrom(await rpc('spicy_call_beat', { p_other: profileId }));
+    },
+    async spicyCallEnd(profileId, unsafe) {
+      await uid();
+      return callFrom(await rpc('spicy_call_end', { p_other: profileId, p_unsafe: unsafe }));
+    },
+    async spicyCallMove(profileId, anyway) {
+      await uid();
+      return callFrom(await rpc('spicy_call_move', { p_other: profileId, p_anyway: anyway }));
+    },
+    async spicyCallAnswer(profileId, answer) {
+      await uid();
+      return callFrom(await rpc('spicy_call_answer', { p_other: profileId, p_answer: answer }));
     },
 
     async wallet() {

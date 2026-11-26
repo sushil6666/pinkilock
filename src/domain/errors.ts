@@ -130,6 +130,13 @@ export const ERRORS = {
   PL144: 'Top-ups are not open yet. You can still earn credits.',
   PL145: 'Your part is paid already.',
   PL146: 'You both need to say yes first.',
+  PL147: 'Pick a call length: 5, 10, 15 or 30 minutes.',
+  PL148: 'Pick 1 to 8 times, on the hour or half hour, from an hour to a week ahead.',
+  PL149: 'Calls are set up once your match is unlocked.',
+  PL150: 'There is no call to do that on right now.',
+  PL151: 'Moving the call now counts as missing it.',
+  PL152: 'Three calls with one person is the most.',
+  PL153: 'The call timer opens five minutes before the start.',
 
   PA001: 'Phone sign-in is not switched on yet.',
   PA002: 'Email sign-in is not switched on yet.',
