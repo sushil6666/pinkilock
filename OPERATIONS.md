@@ -298,6 +298,14 @@ about that person, and a person's request is answered with their data download. 
 be announced or launched publicly until a lawyer has reviewed it (O14 in `docs/decisions.md`). A report
 about Spicy mode is handled like any other: the report already blocks, which closes the hand-off.
 
+**Changing the Spicy terms (D107).** The terms and quiz are words in `src/i18n` (`spicyQuiz`) and
+the key in SQL. When the terms change in a way that matters, in one PR: a new migration that
+replaces `private.spicy_terms_version()` with the next number (and `private.spicy_quiz_key()` if the
+answers moved), `SPICY_TERMS_VERSION` and `SPICY_QUIZ` in `src/domain/spicyQuiz.ts`, the words in
+English and Hindi, and `UPDATE_CASES=1 npm run test:unit`. Once it deploys, Spicy pauses for everyone
+until they pass the new quiz: say so in the release note. Typo fixes keep the version. The old passes
+stay in `public.consents` as a record.
+
 ## 6. Health checks
 
 Do these in a quick weekly look, and whenever something feels wrong.

@@ -550,6 +550,17 @@ Reminders are local notifications on the phone with plain words (`src/lib/callRe
 server push mentions Spicy. The rules are mirrored in `src/domain/calls.ts`; `CALL_CASES` and
 `ANSWER_CASES` are the shared tables (`tests/db/call_cases.sql`).
 
+Since D107, Spicy turns on only after the **Spicy terms and quiz**. The person reads the terms
+(sections in `src/i18n` under `spicyQuiz.terms`), agrees, and answers five questions; the server
+marks them (`pass_spicy_quiz`: PL155 for old terms, PL156 without the yes, PL157 for a missing or
+unknown answer) against `private.spicy_quiz_key()` and keeps a pass as a `public.consents` row (kind
+`spicy`, version `spicy-N`, so it is in the data download and goes with the account). `spicy_terms`
+says where the caller stands. `private.spicy_terms_version()` is the version in force: `save_spicy`
+refuses without a pass for it (PL154), and `private.spicy_with_for` is closed unless both people
+passed it, so changing the terms pauses every match (no yes, unlock or call) until each passes again.
+The key and the marking are mirrored in `src/domain/spicyQuiz.ts`; `QUIZ_CASES` is the shared table
+(`tests/db/spicy_quiz_cases.sql`).
+
 ### Wallet
 
 A closed loop of credits (D104), reached from Me, on a plan, in the composer and in Spicy mode. No

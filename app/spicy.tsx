@@ -10,6 +10,7 @@ import { useEffect, useState } from 'react';
 import { Pressable, StyleSheet, TextInput, View } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { SafetyRules, useMySpicy } from '@/components/Spicy';
+import { QuizPassed, SpicyQuizGate, SpicyTermsList } from '@/components/SpicyQuiz';
 import { Button } from '@/components/ui/Button';
 import { Chip } from '@/components/ui/Chip';
 import { Columns } from '@/components/ui/Columns';
@@ -18,6 +19,8 @@ import { inputStyle } from '@/components/ui/input';
 import { Screen } from '@/components/ui/Screen';
 import { T } from '@/components/ui/T';
 import { BOUNDARIES, type Boundary } from '@/domain/spicy';
+import { spicyTermsNone, type SpicyTerms } from '@/domain/spicyQuiz';
+import { quiet } from '@/lib/log';
 import { haptic } from '@/lib/haptics';
 import { shown } from '@/lib/report';
 import { aria } from '@/lib/web';
@@ -41,9 +44,16 @@ export default function SpicyPage() {
   const [busy, setBusy] = useState('');
   const [error, setError] = useState('');
   const [note, setNote] = useState('');
+  const [terms, setTerms] = useState<SpicyTerms | null>(null);
+  const [showTerms, setShowTerms] = useState(false);
+  const [justPassed, setJustPassed] = useState(false);
 
   useEffect(() => {
     backend.account().then((a) => setLinked(!!(a.phone || a.email)), () => setLinked(true));
+    backend.spicyTerms().then(setTerms, (e) => {
+      quiet('spicy.terms')(e);
+      setTerms(spicyTermsNone);
+    });
   }, []);
   // The form starts from what is saved, each time it loads.
   useEffect(() => {
@@ -119,8 +129,12 @@ export default function SpicyPage() {
     </>
   );
 
-  const right = (
+  // D107: until the quiz for the terms in force is passed, the gate stands where the form goes.
+  const right = !terms ? null : !terms.passed ? (
+    <SpicyQuizGate terms={terms} onPassed={(next) => { setTerms(next); setJustPassed(next.passed); }} route={ROUTE} />
+  ) : (
     <>
+      {justPassed ? <QuizPassed /> : null}
       <View style={styles.panel}>
         <T v="heading">{t('spicy.whereTitle')}</T>
         <T v="label" c={color.textDim}>{t('spicy.discordLabel')}</T>
@@ -162,6 +176,12 @@ export default function SpicyPage() {
         {error ? <ErrorText text={error} /> : null}
         {note ? <T v="caption" c={color.gold}>{note}</T> : null}
         <Button icon="zap" label={t(state.on ? 'spicy.save' : 'spicy.turnOn')} busy={busy === 'save'} disabled={!adult || !rules || !(discord.trim() || telegram.trim() || signal.trim())} onPress={save} />
+        <View style={styles.step}>
+          <Feather name="check-circle" size={16} color={color.gold} style={{ marginTop: 2 }} />
+          <T v="caption" c={color.textDim} style={{ flex: 1 }}>{t('spicyQuiz.passedNote', { v: terms.version })}</T>
+        </View>
+        <Button kind="quiet" icon={showTerms ? 'chevron-up' : 'book-open'} label={t('spicyQuiz.reread')} onPress={() => setShowTerms((v) => !v)} />
+        {showTerms ? <SpicyTermsList /> : null}
       </View>
     </>
   );

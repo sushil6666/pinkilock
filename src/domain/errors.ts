@@ -137,6 +137,10 @@ export const ERRORS = {
   PL151: 'Moving the call now counts as missing it.',
   PL152: 'Three calls with one person is the most.',
   PL153: 'The call timer opens five minutes before the start.',
+  PL154: 'Read the Spicy terms and pass the quiz first.',
+  PL155: 'The Spicy terms changed. Read them again and retake the quiz.',
+  PL156: 'Agree to the Spicy terms first.',
+  PL157: 'Answer every question.',
 
   PA001: 'Phone sign-in is not switched on yet.',
   PA002: 'Email sign-in is not switched on yet.',
