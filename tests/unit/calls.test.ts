@@ -121,3 +121,17 @@ test('the call text is in English and Hindi', () => {
   assert.ok(keys.length > 20);
   for (const k of keys) assert.ok(k in (hi.calls ?? {}), `hi.calls.${k}`);
 });
+
+test('in-app calls are voice only: no camera, screen or recording anywhere in the call code (D111)', () => {
+  const read = (p: string) => readFileSync(join(__dirname, '..', '..', p), 'utf8');
+  for (const p of ['src/lib/voice.ts', 'src/lib/voiceSetup.ts', 'src/lib/voiceSetup.native.ts', 'src/components/SpicyCall.tsx', 'supabase/functions/voice/index.ts']) {
+    const code = read(p).replace(/\/\*[\s\S]*?\*\/|\/\/.*$/gm, '');
+    for (const bad of [/setCameraEnabled/, /setScreenShareEnabled/, /createLocalVideoTrack/, /createLocalTracks/, /expo-camera/, /getDisplayMedia/, /video:\s*true/i, /egress/i, /record/i]) {
+      assert.ok(!bad.test(code), `${p} must not use ${bad}`);
+    }
+  }
+  const grant = read('supabase/functions/_shared/livekit.ts');
+  assert.match(grant, /canPublishSources: \['microphone'\]/, 'the token may publish the microphone only');
+  assert.match(grant, /canPublishData: false/, 'and no data channel');
+  assert.ok(!/egress|recorder|roomRecord/i.test(grant.replace(/\/\*[\s\S]*?\*\/|\/\/.*$/gm, '')), 'and nothing starts a recording');
+});

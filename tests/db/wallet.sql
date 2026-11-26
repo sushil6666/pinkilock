@@ -243,9 +243,9 @@ select t.ok((select jsonb_array_length(my_wallet() -> 'treats')) = 0, 'after a b
 
 -- The data download carries the wallet, and the worker cannot read it.
 select t.as_user(:'w');
-select t.ok((select export_my_data() ->> 'format') = 'pinkilock-export-11'
+select t.ok((select export_my_data() ->> 'format') = 'pinkilock-export-12'
   and (select jsonb_array_length(export_my_data() -> 'wallet' -> 'orders')) = 3
-  and (select (export_my_data() -> 'wallet' ->> 'paid')::int) = 665, 'the data download (format 11) has the wallet and its orders');
+  and (select (export_my_data() -> 'wallet' ->> 'paid')::int) = 665, 'the data download (format 12) has the wallet and its orders');
 reset role;
 select t.ok(not has_table_privilege('pinkilock_analytics', 'private.wallets', 'select') and not has_table_privilege('pinkilock_analytics', 'private.wallet_ledger', 'select')
   and not has_table_privilege('pinkilock_analytics', 'private.wallet_orders', 'select'), 'the analytics worker cannot read the wallet');

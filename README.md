@@ -62,10 +62,12 @@ With no keys set, the app runs on ten made-up people who answer by themselves. A
 11. **Spicy mode**: in **Me**, tap the pink **Spicy mode** card. Read the safety rules, tick 18+ and
     the rules, add a Discord username (or Telegram, or Signal) and pick boundaries; the mock account needs a
     phone or an email first (**Me**, sign-in, code `123456`). On the card (or a plan) of Aanya, Kabir, Ira,
-    Zoya or Rhea (who have it on in the mock) you see their boundaries and **Yes, move our
-    chat**; say yes, then unlock the match with credits (600, or 300 each; D105) and their username
-    shows. Then **Set up a call**: pick a length and some times (the mock's person takes your first
-    one), and the in-app timer runs while the call is on (D106).
+    Zoya or Rhea (who have it on in the mock) you see their boundaries and **Yes, I'd like a
+    call**; say yes, then unlock the match with credits (600, or 300 each; D105). Then **Set up a
+    call**: pick a length and some times (the mock's person takes your first one). From five minutes
+    before the start, **Join the call** opens an in-app voice call, audio only (D111; the mock's room
+    is silent). After a call that counted, **Share my usernames** shows theirs (the mock's person
+    always shares back).
     **Turn off** wipes it.
 12. **Wallet** (D104): in **Me**, tap the gold **Wallet** card. The mock is Razorpay's test mode on the
     web: tap a pack and the credits arrive at once. Spend them on a boost or an extra open ask; open a

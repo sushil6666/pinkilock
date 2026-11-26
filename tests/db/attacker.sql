@@ -544,3 +544,14 @@ select t.ok(t.sqlstate(format('select talk_answer(%L, true)', gen_random_uuid())
 select t.ok(t.sqlstate(format('select talk_claim_referral(%L)', (talk_state() ->> 'referral_code'))) = 'PL172' and t.sqlstate('select talk_listener_available(true)') = 'PL169'
   and t.sqlstate(format('select talk_call(%L, 10, true)', :'y')) = 'PL158', 'X cannot use their own link, take calls unverified, or ring someone who is not a listener');
 reset role;
+
+-- D111: Spicy calls in the app. X cannot ask for a voice room, report a join or a leave, read the
+-- voice sessions or the shares, or share usernames with someone Spicy is not open with.
+set role authenticated;
+select t.as_user(:'x');
+select t.ok(t.fails(format('select spicy_voice_room(%L, %L)', :'x', :'y')) and t.fails(format($$select spicy_voice_event('spicy_' || gen_random_uuid(), %L, 'participant_joined', now())$$, :'x')),
+  'X cannot get a voice room or invent minutes on a call');
+select t.ok(t.fails('select * from private.spicy_call_voice') and t.fails('select * from private.spicy_shares')
+  and t.fails(format($$insert into private.spicy_shares (user_id, other_id) values (%L, %L)$$, :'x', :'y')), 'X cannot read or write the voice sessions or the shares');
+select t.ok(t.sqlstate(format('select spicy_share(%L, true)', :'y')) = 'PL130', 'X cannot share usernames with Y when Spicy is not open between them');
+reset role;

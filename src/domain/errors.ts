@@ -159,6 +159,7 @@ export const ERRORS = {
   PL177: 'Pick what happened.',
   PL178: 'Usernames can be shared after a call that counted.',
   PL179: 'In-app calls are not switched on yet.',
+  PL180: 'The call needs your microphone. Allow it for Pinkilock in your settings, then join again.',
 
   PA001: 'Phone sign-in is not switched on yet.',
   PA002: 'Email sign-in is not switched on yet.',
@@ -188,9 +189,9 @@ export type ErrorCode = keyof typeof ERRORS;
  * Billing); the `wallet` Edge Function and the app say it, not a migration. PL161 (no Claude key),
  * PL168 (bank details Razorpay would refuse) and PL173 (no voice provider or no Route) come from the
  * `talk` Edge Function and the app (D108). PL179 (no voice provider for Spicy calls) comes from the
- * `voice` Edge Function (D111).
+ * `voice` Edge Function and the app, and PL180 (microphone refused) from the app (D111).
  */
-export const APP_RAISED_PL: readonly ErrorCode[] = ['PL039', 'PL144', 'PL161', 'PL168', 'PL173', 'PL179'];
+export const APP_RAISED_PL: readonly ErrorCode[] = ['PL039', 'PL144', 'PL161', 'PL168', 'PL173', 'PL179', 'PL180'];
 
 /** Refusals that usually mean a block or an account deletion this phone has not heard about yet. */
 export const RESYNC_CODES: readonly ErrorCode[] = ['PL003', 'PL004', 'PL030', 'PL033', 'PL034'];

@@ -323,7 +323,7 @@ in the SQL editor (`select * from reports where reviewed_at is null`).
 profile, contact, trust score, my invites (the other person by id only), passes, blocks, reports
 I made, devices, notifications sent to me, my events, and Self love (moods, notes, the pause and
 the reset), Spicy mode (my usernames, boundaries, yeses and unlocks), and the wallet (balances, ledger, orders,
-stakes and treats), my Spicy call times, and Talk mode (my settings, AI chat minutes and flags but
+stakes and treats), my Spicy call times (and, from format 12, my time on each voice call and whom I shared usernames with), and Talk mode (my settings, AI chat minutes and flags but
 never the words, calls, referrals, and as a listener my application and payouts; format 11). Reports about me are not in it, nor
 anyone else's contact. `delete_my_account()` ends my live invites, removes my id from every events
 row (and clears what the phone sent with `app_open`), then deletes the auth user; everything that
@@ -550,6 +550,22 @@ block. One free move each (`spicy_call_move`) an hour or more ahead; later, canc
 Reminders are local notifications on the phone with plain words (`src/lib/callReminder.ts`); no
 server push mentions Spicy. The rules are mirrored in `src/domain/calls.ts`; `CALL_CASES` and
 `ANSWER_CASES` are the shared tables (`tests/db/call_cases.sql`).
+
+**The call itself is in the app, audio only (D111).** While the timer is open, **Join the call**
+asks the `voice` Edge Function for a room; it checks the person's sign-in, asks
+`spicy_voice_room(user, other)` (service role only: Spicy open, both yes, unlocked, a set call in its
+hour, not ended), and mints a LiveKit token for `spicy_<call id>` that may publish the microphone and
+nothing else (`supabase/functions/_shared/livekit.ts`, shared with Talk mode). The app joins with
+`src/lib/voice.ts` (livekit-client on the web; `@livekit/react-native` WebRTC on phones), never asks
+for the camera, and shows mute, leave and "I felt unsafe or uncomfortable". LiveKit posts signed
+`participant_joined` / `participant_left` / `room_finished` webhooks to the same `voice` function,
+which hands Spicy rooms to `spicy_voice_event` (times clamped to the last ten minutes) and so to
+`private.spicy_call_voice`. `private.call_minute_rows` reads the minutes from those sessions once
+anyone reached the room, else from the check-ins; `call_together`, `call_timer_settle` and
+`call_state` use it. `talk_<call id>` rooms go to `talk_voice_event` once Talk mode has one.
+Usernames: `private.spicy_with_for` is now a wrapper over `private.spicy_with_base` that shows
+Discord, Telegram and Signal only after a call with outcome `talked` and when both have a row in
+`private.spicy_shares` (`spicy_share`); triggers drop shares on Spicy off, a yes taken back or a block.
 
 ### Wallet
 

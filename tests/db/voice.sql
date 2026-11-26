@@ -117,6 +117,13 @@ select t.ok(not exists (select 1 from private.spicy_shares where :'h' in (user_i
 select t.ok(not has_table_privilege('pinkilock_analytics', 'private.spicy_call_voice', 'select')
   and not has_table_privilege('pinkilock_analytics', 'private.spicy_shares', 'select'), 'the analytics worker cannot read the voice sessions or the shares');
 
+-- The data download (format 12) has my time on the call, and whom I shared with.
+set role authenticated;
+select t.as_user(:'h');
+select t.ok((export_my_data() ->> 'format') = 'pinkilock-export-12' and jsonb_array_length(export_my_data() -> 'spicy' -> 'voice_calls') = 2
+  and not (export_my_data()::text like '%' || 'person.' || right(:'j', 2) || '%'), 'the download (format 12) has my voice sessions, and never their username');
+reset role;
+
 -- Deleting an account deletes its voice sessions and shares.
 set role authenticated;
 select t.as_user(:'h');

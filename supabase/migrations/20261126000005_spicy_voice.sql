@@ -298,3 +298,30 @@ create trigger spicy_share_off after delete on private.spicy for each row execut
 create trigger spicy_share_yes after delete on private.spicy_yes for each row execute function private.spicy_share_gone();
 create trigger spicy_share_block after insert on public.blocks for each row execute function private.spicy_share_gone();
 revoke all on function private.spicy_share_gone() from public, anon, authenticated;
+
+-- ---------------------------------------------------------------------------------------------
+-- The data download, format 12: format 11 (20261126000003_talk.sql), plus, under spicy, my time on
+-- each voice call and whom I chose to share my usernames with. Nothing of the call itself exists.
+-- ---------------------------------------------------------------------------------------------
+alter function public.export_my_data() rename to export_my_data_11;
+alter function public.export_my_data_11() set schema private;
+revoke all on function private.export_my_data_11() from public, anon, authenticated;
+
+create or replace function public.export_my_data()
+returns jsonb language plpgsql stable security definer set search_path = public as $$
+declare
+  me uuid := auth.uid();
+  base jsonb;
+begin
+  if me is null then raise exception using errcode = 'PL001', message = 'Sign in first.'; end if;
+  base := private.export_my_data_11() || jsonb_build_object('format', 'pinkilock-export-12');
+  if base -> 'spicy' is null or jsonb_typeof(base -> 'spicy') <> 'object' then return base; end if;
+  return jsonb_set(base, '{spicy}', (base -> 'spicy') || jsonb_build_object(
+    'voice_calls', coalesce((select jsonb_agg(jsonb_build_object('with', case when c.a = me then c.b else c.a end, 'starts_at', c.starts_at,
+                    'joined_at', v.joined_at, 'left_at', v.left_at) order by v.joined_at)
+                    from private.spicy_call_voice v join private.spicy_calls c on c.id = v.call_id where v.user_id = me), '[]'),
+    'shared_usernames_with', coalesce((select jsonb_agg(jsonb_build_object('with', s.other_id, 'at', s.at) order by s.at)
+                    from private.spicy_shares s where s.user_id = me), '[]')));
+end $$;
+revoke all on function public.export_my_data() from public, anon;
+grant execute on function public.export_my_data() to authenticated;

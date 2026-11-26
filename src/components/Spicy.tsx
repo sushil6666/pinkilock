@@ -72,16 +72,26 @@ export function SpicyEntry() {
 /**
  * On someone's card or a plan with them. Nothing at all unless the server says it is open (both of
  * us on, a card I can see, nobody blocked). Then: their boundaries, the reminder, and my yes. Their usernames only
- * once we both said yes, Discord first.
+ * after a kept in-app call, once we both chose to share them (D111), Discord first.
  */
 export function SpicyHandoff({ otherId, name, route }: { otherId: string; name: string; route: string }) {
   const [plan, setPlan] = useState<SpicyPlan>(spicyClosed);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
-  useEffect(() => {
-    backend.spicyWith(otherId).then(setPlan, quiet('spicy.with'));
-  }, [otherId]);
+  const reload = useCallback(() => { backend.spicyWith(otherId).then(setPlan, quiet('spicy.with')); }, [otherId]);
+  useEffect(() => { reload(); }, [reload]);
   if (!plan.open) return null;
+
+  const share = async (yes: boolean) => {
+    setBusy(true);
+    setError('');
+    try {
+      setPlan(await backend.spicyShare(otherId, yes));
+    } catch (e) {
+      setError(shown(e, route));
+    }
+    setBusy(false);
+  };
 
   const answer = async (yes: boolean) => {
     setBusy(true);
@@ -118,6 +128,14 @@ export function SpicyHandoff({ otherId, name, route }: { otherId: string; name: 
       ) : plan.mutual ? (
         <>
           <T c={color.textDim}>{t('spicy.mutualBody', { name })}</T>
+          <SpicyCallPanel otherId={otherId} name={name} route={route} onSettled={reload} />
+          <T v="label" c={color.textDim}>{t('spicy.shareTitle')}</T>
+          {!plan.keptCall ? <T v="caption" c={color.textDim}>{t('spicy.shareLocked')}</T> : (
+            <>
+              <T v="caption" c={color.textDim}>{t('spicy.shareBody', { name })}</T>
+              {plan.myShare && !(plan.discord || plan.telegram || plan.signal) ? <T v="caption" c={color.gold}>{t('spicy.shareWaiting', { name })}</T> : null}
+            </>
+          )}
           {plan.discord ? (
             <View style={styles.handle}>
               <T v="label" c={color.textDim}>{t('spicy.discord')}</T>
@@ -139,7 +157,9 @@ export function SpicyHandoff({ otherId, name, route }: { otherId: string; name: 
               <T v="caption" c={color.textDim}>{t('spicy.signalHow')}</T>
             </View>
           ) : null}
-          <SpicyCallPanel otherId={otherId} name={name} route={route} />
+          {plan.keptCall ? (plan.myShare
+            ? <Button kind="quiet" label={t('spicy.unshare')} busy={busy} onPress={() => share(false)} />
+            : <Button kind="ghost" icon="share-2" wrap label={t('spicy.share', { name })} busy={busy} onPress={() => share(true)} />) : null}
         </>
       ) : (
         <T c={color.textDim}>{t('spicy.planBody', { name })}</T>
