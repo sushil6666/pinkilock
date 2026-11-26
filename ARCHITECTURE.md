@@ -609,7 +609,10 @@ A Boost is a row in `private.boosts` that lapses a month after buying; `wallet_b
 that lapses first (PL185 when none) and sets `wallets.boost_until` for 24 hours. A member's 2 free
 Boosts for the Indian month arrive on `my_wallet` or `wallet_boost` (`private.member_boosts`).
 `discover()` orders boosted cards, then members, then the daily shuffle; `send_invite` lets a member
-have 15 open asks (PL187). `src/domain/pinkGold.ts` holds the same prices and rules for the app and
+have 15 open asks (PL187); `save_profile` lets a member move to a city marked `early` before it is
+`active`. "See who asked you" is app-side (`asksInView`): the Asks tab shows a member every open ask
+waiting on them, and anyone else the next one plus a count. The server still sends every ask, so
+each one shows who sent it before anyone answers. `src/domain/pinkGold.ts` holds the same prices and rules for the app and
 the mock; the page is `app/pink-gold.tsx`, reached from Me.
 
 ### Talk mode

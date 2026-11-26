@@ -18,7 +18,7 @@ import type { Backend, BackendEvent, Changes, ClientErrorReport, Notice, Snapsho
 import { ALWAYS_PASSES, ME_ID, SEED_DUOS, SEED_ME_RECORD, inCity, seedFriend, seedInvites, seedProfiles, seedReveals } from './seed';
 import { PROVABLE_KINDS, checkAsk, checkContact, checkProfile } from '../../domain/profile';
 import { venueOf, venuePlace } from '../../domain/venues';
-import { ALL_CONSENTS, CITIES, openCities } from '../../domain/countries';
+import { ALL_CONSENTS, CITIES, openCities, movableCities } from '../../domain/countries';
 
 const cityCountry = (city: string) => CITIES.find((c) => c.name === city)?.country ?? 'IN';
 import { FREE_WINDOWS } from '../../domain/freeWindows';
@@ -666,7 +666,7 @@ export function createMockBackend(options: { captcha?: () => Promise<string | un
         const next = { ...d.me, ...card };
         // Moving city (D083): an open city, an area from its list, once a week.
         const moving = next.city !== d.me.city;
-        if (moving && !openCities().some((c) => c.name === next.city)) fail('PL076');
+        if (moving && !movableCities(goldOn(walletOf(d), Date.now())).some((c) => c.name === next.city)) fail('PL076');
         checkProfile(next, next.city, { area: d.me.area, city: d.me.city, pronouns: d.me.pronouns, ideaIds: d.me.ideaIds });
         const now = Date.now();
         if (moving && (changed.city ?? 0) > now - 7 * rules.DAY) fail('PL105');

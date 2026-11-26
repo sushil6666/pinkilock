@@ -100,4 +100,15 @@ export function istMonthEnd(now: number): number {
   return Date.UTC(d.getUTCFullYear(), d.getUTCMonth() + 1, 1) - 5.5 * 3_600_000;
 }
 
+/**
+ * See who asked you (D116, Sushil chose "count, then open one at a time"): a member sees every open
+ * ask waiting on them at once; anyone else sees the next one (the soonest to run out) and a count of
+ * the rest, which come one at a time as each is answered. Each ask still shows who sent it before an
+ * answer, so nobody agrees to meet a stranger. App-side only: the server sends every ask, as before.
+ */
+export function asksInView<T>(waiting: readonly T[], gold: boolean): { shown: T[]; more: number } {
+  if (gold) return { shown: [...waiting], more: 0 };
+  return { shown: waiting.slice(0, 1), more: Math.max(0, waiting.length - 1) };
+}
+
 export const daysLeft = (until: number, now: number): number => Math.max(0, Math.ceil((until - now) / DAY));

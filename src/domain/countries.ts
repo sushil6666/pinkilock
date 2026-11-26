@@ -11,12 +11,16 @@ export const DIAL_CODES: Record<string, string> = { IN: '91', GB: '44', US: '1',
 
 /** Open cities, with their country, for onboarding. */
 export const openCities = (): City[] => CITIES.filter((c) => c.active && COUNTRIES.some((k) => k.code === c.country && k.active));
+/** Early access (D116): cities about to open, which Pink Gold members can move to first. Same `early` column in SQL. */
+export const earlyCities = (): City[] => CITIES.filter((c) => !c.active && c.early && COUNTRIES.some((k) => k.code === c.country && k.active));
+/** Where I may move: open cities, and for a member the early ones too. */
+export const movableCities = (gold: boolean): City[] => (gold ? [...openCities(), ...earlyCities()] : openCities());
 /**
  * `zone` is the city's IANA time zone, the `time_zone` column. `state` is the state or union
  * territory, for the "state, then city" picker (D092); it is app-side only, since the server never
  * needs it.
  */
-export interface City { name: string; country: string; active: boolean; zone: string; state: string }
+export interface City { name: string; country: string; active: boolean; zone: string; state: string; early?: boolean }
 
 export const COUNTRIES: Country[] = [
   { code: 'IN', name: 'India', active: true, emergency: '112', womenHelpline: '181' },

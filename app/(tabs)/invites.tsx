@@ -10,6 +10,7 @@ import { Screen } from '@/components/ui/Screen';
 import { T } from '@/components/ui/T';
 import { DAY, MAX_OPEN_ASKS, isOpen, otherId } from '@/domain/invites';
 import { BOUNCE_DAYS } from '@/domain/selfLove';
+import { MEMBER_OPEN_ASKS, asksInView } from '@/domain/pinkGold';
 import { Feather } from '@expo/vector-icons';
 import type { Invite } from '@/domain/types';
 import { haptic } from '@/lib/haptics';
@@ -35,6 +36,9 @@ export default function Invites() {
   // Bounce back (D101): an ask of mine that someone else said no to, or that ran out, lately.
   const stung = invites.find((i) => i.fromId === meId && ((i.status === 'declined' && i.declinedBy && i.declinedBy !== meId) || i.status === 'expired')
     && (i.resolvedAt ?? 0) > now - BOUNCE_DAYS * DAY);
+  // See who asked you (D116): members see every ask waiting on them; others the next one and a count.
+  const gold = useStore((s) => !!s.me?.pinkGold);
+  const inView = side === 'in' ? asksInView(open, gold) : { shown: open, more: 0 };
   const counts = { in: invites.filter((i) => i.fromId !== meId && isOpen(i)).length, out: invites.filter((i) => i.fromId === meId && isOpen(i)).length };
 
   const row = (i: Invite, k: number) => (
@@ -68,8 +72,20 @@ export default function Invites() {
             <Button kind="ghost" icon="arrow-right" label={t('bounce.noticeOpen')} onPress={() => router.push({ pathname: '/self-love/bounce-back', params: { after: stung.status === 'expired' ? 'expired' : 'no', invite: stung.id } })} />
           </View>
         ) : null}
-        {side === 'out' && <T v="caption" c={color.textDim}>{t('asks.openOf', { count: counts.out, max: MAX_OPEN_ASKS })}</T>}
-        <Grid>{open.map(row)}</Grid>
+        {side === 'out' && <T v="caption" c={color.textDim}>{t('asks.openOf', { count: counts.out, max: gold ? MEMBER_OPEN_ASKS : MAX_OPEN_ASKS })}</T>}
+        <Grid>{inView.shown.map(row)}</Grid>
+        {inView.more > 0 && (
+          <View style={styles.more}>
+            <View style={{ flexDirection: 'row', gap: space.md }}>
+              <Feather name="eye-off" size={20} color={color.gold} style={{ marginTop: 2 }} />
+              <View style={{ flex: 1, gap: 2 }}>
+                <T v="bodyBold">{t('asks.moreWaiting', { count: inView.more })}</T>
+                <T v="caption" c={color.textDim}>{t('asks.moreBody')}</T>
+              </View>
+            </View>
+            <Button kind="ghost" icon="star" label={t('asks.seeAllGold')} onPress={() => router.push('/pink-gold')} />
+          </View>
+        )}
         {open.length === 0 && (
           <View style={styles.empty}>
             <T v="title">{t(side === 'in' ? 'asks.noneIn' : 'asks.noneOut')}</T>
@@ -89,5 +105,6 @@ const styles = StyleSheet.create({
   segBtn: { flex: 1, minHeight: 44, alignItems: 'center', justifyContent: 'center', borderRadius: radius.card - 4 },
   segOn: { backgroundColor: color.pink },
   bounce: { gap: space.md, borderWidth: 1, borderColor: color.pinkDeep, backgroundColor: color.pinkWash, borderRadius: radius.card, padding: space.lg },
+  more: { gap: space.md, borderWidth: 1, borderColor: color.gold, backgroundColor: color.goldWash, borderRadius: radius.card, padding: space.lg },
   empty: { borderWidth: 1, borderColor: color.line, borderRadius: radius.card, padding: space.xl, gap: space.md, backgroundColor: color.surface },
 });

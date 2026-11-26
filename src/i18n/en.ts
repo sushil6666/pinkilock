@@ -84,7 +84,10 @@ export const en = {
       asks: '15 open asks at once, instead of 3',
       boosts: '2 free Boosts every month',
       discover: 'Shown right after boosted cards on Discover',
+      cities: 'Early access to new cities, before they open to everyone',
+      whoAsked: 'See everyone who asked you at once, with their photos',
     },
+    earlyCities: 'Early access for Pink Gold',
     plansTitle: 'Pick a plan',
     plansBody: 'Pay once through Razorpay with UPI, a card or net banking. Prices include GST. Nothing renews by itself, and a new plan adds to the end of the one you have.',
     months: { one: '{count} month', other: '{count} months' },
@@ -775,6 +778,9 @@ export const en = {
     noneOutBody: 'Pick a person, choose one small plan and set a time.',
     goDiscover: 'Go to Discover',
     closed: 'Closed',
+    moreWaiting: { one: '{count} more ask is waiting', other: '{count} more asks are waiting' },
+    moreBody: 'Answer this one and the next shows up. Pink Gold members see everyone who asked at once.',
+    seeAllGold: 'See them all with Pink Gold',
   },
 
   vouch: {

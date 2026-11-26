@@ -76,7 +76,10 @@ export const hi: Translation = {
       asks: 'एक साथ 15 खुले न्योते, 3 की जगह',
       boosts: 'हर महीने 2 मुफ़्त Boost',
       discover: 'Discover पर Boost वाले कार्ड के ठीक बाद',
+      cities: 'नए शहरों में सबके लिए खुलने से पहले जगह',
+      whoAsked: 'आपको किस-किस ने बुलाया, सब एक साथ फ़ोटो के साथ देखें',
     },
+    earlyCities: 'Pink Gold के लिए पहले से खुले',
     plansTitle: 'एक प्लान चुनें',
     plansBody: 'Razorpay से UPI, कार्ड या नेट बैंकिंग से एक बार भुगतान करें। कीमतों में GST शामिल है। कुछ भी अपने आप रिन्यू नहीं होता, और नया प्लान आपके मौजूदा प्लान के अंत में जुड़ जाता है।',
     months: { one: '{count} महीना', other: '{count} महीने' },
@@ -761,6 +764,9 @@ export const hi: Translation = {
     noneOutBody: 'किसी को चुनें, एक छोटा प्लान चुनें और समय तय करें।',
     goDiscover: 'डिस्कवर पर जाएँ',
     closed: 'बंद',
+    moreWaiting: { one: '{count} और न्योता इंतज़ार में है', other: '{count} और न्योते इंतज़ार में हैं' },
+    moreBody: 'इसका जवाब दें, फिर अगला दिखेगा। Pink Gold सदस्य सबको एक साथ देखते हैं।',
+    seeAllGold: 'Pink Gold के साथ सब देखें',
   },
 
   vouch: {

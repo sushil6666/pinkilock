@@ -562,6 +562,10 @@ new legal review: it gets its `state` in `CITIES` (for the state, then city pick
 areas with rough centres and 6 places to meet (`npm run test:unit` checks), and any old name people
 still use goes in `CITY_ALIASES` (`src/domain/citySearch.ts`).
 
+**Early access (D116).** To open a city to Pink Gold members first, a migration sets `early = true`
+(leaving `active = false`) in `cities`, and `early: true` goes on its row in `CITIES`. Members can then
+move there from Me; everyone else gets it when `active` turns true.
+
 The tier-2 cities opened by D092 (migration `20261119000002_tier2_cities.sql`) have area and place
 lists written without a local check. Before launch, have someone who lives in each city read its
 areas, their rough centres and its places; fix names and centres in a new migration, and switch a

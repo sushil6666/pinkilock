@@ -146,3 +146,15 @@ select t.ok(t.fails('select * from private.boosts') and t.fails(format($$select 
   and t.fails($$select wallet_paid('order_pg00001', 'pay_x', 159900)$$), 'S cannot read Boosts, give themselves a plan, or open or pay an order');
 select t.ok(not (my_wallet() ->> 'gold')::boolean and (my_wallet() ->> 'boosts')::int = 0, 'S has no Pink Gold and no Boosts');
 reset role;
+
+-- Early access to new cities (D116): a city marked early takes members before it opens to all.
+insert into public.cities (name, country, active, time_zone, early) values ('Earlypur', 'IN', false, 'Asia/Kolkata', true);
+insert into public.profile_private (profile_id, contact_kind, contact_handle) values (:'r', 'Instagram', '@ritu.test'), (:'s', 'Instagram', '@sahil.test');
+set role authenticated;
+select t.as_user(:'s');
+select t.ok(t.sqlstate($$select save_profile('Sahil', 27, 'Old Town', '', '', '{}', array['boba_run','chai_walk','meme_duel'], null, null, 'Earlypur')$$) = 'PL076',
+  'someone who is not Pink Gold cannot move to a city that is not open yet (PL076)');
+select t.as_user(:'r');
+select t.ok(t.sqlstate($$select save_profile('Ritu', 23, 'Old Town', '', '', '{}', array['boba_run','chai_walk','meme_duel'], null, null, 'Earlypur')$$) is null, 'a member can move there early');
+select t.ok((select city from profiles where id = :'r') = 'Earlypur', 'and their card now says Earlypur');
+reset role;

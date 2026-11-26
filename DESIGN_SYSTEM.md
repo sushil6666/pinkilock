@@ -98,6 +98,9 @@ Font scaling is allowed up to 1.3x (`maxFontSizeMultiplier`) so layouts hold on 
   per month and savings in pink captions; the 12-month tile has a gold border and "Best value"; the
   3-month tile has the primary button), then Boosts with the same tiles. The Me entry is a
   `pinkWash` row with a gold border and a 40px pink star disc, under the Wallet entry.
+- **Asks waiting** (not a member, more than one ask): the next ask's card, then a `goldWash` panel with
+  a gold border, an eye-off icon, "N more asks are waiting", one line on how they come, and a ghost
+  button to Pink Gold. Members see every card.
 - **Portrait**: people are shown as a two-colour gradient block with a large glyph and initial, so
   the prototype ships no stock photos of real people. When someone's face has been checked (D095),
   it takes the block's place, `cover`-cropped, under the same bottom fade (`onPhoto`) so the name and

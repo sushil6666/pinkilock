@@ -7,7 +7,7 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { test } from 'node:test';
 import { AppError } from '../../src/domain/errors';
-import { BOOST_PACKS, PLANS, addMonths, canBuy, goldUntilAfter, istMonth, istMonthEnd, openAskCap, perMonth, saves } from '../../src/domain/pinkGold';
+import { BOOST_PACKS, PLANS, addMonths, asksInView, canBuy, goldUntilAfter, istMonth, istMonthEnd, openAskCap, perMonth, saves } from '../../src/domain/pinkGold';
 import { en } from '../../src/i18n/en';
 import { hi } from '../../src/i18n/langs/hi';
 
@@ -75,4 +75,14 @@ test('the name stays Pink Gold in English and Hindi', () => {
   assert.equal(en.pinkGold.name, 'Pink Gold');
   assert.equal(hi.pinkGold?.name, 'Pink Gold');
   assert.ok(String(hi.gold?.perks?.asks).includes('15'));
+});
+
+test('see who asked you: members see all, everyone else the next one and a count', () => {
+  assert.deepEqual(asksInView(['a', 'b', 'c'], true), { shown: ['a', 'b', 'c'], more: 0 });
+  assert.deepEqual(asksInView(['a', 'b', 'c'], false), { shown: ['a'], more: 2 });
+  assert.deepEqual(asksInView([], false), { shown: [], more: 0 });
+});
+
+test('a city with early access takes members only, in SQL too', () => {
+  assert.ok(migration.includes('add column early boolean') && migration.includes('c.early and private.is_pink_gold(me)'));
 });

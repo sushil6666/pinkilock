@@ -259,7 +259,7 @@ export default function Me() {
       {move ? (
         <View style={{ gap: space.lg, marginTop: space.lg }}>
           <T v="caption" c={color.textDim}>{t('me.moveBody')}</T>
-          <WherePicker city={move.city} area={move.area} onCity={(city) => setMove((m) => m && { ...m, city })} onArea={(area) => setMove((m) => m && { ...m, area })} />
+          <WherePicker early={!!me.pinkGold} city={move.city} area={move.area} onCity={(city) => setMove((m) => m && { ...m, city })} onArea={(area) => setMove((m) => m && { ...m, area })} />
           {moveError ? <ErrorText text={moveError} /> : null}
           <Button icon="map-pin" label={t('me.moveSave', { city: move.city })} onPress={saveMove} busy={busy === 'move'}
             disabled={(move.city === me.city && move.area === me.area) || !areaOk(move.city, move.area)} />

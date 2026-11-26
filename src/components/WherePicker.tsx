@@ -17,7 +17,7 @@ import { inputStyle } from '@/components/ui/input';
 import { T } from '@/components/ui/T';
 import { areasIn, closeAreas, matchAreas } from '@/domain/areas';
 import { citiesByState, findCities } from '@/domain/citySearch';
-import { METROS, openCities } from '@/domain/countries';
+import { METROS, openCities, earlyCities } from '@/domain/countries';
 import { nearestAreas, nearestCity } from '@/domain/nearby';
 import { AREA_MAX, customAreaOk, looksLikeContact } from '@/domain/profile';
 import { locateOnce } from '@/lib/location';
@@ -30,9 +30,11 @@ export const areaOk = (city: string, area: string): boolean =>
 
 type Finding = { state: 'idle' | 'finding' | 'denied' | 'unavailable' | 'outside' } | { state: 'found'; city: string; near: string[] };
 
-export function WherePicker({ city, area, onCity, onArea, cityNote, autoLocate = true }: {
+export function WherePicker({ city, area, onCity, onArea, cityNote, autoLocate = true, early = false }: {
   city: string;
   area: string;
+  /** A Pink Gold member moving city: cities with early access show too (D116). */
+  early?: boolean;
   onCity: (city: string) => void;
   onArea: (area: string) => void;
   /** The line under the cities. */
@@ -133,6 +135,14 @@ export function WherePicker({ city, area, onCity, onArea, cityNote, autoLocate =
             <T v="caption" c={color.textMute}>{t('where.metros')}</T>
             <View style={styles.wrap}>
               {metros.map((c) => <Chip key={c.name} label={c.name} selected={city === c.name} onPress={() => pick(c.name)} />)}
+            </View>
+          </View>
+        )}
+        {early && earlyCities().length > 0 && (
+          <View style={{ gap: space.xs }}>
+            <T v="caption" c={color.pink}>{t('gold.earlyCities')}</T>
+            <View style={styles.wrap}>
+              {earlyCities().map((c) => <Chip key={c.name} label={c.name} sub={c.state} selected={city === c.name} onPress={() => pick(c.name)} />)}
             </View>
           </View>
         )}
