@@ -10,12 +10,12 @@ import { join } from 'node:path';
 import { test } from 'node:test';
 import { AppError } from '../../src/domain/errors';
 import {
-  AI_PER_MINUTE, AI_HISTORY, HARM_CASES, HARM_PHRASES, LISTENER_CODE, MATCH_CASES, SPLIT_CASES, aiCharge, aiHistory, callHold, checkAiMessage, checkKyc,
+  AI_PER_MINUTE, AI_HISTORY, aiToneFor, HARM_CASES, HARM_PHRASES, LISTENER_CODE, MATCH_CASES, SPLIT_CASES, aiCharge, aiHistory, callHold, checkAiMessage, checkKyc,
   checkListener, freeReason, mentionsHarm, referralCode, sortListeners, talkMatch, talkSplit,
 } from '../../src/domain/talk';
 import { en } from '../../src/i18n/en';
 import { REVIEW_GAP_DAYS, mayAsk } from '../../src/domain/review';
-import { HARM_NOTE, SYSTEM, toMessages } from '../../supabase/functions/talk/companion';
+import { HARM_NOTE, SYSTEM, TONE_FLIRTY, TONE_WARM, systemFor, toMessages } from '../../supabase/functions/talk/companion';
 
 const ROOT = join(__dirname, '..', '..');
 const q = (s: string) => `'${s.replace(/'/g, "''")}'`;
@@ -153,13 +153,28 @@ test('Saathi is always labelled AI on screen, and the code is spelled out', () =
   for (const rule of LISTENER_CODE) assert.ok(en.talk.code[rule], `the listener code has words for ${rule}`);
 });
 
-test('the companion is told it is an AI, never to flirt, and where help is', () => {
+test('the companion is told it is an AI, never sexual, and where help is', () => {
   assert.match(SYSTEM, /You are an AI, not a person/);
-  assert.match(SYSTEM, /Never flirt/);
+  assert.match(SYSTEM, /Never anything sexual/);
   assert.match(SYSTEM, /sexual roleplay/);
+  assert.match(SYSTEM, /Never mention or suggest Spicy mode/);
   assert.match(SYSTEM, /14416/);
   assert.match(SYSTEM, /\[\[HELP\]\]/);
   assert.match(HARM_NOTE, /14416/);
+});
+
+test('Saathi flirts only when the person picked Flirty, and never after a mention of self-harm (D113)', () => {
+  assert.deepEqual(systemFor('warm', false), [SYSTEM, TONE_WARM]);
+  assert.deepEqual(systemFor('flirty', false), [SYSTEM, TONE_FLIRTY]);
+  assert.deepEqual(systemFor('flirty', true), [SYSTEM, TONE_WARM, HARM_NOTE]);
+  assert.match(TONE_WARM, /Do not flirt/);
+  assert.match(TONE_FLIRTY, /never sexual/);
+  assert.match(TONE_FLIRTY, /still an AI/);
+  assert.equal(aiToneFor('flirty', false), 'flirty');
+  assert.equal(aiToneFor('flirty', true), 'warm');
+  assert.equal(aiToneFor('anything else', false), 'warm');
+  // Listeners never flirt: the listener code keeps its rule.
+  assert.ok((LISTENER_CODE as readonly string[]).includes('flirt'));
 });
 
 test('the chat goes to the model starting with the person, ending with the new message', () => {

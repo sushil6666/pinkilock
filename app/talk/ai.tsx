@@ -2,26 +2,31 @@
  * The AI companion (D108). Always called AI: in the title, on every reply, and in a line that
  * never scrolls away. "Talk to a real person" is one tap from anywhere on the page. A mention of
  * self-harm (on the server, the same list as src/domain/talk.ts) brings up the help lines and
- * makes the rest of this chat free. The chat lives only in this page's memory: leaving it, it goes.
+ * makes the rest of this chat free and warm. The chat lives only in this page's memory: leaving it,
+ * it goes. The tone (D113, warm or flirty) is this phone's choice, kept between visits.
  */
 import { Feather } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import { useRef, useState, type ComponentRef } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useEffect, useRef, useState, type ComponentRef } from 'react';
 import { ScrollView, StyleSheet, TextInput, View } from 'react-native';
 import { HelpLines, panel, until, useTalk } from '@/components/Talk';
 import { Button } from '@/components/ui/Button';
+import { Chip } from '@/components/ui/Chip';
 import { ErrorText } from '@/components/ui/ErrorText';
 import { Screen } from '@/components/ui/Screen';
 import { T } from '@/components/ui/T';
 import { inputStyle } from '@/components/ui/input';
-import { AI_MESSAGES_PER_DAY, AI_MESSAGE_MAX, AI_PER_MINUTE, aiHistory, checkAiMessage, type AiTurn } from '@/domain/talk';
+import { AI_MESSAGES_PER_DAY, AI_MESSAGE_MAX, AI_PER_MINUTE, AI_TONES, aiHistory, aiToneFor, checkAiMessage, type AiTone, type AiTurn } from '@/domain/talk';
 import { haptic } from '@/lib/haptics';
+import { quiet } from '@/lib/log';
 import { shown } from '@/lib/report';
 import { backend } from '@/services';
 import { color, radius, space } from '@/theme/tokens';
 import { t } from '@/i18n';
 
 const ROUTE = '/talk/ai';
+const TONE_KEY = 'pinkilock.talk.tone';
 
 export default function TalkAi() {
   const { state, reload } = useTalk(ROUTE);
@@ -33,6 +38,15 @@ export default function TalkAi() {
   const [today, setToday] = useState<number | null>(null);
   const [error, setError] = useState('');
   const scroll = useRef<ComponentRef<typeof ScrollView>>(null);
+  const [picked, setPicked] = useState<AiTone>('warm');
+  useEffect(() => {
+    AsyncStorage.getItem(TONE_KEY).then((v) => setPicked(aiToneFor(v, false)), quiet('talk.tone'));
+  }, []);
+  const pickTone = (x: AiTone) => {
+    setPicked(x);
+    AsyncStorage.setItem(TONE_KEY, x).catch(quiet('talk.tone'));
+  };
+  const tone = aiToneFor(picked, harm);
   const pass = state.passUntil && state.passUntil > Date.now() ? state.passUntil : null;
   const free = state.freeCall === 'ready';
 
@@ -52,7 +66,7 @@ export default function TalkAi() {
     setSending(true);
     try {
       // The opening hello is the page's, not the model's: only what was really said goes with the message.
-      const r = await backend.talkAi(chat, aiHistory(before.slice(1)), body);
+      const r = await backend.talkAi(chat, aiHistory(before.slice(1)), body, tone);
       setChat(r.chat);
       setTurns((now) => [...now, { role: 'ai', text: r.reply }]);
       if (r.harm) {
@@ -102,6 +116,11 @@ export default function TalkAi() {
             <View style={styles.badge}><T v="label" c={color.moon}>{t('talk.aiLabel')}</T></View>
           </View>
           <T v="caption" c={color.textDim}>{`${cost} ${t('talk.aiWords')}`}</T>
+          <View style={styles.label}>
+            <T v="label" c={color.textDim}>{t('talk.toneTitle')}</T>
+            {AI_TONES.map((x) => <Chip key={x} label={t(`talk.tones.${x}`)} selected={tone === x} disabled={harm} onPress={() => pickTone(x)} />)}
+          </View>
+          <T v="caption" c={color.textDim}>{harm ? t('talk.toneHarm') : tone === 'flirty' ? t('talk.toneFlirty') : t('talk.toneWarm')}</T>
           <T v="caption" c={color.textMute}>{t('talk.aiToday', { n: today ?? state.aiToday, max: AI_MESSAGES_PER_DAY })}</T>
         </View>
         {turns.map((x, i) => (

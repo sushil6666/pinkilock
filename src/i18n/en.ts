@@ -1394,6 +1394,11 @@ export const en = {
     reviewNote: 'Talk mode is new. It is not therapy or medical care.',
 
     // The AI chat
+    toneTitle: 'Tone',
+    tones: { warm: 'Warm', flirty: 'Flirty' },
+    toneWarm: 'Kind and friendly.',
+    toneFlirty: 'Light, playful flirting from an AI. Never sexual, and it goes back to warm if you seem low.',
+    toneHarm: 'Saathi stays warm for the rest of this chat.',
     aiNotPerson: 'You are chatting with an AI, not a person.',
     aiWords: 'Your messages are not kept: the chat goes when you leave this page.',
     aiHello: 'Hi, I am Saathi. I am an AI, not a person. How are you feeling right now?',
@@ -1417,7 +1422,9 @@ export const en = {
       l3: 'It makes sense to feel that way. What would help a little, right now?',
       l4: 'That matters. Would it help to talk it through with a real listener too? They are one tap away.',
       isAi: 'I am Saathi, an AI, not a person. If you would like a real person, tap "Talk to a real person" and a verified listener can take your call.',
-      noFlirt: 'I am an AI, and I keep things kind and friendly, never romantic. I am still here if you want to talk about how you feel.',
+      noFlirt: 'I am an AI, and in this tone I keep things kind and friendly. If you would like it playful, pick the Flirty tone above. I am still here if you want to talk about how you feel.',
+      flirty: 'Well, that made me smile. I am an AI, so I cannot blush, but I like talking with you. Tell me something that made your day better?',
+      noSexual: 'I am an AI, and I keep things light, never sexual. I am happy to keep chatting, though. How has your day really been?',
       person: 'You can tap "Talk to a real person" for a verified listener, by voice. I am an AI, and I am here meanwhile.',
       harm: 'I am really glad you told me. I am an AI, and I want you to have real support right now: please call Tele-MANAS on 14416 (free, any time) or 112 in an emergency. Are you safe right now? A real listener is one tap away, too.',
     },

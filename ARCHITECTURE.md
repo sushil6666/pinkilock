@@ -610,7 +610,8 @@ goes, kept for the books), `talk_blocks` and `talk_reports`.
   `talk_claim_referral` (PL158 to PL177). `talk_sweep` (pg_cron, every minute) ends calls nobody
   answered, that ran their length, or where someone left; it charges only minutes both were present.
 - **The `talk` Edge Function** holds every key: `ai` (checks and charges through `talk_ai_turn`,
-  then asks the model with the instructions in `supabase/functions/talk/companion.ts`; the reply's
+  then asks the model with the instructions in `supabase/functions/talk/companion.ts` and the tone the
+  phone sent, warm or flirty, always warm once the chat is flagged (D113); the reply's
   help marker sets `talk_ai_flag`), `voice` (a LiveKit token for `talk_<call id>` from
   `talk_voice_room`: microphone only, no data, no recording), `kyc` (PAN, bank and address straight to
   Razorpay Route's linked accounts; only the last four digits come back, `talk_kyc_done`), and

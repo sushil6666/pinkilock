@@ -8,8 +8,8 @@
 import { fail } from '../../domain/errors';
 import {
   AI_GAP_SECONDS, AI_MESSAGES_PER_DAY, AI_PASS, AI_PASS_MS, CALL_LENGTHS, CODE_VERSION, FREE_CALL_MINUTES, LISTENER_PER_MINUTE, REFERRAL_CODE, RING_SECONDS,
-  TALK_GONE_SECONDS, aiCharge, callHold, checkAiMessage, checkKyc, checkListener, emptyTalk, freeReason, mentionsHarm, minuteOf, referralCode, talkMatch, talkSplit,
-  type Accepts, type CallLength, type FreeCall, type FreeReason, type ListenerCard, type ListenerStatus, type ProfileDone, type Sex, type Talk, type TalkCall,
+  TALK_GONE_SECONDS, aiCharge, aiToneFor, callHold, checkAiMessage, checkKyc, checkListener, emptyTalk, freeReason, mentionsHarm, minuteOf, referralCode, talkMatch, talkSplit,
+  type AiTone, type Accepts, type CallLength, type FreeCall, type FreeReason, type ListenerCard, type ListenerStatus, type ProfileDone, type Sex, type Talk, type TalkCall,
   type TalkCallEnd, type TalkReportReason, type Topic, type Want,
 } from '../../domain/talk';
 import { dayOf } from '../../domain/selfLove';
@@ -180,11 +180,13 @@ export function createMockTalk(ctx: MockTalkContext): Pick<Backend,
       .map(({ accepts: _a, ...card }) => card);
 
   /** The mock companion: a few kind lines, by the same rules as the real one. */
-  function mockReply(text: string, harm: boolean, n: number): string {
+  function mockReply(text: string, harm: boolean, n: number, tone: AiTone): string {
     const low = text.toLowerCase();
     if (harm) return t('talk.mock.harm');
     if (/\b(human|real person|bot|are you real|robot|ai\?)\b/.test(low)) return t('talk.mock.isAi');
-    if (/\b(love you|date me|sexy|kiss|flirt|girlfriend|boyfriend|hot)\b/.test(low)) return t('talk.mock.noFlirt');
+    // Never sexual, whatever the tone (D113).
+    if (/\b(sex|sexy|nude|nudes|naked|horny)\b/.test(low)) return t('talk.mock.noSexual');
+    if (/\b(love you|date me|kiss|flirt|girlfriend|boyfriend|hot|cute|beautiful|handsome)\b/.test(low)) return t(tone === 'flirty' ? 'talk.mock.flirty' : 'talk.mock.noFlirt');
     if (/\b(person|someone real|listener|talk to a human)\b/.test(low)) return t('talk.mock.person');
     const lines = ['talk.mock.l1', 'talk.mock.l2', 'talk.mock.l3', 'talk.mock.l4'] as const;
     return t(lines[n % lines.length]);
@@ -202,7 +204,7 @@ export function createMockTalk(ctx: MockTalkContext): Pick<Backend,
         if (!['woman', 'man', 'unsaid'].includes(sex) || !['opposite', 'same', 'anyone'].includes(want) || (sex === 'unsaid' && want !== 'anyone')) fail('PL158');
         Object.assign(tk, { sex, want });
       }),
-    async talkAi(chat, history, text) {
+    async talkAi(chat, history, text, tone) {
       const { talk: tk, now } = await ctx.open();
       tick(tk, now);
       const body = checkAiMessage(text);
@@ -225,7 +227,7 @@ export function createMockTalk(ctx: MockTalkContext): Pick<Backend,
       tk.lastAi = now;
       ctx.save();
       await new Promise((r) => setTimeout(r, 700));
-      return { chat: id, reply: mockReply(body, ch.harm, history.length), harm: ch.harm, charged: cost };
+      return { chat: id, reply: mockReply(body, ch.harm, history.length, aiToneFor(tone, ch.harm)), harm: ch.harm, charged: cost };
     },
     talkAiPass: () =>
       change((tk, now) => {

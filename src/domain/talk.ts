@@ -3,8 +3,10 @@
  * someone wants to be listened to. It is not dating and it never touches Spicy mode: nothing here
  * reads, writes or links to it, and nothing from Talk mode is ever shown on a card.
  *
- *   * The AI companion: there day and night, cheaper. Always labelled AI, it never says or hints that
- *     it is a person, never flirts and never takes part in sexual roleplay. It is paid by the minute
+ *   * The AI companion (Saathi): there day and night, cheaper. Always labelled AI, it never says or
+ *     hints that it is a person. Warm by default; a person may choose the Flirty tone (D113): light,
+ *     playful flirting and a little romance, never sexual, back to warm the moment the chat mentions
+ *     self-harm. Listeners never flirt (the listener code). It is paid by the minute
  *     (a minute counts when I sent something in it) or with a day pass. When someone mentions
  *     self-harm or suicide, charging stops for the rest of that chat, the reply points to Tele-MANAS
  *     14416 and other help lines, and it offers a person. The words are never stored: the chat lives
@@ -339,6 +341,15 @@ export interface AiReply {
   /** Credits taken for this message (0 with a pass, in a minute already paid, or after a mention). */
   charged: number;
 }
+
+/**
+ * Saathi's tone (D113), picked on the phone: warm (the default) or flirty (light, playful flirting
+ * and a little romance from an AI; never sexual, never claiming real feelings). Only for the AI:
+ * listeners never flirt. A chat that has mentioned self-harm is always warm.
+ */
+export type AiTone = 'warm' | 'flirty';
+export const AI_TONES: readonly AiTone[] = ['warm', 'flirty'];
+export const aiToneFor = (tone: unknown, harm: boolean): AiTone => (!harm && tone === 'flirty' ? 'flirty' : 'warm');
 
 /** A message to send: trimmed, not empty, not too long (PL162). */
 export function checkAiMessage(text: string): string {

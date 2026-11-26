@@ -74,7 +74,7 @@ With no keys set, the app runs on ten made-up people who answer by themselves. A
     there is a partner café). Rewards: keep a plan, rate it, open the app 7 days in a row. Live,
     top-ups stay off until the Razorpay keys are secrets (`OPERATIONS.md`, "Wallet").
 13. **Talk to someone** (D108): in **Me**, tap **Talk to someone**. Chat with **Saathi**, the AI companion
-    (always labelled AI, D112; the mock answers from a few kind lines, and "I want to die" or similar shows
+    (always labelled AI, D112; pick the Warm or Flirty tone, D113; the mock answers from a few kind lines, and "I want to die" or similar shows
     the help lines and makes the chat free). **Talk to a real person**: say who you are and whom you
     would like to talk to, pick a length (or your free first call, D109: tap **Pretend a friend
     joined** to unlock it) and call a listener. The mock listener picks up and the timer runs; there

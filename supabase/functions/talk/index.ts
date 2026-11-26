@@ -29,7 +29,7 @@
  * Logs carry ids, actions, results and traces: never a message, a reply, a PAN or a bank detail.
  */
 import Anthropic from 'npm:@anthropic-ai/sdk@1.9.0';
-import { HARM_NOTE, SYSTEM, toMessages, type Turn } from './companion.ts';
+import { systemFor, toMessages, type Turn } from './companion.ts';
 
 const BASE = (Deno.env.get('SUPABASE_URL') ?? '').replace(/\/$/, '');
 const SERVICE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
@@ -82,7 +82,7 @@ const HELP = '[[HELP]]';
 /** When the whole fallback chain declines, or the model fails: a kind reply that points somewhere real. */
 const SAFE_REPLY = "I'm an AI, and I couldn't answer that one well. If things feel heavy, Tele-MANAS (14416) is free and open all day and night, and a real listener is one tap away.";
 
-async function companion(history: Turn[], text: string, harm: boolean): Promise<{ reply: string; flagged: boolean }> {
+async function companion(history: Turn[], text: string, harm: boolean, tone: 'warm' | 'flirty'): Promise<{ reply: string; flagged: boolean }> {
   const response = await claude!.beta.messages.create({
     model: MODEL,
     max_tokens: 2048,
@@ -90,7 +90,8 @@ async function companion(history: Turn[], text: string, harm: boolean): Promise<
     output_config: { effort: 'low' },
     betas: ['server-side-fallback-2026-07-01'],
     fallbacks: 'default',
-    system: [{ type: 'text', text: SYSTEM, cache_control: { type: 'ephemeral' } }, ...(harm ? [{ type: 'text' as const, text: HARM_NOTE }] : [])],
+    // The fixed rules are cached; the tone (D113) and the help note follow them.
+    system: systemFor(tone, harm).map((text, i) => (i === 0 ? { type: 'text' as const, text, cache_control: { type: 'ephemeral' as const } } : { type: 'text' as const, text })),
     messages: toMessages(history, text),
   });
   if (response.stop_reason === 'refusal') return { reply: SAFE_REPLY, flagged: false };
@@ -217,7 +218,9 @@ Deno.serve(async (req) => {
     let reply = SAFE_REPLY;
     let harm = turn.data.harm;
     try {
-      const out = await companion(history, text, harm);
+      // Flirty only when the person picked it and the chat has never mentioned self-harm (D113).
+      const tone = !harm && body.tone === 'flirty' ? 'flirty' : 'warm';
+      const out = await companion(history, text, harm, tone);
       reply = out.reply;
       if (out.flagged && !harm) {
         harm = true;
