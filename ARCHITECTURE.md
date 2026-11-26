@@ -323,7 +323,7 @@ in the SQL editor (`select * from reports where reviewed_at is null`).
 profile, contact, trust score, my invites (the other person by id only), passes, blocks, reports
 I made, devices, notifications sent to me, my events, and Self love (moods, notes, the pause and
 the reset), Spicy mode (my usernames, boundaries, yeses and unlocks), and the wallet (balances, ledger, orders,
-stakes and treats; format 9). Reports about me are not in it, nor
+stakes and treats), and my Spicy call times (format 10). Reports about me are not in it, nor
 anyone else's contact. `delete_my_account()` ends my live invites, removes my id from every events
 row (and clears what the phone sent with `app_open`), then deletes the auth user; everything that
 references the profile cascades, and reports keep their row with my id set to null. The other
@@ -529,6 +529,26 @@ Since D105, usernames also wait for the match's **unlock**: 600 bought credits p
 (`spicy_pay`: 'half' is 300 once, 'full' is whatever is left), kept per pair in
 `private.spicy_unlocks`. A trigger on `private.spicy_yes` (a yes taken back, Spicy off, a deleted
 account) and one on `blocks` give back what was paid while it is not yet unlocked.
+
+**Call times (D106).** On an unlocked match the two set up a call in Discord, Telegram or Signal,
+and Pinkilock checks that it happened. `private.spicy_calls` (one open call per pair, three per
+match) holds each person's times (1 to 8, on the half hour, an hour to a week ahead) and minimum
+(10, 15 or 30; the shorter applies). `spicy_call_pick` sets the call at the first time both picked.
+The **in-app call timer**: while the call's hour is open and the app is in front, the app calls
+`spicy_call_beat` every 20 seconds, which writes one row per person per minute to
+`private.spicy_call_minutes`; a minute counts when both have a row for it. Nothing of the call
+itself is heard or stored. `private.call_sweep` (every minute) or both tapping End hands the facts
+to `private.call_verdict`: enough together is talked, one never there is a no-show, one leaving 3+
+minutes before the other is a drop, and anything else asks both (`spicy_call_answer`,
+`private.answer_verdict`, 24 hours; someone with 3 disputed "they missed it" in 30 days is not
+taken on their word alone). A miss writes a bare `call_missed` event for that person (no plan, no
+props), which the Trust Score worker weighs like an early bail, and gives the one who showed their
+own part of the unlock back (once per match). `spicy_call_end` with `p_unsafe` ("I felt unsafe or
+uncomfortable") ends it for both at once with no blame; so do Spicy off, a yes taken back and a
+block. One free move each (`spicy_call_move`) an hour or more ahead; later, cancelling is a miss.
+Reminders are local notifications on the phone with plain words (`src/lib/callReminder.ts`); no
+server push mentions Spicy. The rules are mirrored in `src/domain/calls.ts`; `CALL_CASES` and
+`ANSWER_CASES` are the shared tables (`tests/db/call_cases.sql`).
 
 ### Wallet
 
