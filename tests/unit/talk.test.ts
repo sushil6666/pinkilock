@@ -143,8 +143,11 @@ test('Talk mode never touches Spicy mode', () => {
   assert.ok(!/spicy/i.test(JSON.stringify(en.talk)), 'no word about Spicy in Talk mode');
 });
 
-test('the AI is always called AI on screen, and the code is spelled out', () => {
-  assert.match(en.talk.aiTitle, /\bAI\b/);
+test('Saathi is always labelled AI on screen, and the code is spelled out', () => {
+  // The companion is named Saathi (Sushil, 2026-11-26), and the AI label goes with it everywhere.
+  assert.equal(en.talk.aiTitle, 'Saathi');
+  assert.match(en.talk.aiThem, /\bAI\b/);
+  assert.match(en.talk.aiHello, /\bAI\b/);
   assert.match(en.talk.aiLabel, /\bAI\b/);
   assert.match(en.talk.aiNotPerson, /\bAI\b/);
   for (const rule of LISTENER_CODE) assert.ok(en.talk.code[rule], `the listener code has words for ${rule}`);
