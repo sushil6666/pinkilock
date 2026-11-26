@@ -709,7 +709,8 @@ Pink Gold (D115) is the name for paid members, shown as a badge on their card. P
 website (D116): the plans (`g1`, `g3`, `g6`, `g12`) and Boost packs (`b1`, `b6`) go through the same
 `wallet` Edge Function, Razorpay keys and webhook as credit top-ups ("Wallet" above), so there is
 nothing more to set up. Phone apps wait for Play Billing (O15). A refund from the Razorpay dashboard
-takes the plan's months off the end, or the Boosts not used yet.
+takes the plan's months off the end, or the Boosts not used yet. A member's free Saathi session a
+month needs nothing set up: it rides the Saathi switches in "Talk mode".
 
 The team can also make someone a member in the SQL editor (it runs as the owner; no app role can
 call these):

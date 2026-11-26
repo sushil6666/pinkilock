@@ -145,6 +145,8 @@ export interface Wallet {
   /** Boosts I can use now, and when the first of them lapses (a month after buying; a member's free ones at the month's end). */
   boosts?: number;
   boostLapses?: number | null;
+  /** A member's free Saathi session for this month is still there (D116). */
+  saathiFree?: boolean;
 }
 
 export type TreatStatus = 'held' | 'ready' | 'used' | 'back';

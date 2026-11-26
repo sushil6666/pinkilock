@@ -120,6 +120,17 @@ create index boosts_user_idx on private.boosts (user_id, expires_at) where used_
 alter table private.boosts enable row level security;
 revoke all on private.boosts from public, anon, authenticated;
 
+-- A member's free Saathi session, one per Indian calendar month (talk_ai_session, below).
+create table private.member_saathi (
+  user_id uuid not null references auth.users (id) on delete cascade,
+  month text not null check (month ~ '^[0-9]{4}-[0-9]{2}$'),
+  chat_id uuid,
+  at timestamptz not null default now(),
+  primary key (user_id, month)
+);
+alter table private.member_saathi enable row level security;
+revoke all on private.member_saathi from public, anon, authenticated;
+
 -- A member's two free Boosts for this month, once.
 create or replace function private.member_boosts(p_user uuid)
 returns void language plpgsql security definer set search_path = public as $$
@@ -260,7 +271,10 @@ returns jsonb language sql stable security definer set search_path = public as $
     'gold', private.is_pink_gold(p_user),
     'gold_until', (select g.until from private.pink_gold g where g.user_id = p_user and private.is_pink_gold(p_user)),
     'boosts', private.boosts_left(p_user),
-    'boost_lapses', (select min(b.expires_at) from private.boosts b where b.user_id = p_user and b.used_at is null and b.expires_at > now()));
+    'boost_lapses', (select min(b.expires_at) from private.boosts b where b.user_id = p_user and b.used_at is null and b.expires_at > now()),
+    -- A member's free Saathi session this month is still there (D116).
+    'saathi_free', private.is_pink_gold(p_user) and not exists (select 1 from private.member_saathi m
+                     where m.user_id = p_user and m.month = to_char(now() at time zone 'Asia/Kolkata', 'YYYY-MM')));
 $$;
 revoke all on function private.wallet_state(uuid), private.wallet_state_before_pink_gold(uuid) from public, anon, authenticated;
 
@@ -602,6 +616,48 @@ end $$;
 
 
 -- ---------------------------------------------------------------------------------------------
+-- A free Saathi session each month for members (D116): one 15-minute session per Indian calendar
+-- month, in place of the 60 credits (private.member_saathi, above). talk_ai_session: as in
+-- 20261126000006_saathi_sessions.sql, with that one change.
+-- ---------------------------------------------------------------------------------------------
+create or replace function public.talk_ai_session(p_chat uuid)
+returns jsonb language plpgsql security definer set search_path = public as $$
+declare
+  me uuid := private.self_love_me();
+  p private.talk_people;
+  ch private.talk_ai_chats;
+  cost int := 0;
+  gift boolean := false;
+begin
+  p := private.talk_person(me);
+  select * into ch from private.talk_ai_chats where id = p_chat and user_id = me and last_at > now() - interval '6 hours' for update;
+  if not found then
+    insert into private.talk_ai_chats (user_id) values (me) returning * into ch;
+  end if;
+  -- Free: a chat that mentioned self-harm, or a day pass. Nothing to buy.
+  if ch.harm or coalesce(p.pass_until > now(), false) then
+    return jsonb_build_object('chat', ch.id, 'paid_until', ch.paid_until, 'charged', 0, 'free', true);
+  end if;
+  if ch.paid_until > now() + interval '2 minutes' then
+    raise exception using errcode = 'PL182', message = 'You still have time with Saathi. You can continue in the last 2 minutes.';
+  end if;
+  -- A Pink Gold member's free session this month (D116), once; otherwise 60 credits.
+  if private.is_pink_gold(me) and not exists (select 1 from private.member_saathi m where m.user_id = me and m.month = to_char(now() at time zone 'Asia/Kolkata', 'YYYY-MM')) then
+    insert into private.member_saathi (user_id, month, chat_id) values (me, to_char(now() at time zone 'Asia/Kolkata', 'YYYY-MM'), ch.id);
+    gift := true;
+  else
+    perform private.wallet_spend(me, 'talk_ai', 60, ch.id || ':s' || (ch.sessions + 1));
+    cost := 60;
+  end if;
+  update private.talk_ai_chats
+    set paid_until = greatest(coalesce(paid_until, now()), now()) + interval '15 minutes', sessions = sessions + 1, last_at = now()
+    where id = ch.id returning * into ch;
+  return jsonb_build_object('chat', ch.id, 'paid_until', ch.paid_until, 'charged', cost, 'free', false, 'gold', gift);
+end $$;
+revoke all on function public.talk_ai_session(uuid) from public, anon;
+grant execute on function public.talk_ai_session(uuid) to authenticated;
+
+-- ---------------------------------------------------------------------------------------------
 -- The data download: whatever came before, plus my Pink Gold membership. One key is added and the
 -- format name is kept, so this sits on top of any later format without clashing with it.
 -- ---------------------------------------------------------------------------------------------
@@ -619,7 +675,8 @@ begin
     'pink_gold', (select jsonb_build_object('since', g.since, 'until', g.until, 'now', private.is_pink_gold(me))
                   from private.pink_gold g where g.user_id = me),
     'boosts', coalesce((select jsonb_agg(jsonb_build_object('source', b.source, 'got_at', b.got_at, 'expires_at', b.expires_at, 'used_at', b.used_at) order by b.got_at)
-                        from private.boosts b where b.user_id = me), '[]'));
+                        from private.boosts b where b.user_id = me), '[]'),
+    'free_saathi_months', coalesce((select jsonb_agg(m.month order by m.month) from private.member_saathi m where m.user_id = me), '[]'));
 end $$;
 revoke all on function public.export_my_data() from public, anon;
 grant execute on function public.export_my_data() to authenticated;

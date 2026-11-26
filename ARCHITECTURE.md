@@ -627,7 +627,9 @@ Boosts for the Indian month arrive on `my_wallet` or `wallet_boost` (`private.me
 have 15 open asks (PL187); `save_profile` lets a member move to a city marked `early` before it is
 `active`. "See who asked you" is app-side (`asksInView`): the Asks tab shows a member every open ask
 waiting on them, and anyone else the next one plus a count. The server still sends every ask, so
-each one shows who sent it before anyone answers. `src/domain/pinkGold.ts` holds the same prices and rules for the app and
+each one shows who sent it before anyone answers. A member's first `talk_ai_session` in an Indian month
+costs nothing (`private.member_saathi`, one row a month; `my_wallet` says `saathi_free` while it waits).
+`src/domain/pinkGold.ts` holds the same prices and rules for the app and
 the mock; the page is `app/pink-gold.tsx`, reached from Me.
 
 ### Talk mode

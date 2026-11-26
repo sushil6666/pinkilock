@@ -133,6 +133,8 @@ interface MockWallet {
   goldUntil?: number;
   /** Boosts (D116): bought ones and a member's free ones, until used or lapsed. */
   boosts?: { source: 'bought' | 'member'; ref: string; expires: number; used?: number }[];
+  /** Months (Indian time) in which my free Saathi session as a member was used. */
+  saathiMonths?: string[];
 }
 
 /**
@@ -502,6 +504,7 @@ export function createMockBackend(options: { captcha?: () => Promise<string | un
       goldUntil: goldOn(w, now) ? w.goldUntil! : null,
       boosts: left.length,
       boostLapses: left.length ? Math.min(...left.map((b) => b.expires)) : null,
+      saathiFree: goldOn(w, now) && !(w.saathiMonths ?? []).includes(istMonth(now)),
       ...emptyWallet,
       paid: w.paid,
       earned: w.earned,
@@ -630,6 +633,13 @@ export function createMockBackend(options: { captcha?: () => Promise<string | un
       spend(walletOf(talkDb!), kind, cost, ref);
     },
     balance: () => ({ paid: walletOf(talkDb!).paid, earned: walletOf(talkDb!).earned }),
+    goldSaathi: () => {
+      const w = walletOf(talkDb!);
+      const now = Date.now();
+      if (!goldOn(w, now) || (w.saathiMonths ?? []).includes(istMonth(now))) return false;
+      w.saathiMonths = [...(w.saathiMonths ?? []), istMonth(now)];
+      return true;
+    },
     profileDone: () => ({
       face: myFaceList.some((f) => f.status === 'approved' || Date.now() - f.at >= PHOTO_CHECK_MS),
       handle: !!talkDb?.myContact?.verified,

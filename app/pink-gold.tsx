@@ -26,7 +26,7 @@ import { color, radius, space } from '@/theme/tokens';
 import { fmtDay, fmtNumber, fmtTime, t } from '@/i18n';
 
 const ROUTE = '/pink-gold';
-const PERKS = [['award', 'badge'], ['eye', 'whoAsked'], ['send', 'asks'], ['trending-up', 'boosts'], ['compass', 'discover'], ['map', 'cities']] as const;
+const PERKS = [['award', 'badge'], ['eye', 'whoAsked'], ['send', 'asks'], ['trending-up', 'boosts'], ['compass', 'discover'], ['map', 'cities'], ['message-circle', 'saathi']] as const;
 const rupees = (n: number) => fmtNumber(n);
 
 export default function PinkGoldPage() {

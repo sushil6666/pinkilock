@@ -158,3 +158,28 @@ select t.as_user(:'r');
 select t.ok(t.sqlstate($$select save_profile('Ritu', 23, 'Old Town', '', '', '{}', array['boba_run','chai_walk','meme_duel'], null, null, 'Earlypur')$$) is null, 'a member can move there early');
 select t.ok((select city from profiles where id = :'r') = 'Earlypur', 'and their card now says Earlypur');
 reset role;
+
+-- A member's free Saathi session (D116): the first one each Indian month costs nothing; after that,
+-- 60 credits as for anyone.
+insert into private.wallets (user_id, paid) values (:'r', 200), (:'s', 200)
+  on conflict (user_id) do update set paid = private.wallets.paid + 200;
+select paid + earned as r_before from private.wallets where user_id = :'r' \gset
+select paid + earned as s_before from private.wallets where user_id = :'s' \gset
+set role authenticated;
+select t.as_user(:'r');
+select t.ok((my_wallet() ->> 'saathi_free')::boolean, 'a member has a free Saathi session waiting');
+select talk_ai_session(null) as r_first \gset
+select t.ok((:'r_first'::jsonb ->> 'charged')::int = 0 and (:'r_first'::jsonb ->> 'gold')::boolean, 'their first session this month is free');
+select t.ok(not (my_wallet() ->> 'saathi_free')::boolean, 'and then it is used');
+reset role;
+update private.talk_ai_chats set paid_until = now() + interval '1 minute' where id = (:'r_first'::jsonb ->> 'chat')::uuid;
+set role authenticated;
+select t.as_user(:'r');
+select t.ok((talk_ai_session((:'r_first'::jsonb ->> 'chat')::uuid) ->> 'charged')::int = 60, 'the next one costs 60 credits');
+select t.ok((export_my_data() -> 'free_saathi_months') = jsonb_build_array(to_char(now() at time zone 'Asia/Kolkata', 'YYYY-MM')), 'the download lists the month it was used');
+select t.as_user(:'s');
+select t.ok(not (my_wallet() ->> 'saathi_free')::boolean and (talk_ai_session(null) ->> 'charged')::int = 60, 'someone who is not Pink Gold pays 60');
+select t.ok(t.fails('select * from private.member_saathi'), 'no client reads the free session list');
+reset role;
+select t.ok((select paid + earned from private.wallets where user_id = :'r') = :r_before - 60
+  and (select paid + earned from private.wallets where user_id = :'s') = :s_before - 60, 'credits: 60 each, nothing for the free one');

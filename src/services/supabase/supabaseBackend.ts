@@ -135,7 +135,7 @@ function walletFrom(raw: unknown): Wallet {
   const r = (raw ?? {}) as {
     paid?: number; earned?: number; boost_until?: string | null; extra_asks?: number; stakes?: Record<string, number>; streak?: number; had?: string[];
     vouch_rewards?: number; kept_this_week?: number; treats?: RawTreat[]; history?: { id: number; kind: string; credits: number; reward: string | null; at: string }[];
-    gold?: boolean; gold_until?: string | null; boosts?: number; boost_lapses?: string | null;
+    gold?: boolean; gold_until?: string | null; boosts?: number; boost_lapses?: string | null; saathi_free?: boolean;
   };
   const isReward = (k: unknown): k is RewardKind => (REWARD_KINDS as readonly unknown[]).includes(k);
   return {
@@ -147,7 +147,7 @@ function walletFrom(raw: unknown): Wallet {
       partner: x.partner, code: x.code ?? null, until: ms(x.until ?? null),
     })),
     history: (r.history ?? []).map((h) => ({ id: String(h.id), kind: h.kind as LedgerKind, credits: h.credits, at: ms(h.at) ?? 0, reward: isReward(h.reward) ? h.reward : undefined })),
-    gold: !!r.gold, goldUntil: ms(r.gold_until ?? null), boosts: r.boosts ?? 0, boostLapses: ms(r.boost_lapses ?? null),
+    gold: !!r.gold, goldUntil: ms(r.gold_until ?? null), boosts: r.boosts ?? 0, boostLapses: ms(r.boost_lapses ?? null), saathiFree: !!r.saathi_free,
   };
 }
 

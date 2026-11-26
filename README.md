@@ -89,7 +89,8 @@ With no keys set, the app runs on ten made-up people who answer by themselves. A
     see the perks, buy a plan or Boosts (the mock is Razorpay's test mode on the website: paid at
     once, no money moves) and use a Boost. Once you are a member, your own Me shows the badge too.
     In **Asks**, someone who is not a member sees the next ask and "N more asks are waiting"; a
-    member sees them all.
+    member sees them all. In **Talk**, a member's first Saathi session each month says "free with
+    Pink Gold" and costs no credits.
     Live, it is bought through the same Razorpay setup as the wallet (`OPERATIONS.md`, "Pink Gold").
 
 ## Run the backend locally (Docker)

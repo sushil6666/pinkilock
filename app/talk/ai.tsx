@@ -32,6 +32,7 @@ import { haptic } from '@/lib/haptics';
 import { quiet } from '@/lib/log';
 import { shown } from '@/lib/report';
 import { backend } from '@/services';
+import { useStore } from '@/state/store';
 import { color, radius, space } from '@/theme/tokens';
 import { t } from '@/i18n';
 
@@ -73,7 +74,9 @@ export default function TalkAi() {
   const mayTalk = aiMayTalk({ passUntil: pass, harm, paidUntil }, now);
   const mayContinue = unpaid && aiMayContinue(paidUntil, now);
   const left = aiMinutesLeft(paidUntil, now);
-  const pack = packToContinue(state.balance);
+  // A Pink Gold member's free session this month (D116) needs no credits.
+  const goldFree = !!useStore((s) => s.wallet?.saathiFree);
+  const pack = goldFree ? undefined : packToContinue(state.balance);
 
   // Start, or continue, a session. The chat (and everything said in it) stays as it is.
   const session = async (topUp?: string) => {
@@ -93,6 +96,7 @@ export default function TalkAi() {
     } finally {
       setBuying('');
       void reload();
+      useStore.getState().loadWallet().catch(quiet('talk.wallet'));
     }
   };
 
@@ -146,9 +150,11 @@ export default function TalkAi() {
   // Before the first session, near the end of one, or after it: pay from the wallet, or add credits and go on.
   const pay = mayContinue && state.open.ai ? (
     <View style={[panel, styles.pay]}>
-      <T v="caption" c={paidUntil === null ? color.textDim : color.gold}>
-        {paidUntil === null ? t('talk.sessionFirst', PRICE) : left > 0 ? t('talk.sessionEnding', PRICE) : t('talk.sessionOver', PRICE)}
-      </T>
+      {goldFree ? <T v="caption" c={color.pink}>{t('gold.saathiFree', { m: AI_SESSION_MINUTES })}</T> : (
+        <T v="caption" c={paidUntil === null ? color.textDim : color.gold}>
+          {paidUntil === null ? t('talk.sessionFirst', PRICE) : left > 0 ? t('talk.sessionEnding', PRICE) : t('talk.sessionOver', PRICE)}
+        </T>
+      )}
       {pack ? (
         <>
           <T v="caption" c={color.flare}>{t('talk.sessionShort', { n: state.balance })}</T>
@@ -163,7 +169,7 @@ export default function TalkAi() {
         </>
       ) : (
         <Button icon={paidUntil === null ? 'message-circle' : 'clock'} busy={buying === 'session'} disabled={!!buying}
-          label={paidUntil === null ? t('talk.sessionStart', PRICE) : t('talk.sessionContinue', { n: AI_SESSION_CREDITS })} onPress={() => session()} />
+          label={goldFree ? t('gold.saathiStart') : paidUntil === null ? t('talk.sessionStart', PRICE) : t('talk.sessionContinue', { n: AI_SESSION_CREDITS })} onPress={() => session()} />
       )}
     </View>
   ) : null;
