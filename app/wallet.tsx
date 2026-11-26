@@ -6,6 +6,7 @@
  */
 import { Feather } from '@expo/vector-icons';
 import { useEffect, useState } from 'react';
+import { router } from 'expo-router';
 import { Platform, StyleSheet, View } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { Credits, useMyWallet } from '@/components/Wallet';
@@ -109,8 +110,8 @@ export default function WalletPage() {
 
       <View style={styles.panel}>
         <T v="heading">{t('wallet.spendTitle')}</T>
-        <Spend icon="trending-up" title={t('wallet.boostTitle')} body={boosted ? t('wallet.boostOn', { time: `${fmtDay(wallet.boostUntil!)}, ${fmtTime(wallet.boostUntil!)}` }) : t('wallet.boostBody')}
-          cost={COSTS.boost} busy={busy === 'boost'} disabled={!!boosted || total < COSTS.boost} onPress={run('boost', async () => setWallet(await backend.boost()))} />
+        <Spend icon="trending-up" title={t('wallet.boostTitle')} body={boosted ? t('wallet.boostOn', { time: `${fmtDay(wallet.boostUntil!)}, ${fmtTime(wallet.boostUntil!)}` }) : `${t('wallet.boostBody')} ${t('gold.walletBoost')}`} />
+        <Button kind="quiet" icon="star" label={t('gold.walletBoostOpen')} onPress={() => router.push('/pink-gold')} />
         <Spend icon="send" title={t('wallet.extraTitle')} body={wallet.extraAsks ? `${t('wallet.extraBody')} ${t('wallet.extraHave', { n: wallet.extraAsks })}` : t('wallet.extraBody')}
           cost={COSTS.extra_ask} busy={busy === 'extra'} disabled={wallet.extraAsks >= MAX_EXTRA_ASKS || total < COSTS.extra_ask} onPress={run('extra', async () => setWallet(await backend.buyExtraAsk()))} />
         <Spend icon="shield" title={t('wallet.stakeTitle')} body={`${t('wallet.stakeBody', { n: COSTS.stake })} ${t('wallet.stakeWhere')}`} />

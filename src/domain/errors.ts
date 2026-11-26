@@ -161,6 +161,10 @@ export const ERRORS = {
   PL175: 'That is a lot of talking for one day. The AI is back tomorrow, or try a listener.',
   PL176: 'Your day pass is still on.',
   PL177: 'Pick what happened.',
+  PL184: 'You have Pink Gold for a year already.',
+  PL185: 'You have no Boosts left. Get one first.',
+  PL186: 'You have a lot of Boosts waiting. Use some first.',
+  PL187: 'You have 15 asks open. Wait for an answer first.',
 
   PA001: 'Phone sign-in is not switched on yet.',
   PA002: 'Email sign-in is not switched on yet.',

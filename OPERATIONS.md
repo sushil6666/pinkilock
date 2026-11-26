@@ -677,15 +677,22 @@ select status, count(*), sum(payout) / 100 as rupees from private.talk_payouts g
 
 ### Pink Gold
 
-Pink Gold (D115) is the name for paid members, shown as a badge on their card. Until the paid plans
-are built, a person on the team makes someone a member in the SQL editor (it runs as the owner; no
-app role can call these):
+Pink Gold (D115) is the name for paid members, shown as a badge on their card. People buy it on the
+website (D116): the plans (`g1`, `g3`, `g6`, `g12`) and Boost packs (`b1`, `b6`) go through the same
+`wallet` Edge Function, Razorpay keys and webhook as credit top-ups ("Wallet" above), so there is
+nothing more to set up. Phone apps wait for Play Billing (O15). A refund from the Razorpay dashboard
+takes the plan's months off the end, or the Boosts not used yet.
+
+The team can also make someone a member in the SQL editor (it runs as the owner; no app role can
+call these):
 
 ```sql
 select private.pink_gold_grant('<user id>');                                -- a member until ended
 select private.pink_gold_grant('<user id>', now() + interval '30 days', 'founding member');  -- with an end date and a note
 select private.pink_gold_end('<user id>');                                  -- the badge comes off now
 select user_id, since, until, note from private.pink_gold order by since desc;   -- who is, and was
+select pack, status, count(*), sum(paise) / 100 as rupees from private.wallet_orders
+  where pack ~ '^[gb][0-9]+$' group by 1, 2 order by 1;                       -- plans and Boosts sold
 ```
 
 Running the grant again changes the end date. The note is only for the team; nobody sees it in the

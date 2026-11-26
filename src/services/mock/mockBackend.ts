@@ -36,6 +36,7 @@ import {
   TREATS_PER_WEEK, VOUCHER_MS, canStake, topUpsHere, emptyWallet, mockVoucher, spicyShare, split, splitTreat, stakeEnd, streakOf, topUp,
   type LedgerEntry, type LedgerKind, type RewardKind, type Treat, type TreatPartner, type Wallet,
 } from '../../domain/wallet';
+import { BOOST_VALID_MONTHS, MEMBER_FREE_BOOSTS, addMonths, boostPackOf, canBuy, goldUntilAfter, isShopId, istMonth, istMonthEnd, openAskCap, planOf } from '../../domain/pinkGold';
 import { t } from '../../i18n';
 import { createMockTalk, emptyMockTalk, type MockTalkDb } from './mockTalk';
 
@@ -123,6 +124,10 @@ interface MockWallet {
   /** Spicy unlock (D105): what I paid towards each match. The made-up people never pay. */
   spicyPaid: Record<string, number>;
   spicyDone: string[];
+  /** Pink Gold (D115, D116): when mine ends; absent when I never had it. */
+  goldUntil?: number;
+  /** Boosts (D116): bought ones and a member's free ones, until used or lapsed. */
+  boosts?: { source: 'bought' | 'member'; ref: string; expires: number; used?: number }[];
 }
 
 /**
@@ -467,11 +472,27 @@ export function createMockBackend(options: { captcha?: () => Promise<string | un
     }
     if (d.myContact?.verified) reward(w, 'verified_handle', 'once');
   }
+  const goldOn = (w: MockWallet, now: number) => !!w.goldUntil && w.goldUntil > now;
+  /** A member's two free Boosts for this month (Indian time), once. */
+  function memberBoosts(w: MockWallet, now: number) {
+    if (!goldOn(w, now)) return;
+    const ref = `member:${istMonth(now)}`;
+    w.boosts ??= [];
+    if (w.boosts.some((b) => b.ref === ref)) return;
+    for (let i = 0; i < MEMBER_FREE_BOOSTS; i++) w.boosts.push({ source: 'member', ref, expires: istMonthEnd(now) });
+  }
+  const boostsLeft = (w: MockWallet, now: number) => (w.boosts ?? []).filter((b) => !b.used && b.expires > now);
   function walletView(d: Db, now = Date.now()): Wallet {
     settleWallet(d, now);
     const w = walletOf(d);
     const today = dayOf(now);
+    memberBoosts(w, now);
+    const left = boostsLeft(w, now);
     return {
+      gold: goldOn(w, now),
+      goldUntil: goldOn(w, now) ? w.goldUntil! : null,
+      boosts: left.length,
+      boostLapses: left.length ? Math.min(...left.map((b) => b.expires)) : null,
       ...emptyWallet,
       paid: w.paid,
       earned: w.earned,
@@ -494,7 +515,12 @@ export function createMockBackend(options: { captcha?: () => Promise<string | un
     const now = Date.now();
     settleWallet(d, now);
     work(d, walletOf(d), now);
+    // My own card carries the badge while Pink Gold is on, as profile_cards does.
+    const gold = goldOn(walletOf(d), now);
+    const badge = d.me && !!d.me.pinkGold !== gold;
+    if (badge) d.me = { ...d.me!, pinkGold: gold };
     save();
+    if (badge) emit({ me: d.me! });
     return walletView(d, now);
   }
   /** Spicy unlock refunds: a match that closes before it is fully paid gives back what I paid. */
@@ -911,15 +937,28 @@ export function createMockBackend(options: { captcha?: () => Promise<string | un
       return { open: topUpsHere(Platform.OS), test: true };
     },
     topUp: (packId) =>
-      walletChange((_d, w) => {
+      walletChange((_d, w, now) => {
         if (!topUpsHere(Platform.OS)) fail('PL144');
+        if (isShopId(packId)) {
+          // A Pink Gold plan or a Boost pack (D116): paid in rupees, never credits.
+          canBuy(packId, { goldOn: goldOn(w, now), goldUntil: w.goldUntil ?? null, boughtBoosts: boostsLeft(w, now).filter((b) => b.source === 'bought').length }, now);
+          const plan = planOf(packId);
+          const pack = boostPackOf(packId);
+          const ref = `order_${now}`;
+          if (plan) w.goldUntil = goldUntilAfter(w.goldUntil ?? null, goldOn(w, now), plan.months, now) ?? undefined;
+          if (pack) for (let i = 0; i < pack.boosts; i++) (w.boosts ??= []).push({ source: 'bought', ref, expires: addMonths(now, BOOST_VALID_MONTHS) });
+          return;
+        }
         const pack = topUp(w, packId);
         move(w, 'topup', pack.credits, 0, `order_${Date.now()}`);
       }),
     boost: () =>
       walletChange((_d, w, now) => {
         if (w.boostUntil && w.boostUntil > now) fail('PL133');
-        spend(w, 'boost', COSTS.boost);
+        memberBoosts(w, now);
+        const next = boostsLeft(w, now).sort((a, b) => a.expires - b.expires)[0];
+        if (!next) fail('PL185');
+        next.used = now;
         w.boostUntil = now + BOOST_MS;
       }),
     buyExtraAsk: () =>
@@ -1005,7 +1044,8 @@ export function createMockBackend(options: { captcha?: () => Promise<string | un
         const open = d.invites.filter((i) => i.fromId === ME_ID && rules.isOpen(i));
         // The link gate: off in the mock unless EXPO_PUBLIC_MOCK_REQUIRE_LINKED=1, as it is off on a server with no code sender.
         if (process.env.EXPO_PUBLIC_MOCK_REQUIRE_LINKED === '1' && !d.phone && !d.email) fail('PL068');
-        if (open.length >= rules.MAX_OPEN_ASKS + walletOf(d).extraAsks.filter((u) => u > now).length) fail('PL023');
+        const gold = goldOn(walletOf(d), now);
+        if (open.length >= openAskCap(gold, walletOf(d).extraAsks.filter((u) => u > now).length)) fail(gold ? 'PL187' : 'PL023');
         if (d.invites.filter((i) => i.fromId === ME_ID && i.createdAt > now - rules.DAY).length >= rules.ASKS_PER_DAY) fail('PL025');
         if (d.invites.some((i) => i.fromId === ME_ID && i.toId === input.toId && (i.resolvedAt ?? i.createdAt) > now - rules.REASK_AFTER
           && (i.status === 'expired' || (i.status === 'declined' && i.declinedBy === input.toId)))) fail('PL026');

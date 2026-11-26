@@ -139,6 +139,12 @@ export interface Wallet {
   /** Treats on my plans, given or given to me. */
   treats: Treat[];
   history: LedgerEntry[];
+  /** Pink Gold (D115, D116): on now, and until when (null with `gold` on: granted for good). */
+  gold?: boolean;
+  goldUntil?: number | null;
+  /** Boosts I can use now, and when the first of them lapses (a month after buying; a member's free ones at the month's end). */
+  boosts?: number;
+  boostLapses?: number | null;
 }
 
 export type TreatStatus = 'held' | 'ready' | 'used' | 'back';

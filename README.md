@@ -81,9 +81,11 @@ With no keys set, the app runs on ten made-up people who answer by themselves. A
     is no sound in the mock. **Become a listener**: apply, fill in the KYC form (any valid-looking
     PAN and IFSC; the mock verifies you after 3 seconds), take calls, and "Priya" rings 6 seconds
     later. Live, each part stays off until its keys are set (`OPERATIONS.md`, "Talk mode").
-14. **Pink Gold** (D115): the paid members' badge. In the mock, Aanya, Meher and Tara are members: their
-    Discover card and profile show a gold **Pink Gold** pill. Live, the team makes someone a member
-    in SQL (`OPERATIONS.md`, "Pink Gold"), and the badge shows on their card and on their own Me.
+14. **Pink Gold** (D115, D116): the paid membership. In the mock, Aanya, Meher and Tara are members:
+    their Discover card and profile show a gold **Pink Gold** pill. In **Me**, tap **Pink Gold** to
+    see the perks, buy a plan or Boosts (the mock is Razorpay's test mode on the website: paid at
+    once, no money moves) and use a Boost. Once you are a member, your own Me shows the badge too.
+    Live, it is bought through the same Razorpay setup as the wallet (`OPERATIONS.md`, "Pink Gold").
 
 ## Run the backend locally (Docker)
 

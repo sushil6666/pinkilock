@@ -518,7 +518,7 @@ select t.ok(t.fails(format($$select wallet_open_order(%L, 'p49', 'order_attack1'
 select t.ok(t.sqlstate(format('select wallet_stake(%L)', gen_random_uuid())) = 'PL135' and t.sqlstate(format($$select treat_plan(%L, 'any', 'coffee')$$, gen_random_uuid())) = 'PL140',
   'X cannot stake or treat a plan that is not X''s');
 select t.ok(t.sqlstate(format($$select spicy_pay(%L, 'full')$$, :'y')) = 'PL130', 'X cannot pay to see Y''s usernames when Spicy is not open between them');
-select t.ok((my_wallet() ->> 'paid')::int = 0 and t.sqlstate('select wallet_boost()') = 'PL132', 'X has no credits to spend, and none appear');
+select t.ok((my_wallet() ->> 'paid')::int = 0 and t.sqlstate('select wallet_boost()') = 'PL185', 'X has no bought credits or Boosts, and none appear');
 reset role;
 
 -- D106: Spicy call times. X cannot read the calls or the timer, check in for a call that is not

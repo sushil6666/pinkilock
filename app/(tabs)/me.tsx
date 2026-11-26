@@ -15,7 +15,7 @@ import { useEffect, useState } from 'react';
 import { Platform, Pressable, Share, StyleSheet, View } from 'react-native';
 import { Portrait } from '@/components/Portrait';
 import { TrustBadge } from '@/components/TrustBadge';
-import { PinkGold } from '@/components/PinkGold';
+import { PinkGold, PinkGoldEntry } from '@/components/PinkGold';
 import { Button } from '@/components/ui/Button';
 import { Chip, Tag } from '@/components/ui/Chip';
 import { HoldButton } from '@/components/ui/HoldButton';
@@ -48,6 +48,7 @@ import { openCities } from '@/domain/countries';
 
 export default function Me() {
   const me = useStore((s) => s.me);
+  const myWallet = useStore((s) => s.wallet);
   const updateMe = useStore((s) => s.updateMe);
   const saveAvailability = useStore((s) => s.saveAvailability);
   const duo = usePerson(useStore((s) => s.duoId) ?? undefined);
@@ -277,6 +278,7 @@ export default function Me() {
       </Pressable>
       <TalkEntry />
       <WalletEntry />
+      <PinkGoldEntry wallet={myWallet} />
       <SpicyEntry />
       <View style={{ marginTop: space.lg, gap: space.sm }}>
         <Vouches person={me} />

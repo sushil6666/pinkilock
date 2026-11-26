@@ -25,7 +25,7 @@ select t.ok(t.sqlstate('select my_wallet()') = 'PL002', 'the wallet needs a prof
 
 select t.as_user(:'w');
 select t.ok((select my_wallet() ->> 'paid')::int = 0 and (select my_wallet() ->> 'earned')::int = 0 and (select my_wallet() -> 'history') = '[]'::jsonb, 'a new person starts with nothing');
-select t.ok(t.sqlstate('select wallet_boost()') = 'PL132', 'nothing to spend yet (PL132)');
+select t.ok(t.sqlstate('select wallet_extra_ask()') = 'PL132', 'nothing to spend yet (PL132)');
 
 -- No client can read or write the wallet, or credit itself.
 select t.ok(t.fails('select * from private.wallets') and t.fails('select * from private.wallet_ledger') and t.fails('select * from private.wallet_orders')
@@ -56,10 +56,16 @@ select t.as_user(:'w');
 select t.ok((select my_wallet() ->> 'paid')::int = 890, 'W has 240 + 650 bought credits (one pack refunded)');
 select t.ok(not exists (select 1 from jsonb_array_elements(my_wallet() -> 'history') h where h ->> 'kind' not in ('topup', 'topup_refund')), 'the history shows the top-ups and the refund');
 
--- Boost: first on Discover in my city for a day, one at a time.
+-- Boost: first on Discover in my city for a day, one at a time. Since D116 a Boost is bought in
+-- rupees (tests/db/pink_gold.sql) or comes with Pink Gold, never paid with credits; W is given one here.
+select t.ok(t.sqlstate('select wallet_boost()') = 'PL185', 'no Boost to use yet (PL185), and credits do not buy one');
+reset role;
+insert into private.boosts (user_id, source, ref, expires_at) values (:'w', 'bought', 'order_wboost1', now() + interval '1 month');
+set role authenticated;
+select t.as_user(:'w');
 select wallet_boost();
 select t.ok((select (my_wallet() ->> 'boost_until')::timestamptz) between now() + interval '23 hours' and now() + interval '25 hours'
-  and (select my_wallet() ->> 'paid')::int = 860, 'a boost costs 30 and runs for a day');
+  and (select my_wallet() ->> 'paid')::int = 890 and (select my_wallet() ->> 'boosts')::int = 0, 'a Boost runs for a day and costs no credits');
 select t.ok(t.sqlstate('select wallet_boost()') = 'PL133', 'one boost at a time (PL133)');
 select t.as_user(:'y');
 reset role;
@@ -76,7 +82,7 @@ select t.as_user(:'w');
 select wallet_extra_ask();
 select wallet_extra_ask();
 select t.ok(t.sqlstate('select wallet_extra_ask()') = 'PL134', 'two extra asks at most (PL134)');
-select t.ok((select my_wallet() ->> 'extra_asks')::int = 2 and (select my_wallet() ->> 'paid')::int = 840, 'each costs 10');
+select t.ok((select my_wallet() ->> 'extra_asks')::int = 2 and (select my_wallet() ->> 'paid')::int = 870, 'each costs 10');
 reset role;
 -- W has 3 asks open already; the extras let a fourth and a fifth through, and no sixth.
 insert into auth.users (id) select ('00000000-0000-0000-0000-0000000a12' || lpad(g::text, 2, '0'))::uuid from generate_series(1, 6) g;
@@ -101,7 +107,7 @@ select t.as_user(:'w');
 select t.ok(t.sqlstate($$select wallet_stake('00000000-0000-0000-0000-0000000a1302')$$) = 'PL135', 'a stake goes only on a locked plan (PL135)');
 select wallet_stake('00000000-0000-0000-0000-0000000a1301');
 select t.ok(t.sqlstate($$select wallet_stake('00000000-0000-0000-0000-0000000a1301')$$) = 'PL138', 'once per plan (PL138)');
-select t.ok((select (my_wallet() -> 'stakes' ->> '00000000-0000-0000-0000-0000000a1301')::int) = 50 and (select my_wallet() ->> 'paid')::int = 790, 'W holds 50 on the plan');
+select t.ok((select (my_wallet() -> 'stakes' ->> '00000000-0000-0000-0000-0000000a1301')::int) = 50 and (select my_wallet() ->> 'paid')::int = 820, 'W holds 50 on the plan');
 select t.as_user(:'y');
 select t.ok(t.sqlstate($$select wallet_stake('00000000-0000-0000-0000-0000000a1301')$$) = 'PL135', 'nobody else can stake someone''s plan (PL135)');
 
@@ -118,7 +124,7 @@ select t.ok((select treat_options('00000000-0000-0000-0000-0000000a1301') -> 0 -
 select t.ok(t.sqlstate($$select treat_plan('00000000-0000-0000-0000-0000000a1301', 'test_cafe', 'movie')$$) = 'PL140', 'only what that partner hands over (PL140)');
 select treat_plan('00000000-0000-0000-0000-0000000a1301', 'test_cafe', 'coffee');
 select t.ok(t.sqlstate($$select treat_plan('00000000-0000-0000-0000-0000000a1301', 'test_cafe', 'dessert')$$) = 'PL141', 'one treat a plan (PL141)');
-select t.ok((select my_wallet() ->> 'paid')::int = 640 and (select my_wallet() -> 'treats' -> 0 ->> 'code') is null, 'a coffee is 150 bought credits; W never sees a code');
+select t.ok((select my_wallet() ->> 'paid')::int = 670 and (select my_wallet() -> 'treats' -> 0 ->> 'code') is null, 'a coffee is 150 bought credits; W never sees a code');
 select t.as_user(:'x');
 select t.ok((select my_wallet() -> 'treats' -> 0 ->> 'status') = 'held' and (select my_wallet() -> 'treats' -> 0 ->> 'code') is null
   and (select my_wallet() ->> 'paid')::int = 0, 'X sees the treat held, with no code yet, and is given no credits');
@@ -128,7 +134,7 @@ reset role;
 update public.invites set check_ins = array[:'w', :'x']::uuid[], status = 'kept', resolved_at = now() where id = '00000000-0000-0000-0000-0000000a1301';
 set role authenticated;
 select t.as_user(:'w');
-select t.ok((select my_wallet() ->> 'paid')::int = 690 and (select my_wallet() -> 'stakes') = '{}'::jsonb, 'a kept plan gives the stake back');
+select t.ok((select my_wallet() ->> 'paid')::int = 720 and (select my_wallet() -> 'stakes') = '{}'::jsonb, 'a kept plan gives the stake back');
 select t.ok((select my_wallet() ->> 'earned')::int = 20 and (select my_wallet() ->> 'kept_this_week')::int = 1, 'and earns 20 credits');
 select t.as_user(:'x');
 select t.ok((select my_wallet() -> 'treats' -> 0 ->> 'code') ~ '^[A-Z2-9]{8}$' and (select my_wallet() -> 'treats' -> 0 ->> 'status') = 'ready', 'X gets a voucher code');
@@ -162,13 +168,13 @@ set role authenticated;
 select t.as_user(:'w');
 select wallet_stake('00000000-0000-0000-0000-0000000a1304');
 select wallet_stake('00000000-0000-0000-0000-0000000a1305');
-select t.ok((select my_wallet() ->> 'earned')::int = 0 and (select my_wallet() ->> 'paid')::int = 615, 'a stake takes earned credits first');
+select t.ok((select my_wallet() ->> 'earned')::int = 0 and (select my_wallet() ->> 'paid')::int = 645, 'a stake takes earned credits first');
 reset role;
 update public.invites set status = 'flaked', flaked_by = :'w', starts_at = now() - interval '1 hour', resolved_at = now() where id = '00000000-0000-0000-0000-0000000a1304';
 update public.invites set status = 'flaked', flaked_by = '00000000-0000-0000-0000-0000000a1202', resolved_at = now() where id = '00000000-0000-0000-0000-0000000a1305';
 set role authenticated;
 select t.as_user(:'w');
-select t.ok((select my_wallet() ->> 'paid')::int = 665 and (select my_wallet() ->> 'earned')::int = 0, 'my no-show loses the stake; their flake gives it back, to the bucket it came from');
+select t.ok((select my_wallet() ->> 'paid')::int = 695 and (select my_wallet() ->> 'earned')::int = 0, 'my no-show loses the stake; their flake gives it back, to the bucket it came from');
 select t.ok(exists (select 1 from jsonb_array_elements(my_wallet() -> 'history') h where h ->> 'kind' = 'stake_lost'), 'the history says it was lost');
 select t.as_user(:'y');
 select t.ok((select my_wallet() ->> 'paid')::int = 0 and (select my_wallet() ->> 'earned')::int = 0, 'a lost stake never goes to the other person');
@@ -212,7 +218,7 @@ select t.as_user(:'w');
 select treat_plan('00000000-0000-0000-0000-0000000a1306', 'test_cinema', 'movie');
 select treat_plan('00000000-0000-0000-0000-0000000a1307', 'test_cafe', 'dessert');
 select t.ok(t.sqlstate($$select treat_plan('00000000-0000-0000-0000-0000000a1308', 'test_cafe', 'coffee')$$) = 'PL142', 'two treats a week at most (PL142)');
-select t.ok((select my_wallet() ->> 'paid')::int = 245, 'a movie is 300 and a dessert 120');
+select t.ok((select my_wallet() ->> 'paid')::int = 275, 'a movie is 300 and a dessert 120');
 select t.as_user(:'x');
 select t.ok(t.sqlstate($$select decline_treat('00000000-0000-0000-0000-0000000a1307')$$) = 'PL143', 'only the person treated can say no thanks (PL143)');
 select t.as_user('00000000-0000-0000-0000-0000000a1203');
@@ -221,7 +227,7 @@ reset role;
 update public.invites set status = 'flaked', flaked_by = :'y', resolved_at = now() where id = '00000000-0000-0000-0000-0000000a1306';
 set role authenticated;
 select t.as_user(:'w');
-select t.ok((select my_wallet() ->> 'paid')::int = 665, 'a treat said no to, or on a plan not kept, comes back');
+select t.ok((select my_wallet() ->> 'paid')::int = 695, 'a treat said no to, or on a plan not kept, comes back');
 reset role;
 update private.wallet_treats set at = now() - interval '8 days';
 set role authenticated;
@@ -233,7 +239,7 @@ update private.wallet_treats set ready_at = now() - interval '25 hours' where in
 select private.wallet_sweep();
 set role authenticated;
 select t.as_user(:'w');
-select t.ok((select my_wallet() ->> 'paid')::int = 665, 'a voucher nobody used in a day comes back');
+select t.ok((select my_wallet() ->> 'paid')::int = 695, 'a voucher nobody used in a day comes back');
 
 -- A block hides treats between the two, and nobody can be treated across one.
 select t.as_user(:'x');
@@ -245,7 +251,7 @@ select t.ok((select jsonb_array_length(my_wallet() -> 'treats')) = 0, 'after a b
 select t.as_user(:'w');
 select t.ok((select export_my_data() ->> 'format') = 'pinkilock-export-11'
   and (select jsonb_array_length(export_my_data() -> 'wallet' -> 'orders')) = 3
-  and (select (export_my_data() -> 'wallet' ->> 'paid')::int) = 665, 'the data download (format 11) has the wallet and its orders');
+  and (select (export_my_data() -> 'wallet' ->> 'paid')::int) = 695, 'the data download (format 11) has the wallet and its orders');
 reset role;
 select t.ok(not has_table_privilege('pinkilock_analytics', 'private.wallets', 'select') and not has_table_privilege('pinkilock_analytics', 'private.wallet_ledger', 'select')
   and not has_table_privilege('pinkilock_analytics', 'private.wallet_orders', 'select'), 'the analytics worker cannot read the wallet');

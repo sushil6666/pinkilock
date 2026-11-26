@@ -597,9 +597,20 @@ holds who is a member, since when and until when; `private.is_pink_gold` gives o
 `public.profile_cards` carries it as `pink_gold`, so the badge reaches exactly the cards a person may
 already see (Discover, a shared plan, their own on Me) and a block hides it like the rest. The app
 reads it as `Profile.pinkGold` and draws `src/components/PinkGold.tsx`; the mock seeds two members.
-Until paid plans exist, the team grants it in SQL (`OPERATIONS.md`, "Pink Gold"). Nothing else reads
-it: not the Discover order, not limits, not Spicy mode. My download has my own `pink_gold` (since,
-until, now), without the team's note.
+The team can also grant it in SQL (`OPERATIONS.md`, "Pink Gold"). Spicy mode never reads it. My
+download has my own `pink_gold` (since, until, now), without the team's note, and my `boosts`.
+
+**Plans and Boosts (D116)** ride the wallet's order path: the `wallet` Edge Function asks
+`wallet_pack_price` (credit packs from `private.wallet_pack`, plans and Boost packs from
+`private.shop_item`), files the order with `wallet_open_order` (PL184 past 13 months ahead, PL186 past
+12 Boosts waiting), and `wallet_paid` hands a paid plan or pack to `private.shop_deliver` (months onto
+`private.pink_gold`, rows into `private.boosts`) instead of crediting. `wallet_refunded` undoes either.
+A Boost is a row in `private.boosts` that lapses a month after buying; `wallet_boost` uses the one
+that lapses first (PL185 when none) and sets `wallets.boost_until` for 24 hours. A member's 2 free
+Boosts for the Indian month arrive on `my_wallet` or `wallet_boost` (`private.member_boosts`).
+`discover()` orders boosted cards, then members, then the daily shuffle; `send_invite` lets a member
+have 15 open asks (PL187). `src/domain/pinkGold.ts` holds the same prices and rules for the app and
+the mock; the page is `app/pink-gold.tsx`, reached from Me.
 
 ### Talk mode
 

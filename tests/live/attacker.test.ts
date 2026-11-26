@@ -383,11 +383,16 @@ test('Talk mode (D108, D109): nothing of anyone else\'s, no free credits or payo
   refused(await signedOut.rpc('talk_state'), 'signed out, there is no Talk mode to read');
 });
 
-test('Pink Gold (D115): no making myself a member, over the API too', async () => {
+test('Pink Gold (D115, D116): no making myself a member or buying without paying, over the API too', async () => {
   refused(await raw.schema('private' as 'public').from('pink_gold').select('*'), 'reading who is Pink Gold');
   refused(await raw.schema('private' as 'public').from('pink_gold').insert({ user_id: x.id }), 'making myself Pink Gold');
   refused(await raw.schema('private' as 'public').rpc('pink_gold_grant', { p_user: x.id }), 'granting myself Pink Gold');
   refused(await raw.schema('private' as 'public').rpc('pink_gold_end', { p_user: y.id }), 'ending someone else\'s Pink Gold');
+  // D116: plans and Boosts come only through a paid order the Edge Function files.
+  refused(await raw.rpc('wallet_open_order', { p_user: x.id, p_pack: 'g12', p_order: 'order_gold01' }), 'opening a Pink Gold order');
+  refused(await raw.rpc('wallet_paid', { p_order: 'order_gold01', p_payment: 'pay_gold01', p_paise: 330000 }), 'saying a plan was paid');
+  refused(await raw.schema('private' as 'public').from('boosts').insert({ user_id: x.id, source: 'bought', ref: 'x', expires_at: new Date(Date.now() + 864e5).toISOString() }), 'giving myself Boosts');
+  refused(await raw.schema('private' as 'public').rpc('shop_deliver', { p_user: x.id, p_item: 'g12', p_order: 'order_gold02' }), 'delivering a plan to myself');
   const card = await raw.from('profile_cards').select('pink_gold').eq('id', x.id).single();
   assert.equal(card.error, null, 'my card reads');
   assert.equal(card.data?.pink_gold, false, 'and says I am not Pink Gold');

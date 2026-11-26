@@ -92,6 +92,12 @@ Font scaling is allowed up to 1.3x (`maxFontSizeMultiplier`) so layouts hold on 
   20px `pink` disc with a `moon` rim holding a star in `onPink`, and "Pink Gold" as a gold label. It
   sits beside the trust badge on a Discover card, above the name on a profile, and under the name on
   Me. Nothing shows for anyone who is not a member.
+- **Pink Gold page** (`/pink-gold`): left column a `goldWash` hero (eyebrow, the badge, the name in
+  display type, the intro, and "until" in gold for a member) over the perks, each with a 28px `pink`
+  disc icon. Right column the four plans as `surfaceHi` tiles two by two (price in gold title type,
+  per month and savings in pink captions; the 12-month tile has a gold border and "Best value"; the
+  3-month tile has the primary button), then Boosts with the same tiles. The Me entry is a
+  `pinkWash` row with a gold border and a 40px pink star disc, under the Wallet entry.
 - **Portrait**: people are shown as a two-colour gradient block with a large glyph and initial, so
   the prototype ships no stock photos of real people. When someone's face has been checked (D095),
   it takes the block's place, `cover`-cropped, under the same bottom fade (`onPhoto`) so the name and
