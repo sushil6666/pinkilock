@@ -36,12 +36,12 @@ select t.ok(t.sqlstate(format('select checkin_ai_claim(%L)', :'m')) = 'PL237', '
 reset role;
 
 -- The reminder: at 21:00 Mumbai time, only to those who have not checked in that day.
-select private.queue_checkin_reminders((current_date + 1 + time '21:05') at time zone 'Asia/Kolkata');
+select private.queue_checkin_reminders(((now() at time zone 'Asia/Kolkata')::date + 1 + time '21:05') at time zone 'Asia/Kolkata');
 select t.ok((select count(*) from public.notifications where kind = 'checkin_daily' and recipient_id = :'k') = 1
   and (select count(*) from public.notifications where kind = 'checkin_daily' and recipient_id = :'l') = 1, 'tomorrow at nine, both are reminded');
-select private.queue_checkin_reminders((current_date + 1 + time '21:40') at time zone 'Asia/Kolkata');
+select private.queue_checkin_reminders(((now() at time zone 'Asia/Kolkata')::date + 1 + time '21:40') at time zone 'Asia/Kolkata');
 select t.ok((select count(*) from public.notifications where kind = 'checkin_daily') = 2, 'once a day');
-select private.queue_checkin_reminders((current_date + 2 + time '20:05') at time zone 'Asia/Kolkata');
+select private.queue_checkin_reminders(((now() at time zone 'Asia/Kolkata')::date + 2 + time '20:05') at time zone 'Asia/Kolkata');
 select t.ok((select count(*) from public.notifications where kind = 'checkin_daily') = 2, 'not at another hour');
 select t.ok((select count(*) from public.notifications where kind = 'checkin_daily' and nudge_key is null) = 2, 'outside the gentle reminders'' weekly cap');
 set role authenticated;
