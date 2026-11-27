@@ -72,6 +72,9 @@ With no keys set, the app runs on ten made-up people who answer by themselves. A
     Under it, **Expert tips for the two of you** opens Expert tips (also on **Me**): pick a topic, read the
     team's general tips and the **Watch out for** panel. No expert is listed in the mock, as on the server until
     the team checks one. **Join as an expert** opens the pitch and the form.
+    **Your cosmic match with Zoya** (also **Cosmic match** on **Me**): type a birth date that fits your
+    age, turn it on, and see your score with Zoya out of 36 and your numbers; the mock gives Zoya a
+    made-up birthday.
 12. **This week**: on **Plans**, under your next plan, three plan ideas that change every Monday, each with
     **Ask Zoya** (someone you kept a plan with who is up for it) or **Find someone**, and what is on in
     your city this fortnight (the mock makes two events from your city's places). **Plan it** opens an

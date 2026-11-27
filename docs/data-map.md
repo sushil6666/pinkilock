@@ -33,6 +33,7 @@ a processor or a kind of data updates this file in the same pull request.
 | When my phone was last asked to look again (no content) | `feed_nudges` | Until the account is deleted | Only me |
 | Request to join as an expert: name, kind, licence or training, city, how to reach them, note, status | `private.expert_applications` | Until the account is deleted | The person (kind and status); operators |
 | Reports about an expert: reason, optional detail | `private.expert_reports` | Until the reporter's account is deleted | Operators only |
+| Cosmic match: birth date, birth time if given, the Moon's position worked out from them | `private.cosmic` | Until turned off or the account is deleted | No client; the score with a match only |
 | Check-in codes | `private.checkin_codes` | Deleted when the plan ends | The person (their own code) |
 | Flags on a contact handle: who flagged whose handle, on which plan, and when the handle was verified | `contact_reports`, `events` (`bad_contact`), `profile_private.contact_verified_at` | Until either account is deleted | The flagged person sees a count only (`my_contact_flags`). The flagger's export lists the flags they made; the flagged person's export leaves them out, since a plan names the flagger |
 

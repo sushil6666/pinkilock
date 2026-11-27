@@ -33,7 +33,8 @@ merge, **Supabase deploy** and **Web deploy** run on their own; check they go gr
 - [ ] **#109** Question of the day and tip of the day in Couple mode (D125). Next.
 - [ ] **#111** Daily relationship check-in with Saathi's ideas (D126). After #109.
 - [ ] **#112** Expert tips and Join as an expert (D127). After #111.
-- [ ] **Festive packs** for Christmas and New Year (D128). After #112, before 18 December.
+- [ ] **#113** Festive packs for Christmas and New Year (D128). After #112, before 18 December.
+- [ ] **Cosmic match** (D129). After #113.
 - [ ] **#104** This list. Any time.
 
 
@@ -193,6 +194,9 @@ One lawyer can take all of the legal briefs together. Each item's full question 
 - [ ] **Experts.** Pitch counsellors, therapists, coaches and guides you know and point them to
       **Join as an expert** in the app; then check each request and list them as in `OPERATIONS.md`,
       "Experts". Nothing shows until you do.
+
+- [ ] **Cosmic match tables.** Someone who reads kundlis compares a few real pairs' scores with
+      the app's (`src/domain/cosmic.ts`), and says whether any table should change.
 
 ## 12. Decisions waiting for you
 

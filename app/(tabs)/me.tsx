@@ -8,7 +8,7 @@ import { IdeaChip } from '@/components/IdeaChip';
 import { MyFace, useMyFace } from '@/components/MyFace';
 import { MyPhotos } from '@/components/MyPhotos';
 import { SpicyEntry } from '@/components/Spicy';
-import { ExpertsEntry } from '@/components/Experts';
+import { CosmicEntry, ExpertsEntry } from '@/components/Experts';
 import { TalkEntry } from '@/components/Talk';
 import { WalletEntry } from '@/components/Wallet';
 import { router } from 'expo-router';
@@ -284,6 +284,7 @@ export default function Me() {
       <FriendsEntry />
       <TalkEntry />
       <ExpertsEntry />
+      <CosmicEntry />
       <WalletEntry />
       <PinkGoldEntry wallet={myWallet} />
       <SpicyEntry />

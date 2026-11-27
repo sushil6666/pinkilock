@@ -230,6 +230,9 @@ Font scaling is allowed up to 1.3x (`maxFontSizeMultiplier`) so layouts hold on 
 - **Festive packs** (D128): on Plans, a `surface` panel edged `pink` above This week, a pink `label`,
   the festival's emoji at 32 and a `title`, then This week's idea rows. In Couple mode's Today, a
   `surfaceHi` card edged `pink` with the emoji, a pink `label` and the challenge.
+- **Cosmic match** (D129): `moon` is its colour: the eyebrow, a pill "For fun and tradition" edged
+  `moon`, my moon star panel edged `moon`, and each match's score as a `moon` `title` with a thin
+  `moon` bar out of 36 on `line`. The eight parts open under a quiet button, one hairline row each.
 
 ## 5. Motion
 

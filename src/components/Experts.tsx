@@ -25,6 +25,21 @@ export function ExpertsEntry() {
   );
 }
 
+/** Cosmic match (D129), on Me under Expert tips. */
+export function CosmicEntry() {
+  return (
+    <Pressable accessibilityRole="button" accessibilityLabel={t('cosmic.meOpen')} onPress={() => router.push('/cosmic')} style={({ pressed }) => [styles.entry, pressed && { opacity: 0.85 }]}>
+      <Feather name="moon" size={22} color={color.moon} />
+      <View style={{ flex: 1, gap: 2 }}>
+        <T v="label" c={color.moon}>{t('cosmic.eyebrow')}</T>
+        <T v="heading">{t('cosmic.meTitle')}</T>
+        <T v="caption" c={color.textDim}>{t('cosmic.meBody')}</T>
+      </View>
+      <Feather name="chevron-right" size={20} color={color.textDim} />
+    </Pressable>
+  );
+}
+
 /** The warning signs, shown to everyone on the tips page (D127). */
 export function WatchOut() {
   return (

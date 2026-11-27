@@ -124,6 +124,11 @@ export function Today({ partnerName, today }: { partnerName: string; today: stri
         <T v="bodyBold" style={{ flex: 1 }}>{t('experts.coupleLink')}</T>
         <Feather name="chevron-right" size={18} color={color.textDim} />
       </Pressable>
+      <Pressable accessibilityRole="button" onPress={() => router.push('/cosmic')} style={({ pressed }) => [styles.checkin, pressed && { opacity: 0.85 }]}>
+        <Feather name="moon" size={18} color={color.moon} />
+        <T v="bodyBold" style={{ flex: 1 }}>{t('cosmic.coupleLink', { name: partnerName })}</T>
+        <Feather name="chevron-right" size={18} color={color.textDim} />
+      </Pressable>
     </View>
   );
 }

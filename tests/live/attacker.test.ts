@@ -360,6 +360,14 @@ test('Expert tips (D127): the team lists experts; nobody reads reports or applic
   refused(await signedOut.rpc('expert_tips_list' as never), 'signed out, there are no tips');
 });
 
+test('Cosmic match (D129): birth details are private; no score without a match', async () => {
+  refused(await raw.schema('private' as 'public').from('cosmic').select('*'), 'reading anyone\'s birth details');
+  refused(await raw.rpc('guna' as never, { p_a: 1, p_b: 2 } as never), 'calling the scorer directly');
+  const mine = await x.backend.cosmic();
+  assert.ok(!mine.pairs.some((p) => p.profileId === y.id), 'X sees no score with Y, whom X never matched');
+  refused(await signedOut.rpc('my_cosmic' as never), 'signed out, there is nothing');
+});
+
 test('Couple mode (D120): only after a match, and only for the two, over the API too', async () => {
   // X and Y never matched: no couple can start, and the tables are in `private`, which PostgREST does not serve.
   refused(await raw.rpc('couple_ask', { p_to: y.id }), 'starting Couple mode with Y without a match');

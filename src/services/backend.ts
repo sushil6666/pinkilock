@@ -11,6 +11,7 @@ import type { CityStanding } from '../domain/streaks';
 import type { Couple, DayKind } from '../domain/couple';
 import type { DailyQuestion } from '../domain/daily';
 import type { CheckinMood, Checkins } from '../domain/checkin';
+import type { Cosmic } from '../domain/cosmic';
 import type { ExpertApplication, ExpertApply, ExpertReportReason, ExpertTip, ExpertTopic } from '../domain/experts';
 import type { CallAnswer, CallMinutes, SpicyCall } from '../domain/calls';
 import type { Spicy, SpicyInput, SpicyPlan } from '../domain/spicy';
@@ -228,6 +229,13 @@ export interface Backend {
   checkinSuggest(): Promise<Checkins>;
   /** A daily reminder at 18 to 22 in my city's time, or null for none. */
   checkinReminder(hour: number | null): Promise<Checkins>;
+
+  /** Cosmic match (D129): mine, and the score with each person I matched with once both are on. */
+  cosmic(): Promise<Cosmic>;
+  /** Turn it on or change my birth details (`YYYY-MM-DD`, `HH:MM` or null; PL246 to PL248). The Moon is worked out here. */
+  cosmicSave(date: string, time: string | null): Promise<Cosmic>;
+  /** Off: my birth details are deleted. */
+  cosmicOff(): Promise<Cosmic>;
 
   /** Expert tips (D127): tips from vetted experts, for a topic or all, my language first. Empty until the team lists someone. */
   expertTips(topic: ExpertTopic | null): Promise<ExpertTip[]>;

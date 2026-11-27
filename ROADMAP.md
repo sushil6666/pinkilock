@@ -131,6 +131,8 @@ someone, and delete their account, on both platforms, against the production pro
   Cosmic match.
 - [x] **Festive packs** (D128): Christmas and New Year plan ideas on Plans and a festive challenge in
   Couple mode, only on their days. Next: more festivals (Valentine's Day, Holi, Diwali), and Cosmic match.
+- [x] **Cosmic match** (D129): opt-in Moon-sign match (36 gunas) and numerology numbers with people
+  you matched with, for fun and tradition, private birth details, never in Discover or a Trust Score.
 
 - [x] **Spicy mode** (D103): an opt-in for two adults, off by default, with the safety rules, 18+
   and rules yeses, boundaries from a list, and from day one, with a yes from both, a hand-off to
