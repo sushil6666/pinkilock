@@ -26,9 +26,13 @@ merge, **Supabase deploy** and **Web deploy** run on their own; check they go gr
 - [x] **#101** Bring a friend: referral rewards (D118). Merged 2026-11-27.
 - [ ] **#102** Couple mode after a match (D120). Up to date with main, tests pass: merge first.
 - [ ] **#103** This week on Plans: three plan ideas each Monday and city events (D121). After #102.
+- [ ] **#105** Your record: kept-plan streak and private city standing (D122). After #103.
+- [ ] **#106** With friends in Couple mode. After #105.
+- [ ] **#107** Gentle reminders, at most 3 pushes a week. After #106. The real push test on a phone
+      (step 3) checks it too.
 - [ ] **#104** This list. Any time.
-- [ ] Kept-plan streak and private city standing (D122), coming next from the "Keep users coming
-      back after a match" thread: after #103. More from that thread follow in the order it gives.
+
+#102, #103, #105, #106 and #107 are each built on the one before, so keep that order.
 
 How: open the PR on GitHub, "Merge pull request", "Confirm merge". If GitHub says the branch is out
 of date or has conflicts, tell the thread that made it; do not fix it in the browser.
@@ -209,7 +213,8 @@ Payments are paused (D117). None of this is needed until you want to take money.
 
 - [ ] Apple developer account (99 USD a year), then an iOS build with EAS and APNs push. Code helps
       with the build settings once the account exists.
-- [ ] Push checked on real phones on Android and iOS (`docs/phase-2-checklist.md`, step 4).
+- [ ] Push checked on real phones on Android and iOS (`docs/phase-2-checklist.md`, step 4),
+      including the gentle reminders from #107.
 
 ## 15. Optional
 
