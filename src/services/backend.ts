@@ -6,6 +6,7 @@
  * to one rpc() or select() (ARCHITECTURE.md section 8) and `subscribe` to a Realtime channel.
  */
 import type { Mood, NoteKind, SelfLove } from '../domain/selfLove';
+import type { Couple, DayKind } from '../domain/couple';
 import type { CallAnswer, CallMinutes, SpicyCall } from '../domain/calls';
 import type { Spicy, SpicyInput, SpicyPlan } from '../domain/spicy';
 import type { QuizResult, SpicyTerms } from '../domain/spicyQuiz';
@@ -172,6 +173,28 @@ export interface Backend {
   startReset(): Promise<SelfLove>;
   /** Ticks a day of the reset; each opens on its own day. */
   doResetStep(day: number): Promise<SelfLove>;
+
+  /**
+   * Couple mode (D120): only after a match (a kept plan for two, both want round two), and only the
+   * two of us see it. Each call answers with the whole of it as it now stands.
+   */
+  couple(): Promise<Couple>;
+  /** Ask them, or say yes when they asked me first. PL220 without a match, PL222 when mine is open, PL223 when theirs is. */
+  coupleAsk(profileId: string): Promise<Couple>;
+  /** Yes or no to their ask (PL224 when there is none). A no ends it quietly. */
+  coupleAnswer(yes: boolean): Promise<Couple>;
+  /** Ends it for both, or takes my ask back. Nothing says why. */
+  coupleEnd(): Promise<Couple>;
+  /** An idea from my city's catalogue onto our date list (PL225 to PL227); I heart it as I add it. */
+  coupleAddIdea(ideaId: string): Promise<Couple>;
+  /** Heart it (again: take it back), mark it done (again: not done), or take it off (PL228). */
+  coupleIdea(id: string, action: 'heart' | 'done' | 'remove'): Promise<Couple>;
+  /** A special day from the list, `YYYY-MM-DD` (PL229 to PL232). */
+  coupleAddDay(kind: DayKind, day: string): Promise<Couple>;
+  /** Only a day I added (PL233). */
+  coupleRemoveDay(id: string): Promise<Couple>;
+  /** I did this week's challenge, or take my tick back. */
+  coupleChallenge(done: boolean): Promise<Couple>;
 
   /**
    * Spicy mode (D103): off unless I turn it on. It needs a phone or an email on the account, the

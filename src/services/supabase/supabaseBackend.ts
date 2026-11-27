@@ -16,6 +16,7 @@ import { CHECK_IN_CLOSES_AFTER, isDouble, otherId, peopleOf } from '../../domain
 import type { Account, BlockedPerson, CodeKind, ContactCheck, Invite, MyContact, MyPhoto, PickedPhoto, Profile, Reveal } from '../../domain/types';
 import { log, quiet } from '../../lib/log';
 import { isMood, type NoteKind, type SelfLove } from '../../domain/selfLove';
+import { isChallenge, isDayKind, type Couple, type CoupleStatus } from '../../domain/couple';
 import { MAX_CALLS, isCallMinutes, noCall, type CallAnswer, type CallOutcome, type CallStatus, type SpicyCall } from '../../domain/calls';
 import { isBoundary, type Spicy, type SpicyPlan } from '../../domain/spicy';
 import { SPICY_QUIZ, type QuizQuestion, type QuizResult, type SpicyTerms } from '../../domain/spicyQuiz';
@@ -42,6 +43,27 @@ function selfLoveFrom(raw: unknown): SelfLove {
     notes: (r.notes ?? []).map((n) => ({ id: String(n.id), kind: n.kind, body: n.body, day: n.day, at: ms(n.at) ?? 0 })),
     pausedUntil: ms(r.paused_until ?? null),
     reset: r.reset ? { started: r.reset.started, done: r.reset.done ?? [] } : null,
+  };
+}
+
+/** my_couple() and its siblings (D120). Unknown challenges and kinds from a newer server are left out. */
+function coupleFrom(raw: unknown): Couple {
+  const r = (raw ?? {}) as {
+    today?: string; status?: CoupleStatus; partner?: string | null; since?: string | null; first_date?: string | null; matches?: string[];
+    ideas?: { id: number; idea: string; mine: boolean; heart_me: boolean; heart_them: boolean; done: boolean }[];
+    days?: { id: number; kind: string; day: string; mine: boolean }[];
+    weeks?: { week: string; challenge: string; me: boolean; them: boolean }[];
+  };
+  return {
+    today: r.today ?? new Date().toISOString().slice(0, 10),
+    status: r.status ?? 'none',
+    partnerId: r.partner ?? null,
+    since: ms(r.since ?? null),
+    firstDate: r.first_date ?? null,
+    matches: r.matches ?? [],
+    ideas: (r.ideas ?? []).map((i) => ({ id: String(i.id), ideaId: i.idea, mine: !!i.mine, heartMe: !!i.heart_me, heartThem: !!i.heart_them, done: !!i.done })),
+    days: (r.days ?? []).filter((d) => isDayKind(d.kind)).map((d) => ({ id: String(d.id), kind: d.kind as Couple['days'][number]['kind'], day: d.day, mine: !!d.mine })),
+    weeks: (r.weeks ?? []).filter((w) => isChallenge(w.challenge)).map((w) => ({ week: w.week, challenge: w.challenge as Couple['weeks'][number]['challenge'], me: !!w.me, them: !!w.them })),
   };
 }
 
@@ -942,6 +964,43 @@ export function createSupabaseBackend(url: string, anonKey: string, storage: Ses
     async doResetStep(day) {
       await uid();
       return selfLoveFrom(await rpc('do_reset_step', { p_day: day }));
+    },
+
+    async couple() {
+      await uid();
+      return coupleFrom(await rpc('my_couple'));
+    },
+    async coupleAsk(profileId) {
+      await uid();
+      return coupleFrom(await rpc('couple_ask', { p_to: profileId }));
+    },
+    async coupleAnswer(yes) {
+      await uid();
+      return coupleFrom(await rpc('couple_answer', { p_yes: yes }));
+    },
+    async coupleEnd() {
+      await uid();
+      return coupleFrom(await rpc('couple_end'));
+    },
+    async coupleAddIdea(ideaId) {
+      await uid();
+      return coupleFrom(await rpc('couple_add_idea', { p_idea: ideaId }));
+    },
+    async coupleIdea(id, action) {
+      await uid();
+      return coupleFrom(await rpc('couple_idea', { p_id: Number(id), p_action: action }));
+    },
+    async coupleAddDay(kind, day) {
+      await uid();
+      return coupleFrom(await rpc('couple_add_day', { p_kind: kind, p_day: day }));
+    },
+    async coupleRemoveDay(id) {
+      await uid();
+      return coupleFrom(await rpc('couple_remove_day', { p_id: Number(id) }));
+    },
+    async coupleChallenge(done) {
+      await uid();
+      return coupleFrom(await rpc('couple_challenge_done', { p_done: done }));
     },
 
     async spicy() {

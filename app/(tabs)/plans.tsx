@@ -3,6 +3,7 @@ import { Feather } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { Pressable, StyleSheet, View } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
+import { CoupleEntry } from '@/components/Couple';
 import { Countdown } from '@/components/Countdown';
 import { statusLine } from '@/components/InviteCard';
 import { Portrait } from '@/components/Portrait';
@@ -35,6 +36,7 @@ export default function Plans() {
   return (
     <Screen inTabs>
       <T v="display" style={{ marginBottom: space.lg }}>{t('plans.title')}</T>
+      <CoupleEntry />
 
       <Columns gap={0} left={next ? (
         <Pressable accessibilityRole="button" accessibilityLabel={t('plans.nextSpoken', { idea: ideaOf(next.ideaId).title, name: who(next)?.name ?? t('common.someone') })} onPress={() => open(next)} style={[styles.hero, elevation('glow')]}>

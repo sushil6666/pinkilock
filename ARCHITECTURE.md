@@ -321,7 +321,7 @@ in the SQL editor (`select * from reports where reviewed_at is null`).
 
 **Export and deletion.** `export_my_data()` returns one JSON document: account (id, phone),
 profile, contact, trust score, my invites (the other person by id only), passes, blocks, reports
-I made, devices, notifications sent to me, my events, and Self love (moods, notes, the pause and
+I made, devices, notifications sent to me, my events, my couples (D120), and Self love (moods, notes, the pause and
 the reset), Spicy mode (my usernames, boundaries, yeses and unlocks), and the wallet (balances, ledger, orders,
 stakes and treats), my Spicy call times (and, from format 12, my time on each voice call and whom I shared usernames with), and Talk mode (my settings, AI chat minutes and flags but
 never the words, calls, referrals, and as a listener my application and payouts; format 11). Reports about me are not in it, nor
@@ -509,6 +509,23 @@ asks already made carry on. The kind lines, the self-care steps and the solo ide
 `src/i18n/en.ts`; solo plans are venues of the person's city (`soloPlans` in
 `src/domain/selfLove.ts`). Nothing from Self love is logged or pushed. Bounce back is offered on an
 ask someone said no to or that ran out, and on Asks, Sent, for three days afterwards.
+
+### Couple mode
+
+A shared corner for two people who matched (D120), reached from the card at the top of Plans and
+from round two on a kept plan. A match is a kept plan for two where both said "see them again"
+(`private.matched`, never across a block). `private.couples` holds one row per ask (`asked`, `on`,
+`ended`); `private.couple_ideas` the date list (catalogue ideas, hearts as an array of the two ids,
+done), `private.couple_days` the special days from a fixed list, and `private.couple_weeks` one row
+per couple and week with the challenge and who ticked it. None is readable by a client role or the
+analytics worker. The app uses only `my_couple`, `couple_ask`, `couple_answer`, `couple_end`,
+`couple_add_idea`, `couple_idea` (heart, done, remove), `couple_add_day`, `couple_remove_day` and
+`couple_challenge_done`, each answering with the caller's whole state. A week starts on Monday in the
+asker's city; its challenge is picked from `private.couple_challenge_ids()` (the same list as
+`COUPLE_CHALLENGES`, words in `src/i18n`) and never repeats last week's. A trigger on `blocks` ends a
+couple at once; deleting an account cascades. Streaks, day counts and anniversaries are worked out in
+the app (`src/domain/couple.ts`). "Plan it" opens the usual ask, so every date is still a pinky
+promise. The screen reads the state again every 15 seconds while open; there are no pushes yet.
 
 ### Spicy mode
 

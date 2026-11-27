@@ -60,7 +60,12 @@ With no keys set, the app runs on ten made-up people who answer by themselves. A
     with your week and streak, solo plans in your city, the gratitude jar and your boundaries. Only
     you see it. **Bounce back** (from there, or from an ask someone passed on) has a kind note, a
     3-day reset, a private journal, a pause from Discover, and help lines.
-11. **Spicy mode**: in **Me**, tap the pink **Spicy mode** card. Read the safety rules and the **Spicy
+11. **Couple mode**: open a kept plan in **Plans** (Zoya's Sunset spot), answer **Yes** to both
+    questions and **Send**: you both want round two. Tap **Start Couple mode**, then **Start with
+    Zoya**; she says yes a few seconds later. Add ideas to your date list (she hearts them), add a
+    birthday or a special day, and tick this week's challenge (she ticks it a few seconds after you).
+    The card at the top of **Plans** leads back in.
+12. **Spicy mode**: in **Me**, tap the pink **Spicy mode** card. Read the safety rules and the **Spicy
     terms**, agree, and pass the 5-question quiz (all five right; a miss shows what to read again,
     D107). Then tick 18+ and the rules, add a Discord username (or Telegram, or Signal) and pick boundaries; the mock account needs a
     phone or an email first (**Me**, sign-in, code `123456`). On the card (or a plan) of Aanya, Kabir, Ira,
@@ -71,12 +76,12 @@ With no keys set, the app runs on ten made-up people who answer by themselves. A
     is silent). After a call that counted, **Share my usernames** shows theirs (the mock's person
     always shares back).
     **Turn off** wipes it.
-12. **Wallet** (D104): in **Me**, tap the gold **Wallet** card. The mock is Razorpay's test mode on the
+13. **Wallet** (D104): in **Me**, tap the gold **Wallet** card. The mock is Razorpay's test mode on the
     web: tap a pack and the credits arrive at once. Spend them on a boost or an extra open ask; open a
     locked plan to **Stake 50 credits** or to treat the other person to a coffee (the mock pretends
     there is a partner café). Rewards: keep a plan, rate it, open the app 7 days in a row. Live,
     top-ups stay off until the Razorpay keys are secrets (`OPERATIONS.md`, "Wallet").
-13. **Talk to someone** (D108): in **Me**, tap **Talk to someone**. Chat with **Saathi**, the AI companion
+14. **Talk to someone** (D108): in **Me**, tap **Talk to someone**. Chat with **Saathi**, the AI companion
     (always labelled AI, D112; pick the Warm or Flirty tone, D113; the mock answers from a few kind lines, and "I want to die" or similar shows
     the help lines and makes the chat free). Saathi costs 60 credits for up to 15 minutes, and 60 more to
     continue near the end (D114). **Talk to a real person**: say who you are and whom you
@@ -85,7 +90,7 @@ With no keys set, the app runs on ten made-up people who answer by themselves. A
     is no sound in the mock. **Become a listener**: apply, fill in the KYC form (any valid-looking
     PAN and IFSC; the mock verifies you after 3 seconds), take calls, and "Priya" rings 6 seconds
     later. Live, each part stays off until its keys are set (`OPERATIONS.md`, "Talk mode").
-14. **Pink Gold** (D115, D116): the paid membership. In the mock, Aanya, Meher and Tara are members:
+15. **Pink Gold** (D115, D116): the paid membership. In the mock, Aanya, Meher and Tara are members:
     their Discover card and profile show a gold **Pink Gold** pill. In **Me**, tap **Pink Gold** to
     see the perks, buy a plan or Boosts (the mock is Razorpay's test mode on the website: paid at
     once, no money moves) and use a Boost. Once you are a member, your own Me shows the badge too.

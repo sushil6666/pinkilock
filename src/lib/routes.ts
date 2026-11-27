@@ -34,6 +34,7 @@ const TITLES: Record<string, Key | null> = {
   'duo/[token]': 'titles.joinADuo',
   'self-love': 'titles.selfLove',
   'self-love/bounce-back': 'titles.bounceBack',
+  couple: 'titles.couple',
   spicy: 'titles.spicy',
   wallet: 'titles.wallet',
   'pink-gold': 'titles.pinkGold',

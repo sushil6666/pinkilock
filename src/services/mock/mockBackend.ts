@@ -39,6 +39,8 @@ import {
 import { BOOST_VALID_MONTHS, MEMBER_FREE_BOOSTS, addMonths, boostPackOf, canBuy, goldUntilAfter, isShopId, istMonth, istMonthEnd, openAskCap, planOf } from '../../domain/pinkGold';
 import { t } from '../../i18n';
 import { createMockTalk, emptyMockTalk, type MockTalkDb } from './mockTalk';
+import { createMockCouple, type MockCoupleDb } from './mockCouple';
+import { ideasFor } from '../../domain/ideas';
 
 const KEY = 'pinkilock.mock.v1';
 const LATENCY = 280;
@@ -84,6 +86,10 @@ interface Db {
   spicyCalls?: Record<string, MockCall[]>;
   /** Talk mode (D108), mine. */
   talk?: MockTalkDb;
+  /** Plans (by id) where I said "see them again"; the made-up people always do too. */
+  roundTwo?: string[];
+  /** Couple mode (D120), asked or on. */
+  couple?: MockCoupleDb | null;
 }
 
 /** A call as private.spicy_calls holds it, from my side. The made-up person is always on time. */
@@ -356,6 +362,8 @@ export function createMockBackend(options: { captcha?: () => Promise<string | un
     if (profileId === ME_ID) fail('PL010');
     if (!isBlocked(d, profileId)) d.blocked = [...(d.blocked ?? []), { id: profileId, at: now }];
     callStop(d, profileId);
+    // A block ends Couple mode for good (D120).
+    if (d.couple?.partnerId === profileId) d.couple = null;
     const theirs = d.invites.filter((i) => rules.peopleOf(i).includes(profileId));
     for (const i of theirs) {
       put(d, rules.endForBlock(i, now));
@@ -650,9 +658,38 @@ export function createMockBackend(options: { captcha?: () => Promise<string | un
     blocked: () => false,
   });
 
+  // --- Couple mode (D120), as in supabase/migrations/20261127000020_couple_mode.sql: see mockCouple.ts. ---
+  let coupleDb: Db | null = null;
+  const forTwo = (i: Invite) => i.status === 'kept' && !rules.isDouble(i);
+  const couplePart = createMockCouple({
+    async open() {
+      const d = await load();
+      await wait(LATENCY);
+      if (!d.me) fail('PL002');
+      coupleDb = d;
+      return { couple: d.couple ?? null, now: Date.now() };
+    },
+    put: (c) => {
+      if (coupleDb) coupleDb.couple = c;
+      save();
+    },
+    matches: () => {
+      const d = coupleDb!;
+      const ids = visible(d).invites.filter((i) => forTwo(i) && (d.roundTwo ?? []).includes(i.id)).map((i) => rules.otherId(i, ME_ID));
+      return [...new Set(ids)];
+    },
+    firstDate: (id) => {
+      const starts = visible(coupleDb!).invites.filter((i) => forTwo(i) && rules.otherId(i, ME_ID) === id).map((i) => i.startsAt);
+      return starts.length ? Math.min(...starts) : null;
+    },
+    offered: (ideaId) => ideasFor(coupleDb?.me?.country, coupleDb?.me?.city).some((i) => i.id === ideaId),
+    blocked: (id) => isBlocked(coupleDb!, id),
+  });
+
   return {
     kind: 'mock',
     ...talkPart,
+    ...couplePart,
 
     async boot() {
       const d = await load();
@@ -1049,12 +1086,17 @@ export function createMockBackend(options: { captcha?: () => Promise<string | un
     async rateDate(inviteId, answer) {
       const d = await load();
       if (find(d, inviteId).status !== 'kept') fail('PL074');
-      if (!ratings.has(inviteId)) ratings.set(inviteId, answer.again);
+      if (!ratings.has(inviteId)) {
+        ratings.set(inviteId, answer.again);
+        if (answer.again && !answer.unsafe) d.roundTwo = [...(d.roundTwo ?? []), inviteId];
+        save();
+      }
       if (reward(walletOf(d), 'rated_date', inviteId)) save();
     },
 
     async dateFeedback(inviteId) {
-      const mine = ratings.get(inviteId);
+      const d = await load();
+      const mine = ratings.get(inviteId) ?? ((d.roundTwo ?? []).includes(inviteId) ? true : undefined);
       return { rated: mine !== undefined, roundTwo: mine === true };
     },
 
@@ -1338,6 +1380,10 @@ export function createMockBackend(options: { captcha?: () => Promise<string | un
         spicy: d.spicy ? { discord: d.spicy.discord, telegram: d.spicy.telegram, signal: d.spicy.signal, boundaries: d.spicy.boundaries, since: d.spicy.since ? new Date(d.spicy.since).toISOString() : null, yes: (d.spicyYes ?? []).map((who) => ({ with: who })),
           calls: Object.entries(d.spicyCalls ?? {}).flatMap(([who, list]) => list.map((c) => ({ with: who, my_times: c.mySlots.map((x) => new Date(x).toISOString()), my_minimum: c.myMinutes, starts_at: c.startsAt ? new Date(c.startsAt).toISOString() : null, minimum: c.minutes, my_minutes_on_timer: c.myMins.length, my_answer: c.myAnswer, outcome: c.outcome, counted_against_me: c.fault === 'me' || c.fault === 'both', credits_back: c.refunded }))) } : null,
         self_love: d.selfLove ? { moods: d.selfLove.moods, notes: d.selfLove.notes.map(({ kind, body, day, at }) => ({ kind, body, day, at: new Date(at).toISOString() })), paused_until: d.selfLove.pausedUntil, reset: d.selfLove.reset } : null,
+        couples: d.couple ? [{ status: d.couple.status, with: d.couple.partnerId, asked_at: new Date(d.couple.askedAt).toISOString(), since: d.couple.since ? new Date(d.couple.since).toISOString() : null,
+          date_list: d.couple.ideas.map((i) => ({ idea: i.ideaId, added_by_me: i.mine, my_heart: i.heartMe, done: i.done })),
+          special_days: d.couple.days.map((x) => ({ kind: x.kind, day: x.day, added_by_me: x.mine })),
+          challenges: d.couple.weeks.map((w) => ({ week: w.week, challenge: w.challenge, i_did_it: w.me })) }] : [],
       }, null, 2);
     },
 

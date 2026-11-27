@@ -201,6 +201,12 @@ Font scaling is allowed up to 1.3x (`maxFontSizeMultiplier`) so layouts hold on 
   reset steps, the gold-week badge filled `gold`), and Bounce back is pink (`pinkWash` behind
   `pinkDeep`). Mood buttons are slabs on `surfaceHi`, pink when picked; the week is seven rings.
 
+- **Couple mode** (D120): existing tokens only. The pair (both portraits overlapping, days together)
+  and the Plans entry card are pink (`pinkWash` behind `pinkDeep`); this week's challenge is gold
+  (`goldWash` behind `goldDeep`) with two tick rings that fill `gold` and the same award badge as Self
+  love. Date-list rows are `surfaceHi` cards, edged `pink` once both hearted; their actions are small
+  icon-and-word buttons (44-point targets) so a row stays one card on a phone.
+
 ## 5. Motion
 
 | Token | Value | Use |
