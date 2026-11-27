@@ -34,7 +34,7 @@ import { backend } from '@/services';
 const REMOTE_PLACE = { video: 'Pinkilock video room', game: 'Voice chat in the app' } as const; // i18n: data
 
 export default function NewInvite() {
-  const params = useLocalSearchParams<{ to: string; idea?: string; double?: string }>();
+  const params = useLocalSearchParams<{ to: string; idea?: string; double?: string; venue?: string }>();
   const me = useStore((s) => s.me);
   const person = usePerson(params.to);
   const friend = usePerson(useStore((s) => s.duoId) ?? undefined);
@@ -52,8 +52,9 @@ export default function NewInvite() {
   const [startsAt, setStartsAt] = useState<number | null>(null);
   const [place, setPlace] = useState('');
   // A picked venue, or 'other' once the person chooses to type a place of their own.
-  const [venueId, setVenueId] = useState<string | 'other' | null>(null);
-  const [showAllVenues, setShowAllVenues] = useState(false);
+  // A city event (D121) can arrive with its venue already picked.
+  const [venueId, setVenueId] = useState<string | 'other' | null>(params.venue ?? null);
+  const [showAllVenues, setShowAllVenues] = useState(!!params.venue);
   const [note, setNote] = useState('');
   const [tone, setTone] = useState<NoteTone>('chill');
   // A double (docs/build-plan.md F3): my duo comes, and so does theirs.

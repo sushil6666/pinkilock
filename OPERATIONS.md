@@ -301,6 +301,25 @@ the SQL editor. A person's request about them is answered with their data downlo
 on Bounce back (Tele-MANAS 14416, `SUPPORT_LINES` in `src/domain/selfLove.ts`) should be checked
 before launch and when a country opens.
 
+**Couple mode data (D120).** Couples, date lists, special days and challenge ticks are in
+`private.couples`, `private.couple_ideas`, `private.couple_days` and `private.couple_weeks`. They are the
+two people's alone: nobody reads them in the SQL editor except to answer a report, and a request is
+answered with the data download (`couples`). Nothing to set up: it works once the migration is
+deployed.
+
+**City events (D121).** Plans lists what is on in a city from `public.city_events`. Add one in the
+SQL editor once you have checked it is real (nothing is seeded):
+
+```sql
+insert into public.city_events (id, city, title, emoji, place, venue_id, idea_id, starts_at, ends_at, url, free)
+values ('mum_flea_dec', 'Mumbai', 'Sunday flea market', '🛍️', null, 'mum_carter_road', 'thrift_dare',
+        '2026-12-06 10:00+05:30', '2026-12-06 20:00+05:30', 'https://example.org/flea', true);
+```
+
+`city` is the city's name as in `cities`; give a `venue_id` from `venues` or a short `place`; `idea_id`
+is optional. An event lasts at most 31 days and is shown from 14 days before it starts until it ends.
+To take one down, `update public.city_events set active = false where id = '...'`; never delete a row.
+
 **Spicy mode data (D103).** Usernames, boundaries and yeses are in `private.spicy` and
 `private.spicy_yes`. Like Self love, nobody reads them in the SQL editor except to answer a report
 about that person, and a person's request is answered with their data download. Spicy mode should not
@@ -621,6 +640,59 @@ calls are not switched on yet (PL179). Two more steps in LiveKit Cloud:
 A phone build made before this change has no voice module: build a new APK (EAS) after merging.
 To see a call's sessions in the SQL editor: `select user_id, joined_at, left_at from
 private.spicy_call_voice where call_id = '<id>' order by joined_at`.
+
+### Paid features
+
+Payments are **paused** (D117, Sushil 2026-11-27) until Pinkilock has a good number of users. The
+paid features stay on screen and keep working; only taking money stops. One switch decides it: the
+repository variable `PAID_FEATURES`. Unset (or anything but `on`), payments are paused.
+
+While paused:
+
+- Nothing can be bought: credit packs, Pink Gold plans and Boost packs are refused on the server
+  (PL188), the `wallet` function makes no Razorpay order, and the app and website show no prices and
+  no Pay buttons. An order paid before the pause is still credited.
+- Pink Gold, its badge and perks, and Boosts keep working for whoever has them. They can be given as
+  rewards (a referral programme will use the same calls):
+
+  ```sql
+  select private.pink_gold_gift('<user id>', 7, 'referral');       -- 7 more days (starts now if not a member)
+  select private.boost_gift('<user id>', 1, 'referral:<friend id>'); -- 1 Boost, once per reason, used within a month
+  ```
+- Saathi is free: one 15-minute session a day each (`private.saathi_free_days`), which keeps the
+  Claude bill small. A chat that mentions self-harm stays free and is never cut off.
+- Paid calls with listeners and Treat the plan wait (PL188). The free first call with a listener
+  (D109) still works.
+- Spicy mode's unlock is free, one new unlock per person per 7 days (PL190). Anything paid towards
+  a match before the pause goes back when it is unlocked for free.
+
+**To take payments again** (no code change): GitHub, **Settings, Secrets and variables, Actions,
+Variables, New repository variable** `PAID_FEATURES` = `on`, then run **Supabase deploy** (Actions).
+Its summary says "Payments: on". The app reads the switch when it opens, so people see prices again
+the next time they open it. The Razorpay keys ("Wallet", below) are still needed to take money. To
+pause again, set it to `off` and run the deploy. Production can have its own value as an
+environment variable of the `production` environment.
+
+To check it in the SQL editor: `select public.app_switches();`.
+
+### Bring a friend
+
+Referral rewards (D118) need nothing set up beyond the payment pause's grant calls: they are given
+by the server, in `private.referral_settle`, when someone opens Bring a friend and every 10 minutes
+(pg_cron job `pinkilock-referrals`). **For now a verified email counts** as well as a verified
+phone (Sushil, 2026-11-27), because phone sign-in (Twilio, `docs/phase-3-checklist.md`) is not on
+yet. **Once phone sign-in works**, make a phone the rule, in the SQL editor:
+
+```sql
+select private.set_config('referral_needs_phone', 'true');    -- 'false' lets an email count again
+```
+
+The app's checklist and rules follow the switch by themselves.
+
+To look at it: `select referrer, count(*) from private.referral_rewards group by 1 order by 2 desc;`
+(many from one person in a short time is worth a look; at most 10 count per 30 days anyway). A
+friend's checklist: `select private.referral_check('<user id>');`. To give a reward by hand, use the
+gift calls above with a ref like `referral:<friend id>`.
 
 ### Wallet
 

@@ -64,7 +64,7 @@ select t.ok((select string_agg(column_name, ',' order by column_name) from infor
 select t.ok((select string_agg(n.nspname || '.' || p.proname, ' ' order by n.nspname, p.proname)
     from pg_proc p join pg_namespace n on n.oid = p.pronamespace
     where n.nspname in ('public', 'private', 'analytics') and has_function_privilege('authenticated', p.oid, 'execute'))
-  = 'private.blocked_pair private.face_visible private.has_duo private.is_pink_gold private.on_invite private.revealed_to private.shares_invite private.vouch_summary public.add_self_note public.bail public.block_user public.check_in public.create_duo_link public.create_vouch_link public.date_feedback public.decline_invite public.decline_treat public.delete_my_account public.discover public.do_reset_step public.duo_link_name public.export_my_data public.file_privacy_request public.give_consents public.join_duo public.leave_duo public.log_client_error public.log_event public.my_blocks public.my_checkin_code public.my_city_standing public.my_consents public.my_contact_flags public.my_line_review public.my_moderation public.my_self_love public.my_spicy public.my_wallet public.offer_pinky public.pass_profile public.pass_spicy_quiz public.pause_discover public.rate_date public.register_push_token public.remove_photo public.remove_self_note public.report_bad_contact public.report_user public.restore_passes public.save_availability public.save_mood public.save_profile public.save_spicy public.send_invite public.spicy_call public.spicy_call_answer public.spicy_call_beat public.spicy_call_end public.spicy_call_move public.spicy_call_pick public.spicy_off public.spicy_pay public.spicy_share public.spicy_terms public.spicy_with public.spicy_yes public.start_contact_check public.start_reset public.talk_ai_pass public.talk_ai_session public.talk_answer public.talk_beat public.talk_block public.talk_call public.talk_claim_referral public.talk_end public.talk_listener_apply public.talk_listener_available public.talk_listeners public.talk_report public.talk_settings public.talk_state public.treat_options public.treat_plan public.unblock_user public.unregister_push_token public.vouch public.vouch_link_name public.wallet_boost public.wallet_extra_ask public.wallet_stake public.wallet_visit',
+  = 'private.blocked_pair private.face_visible private.has_duo private.is_pink_gold private.on_invite private.revealed_to private.shares_invite private.vouch_summary public.add_self_note public.app_switches public.bail public.block_user public.check_in public.city_events public.couple_add_day public.couple_add_idea public.couple_answer public.couple_ask public.couple_challenge_done public.couple_end public.couple_idea public.couple_remove_day public.create_duo_link public.create_vouch_link public.date_feedback public.decline_invite public.decline_treat public.delete_my_account public.discover public.do_reset_step public.duo_link_name public.export_my_data public.file_privacy_request public.give_consents public.join_duo public.leave_duo public.log_client_error public.log_event public.my_blocks public.my_checkin_code public.my_city_standing public.my_consents public.my_contact_flags public.my_couple public.my_line_review public.my_moderation public.my_referrals public.my_self_love public.my_spicy public.my_wallet public.note_device public.offer_pinky public.pass_profile public.pass_spicy_quiz public.pause_discover public.rate_date public.register_push_token public.remove_photo public.remove_self_note public.report_bad_contact public.report_user public.restore_passes public.save_availability public.save_mood public.save_profile public.save_spicy public.send_invite public.spicy_call public.spicy_call_answer public.spicy_call_beat public.spicy_call_end public.spicy_call_move public.spicy_call_pick public.spicy_off public.spicy_pay public.spicy_share public.spicy_terms public.spicy_with public.spicy_yes public.start_contact_check public.start_reset public.talk_ai_pass public.talk_ai_session public.talk_answer public.talk_beat public.talk_block public.talk_call public.talk_claim_referral public.talk_end public.talk_listener_apply public.talk_listener_available public.talk_listeners public.talk_report public.talk_settings public.talk_state public.treat_options public.treat_plan public.unblock_user public.unregister_push_token public.vouch public.vouch_link_name public.wallet_boost public.wallet_extra_ask public.wallet_stake public.wallet_visit',
   'a signed-in user can call exactly these functions and no others');
 select t.ok(not exists (select 1 from pg_proc p join pg_namespace n on n.oid = p.pronamespace
     where n.nspname in ('public', 'private', 'analytics') and has_function_privilege('anon', p.oid, 'execute')),
@@ -485,6 +485,27 @@ select t.ok(not (my_self_love()::text like '%y private journal line%'), 'X''s ow
 select t.ok(not (export_my_data()::text like '%y private journal line%'), 'nor does X''s export');
 reset role;
 
+-- D121: city events are written by the team only. X can read what is on in X's city through the
+-- function, and cannot read the table or add, change or switch off an event.
+set role authenticated;
+select t.as_user(:'x');
+select t.ok(t.fails('select * from public.city_events')
+  and t.fails($$insert into public.city_events (id, city, title, place, starts_at, ends_at) values ('x_spam', 'Mumbai', 'Free money', 'Anywhere', now(), now() + interval '1 hour')$$)
+  and t.fails($$update public.city_events set active = false$$), 'X cannot read, add or switch off city events');
+select t.ok(t.sqlstate('select * from city_events()') is null, 'but can read what is on in their city');
+-- D120: Couple mode opens only after a match, and only the two of them see it. X cannot start it
+-- with Y without one, write a couple by hand, or reach the helpers.
+set role authenticated;
+select t.as_user(:'x');
+select t.ok(t.sqlstate(format('select couple_ask(%L)', :'y')) in ('PL220', 'PL222'), 'X cannot start Couple mode with Y without a match');
+select t.ok(t.fails('select * from private.couples') and t.fails('select * from private.couple_ideas') and t.fails('select * from private.couple_days')
+  and t.fails('select * from private.couple_weeks')
+  and t.fails(format($$insert into private.couples (a, b, status, since) values (%L, %L, 'on', now())$$, :'x', :'y')),
+  'X cannot read or write the couple tables, or make a couple with Y by hand');
+select t.ok(t.fails(format('select private.matched(%L, %L)', :'x', :'y')) and t.fails(format('select private.couple_state(%L)', :'y')),
+  'X cannot call the couple helpers, or read Y''s couple');
+reset role;
+
 -- D103: Spicy is between two people who both turned it on, after a kept plan. X reads or writes none of Y's.
 set role authenticated;
 select t.as_user(:'x');
@@ -505,6 +526,26 @@ select t.ok(t.fails(format($$insert into public.consents (user_id, kind, version
   'X cannot write a pass by hand, give one as a consent, or read the answer key');
 select t.ok(t.sqlstate(format('select spicy_yes(%L, true)', gen_random_uuid())) = 'PL130', 'X cannot say yes on a plan that is not X''s');
 reset role;
+
+-- D117: payments paused (the switch is off by default). X cannot turn payments on, reach the
+-- functions as they were before the pause, give themselves Pink Gold or Boosts, or pay for anything.
+set role authenticated;
+select t.as_user(:'x');
+select t.ok(app_switches() = '{"paid": false}'::jsonb, 'payments are paused until the deploy turns them on');
+select t.ok(t.fails($$select private.set_config('paid', 'true')$$) and t.fails($$update private.config set value = 'true' where key = 'paid'$$)
+  and t.fails('select private.paid_on()'), 'X cannot turn payments on, or read the switch except through app_switches');
+select t.ok(t.fails(format($$select private.wallet_open_order_before_pause(%L, 'g1', 'order_attack0')$$, :'x'))
+  and t.fails(format($$select private.treat_plan_before_pause(%L, 'any', 'coffee')$$, gen_random_uuid()))
+  and t.fails(format('select private.talk_call_before_pause(%L, 10, false)', :'y'))
+  and t.fails(format($$select private.spicy_pay_before_pause(%L, 'full')$$, :'y'))
+  and t.fails('select private.talk_ai_session_before_pause(null)'), 'X cannot call the paid paths around the switch');
+select t.ok(t.fails(format('select private.pink_gold_gift(%L, 30)', :'x')) and t.fails(format($$select private.boost_gift(%L, 6, 'me')$$, :'x'))
+  and t.fails('select * from private.saathi_free_days'), 'X cannot give themselves Pink Gold days or Boosts, or read the free Saathi days');
+select t.ok(t.sqlstate(format($$select treat_plan(%L, 'any', 'coffee')$$, gen_random_uuid())) = 'PL188'
+  and t.sqlstate(format('select talk_call(%L, 10, false)', :'y')) = 'PL188', 'while paused, X cannot treat a plan or pay for a listener call');
+reset role;
+-- The rest of this suite, and the files after it, check the paid paths: payments on until tests/db/paid_pause.sql.
+select private.set_config('paid', 'true');
 
 -- D104, D105: the wallet. X cannot credit themselves, read anyone's wallet, stake or treat a plan
 -- that is not X's, pay a Spicy unlock that is not open, or call what only the Edge Function may.
@@ -574,4 +615,19 @@ select t.ok(t.fails('select * from private.pink_gold') and t.fails(format('inser
   and t.fails(format('select private.pink_gold_grant(%L)', :'x')) and t.fails(format('select private.pink_gold_end(%L)', :'y')),
   'X cannot read or write Pink Gold, or grant or end it');
 select t.ok((select pink_gold from profile_cards where id = :'x') = false, 'and X''s card still says not Pink Gold');
+reset role;
+
+-- D118: Bring a friend. X cannot read devices or rewards, give themselves a reward, or note a
+-- device for someone else; a friend counts only by the server's own check.
+set role authenticated;
+select t.as_user(:'x');
+select t.ok(t.fails('select * from private.devices') and t.fails('select * from private.referral_rewards')
+  and t.fails(format($$insert into private.devices (user_id, device) values (%L, 'yyyyyyyyyyyyyyyyyyyy')$$, :'y'))
+  and t.fails(format('insert into private.referral_rewards (friend, referrer, nth) values (%L, %L, 1)', :'y', :'x'))
+  and t.fails(format('insert into private.talk_referrals (friend, referrer) values (%L, %L)', :'y', :'x'))
+  and t.fails(format('select private.referral_settle(%L)', :'y')) and t.fails('select private.referral_sweep()')
+  and t.fails(format('select private.pink_gold_gift(%L, 7)', :'x')) and t.fails(format($$select private.boost_gift(%L, 1, 'x')$$, :'x')),
+  'X cannot read devices or rewards, make a friend, or give themselves Pink Gold days or Boosts');
+select t.ok(t.sqlstate($$select note_device('x; drop table')$$) = 'PL192' and (my_referrals() ->> 'counted')::int = 0,
+  'X cannot note a device id that is not one, and has no friends who count');
 reset role;

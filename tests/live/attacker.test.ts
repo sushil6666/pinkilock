@@ -311,6 +311,23 @@ test('Self love (D101): mine alone, over the API too', async () => {
   await assert.rejects(x.backend.pauseDiscover(30), (e: unknown) => e instanceof AppError && e.code === 'PL121', 'a pause is 1 to 14 days');
 });
 
+test('City events (D121): read through the function, written by the team only', async () => {
+  refused(await raw.from('city_events' as never).select('*'), 'reading the events table');
+  refused(await raw.from('city_events' as never).insert({ id: 'x_spam', city: 'Mumbai', title: 'Free money', place: 'Anywhere', starts_at: new Date().toISOString(), ends_at: new Date(Date.now() + 36e5).toISOString() } as never), 'adding an event');
+  assert.ok(Array.isArray(await x.backend.cityEvents()), 'X reads what is on in X\'s city');
+  refused(await signedOut.rpc('city_events'), 'signed out, there are no events to read');
+});
+
+test('Couple mode (D120): only after a match, and only for the two, over the API too', async () => {
+  // X and Y never matched: no couple can start, and the tables are in `private`, which PostgREST does not serve.
+  refused(await raw.rpc('couple_ask', { p_to: y.id }), 'starting Couple mode with Y without a match');
+  refused(await raw.schema('private' as 'public').from('couples').select('*'), 'reading the couples table');
+  refused(await raw.schema('private' as 'public').from('couples').insert({ a: x.id, b: y.id, status: 'on' }), 'making a couple with Y by hand');
+  refused(await raw.rpc('couple_add_idea', { p_idea: 'boba_run' }), 'adding to a date list without a couple');
+  refused(await signedOut.rpc('my_couple'), 'signed out, there is no couple to read');
+  assert.equal((await x.backend.couple()).status, 'none', 'X has no couple');
+});
+
 test('Spicy mode (D103): nothing of anyone else\'s, over the API too', async () => {
   // The tables are in `private`, which PostgREST does not serve.
   refused(await raw.schema('private' as 'public').from('spicy').select('*'), 'reading the Spicy table');
@@ -405,4 +422,36 @@ test('Pink Gold (D115, D116): no making myself a member or buying without paying
   const card = await raw.from('profile_cards').select('pink_gold').eq('id', x.id).single();
   assert.equal(card.error, null, 'my card reads');
   assert.equal(card.data?.pink_gold, false, 'and says I am not Pink Gold');
+});
+
+test('Bring a friend (D118): no rewards without the server\'s check, over the API too', async () => {
+  refused(await raw.schema('private' as 'public').from('devices').select('*'), 'reading devices');
+  refused(await raw.schema('private' as 'public').from('referral_rewards').select('*'), 'reading referral rewards');
+  refused(await raw.schema('private' as 'public').from('referral_rewards').insert({ friend: y.id, referrer: x.id, nth: 1 }), 'giving myself a reward');
+  refused(await raw.schema('private' as 'public').from('talk_referrals').insert({ friend: y.id, referrer: x.id }), 'making someone my friend');
+  refused(await raw.schema('private' as 'public').rpc('referral_settle', { p_friend: y.id }), 'settling a friend');
+  refused(await raw.schema('private' as 'public').rpc('pink_gold_gift', { p_user: x.id, p_days: 7 }), 'gifting myself Pink Gold days');
+  refused(await raw.schema('private' as 'public').rpc('boost_gift', { p_user: x.id, p_count: 1, p_ref: 'x' }), 'gifting myself Boosts');
+  refused(await raw.rpc('note_device', { p_device: 'x; drop table' }), 'noting a device id that is not one');
+  const mine = await raw.rpc('my_referrals');
+  assert.equal(mine.error, null, 'my referrals read');
+  assert.equal((mine.data as { counted: number }).counted, 0, 'and no friend of mine counts');
+});
+
+test('Payments paused (D117): no turning payments on, no paid path around the switch, no gifts to myself, over the API too', async () => {
+  const sw = await raw.rpc('app_switches');
+  assert.equal(sw.error, null, 'the switches read');
+  assert.deepEqual(Object.keys(sw.data ?? {}), ['paid'], 'and say only whether payments are on');
+  refused(await signedOut.rpc('app_switches'), 'signed out, no switches to read');
+  refused(await raw.schema('private' as 'public').rpc('set_config', { p_key: 'paid', p_value: 'true' }), 'turning payments on');
+  refused(await raw.schema('private' as 'public').from('config').update({ value: 'true' }).eq('key', 'paid'), 'writing the switch');
+  refused(await raw.schema('private' as 'public').rpc('wallet_open_order_before_pause', { p_user: x.id, p_pack: 'g1', p_order: 'order_pause01' }), 'opening an order around the switch');
+  refused(await raw.schema('private' as 'public').rpc('spicy_pay_before_pause', { p_other: y.id, p_share: 'full' }), 'paying the unlock around the switch');
+  refused(await raw.schema('private' as 'public').rpc('talk_ai_session_before_pause', { p_chat: null }), 'a Saathi session around the switch');
+  refused(await raw.schema('private' as 'public').rpc('pink_gold_gift', { p_user: x.id, p_days: 30 }), 'giving myself Pink Gold days');
+  refused(await raw.schema('private' as 'public').rpc('boost_gift', { p_user: x.id, p_count: 6, p_ref: 'me' }), 'giving myself Boosts');
+  refused(await raw.schema('private' as 'public').from('saathi_free_days').delete().eq('user_id', x.id), 'clearing my free Saathi days');
+  if (sw.data?.paid === false) {
+    await assert.rejects(x.backend.treatPlan('00000000-0000-0000-0000-000000000000', 'any', 'coffee'), (e: unknown) => e instanceof AppError && e.code === 'PL188', 'no treat while paused');
+  }
 });

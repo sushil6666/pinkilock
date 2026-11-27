@@ -15,6 +15,7 @@ import { shown } from '@/lib/report';
 import { backend } from '@/services';
 import { useStore } from '@/state/store';
 import { color, space } from '@/theme/tokens';
+import { REFERRAL_GOLD_DAYS } from '@/domain/referrals';
 import { t } from '@/i18n';
 
 const ROUTE = '/r/[code]';
@@ -36,6 +37,7 @@ export default function Referral() {
       <View style={{ gap: space.lg }}>
         <T v="display">{t('invite.title')}</T>
         <T c={color.textDim}>{done ? t('invite.joined') : t('invite.body')}</T>
+        {done ? null : <T c={color.gold}>{t('invite.gold', { days: REFERRAL_GOLD_DAYS })}</T>}
         {error ? <ErrorText text={error} /> : null}
         {me ? <Button label={t('invite.home')} onPress={() => router.replace('/')} />
           : <Button label={t('invite.start')} onPress={() => router.replace('/onboarding')} />}

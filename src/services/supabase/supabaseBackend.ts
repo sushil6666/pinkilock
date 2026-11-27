@@ -16,8 +16,10 @@ import { CHECK_IN_CLOSES_AFTER, isDouble, otherId, peopleOf } from '../../domain
 import type { Account, BlockedPerson, CodeKind, ContactCheck, Invite, MyContact, MyPhoto, PickedPhoto, Profile, Reveal } from '../../domain/types';
 import { log, quiet } from '../../lib/log';
 import { isMood, type NoteKind, type SelfLove } from '../../domain/selfLove';
+import { isChallenge, isDayKind, type Couple, type CoupleStatus } from '../../domain/couple';
 import { MAX_CALLS, isCallMinutes, noCall, type CallAnswer, type CallOutcome, type CallStatus, type SpicyCall } from '../../domain/calls';
 import { isBoundary, type Spicy, type SpicyPlan } from '../../domain/spicy';
+import { switchesFrom } from '../../domain/paid';
 import { SPICY_QUIZ, type QuizQuestion, type QuizResult, type SpicyTerms } from '../../domain/spicyQuiz';
 import {
   ACCEPTS, SEXES, TOPICS, WANTS, aiHistory, checkAiMessage, checkKyc, checkListener, emptyTalk, referralCode,
@@ -26,6 +28,7 @@ import {
 import { REWARD_KINDS, TREAT_ITEMS, emptyWallet, topUpsHere, type LedgerKind, type RewardKind, type TreatItem, type TreatPartner, type Wallet } from '../../domain/wallet';
 import type { openCheckout } from '../../lib/razorpay';
 import type { Backend, BackendEvent, Changes, Notice, Snapshot } from '../backend';
+import type { MyReferrals } from '../../domain/referrals';
 import { t } from '../../i18n';
 import { activeTrace, tracedAll } from '../traceScope';
 
@@ -42,6 +45,27 @@ function selfLoveFrom(raw: unknown): SelfLove {
     notes: (r.notes ?? []).map((n) => ({ id: String(n.id), kind: n.kind, body: n.body, day: n.day, at: ms(n.at) ?? 0 })),
     pausedUntil: ms(r.paused_until ?? null),
     reset: r.reset ? { started: r.reset.started, done: r.reset.done ?? [] } : null,
+  };
+}
+
+/** my_couple() and its siblings (D120). Unknown challenges and kinds from a newer server are left out. */
+function coupleFrom(raw: unknown): Couple {
+  const r = (raw ?? {}) as {
+    today?: string; status?: CoupleStatus; partner?: string | null; since?: string | null; first_date?: string | null; matches?: string[];
+    ideas?: { id: number; idea: string; mine: boolean; heart_me: boolean; heart_them: boolean; done: boolean }[];
+    days?: { id: number; kind: string; day: string; mine: boolean }[];
+    weeks?: { week: string; challenge: string; me: boolean; them: boolean }[];
+  };
+  return {
+    today: r.today ?? new Date().toISOString().slice(0, 10),
+    status: r.status ?? 'none',
+    partnerId: r.partner ?? null,
+    since: ms(r.since ?? null),
+    firstDate: r.first_date ?? null,
+    matches: r.matches ?? [],
+    ideas: (r.ideas ?? []).map((i) => ({ id: String(i.id), ideaId: i.idea, mine: !!i.mine, heartMe: !!i.heart_me, heartThem: !!i.heart_them, done: !!i.done })),
+    days: (r.days ?? []).filter((d) => isDayKind(d.kind)).map((d) => ({ id: String(d.id), kind: d.kind as Couple['days'][number]['kind'], day: d.day, mine: !!d.mine })),
+    weeks: (r.weeks ?? []).filter((w) => isChallenge(w.challenge)).map((w) => ({ week: w.week, challenge: w.challenge as Couple['weeks'][number]['challenge'], me: !!w.me, them: !!w.them })),
   };
 }
 
@@ -66,8 +90,11 @@ function quizResultFrom(raw: unknown): QuizResult {
 
 /** spicy_with() and spicy_yes(). */
 function spicyPlanFrom(raw: unknown): SpicyPlan {
-  const r = (raw ?? {}) as { open?: boolean; my_yes?: boolean; mutual?: boolean; their_boundaries?: string[]; unlock?: { mine?: number; theirs?: number; done?: boolean }; kept_call?: boolean; my_share?: boolean; discord?: string | null; telegram?: string | null; signal?: string | null };
-  const unlock = { mine: r.unlock?.mine ?? 0, theirs: r.unlock?.theirs ?? 0, done: !!r.unlock?.done };
+  const r = (raw ?? {}) as { open?: boolean; my_yes?: boolean; mutual?: boolean; their_boundaries?: string[]; unlock?: { mine?: number; theirs?: number; done?: boolean; free?: boolean; free_next?: string | null }; kept_call?: boolean; my_share?: boolean; discord?: string | null; telegram?: string | null; signal?: string | null };
+  const unlock = {
+    mine: r.unlock?.mine ?? 0, theirs: r.unlock?.theirs ?? 0, done: !!r.unlock?.done,
+    ...(r.unlock?.free ? { free: true, freeNext: r.unlock.free_next ? Date.parse(r.unlock.free_next) : null } : {}),
+  };
   return { open: !!r.open, myYes: !!r.my_yes, mutual: !!r.mutual, theirBoundaries: (r.their_boundaries ?? []).filter(isBoundary), unlock, keptCall: !!r.kept_call, myShare: !!r.my_share, discord: r.discord ?? null, telegram: r.telegram ?? null, signal: r.signal ?? null };
 }
 
@@ -101,7 +128,7 @@ function talkFrom(raw: unknown, open: TalkOpen): Talk {
   const r = (raw ?? {}) as {
     sex?: string | null; want?: string; pass_until?: string | null; ai_today?: number; free_call?: string; free_reason?: string | null;
     profile?: { face?: boolean; handle?: boolean; plans?: boolean }; referral_code?: string; friends_joined?: number; friends_verified?: number;
-    paid?: number; balance?: number; listener?: RawListener | null; call?: RawCall | null;
+    paid?: number; balance?: number; listener?: RawListener | null; call?: RawCall | null; paused?: boolean; saathi_used_today?: boolean;
   };
   const sex = (x: unknown): Sex => (SEXES.includes(x as Sex) ? (x as Sex) : 'unsaid');
   const l = r.listener;
@@ -126,6 +153,7 @@ function talkFrom(raw: unknown, open: TalkOpen): Talk {
       startedAt: ms(c.started_at), together: c.together ?? 0, theyHere: !!c.they_here, end: (c.end as TalkCallEnd | null) ?? null, charged: c.charged ?? 0, refunded: c.refunded ?? 0,
     } : null,
     open,
+    paused: r.paused === true, saathiUsedToday: r.saathi_used_today === true,
   };
 }
 
@@ -944,6 +972,49 @@ export function createSupabaseBackend(url: string, anonKey: string, storage: Ses
       return selfLoveFrom(await rpc('do_reset_step', { p_day: day }));
     },
 
+    async cityEvents() {
+      await uid();
+      const rows = ((await rpc('city_events')) ?? []) as Row[];
+      return rows.map((r) => ({ id: r.id, title: r.title, emoji: r.emoji, place: r.place ?? '', venueId: r.venue_id ?? null, ideaId: r.idea_id ?? null,
+        startsAt: ms(r.starts_at) ?? 0, endsAt: ms(r.ends_at) ?? 0, url: r.url ?? null, free: !!r.free }));
+    },
+    async couple() {
+      await uid();
+      return coupleFrom(await rpc('my_couple'));
+    },
+    async coupleAsk(profileId) {
+      await uid();
+      return coupleFrom(await rpc('couple_ask', { p_to: profileId }));
+    },
+    async coupleAnswer(yes) {
+      await uid();
+      return coupleFrom(await rpc('couple_answer', { p_yes: yes }));
+    },
+    async coupleEnd() {
+      await uid();
+      return coupleFrom(await rpc('couple_end'));
+    },
+    async coupleAddIdea(ideaId) {
+      await uid();
+      return coupleFrom(await rpc('couple_add_idea', { p_idea: ideaId }));
+    },
+    async coupleIdea(id, action) {
+      await uid();
+      return coupleFrom(await rpc('couple_idea', { p_id: Number(id), p_action: action }));
+    },
+    async coupleAddDay(kind, day) {
+      await uid();
+      return coupleFrom(await rpc('couple_add_day', { p_kind: kind, p_day: day }));
+    },
+    async coupleRemoveDay(id) {
+      await uid();
+      return coupleFrom(await rpc('couple_remove_day', { p_id: Number(id) }));
+    },
+    async coupleChallenge(done) {
+      await uid();
+      return coupleFrom(await rpc('couple_challenge_done', { p_done: done }));
+    },
+
     async spicy() {
       await uid();
       return spicyFrom(await rpc('my_spicy'));
@@ -1060,6 +1131,14 @@ export function createSupabaseBackend(url: string, anonKey: string, storage: Ses
     },
     talkListenerAvailable: (on) => talkRpc('talk_listener_available', { p_on: on }),
     claimReferral: (code) => talkRpc('talk_claim_referral', { p_code: referralCode(code) }),
+    async myReferrals() {
+      await uid();
+      return referralsFrom(await rpc<Row>('my_referrals'));
+    },
+    async noteDevice(device) {
+      await uid();
+      await rpc('note_device', { p_device: device });
+    },
 
     async wallet() {
       await uid();
@@ -1069,9 +1148,14 @@ export function createSupabaseBackend(url: string, anonKey: string, storage: Ses
       await uid();
       return walletFrom(await rpc('wallet_visit'));
     },
+    async switches() {
+      await uid();
+      return switchesFrom(await rpc('app_switches'));
+    },
     async topUpStatus() {
       if (!topUpsHere(platform) || !checkout) return { open: false, test: false };
       try {
+        // The function says closed while payments are paused (D117), whatever the keys.
         const r = await walletFunction<{ open?: boolean; test?: boolean }>({ action: 'status' });
         return { open: !!r.open, test: !!r.test };
       } catch {
@@ -1207,4 +1291,17 @@ export function createSupabaseBackend(url: string, anonKey: string, storage: Ses
       throw new AppError('PC004', 'Prototype tools only work on mock data.');
     },
   });
+}
+
+/** my_referrals(), as the screens hold it. */
+export function referralsFrom(r: Row): MyReferrals {
+  const mine = r.mine as Row | null;
+  return {
+    code: String(r.code ?? ''),
+    joined: Number(r.joined ?? 0),
+    counted: Number(r.counted ?? 0),
+    month: !!r.month,
+    needsPhone: r.needs_phone !== false,
+    mine: mine ? { phone: !!mine.phone, face: !!mine.face, plans: !!mine.plans, device: !!mine.device, counted: !!mine.counted, via: mine.via === 'duo' ? 'duo' : 'link' } : null,
+  };
 }
