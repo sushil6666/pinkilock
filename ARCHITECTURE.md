@@ -537,6 +537,16 @@ by `city_events()`: the caller's city, from now to 14 days ahead, at most 12, a 
 standing in for the place. Rows are added in SQL and switched off with `active`, never deleted. "Ask"
 and "Plan it" open the ordinary ask (`invite/new` takes `idea` and `venue`), so the promise rules apply.
 
+### Your record: kept-plan streak and city standing
+
+Me shows "Your record" (D122). The streak is worked out in the phone from my invites by `keptStreak`
+in `src/domain/streaks.ts`: weeks in a row (Monday, India time) with a plan I kept, this week counting
+once it has one. Where I stand comes from `my_city_standing()` (security definer, reads
+`trust_scores` and `invites` on the server): among people in my city with 3 or more kept or missed
+promises, a top 1/5/10/25/50 percent bucket by Trust Score, only once there are 20 of them and I
+have 3 of my own; and the share of the city's plans (both people in the city) kept in the last 30
+days, once there are 20. It answers only the caller's buckets, never an id, a rank or a list.
+
 ### Spicy mode
 
 An opt-in for two adults (D103), off by default, reached from Me. `private.spicy` (one row while it

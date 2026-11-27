@@ -320,6 +320,10 @@ values ('mum_flea_dec', 'Mumbai', 'Sunday flea market', '🛍️', null, 'mum_ca
 is optional. An event lasts at most 31 days and is shown from 14 days before it starts until it ends.
 To take one down, `update public.city_events set active = false where id = '...'`; never delete a row.
 
+**City standing (D122).** "Your record" on Me reads `my_city_standing()`, which uses the Trust Scores
+the analytics worker writes (`trust_scores`). Nothing to set up. A city shows no badges until 20
+people there have 3 or more kept or missed promises, so early on most people see only their streak.
+
 **Spicy mode data (D103).** Usernames, boundaries and yeses are in `private.spicy` and
 `private.spicy_yes`. Like Self love, nobody reads them in the SQL editor except to answer a report
 about that person, and a person's request is answered with their data download. Spicy mode should not

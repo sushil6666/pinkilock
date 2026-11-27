@@ -41,6 +41,7 @@ import { Vouches } from '@/components/Vouches';
 import { WherePicker, areaOk } from '@/components/WherePicker';
 import { shareOrCopy } from '@/lib/shareOrCopy';
 import { FriendsEntry } from '@/components/Friends';
+import { YourRecord } from '@/components/Record';
 import { openStorePage } from '@/lib/review';
 import * as Linking from 'expo-linking';
 import { t } from '@/i18n';
@@ -215,6 +216,7 @@ export default function Me() {
       <T v="caption" c={color.textDim} style={{ marginTop: space.sm }}>
         {live ? t('me.scoreLive') : t('me.scoreDemo', { score: trustScore(me.kept, me.flaked + 1) })}
       </T>
+      <YourRecord />
 
       {me.tagline ? <T v="heading" style={{ marginTop: space.xl }}>{me.tagline}</T> : null}
       {lineReview ? (
