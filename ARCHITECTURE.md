@@ -321,7 +321,7 @@ in the SQL editor (`select * from reports where reviewed_at is null`).
 
 **Export and deletion.** `export_my_data()` returns one JSON document: account (id, phone),
 profile, contact, trust score, my invites (the other person by id only), passes, blocks, reports
-I made, devices, notifications sent to me, my events, and Self love (moods, notes, the pause and
+I made, devices, notifications sent to me, my events, my couples (D120), and Self love (moods, notes, the pause and
 the reset), Spicy mode (my usernames, boundaries, yeses and unlocks), and the wallet (balances, ledger, orders,
 stakes and treats), my Spicy call times (and, from format 12, my time on each voice call and whom I shared usernames with), and Talk mode (my settings, AI chat minutes and flags but
 never the words, calls, referrals, and as a listener my application and payouts; format 11). Reports about me are not in it, nor
@@ -510,6 +510,23 @@ asks already made carry on. The kind lines, the self-care steps and the solo ide
 `src/domain/selfLove.ts`). Nothing from Self love is logged or pushed. Bounce back is offered on an
 ask someone said no to or that ran out, and on Asks, Sent, for three days afterwards.
 
+### Couple mode
+
+A shared corner for two people who matched (D120), reached from the card at the top of Plans and
+from round two on a kept plan. A match is a kept plan for two where both said "see them again"
+(`private.matched`, never across a block). `private.couples` holds one row per ask (`asked`, `on`,
+`ended`); `private.couple_ideas` the date list (catalogue ideas, hearts as an array of the two ids,
+done), `private.couple_days` the special days from a fixed list, and `private.couple_weeks` one row
+per couple and week with the challenge and who ticked it. None is readable by a client role or the
+analytics worker. The app uses only `my_couple`, `couple_ask`, `couple_answer`, `couple_end`,
+`couple_add_idea`, `couple_idea` (heart, done, remove), `couple_add_day`, `couple_remove_day` and
+`couple_challenge_done`, each answering with the caller's whole state. A week starts on Monday in the
+asker's city; its challenge is picked from `private.couple_challenge_ids()` (the same list as
+`COUPLE_CHALLENGES`, words in `src/i18n`) and never repeats last week's. A trigger on `blocks` ends a
+couple at once; deleting an account cascades. Streaks, day counts and anniversaries are worked out in
+the app (`src/domain/couple.ts`). "Plan it" opens the usual ask, so every date is still a pinky
+promise. The screen reads the state again every 15 seconds while open; there are no pushes yet.
+
 ### This week: plan ideas and city events
 
 Plans shows three ideas a week (D121), picked in the phone by `weeklyIdeas` in `src/domain/weekly.ts`
@@ -586,6 +603,40 @@ anyone reached the room, else from the check-ins; `call_together`, `call_timer_s
 Usernames: `private.spicy_with_for` is now a wrapper over `private.spicy_with_base` that shows
 Discord, Telegram and Signal only after a call with outcome `talked` and when both have a row in
 `private.spicy_shares` (`spicy_share`); triggers drop shares on Spicy off, a yes taken back or a block.
+
+### Paid features switch
+
+D117: one switch, `paid` in `private.config`, decides whether Pinkilock takes money. It is off by
+default; the Supabase deploy sets it from the repository variable `PAID_FEATURES`. The app reads it
+once at boot through `public.app_switches()` (`Backend.switches()`, `paid` in the store; any error
+reads as off) and hides prices and Pay buttons; the server enforces it. Each money path is a thin
+wrapper over the function as it was, renamed into `private` (`*_before_pause`): `wallet_open_order`
+(PL188), `treat_plan` (PL188), `talk_call` for paid calls (PL188), `talk_ai_session` (one free
+session per local day, `private.saathi_free_days`, PL189) and `spicy_pay` (free, one per person per
+7 days, `spicy_unlocks.free_by`, PL190). `private.talk_state` adds `paused` and `saathi_used_today`;
+`private.spicy_with_for` adds `unlock.free` and `unlock.free_next`. `private.pink_gold_gift` and
+`private.boost_gift` (source `gift`) give the paid perks as rewards, callable only from SQL. The
+`wallet` function answers `open: false` and makes no order while paused. The mock follows
+`EXPO_PUBLIC_MOCK_PAID=1` (off otherwise). Rules in `src/domain/paid.ts`, checks in
+`tests/db/paid_pause.sql`.
+
+### Bring a friend
+
+D118, `supabase/migrations/20261127000002_referrals.sql`. Built on Talk's referral tables
+(`private.talk_referral_codes`, `private.talk_referrals`, now with `via` = `link` or `duo`): a friend
+joins with `talk_claim_referral` (the `/r/CODE` link, kept on the phone through onboarding by
+`src/lib/referral.ts`) or by `join_duo` when their account is under 7 days old (the `/duo/TOKEN`
+page is open without a profile and keeps the token through onboarding the same way).
+`private.referral_check` says whether a friend has a verified phone (or a linked email with
+`referral_needs_phone` off, as it starts until phone sign-in is live), an approved face photo, a plan, and a device (`private.devices`, from
+`note_device`, a random id the app keeps, `src/lib/device.ts`) seen on no other account.
+`private.referral_settle` gives once per friend (`private.referral_rewards`): 7 days of Pink Gold each
+(`pink_gold_gift`), a Boost for the referrer (`boost_gift`, ref `referral:<friend>`), 30 more days
+at the 5th, at most 10 per referrer per 30 days. It runs from `public.my_referrals()` (counts and my
+own checklist, never who) and `private.referral_sweep()` (pg_cron, every 10 minutes, friends from
+the last 60 days). The download adds `app_devices` and `referral_rewards`. Rules mirrored in
+`src/domain/referrals.ts`; screen `app/friends.tsx`, entry on Me (`src/components/Friends.tsx`);
+checks in `tests/db/referrals.sql` and the attacker suites.
 
 ### Wallet
 

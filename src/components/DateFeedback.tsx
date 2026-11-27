@@ -58,6 +58,9 @@ export function DateFeedback({ inviteId, otherId, name, double }: { inviteId: st
         <T v="label" c={color.gold}>{t('feedback.roundTwo')}</T>
         <T v="heading">{t('feedback.bothAgain', { name })}</T>
         <Button icon="repeat" label={t('feedback.planRoundTwo', { name })} onPress={() => router.push({ pathname: '/invite/new', params: { to: otherId } })} />
+        {/* Couple mode (D120): a match can keep going in a shared corner of its own. */}
+        <T v="caption" c={color.textDim}>{t('feedback.coupleBody')}</T>
+        <Button kind="ghost" icon="heart" label={t('feedback.startCouple')} onPress={() => router.push('/couple')} />
       </View>
     ) : (
       <T v="caption" c={color.textDim}>{t('feedback.thanks')}</T>

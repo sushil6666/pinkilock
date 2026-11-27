@@ -24,6 +24,7 @@ import { useStore } from '@/state/store';
 import { color, space, type } from '@/theme/tokens';
 import { ErrorText } from '@/components/ui/ErrorText';
 import { shown } from '@/lib/report';
+import { takeKeptDuo } from '@/lib/referral';
 import { NAME_MAX, PRONOUN_OPTIONS, handleOk, looksLikeContact, nameOk } from '@/domain/profile';
 import { ALL_CONSENTS, DIAL_CODES, openCities } from '@/domain/countries';
 import { WherePicker, areaOk } from '@/components/WherePicker';
@@ -76,7 +77,9 @@ export default function Onboarding() {
     try {
       await complete({ name: name.trim(), age: ageNum, area: area.trim(), pronouns, tagline: tagline.trim(), vibes, ideaIds, contactKind, contactHandle: handle.trim(), consents: [...ALL_CONSENTS], city });
       haptic.success();
-      router.replace('/(tabs)');
+      // A friend's Doubles invite opened before the profile existed (D118): back to it, once.
+      const duo = await takeKeptDuo();
+      router.replace(duo ? { pathname: '/duo/[token]', params: { token: duo } } : '/(tabs)');
     } catch (e) {
       setError(shown(e, '/onboarding'));
       setBusy(false);

@@ -54,7 +54,9 @@ export default function TalkListeners() {
     });
   }, [loaded, state.sex, state.want, callOpen]);
 
-  const free = state.freeCall === 'ready' && useFree;
+  // D117: while payments are paused, only the free first call can be made.
+  const paused = !!state.paused;
+  const free = state.freeCall === 'ready' && (useFree || paused);
   const hold = free ? 0 : callHold(length, false);
   const short = !free && state.paid < hold;
   const changed = sex !== state.sex || want !== state.want;
@@ -102,9 +104,10 @@ export default function TalkListeners() {
       <View style={panel}>
         <T v="heading">{t('talk.lengthTitle')}</T>
         {state.freeCall === 'ready' ? (
-          <Chip label={t('talk.useFree')} sub={t('talk.lengthMinutes', { n: FREE_CALL_MINUTES })} selected={useFree} onPress={() => setUseFree(!useFree)} />
+          <Chip label={t('talk.useFree')} sub={t('talk.lengthMinutes', { n: FREE_CALL_MINUTES })} selected={free} onPress={() => setUseFree(!useFree)} />
         ) : null}
-        {free ? null : (
+        {paused ? <T v="caption" c={color.textDim}>{t(state.freeCall === 'ready' ? 'paused.listeners' : 'paused.listenersLocked')}</T> : null}
+        {free || paused ? null : (
           <>
             <View style={styles.chips}>
               {CALL_LENGTHS.map((n) => <Chip key={n} label={t('talk.lengthMinutes', { n })} selected={length === n} onPress={() => setLength(n)} />)}
@@ -142,7 +145,7 @@ export default function TalkListeners() {
             </View>
             <T v="caption" c={color.textDim}>{l.topics.map((x) => t(`talk.topics.${x}`)).join(' · ')}</T>
             <Button kind={free ? 'primary' : 'ghost'} icon="phone" label={free ? t('talk.callFree', { name: l.firstName }) : t('talk.call', { name: l.firstName })}
-              busy={busy === `call:${l.id}`} disabled={!state.open.voice || short || !!busy}
+              busy={busy === `call:${l.id}`} disabled={!state.open.voice || short || (paused && !free) || !!busy}
               onPress={() => run(`call:${l.id}`, () => backend.talkCall(l.id, length, free)).then((ok) => { if (!ok) backend.talkListeners().then(setList, quiet('talk.list')); })} />
           </View>
         ))}

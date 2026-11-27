@@ -67,7 +67,7 @@ def main() -> int:
             gaps = 0
             for step in ("pipeline", HERE / "check_scores.sql", HERE / "push.sql", HERE / "safety.sql", HERE / "account.sql",
                          "pipeline", HERE / "check_after.sql", HERE / "attacker.sql", "pipeline", HERE / "attacker_after.sql",
-                         HERE / "tracing.sql", HERE / "profile_rules.sql", HERE / "venues.sql", HERE / "limits.sql", HERE / "review.sql", HERE / "ratings.sql", HERE / "privacy.sql", HERE / "doubles.sql", HERE / "photos.sql", HERE / "auth_codes.sql", HERE / "feed.sql", HERE / "faces.sql", HERE / "discover_race.sql", HERE / "self_love.sql", HERE / "spicy.sql", HERE / "wallet.sql", HERE / "calls.sql", HERE / "spicy_quiz.sql", HERE / "talk.sql", HERE / "voice.sql", HERE / "pink_gold.sql", HERE / "city_events.sql"):
+                         HERE / "tracing.sql", HERE / "profile_rules.sql", HERE / "venues.sql", HERE / "limits.sql", HERE / "review.sql", HERE / "ratings.sql", HERE / "privacy.sql", HERE / "doubles.sql", HERE / "photos.sql", HERE / "auth_codes.sql", HERE / "feed.sql", HERE / "faces.sql", HERE / "discover_race.sql", HERE / "self_love.sql", HERE / "spicy.sql", HERE / "wallet.sql", HERE / "calls.sql", HERE / "spicy_quiz.sql", HERE / "talk.sql", HERE / "voice.sql", HERE / "pink_gold.sql", HERE / "paid_pause.sql", HERE / "referrals.sql", HERE / "couple.sql", HERE / "city_events.sql"):
                 if step == "pipeline":
                     print("== analytics/duckdb_pipeline.py")
                     run = subprocess.run([args.duckdb_python, str(ROOT / "analytics" / "duckdb_pipeline.py"), "--dsn", worker_uri])
