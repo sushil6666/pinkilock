@@ -207,6 +207,10 @@ Font scaling is allowed up to 1.3x (`maxFontSizeMultiplier`) so layouts hold on 
   love. Date-list rows are `surfaceHi` cards, edged `pink` once both hearted; their actions are small
   icon-and-word buttons (44-point targets) so a row stays one card on a phone.
 
+- **This week** (D121): one `surface` panel with a gold `label`; each idea is a row split by hairlines
+  with a gold pill button (`gold` behind `onGold` words) for the ask and `Tag`s for minutes and "Only
+  in {city}". Events are `surfaceHi` cards with small icon-and-word actions and a gold "Free" tag.
+
 ## 5. Motion
 
 | Token | Value | Use |

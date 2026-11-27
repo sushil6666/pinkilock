@@ -307,6 +307,19 @@ two people's alone: nobody reads them in the SQL editor except to answer a repor
 answered with the data download (`couples`). Nothing to set up: it works once the migration is
 deployed.
 
+**City events (D121).** Plans lists what is on in a city from `public.city_events`. Add one in the
+SQL editor once you have checked it is real (nothing is seeded):
+
+```sql
+insert into public.city_events (id, city, title, emoji, place, venue_id, idea_id, starts_at, ends_at, url, free)
+values ('mum_flea_dec', 'Mumbai', 'Sunday flea market', '🛍️', null, 'mum_carter_road', 'thrift_dare',
+        '2026-12-06 10:00+05:30', '2026-12-06 20:00+05:30', 'https://example.org/flea', true);
+```
+
+`city` is the city's name as in `cities`; give a `venue_id` from `venues` or a short `place`; `idea_id`
+is optional. An event lasts at most 31 days and is shown from 14 days before it starts until it ends.
+To take one down, `update public.city_events set active = false where id = '...'`; never delete a row.
+
 **Spicy mode data (D103).** Usernames, boundaries and yeses are in `private.spicy` and
 `private.spicy_yes`. Like Self love, nobody reads them in the SQL editor except to answer a report
 about that person, and a person's request is answered with their data download. Spicy mode should not

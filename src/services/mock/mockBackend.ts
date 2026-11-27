@@ -39,6 +39,8 @@ import {
 import { BOOST_VALID_MONTHS, MEMBER_FREE_BOOSTS, addMonths, boostPackOf, canBuy, goldUntilAfter, isShopId, istMonth, istMonthEnd, openAskCap, planOf } from '../../domain/pinkGold';
 import { t } from '../../i18n';
 import { createMockTalk, emptyMockTalk, type MockTalkDb } from './mockTalk';
+import { venuesFor } from '../../domain/venues';
+import type { CityEvent } from '../../domain/weekly';
 import { spicyFreeNext } from '../../domain/paid';
 import { DEVICE_ID, REFERRAL_BOOSTS, REFERRAL_GOLD_DAYS, REFERRAL_MONTH_AT, REFERRAL_MONTH_DAYS, type MyReferrals } from '../../domain/referrals';
 
@@ -870,6 +872,25 @@ export function createMockBackend(options: { captcha?: () => Promise<string | un
         d.me = { ...d.me, freeWindows: FREE_WINDOWS.map((x) => x.id).filter((id) => windows.includes(id)) };
         return { me: d.me };
       }),
+
+    // City events (D121): the team writes them live; the mock makes two from my city's places so the
+    // card can be seen. i18n: data
+    async cityEvents(): Promise<CityEvent[]> {
+      const d = await load();
+      await wait(LATENCY);
+      if (!d.me) fail('PL002');
+      const places = venuesFor(d.me.city, d.me.area, d.me.area);
+      const market = places.find((v) => v.kind === 'market') ?? places[0];
+      const open = places.find((v) => v.kind === 'promenade' || v.kind === 'park') ?? places[1] ?? places[0];
+      if (!market) return [];
+      const day = new Date();
+      day.setHours(0, 0, 0, 0);
+      const at = (days: number, hour: number) => day.getTime() + days * rules.DAY + hour * 3_600_000;
+      return [
+        { id: 'mock_market', title: 'Weekend flea market', emoji: '🛍️', place: `${market.name}, ${market.area}`, venueId: market.id, ideaId: 'thrift_dare', startsAt: at(1, 10), endsAt: at(2, 20), url: null, free: true },
+        { id: 'mock_music', title: 'Sunset music, open air', emoji: '🎶', place: `${open.name}, ${open.area}`, venueId: open.id, ideaId: 'sunset_spot', startsAt: at(4, 17), endsAt: at(4, 20), url: 'https://example.com/events', free: false },
+      ];
+    },
 
     async selfLove() {
       const d = await load();

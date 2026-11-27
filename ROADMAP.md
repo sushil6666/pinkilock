@@ -111,6 +111,8 @@ someone, and delete their account, on both platforms, against the production pro
   catalogue ideas that becomes ordinary pinky promises, special days with anniversaries and day
   counts, and a couple challenge each week with a streak badge. First of the "keep coming back after
   a match" work; weekly plan ideas, city events, streaks and gentle pushes follow.
+- [x] **This week on Plans** (D121): three fresh plan ideas every Monday and a team-written list of
+  city events, each one tap from an ask. Part of keeping people coming back after a match.
 
 - [x] **Spicy mode** (D103): an opt-in for two adults, off by default, with the safety rules, 18+
   and rules yeses, boundaries from a list, and from day one, with a yes from both, a hand-off to

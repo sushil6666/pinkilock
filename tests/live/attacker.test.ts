@@ -311,6 +311,13 @@ test('Self love (D101): mine alone, over the API too', async () => {
   await assert.rejects(x.backend.pauseDiscover(30), (e: unknown) => e instanceof AppError && e.code === 'PL121', 'a pause is 1 to 14 days');
 });
 
+test('City events (D121): read through the function, written by the team only', async () => {
+  refused(await raw.from('city_events' as never).select('*'), 'reading the events table');
+  refused(await raw.from('city_events' as never).insert({ id: 'x_spam', city: 'Mumbai', title: 'Free money', place: 'Anywhere', starts_at: new Date().toISOString(), ends_at: new Date(Date.now() + 36e5).toISOString() } as never), 'adding an event');
+  assert.ok(Array.isArray(await x.backend.cityEvents()), 'X reads what is on in X\'s city');
+  refused(await signedOut.rpc('city_events'), 'signed out, there are no events to read');
+});
+
 test('Couple mode (D120): only after a match, and only for the two, over the API too', async () => {
   // X and Y never matched: no couple can start, and the tables are in `private`, which PostgREST does not serve.
   refused(await raw.rpc('couple_ask', { p_to: y.id }), 'starting Couple mode with Y without a match');
