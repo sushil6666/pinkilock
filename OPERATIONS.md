@@ -759,6 +759,8 @@ accounts is off until `private.config` has `retention_inactive_months` (the lawy
   that. Phase 2 needed that workaround once, and PR #2 removed it.
 - **Prompts:** start a session by telling it to read `CLAUDE.md`, `README.md`, `ARCHITECTURE.md`,
   `ROADMAP.md` and this file. `ROADMAP.md` holds the prompt for the next phase.
+- **The pending list:** `docs/PENDING.md` holds every task still open, in order, marked as the
+  owner's or code work. A session that closes or opens one updates it in the same PR.
 - **Ask Claude to check before trusting:** state in GitHub (PRs, runs, branches) changes outside
   the session, so have it read the current state rather than assume it.
 
