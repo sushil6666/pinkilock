@@ -21,6 +21,8 @@ import { Chip, Tag } from '@/components/ui/Chip';
 import { HoldButton } from '@/components/ui/HoldButton';
 import { Columns } from '@/components/ui/Columns';
 import { Screen } from '@/components/ui/Screen';
+import { Fold } from '@/components/ui/Fold';
+import { Entry } from '@/components/ui/Entry';
 import { Sheet } from '@/components/ui/Sheet';
 import { T } from '@/components/ui/T';
 import { IDEAS, KIND_LABEL, KIND_ORDER, VIBE_GROUPS, offeredIn, pickerIdeas } from '@/domain/ideas';
@@ -67,7 +69,6 @@ export default function Me() {
   const deleteAccount = useStore((s) => s.deleteAccount);
   const signOut = useStore((s) => s.signOut);
   const [sheet, setSheet] = useState<'delete' | 'sign_out' | null>(null);
-  const [editVibes, setEditVibes] = useState(false);
   // Moving city (D083): the new city and area wait here until saved together.
   const [move, setMove] = useState<{ city: string; area: string } | null>(null);
   const [moveError, setMoveError] = useState('');
@@ -211,9 +212,6 @@ export default function Me() {
       <MyFace face={face} />
 
       <TrustBadge person={me} size="lg" />
-      <T v="caption" c={color.textDim} style={{ marginTop: space.sm }}>
-        {live ? t('me.scoreLive') : t('me.scoreDemo', { score: trustScore(me.kept, me.flaked + 1) })}
-      </T>
 
       {me.tagline ? <T v="heading" style={{ marginTop: space.xl }}>{me.tagline}</T> : null}
       {lineReview ? (
@@ -221,169 +219,149 @@ export default function Me() {
           {t(lineReview.status === 'rejected' ? 'me.lineRejected' : 'me.lineChecking', { line: lineReview.text })}
         </T>
       ) : null}
-      <View style={[styles.wrap, { marginTop: space.md, alignItems: 'center' }]}>
-        {me.vibes.map((v) => <Chip key={v} label={v} />)}
-        <Tag label={t(editVibes ? 'common.done' : 'me.changeTags')} tone={editVibes ? color.gold : color.textDim} onPress={() => setEditVibes(!editVibes)} />
-      </View>
-      {editVibes && VIBE_GROUPS.map((group) => (
-        <View key={group.label} style={{ gap: space.sm, marginTop: space.lg }}>
-          <T v="label" c={color.textDim}>{group.label}</T>
-          <View style={styles.wrap}>
-            {group.vibes.map((v) => <Chip key={v} label={v} selected={me.vibes.includes(v)} onPress={() => toggleVibe(v)} />)}
+
+      <View style={{ marginTop: space.lg }} />
+      <Fold icon="map-pin" title={t('me.whereTitle')} value={me.area || me.city} open={!!move}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.md }}>
+          <View style={{ flex: 1 }}>
+            <T v="bodyBold">{me.area ? t('profile.areaCity', { area: me.area, city: me.city }) : me.city}</T>
+            {moved && !move ? <T v="caption" c={color.gold}>{moved}</T> : null}
           </View>
+          <Tag label={t(move ? 'common.cancel' : 'me.move')} tone={move ? color.textDim : color.gold}
+            onPress={() => { setMoved(''); setMoveError(''); setMove(move ? null : { city: me.city, area: me.area }); }} />
         </View>
-      ))}
-      {editVibes && error ? <ErrorText text={error} style={{ marginTop: space.sm }} /> : null}
+        {move ? (
+          <View style={{ gap: space.lg, marginTop: space.sm }}>
+            <T v="caption" c={color.textDim}>{t('me.moveBody')}</T>
+            <WherePicker early={!!me.pinkGold} city={move.city} area={move.area} onCity={(city) => setMove((m) => m && { ...m, city })} onArea={(area) => setMove((m) => m && { ...m, area })} />
+            {moveError ? <ErrorText text={moveError} /> : null}
+            <Button icon="map-pin" label={t('me.moveSave', { city: move.city })} onPress={saveMove} busy={busy === 'move'}
+              disabled={(move.city === me.city && move.area === me.area) || !areaOk(move.city, move.area)} />
+          </View>
+        ) : null}
+      </Fold>
 
-      <T v="label" c={color.textDim} style={styles.section}>{t('me.upFor')}</T>
-      {KIND_ORDER.map((kind) => (
-        <View key={kind} style={{ gap: space.sm, marginBottom: space.lg }}>
-          <T v="label" c={color.textMute}>{KIND_LABEL[kind]}</T>
-          {pickerIdeas(IDEAS.filter((i) => offeredIn(i.id, me.country, me.city) || me.ideaIds.includes(i.id)), kind).map((i) => (
-            <IdeaChip key={i.id} idea={i} localTo={me.city} selected={me.ideaIds.includes(i.id)} onPress={() => toggleIdea(i.id)} />
-          ))}
-        </View>
-      ))}
-      {error ? <ErrorText text={error} style={{ marginTop: space.sm }} /> : null}
+      <Fold icon="tag" title={t('fold.tags')} value={me.vibes.join(', ') || undefined}>
+        {VIBE_GROUPS.map((group) => (
+          <View key={group.label} style={{ gap: space.sm, marginTop: space.md }}>
+            <T v="label" c={color.textDim}>{group.label}</T>
+            <View style={styles.wrap}>
+              {group.vibes.map((v) => <Chip key={v} label={v} selected={me.vibes.includes(v)} onPress={() => toggleVibe(v)} />)}
+            </View>
+          </View>
+        ))}
+        {error ? <ErrorText text={error} /> : null}
+      </Fold>
 
-      <T v="label" c={color.textDim} style={styles.section}>{t('me.whereTitle')}</T>
-      <View style={styles.panel}>
-        <Feather name="map-pin" size={18} color={color.gold} />
-        <View style={{ flex: 1 }}>
-          <T v="bodyBold">{me.area ? t('profile.areaCity', { area: me.area, city: me.city }) : me.city}</T>
-          {moved && !move ? <T v="caption" c={color.gold}>{moved}</T> : null}
+      <Fold icon="coffee" title={t('fold.upFor')} value={t('fold.picked', { count: me.ideaIds.length })}>
+        {KIND_ORDER.map((kind) => (
+          <View key={kind} style={{ gap: space.sm, marginTop: space.md }}>
+            <T v="label" c={color.textMute}>{KIND_LABEL[kind]}</T>
+            {pickerIdeas(IDEAS.filter((i) => offeredIn(i.id, me.country, me.city) || me.ideaIds.includes(i.id)), kind).map((i) => (
+              <IdeaChip key={i.id} idea={i} localTo={me.city} selected={me.ideaIds.includes(i.id)} onPress={() => toggleIdea(i.id)} />
+            ))}
+          </View>
+        ))}
+        {error ? <ErrorText text={error} /> : null}
+      </Fold>
+
+      <Fold icon="clock" title={t('fold.free')} value={t('fold.picked', { count: (me.freeWindows ?? []).length })}>
+        <View style={styles.wrap}>
+          {FREE_WINDOWS.map((w) => {
+            const on = (me.freeWindows ?? []).includes(w.id);
+            return <Chip key={w.id} label={w.label} selected={on} onPress={() => saveAvailability(on ? (me.freeWindows ?? []).filter((x) => x !== w.id) : [...(me.freeWindows ?? []), w.id]).catch((e) => setError(shown(e, '/(tabs)/me')))} />;
+          })}
         </View>
-        <Tag label={t(move ? 'common.cancel' : 'me.move')} tone={move ? color.textDim : color.gold}
-          onPress={() => { setMoved(''); setMoveError(''); setMove(move ? null : { city: me.city, area: me.area }); }} />
-      </View>
-      {move ? (
-        <View style={{ gap: space.lg, marginTop: space.lg }}>
-          <T v="caption" c={color.textDim}>{t('me.moveBody')}</T>
-          <WherePicker early={!!me.pinkGold} city={move.city} area={move.area} onCity={(city) => setMove((m) => m && { ...m, city })} onArea={(area) => setMove((m) => m && { ...m, area })} />
-          {moveError ? <ErrorText text={moveError} /> : null}
-          <Button icon="map-pin" label={t('me.moveSave', { city: move.city })} onPress={saveMove} busy={busy === 'move'}
-            disabled={(move.city === me.city && move.area === me.area) || !areaOk(move.city, move.area)} />
-        </View>
-      ) : null}
+        <T v="caption" c={color.textDim}>{t('me.freeBody')}</T>
+      </Fold>
 
       </>} right={<>
-      <Pressable accessibilityRole="button" accessibilityLabel={t('selfLove.meOpen')} onPress={() => router.push('/self-love')} style={({ pressed }) => [styles.selfLove, pressed && { opacity: 0.85 }]}>
-        <Feather name="heart" size={22} color={color.gold} />
-        <View style={{ flex: 1, gap: 2 }}>
-          <T v="label" c={color.gold}>{t('selfLove.eyebrow')}</T>
-          <T v="heading">{t('selfLove.meTitle')}</T>
-          <T v="caption" c={color.textDim}>{t('selfLove.meBody')}</T>
-        </View>
-        <Feather name="chevron-right" size={20} color={color.textDim} />
-      </Pressable>
+      <Entry tone="gold" icon={<Feather name="heart" size={20} color={color.gold} />} title={t('selfLove.meTitle')} spoken={t('selfLove.meOpen')} onPress={() => router.push('/self-love')} />
       <TalkEntry />
       <WalletEntry />
       <PinkGoldEntry wallet={myWallet} />
       <SpicyEntry />
-      <View style={{ marginTop: space.lg, gap: space.sm }}>
+
+      <View style={{ marginTop: space.lg }} />
+      <Fold icon="users" title={t('fold.duo')} value={duo ? duo.name : t('fold.none')}>
+        {duo ? (
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.md }}>
+            <Portrait name={duo.name} palette={duo.palette} glyph={duo.glyph} faceUrl={duo.faceUrl} size={40} />
+            <View style={{ flex: 1 }}>
+              <T v="bodyBold">{t('me.youAnd', { name: duo.name })}</T>
+              <T v="caption" c={color.textDim}>{t('me.duoBody')}</T>
+            </View>
+            <Tag label={t('me.leave')} tone={color.textDim} onPress={() => duoStep('leave_duo', () => leaveDuo())} />
+          </View>
+        ) : (
+          <>
+            <T c={color.textDim}>{t('me.duoPitch')}</T>
+            <Button kind="ghost" icon="user-plus" label={t('me.makeDuo')} onPress={askDuo} busy={busy === 'duo'} />
+          </>
+        )}
+        {duoError ? <ErrorText text={duoError} /> : null}
+        {copied === 'duo' && !duo ? <T v="caption" c={color.gold}>{t('me.duoCopied')}</T> : null}
+      </Fold>
+
+      <Fold icon="award" title={t('fold.vouches')} value={me.vouchCount ? String(me.vouchCount) : t('fold.none')}>
         <Vouches person={me} />
         <Button kind="ghost" icon="users" label={t('me.askVouch')} onPress={askVouch} />
         {copied === 'vouch' ? <T v="caption" c={color.gold}>{t('me.vouchCopied')}</T> : null}
-      </View>
+      </Fold>
 
-      <T v="label" c={color.textDim} style={styles.section}>{t('me.duoTitle')}</T>
-      {duo ? (
-        <View style={styles.duo}>
-          <Portrait name={duo.name} palette={duo.palette} glyph={duo.glyph} faceUrl={duo.faceUrl} size={40} />
-          <View style={{ flex: 1 }}>
-            <T v="bodyBold">{t('me.youAnd', { name: duo.name })}</T>
-            <T v="caption" c={color.textDim}>{t('me.duoBody')}</T>
-          </View>
-          <Tag label={t('me.leave')} tone={color.textDim} onPress={() => duoStep('leave_duo', () => leaveDuo())} />
-        </View>
-      ) : (
-        <View style={{ gap: space.sm }}>
-          <T c={color.textDim}>{t('me.duoPitch')}</T>
-          <Button kind="ghost" icon="user-plus" label={t('me.makeDuo')} onPress={askDuo} busy={busy === 'duo'} />
-        </View>
-      )}
-      {duoError ? <ErrorText text={duoError} style={{ marginTop: space.sm }} /> : null}
-      {copied === 'duo' && !duo ? <T v="caption" c={color.gold} style={{ marginTop: space.sm }}>{t('me.duoCopied')}</T> : null}
+      <Fold icon="unlock" title={t('fold.unlocks')}>
+        <ContactPanel />
+        <MyPhotos />
+      </Fold>
 
-      <T v="label" c={color.textDim} style={styles.section}>{t('me.freeTitle')}</T>
-      <View style={styles.wrap}>
-        {FREE_WINDOWS.map((w) => {
-          const on = (me.freeWindows ?? []).includes(w.id);
-          return <Chip key={w.id} label={w.label} selected={on} onPress={() => saveAvailability(on ? (me.freeWindows ?? []).filter((x) => x !== w.id) : [...(me.freeWindows ?? []), w.id]).catch((e) => setError(shown(e, '/(tabs)/me')))} />;
-        })}
-      </View>
-      <T v="caption" c={color.textDim} style={{ marginTop: space.sm }}>{t('me.freeBody')}</T>
-
-      <T v="label" c={color.textDim} style={styles.section}>{t('me.unlocksTitle')}</T>
-      <ContactPanel />
-      <MyPhotos />
-
-      <T v="label" c={color.textDim} style={styles.section}>{t('language.title')}</T>
-      <LanguagePicker look="row" state={openCities().find((c) => c.name === me.city)?.state} />
-
-      <T v="label" c={color.textDim} style={styles.section}>{t('me.account')}</T>
-      <View style={styles.panel}>
-        <Feather name={account?.email && !account.phone ? 'mail' : 'phone'} size={18} color={keeps ? color.gold : color.textDim} />
-        <View style={{ flex: 1 }}>
-          <T v="bodyBold">{keeps ? [account?.email && maskEmail(account.email), account?.phone && maskPhone(account.phone)].filter(Boolean).join(' · ') : t('me.noLink')}</T>
-          <T v="caption" c={color.textDim}>{t(keeps ? 'me.linkUse' : 'me.linkWhy')}</T>
-        </View>
-      </View>
-      <View style={{ gap: space.sm, marginTop: space.sm }}>
+      <Fold icon={keeps ? 'user-check' : 'user'} title={t('me.account')} value={keeps ? [account?.email && maskEmail(account.email), account?.phone && maskPhone(account.phone)].filter(Boolean).join(' · ') : t('me.noLink')} open={!!accountError && !sheet}>
+        <T v="caption" c={color.textDim}>{t(keeps ? 'me.linkUse' : 'me.linkWhy')}</T>
         {!account?.email ? <Button kind="ghost" icon="mail" label={t('me.addEmail')} onPress={() => router.push({ pathname: '/account/sign-in', params: { mode: 'link', kind: 'email' } })} /> : null}
         {!account?.phone ? <Button kind="ghost" icon="phone" label={t('me.addPhone')} onPress={() => router.push({ pathname: '/account/sign-in', params: { mode: 'link', kind: 'phone' } })} /> : null}
         {keeps ? <Button kind="ghost" icon="log-out" label={t('me.signOut')} onPress={() => setSheet('sign_out')} /> : null}
         <Button kind="ghost" icon="slash" label={t('me.blocked')} onPress={() => router.push('/account/blocked')} />
         <Button kind="ghost" icon="download" label={t('me.download')} busy={busy === 'export'} onPress={exportData} />
         <Button kind="danger" icon="trash-2" label={t('me.delete')} onPress={() => setSheet('delete')} />
-      </View>
-      {accountError && !sheet ? <ErrorText text={accountError} style={{ marginTop: space.sm }} /> : null}
+        {accountError && !sheet ? <ErrorText text={accountError} /> : null}
+      </Fold>
 
-      <T v="label" c={color.textDim} style={styles.section}>{t('me.data')}</T>
-      <View style={styles.panel}>
-        <Feather name={live ? 'cloud' : 'smartphone'} size={18} color={live ? color.gold : color.textDim} />
-        <View style={{ flex: 1 }}>
-          <T v="bodyBold">{t(live ? 'me.connected' : 'me.demoMode')}</T>
-          <T v="caption" c={color.textDim}>{t(live ? 'me.connectedBody' : 'me.demoBody')}</T>
-        </View>
-      </View>
+      <Fold icon={push.state === 'on' ? 'bell' : 'bell-off'} title={t('me.notifications')} value={t(push.state === 'on' ? 'me.pushOn' : push.state === 'denied' ? 'me.pushOff' : push.state === 'error' ? 'me.pushBroken' : 'me.pushNone')}>
+        <T v="caption" c={color.textDim}>{push.detail}</T>
+        <T v="bodyBold" style={{ marginTop: space.sm }}>{t(live ? 'me.connected' : 'me.demoMode')}</T>
+        <T v="caption" c={color.textDim}>{t(live ? 'me.connectedBody' : 'me.demoBody')}</T>
+      </Fold>
 
-      <T v="label" c={color.textDim} style={styles.section}>{t('me.notifications')}</T>
-      <View style={styles.panel}>
-        <Feather name={push.state === 'on' ? 'bell' : 'bell-off'} size={18} color={push.state === 'on' ? color.gold : push.state === 'unavailable' ? color.textDim : color.flare} />
-        <View style={{ flex: 1 }}>
-          <T v="bodyBold">{t(push.state === 'on' ? 'me.pushOn' : push.state === 'denied' ? 'me.pushOff' : push.state === 'error' ? 'me.pushBroken' : 'me.pushNone')}</T>
-          <T v="caption" c={color.textDim}>{push.detail}</T>
-        </View>
+      <View style={{ marginTop: space.md }}>
+        <LanguagePicker look="row" state={openCities().find((c) => c.name === me.city)?.state} />
       </View>
 
-      <T v="label" c={color.textDim} style={styles.section}>{t('me.safety')}</T>
-      <View style={{ gap: space.sm }}>
+      {/* Safety stays on screen, never behind an arrow. */}
+      <View style={{ marginTop: space.md }}>
         <Button kind="ghost" icon="shield" label={t('me.safetyNumbers')} onPress={() => router.push('/safety')} />
+      </View>
+
+      <Fold icon="life-buoy" title={t('me.help')}>
+        <T v="caption" c={color.textDim}>{t('me.helpBody')}</T>
         <Button kind="ghost" icon="message-square" label={t('me.contactUs')} onPress={() => router.push('/account/requests')} />
+        {Platform.OS !== 'web' ? (
+          <>
+            <Button kind="ghost" icon="star" label={t('review.rate')} onPress={() => void openStorePage()} />
+            <T v="caption" c={color.textMute}>{t('review.rateBody')}</T>
+          </>
+        ) : null}
+        <Button kind="ghost" icon="file-text" label={t('me.shareDiagnostics')} busy={busy === 'diagnostics'} onPress={shareDiagnostics} />
         <View style={styles.wrap}>
           <Tag label={t('landing.terms')} onPress={() => router.push('/legal/terms')} />
           <Tag label={t('landing.privacy')} onPress={() => router.push('/legal/privacy')} />
         </View>
-      </View>
-
-      <T v="label" c={color.textDim} style={styles.section}>{t('me.help')}</T>
-      <T v="caption" c={color.textDim} style={{ marginBottom: space.md }}>{t('me.helpBody')}</T>
-      {Platform.OS !== 'web' ? (
-        <View style={{ gap: space.xs }}>
-          <Button kind="ghost" icon="star" label={t('review.rate')} onPress={() => void openStorePage()} />
-          <T v="caption" c={color.textMute}>{t('review.rateBody')}</T>
-        </View>
-      ) : null}
-      <Button kind="ghost" icon="life-buoy" label={t('me.shareDiagnostics')} busy={busy === 'diagnostics'} onPress={shareDiagnostics} />
-      <T v="caption" c={color.textMute} selectable style={{ marginTop: space.md }}>{t('me.version', { build: buildLabel })}</T>
+        <T v="caption" c={color.textMute} selectable>{t('me.version', { build: buildLabel })}</T>
+      </Fold>
 
       {!live && (
-        <>
-          <T v="label" c={color.textDim} style={styles.section}>{t('me.prototype')}</T>
-          <T v="caption" c={color.textDim} style={{ marginBottom: space.md }}>{t('me.prototypeBody')}</T>
+        <Fold icon="tool" title={t('me.prototype')}>
+          <T v="caption" c={color.textDim}>{t('me.prototypeBody')}</T>
           <HoldButton tone="flare" label={t('me.resetDemo')} onComplete={reset} busy={resetting} />
-        </>
+        </Fold>
       )}
 
       <Sheet
@@ -415,9 +393,5 @@ export default function Me() {
 }
 
 const styles = StyleSheet.create({
-  duo: { flexDirection: 'row', alignItems: 'center', gap: space.md, borderWidth: 1, borderColor: color.line, borderRadius: radius.card, backgroundColor: color.surface, padding: space.md },
   wrap: { flexDirection: 'row', flexWrap: 'wrap', gap: space.sm },
-  section: { marginTop: space.x3, marginBottom: space.md },
-  panel: { flexDirection: 'row', alignItems: 'center', gap: space.md, borderWidth: 1, borderColor: color.line, borderRadius: radius.card, backgroundColor: color.surface, padding: space.lg },
-  selfLove: { flexDirection: 'row', alignItems: 'center', gap: space.md, borderWidth: 1, borderColor: color.goldDeep, borderRadius: radius.card, backgroundColor: color.goldWash, padding: space.lg },
 });

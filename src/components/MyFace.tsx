@@ -82,7 +82,6 @@ export function MyFace({ face }: { face: MyFaceState }) {
           <View style={{ flex: 1, gap: 2 }}>
             <T v="bodyBold" c={color.pink}>{t('face.add')}</T>
             {held ? <T v="caption" c={color.flare}>{t('face.state.held')}</T> : null}
-            <T v="caption" c={color.textDim}>{t('face.addBody')}</T>
           </View>
           <Feather name="chevron-right" size={18} color={color.pink} />
         </Pressable>

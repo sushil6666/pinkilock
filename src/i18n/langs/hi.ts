@@ -665,6 +665,20 @@ export const hi: Translation = {
     neverMind: 'रहने दें',
   },
 
+  fold: {
+    tags: 'मेरे टैग',
+    upFor: 'मैं इनके लिए तैयार हूँ',
+    picked: { one: '{count} चुना', other: '{count} चुने' },
+    free: 'मैं कब खाली हूँ',
+    duo: 'मेरी जोड़ी',
+    vouches: 'दोस्तों की गवाही',
+    unlocks: 'वादा निभाने के बाद खुलता है',
+    none: 'अभी कोई नहीं',
+    on: 'चालू',
+    minutes: '{minutes} मिनट',
+    more: '{name} के बारे में और',
+  },
+
   discover: {
     title: 'डिस्कवर',
     emptyTitle: 'अभी के लिए\nबस\nइतने ही।',
