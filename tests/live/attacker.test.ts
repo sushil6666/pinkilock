@@ -326,6 +326,15 @@ test('City standing (D122): only my own bucket, never a name, over the API too',
   refused(await signedOut.rpc('my_city_standing' as never), 'signed out, there is no standing to read');
 });
 
+test('Gentle reminders (D124): my own switch only; nobody can queue a push', async () => {
+  refused(await raw.schema('private' as 'public').from('nudge_prefs').select('*'), 'reading anyone\'s reminder switch');
+  refused(await raw.from('notifications').insert({ recipient_id: y.id, kind: 'nudge_week', title: 'x', body: 'y', nudge_key: 'spam' } as never), 'queueing a reminder for Y');
+  refused(await raw.rpc('queue_nudges' as never), 'running the reminder clock');
+  assert.equal(await x.backend.setNudges(false), false, 'X turns X\'s reminders off');
+  assert.equal(await x.backend.setNudges(true), true, 'and on again');
+  refused(await signedOut.rpc('set_nudges' as never, { p_on: false } as never), 'signed out, there is no switch');
+});
+
 test('Couple mode (D120): only after a match, and only for the two, over the API too', async () => {
   // X and Y never matched: no couple can start, and the tables are in `private`, which PostgREST does not serve.
   refused(await raw.rpc('couple_ask', { p_to: y.id }), 'starting Couple mode with Y without a match');

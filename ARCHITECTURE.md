@@ -529,6 +529,17 @@ promise. The screen reads the state again every 15 seconds while open; there are
 With friends (D123): a double date opens the ordinary Doubles ask to the partner, and "Got a single
 friend?" opens Bring a friend (`/friends`); neither adds a server rule.
 
+### Gentle reminders
+
+A few pushes a week to bring people back (D124). `private.queue_nudges()` runs hourly from pg_cron
+and writes at most one row per person into the same outbox as promise pushes (`notifications`,
+`invite_id` null, a `nudge_key` that is unique per person, so each reminder goes once). It runs
+only between 10:00 and 20:00 in the person's city, for people with a push token whose switch
+(`private.nudge_prefs`, read and set by `my_nudges` / `set_nudges`) is on and who are not paused in
+Self love, and keeps to 3 in 7 days and 1 in 20 hours. In order: a Couple mode ask waiting on me,
+our couple challenge not ticked by Thursday, the kept-plan streak at the weekend, Monday's ideas,
+a Wednesday Self love check-in. A tap opens Couple mode, Plans or Self love (`src/lib/push.ts`).
+
 ### This week: plan ideas and city events
 
 Plans shows three ideas a week (D121), picked in the phone by `weeklyIdeas` in `src/domain/weekly.ts`

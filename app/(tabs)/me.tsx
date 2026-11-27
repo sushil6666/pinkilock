@@ -42,6 +42,7 @@ import { WherePicker, areaOk } from '@/components/WherePicker';
 import { shareOrCopy } from '@/lib/shareOrCopy';
 import { FriendsEntry } from '@/components/Friends';
 import { YourRecord } from '@/components/Record';
+import { Reminders } from '@/components/Reminders';
 import { openStorePage } from '@/lib/review';
 import * as Linking from 'expo-linking';
 import { t } from '@/i18n';
@@ -360,6 +361,7 @@ export default function Me() {
           <T v="caption" c={color.textDim}>{push.detail}</T>
         </View>
       </View>
+      <View style={{ marginTop: space.sm }}><Reminders /></View>
 
       <T v="label" c={color.textDim} style={styles.section}>{t('me.safety')}</T>
       <View style={{ gap: space.sm }}>

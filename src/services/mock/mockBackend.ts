@@ -104,6 +104,8 @@ interface Db {
   device?: string;
   /** Plans (by id) where I said "see them again"; the made-up people always do too. */
   roundTwo?: string[];
+  /** Gentle reminders turned off (D124). */
+  nudgesOff?: boolean;
   /** Couple mode (D120), asked or on. */
   couple?: MockCoupleDb | null;
 }
@@ -904,6 +906,22 @@ export function createMockBackend(options: { captcha?: () => Promise<string | un
       const score = trustScore(d.me.kept, d.me.flaked);
       const top = n < 3 ? null : score >= 95 ? 5 : score >= 85 ? 10 : score >= 75 ? 25 : score >= 60 ? 50 : null;
       return { city: d.me.city, ready: true, top, cityKeptPercent: 84 };
+    },
+
+    // Gentle reminders (D124): the switch only; the mock never pushes.
+    async nudges() {
+      const d = await load();
+      await wait(LATENCY);
+      if (!d.me) fail('PL002');
+      return !d.nudgesOff;
+    },
+    async setNudges(on: boolean) {
+      const d = await load();
+      await wait(LATENCY);
+      if (!d.me) fail('PL002');
+      d.nudgesOff = !on;
+      save();
+      return on;
     },
 
     async selfLove() {

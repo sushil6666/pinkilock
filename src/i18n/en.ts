@@ -966,6 +966,13 @@ export const en = {
     city: '{city} kept {percent}% of its plans in the last 30 days.',
     private: 'Only you see this. It never shows on your card.',
   },
+  reminders: {
+    on: 'Gentle reminders: on',
+    off: 'Gentle reminders: off',
+    body: 'At most 3 a week, between 10 am and 8 pm: new plan ideas on Mondays, your streak, Couple mode and Self love.',
+    turnOff: 'Turn off',
+    turnOn: 'Turn on',
+  },
 
   couple: {
     eyebrow: 'Couple mode',

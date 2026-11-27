@@ -406,6 +406,12 @@ Work along the chain until you find the break:
 Notifications older than an hour, or that have failed 5 times, are never sent. That is on
 purpose: a late "check-in is open" is worse than none.
 
+Gentle reminders (D124) come from the same outbox: rows with a `nudge_key` and no invite, queued by
+the `pinkilock-nudges` cron job each hour at :07. To see who got what: `select recipient_id, kind,
+nudge_key, created_at, sent_at from notifications where nudge_key is not null order by id desc`.
+To stop them all at once in an emergency: `select cron.unschedule('pinkilock-nudges')` (a migration
+puts it back); one person turns theirs off on Me.
+
 ### Trust scores are stale, or an `analytics-worker` issue is open
 
 Open the failing run.

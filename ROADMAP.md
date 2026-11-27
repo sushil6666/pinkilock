@@ -117,6 +117,8 @@ someone, and delete their account, on both platforms, against the production pro
   "top X% of promise keepers in your city" badge plus how the city did this month. No public leaderboard.
 - [x] **With friends in Couple mode** (D123): a double date with both duos, and a nudge to bring a
   single friend in with the referral link.
+- [x] **Gentle reminders** (D124): at most 3 pushes a week, 10:00 to 20:00, about Couple mode, the
+  streak, Monday's ideas and Self love. One switch on Me turns them off.
 
 - [x] **Spicy mode** (D103): an opt-in for two adults, off by default, with the safety rules, 18+
   and rules yeses, boundaries from a list, and from day one, with a yes from both, a hand-off to

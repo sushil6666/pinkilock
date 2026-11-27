@@ -979,6 +979,14 @@ export function createSupabaseBackend(url: string, anonKey: string, storage: Ses
       return rows.map((r) => ({ id: r.id, title: r.title, emoji: r.emoji, place: r.place ?? '', venueId: r.venue_id ?? null, ideaId: r.idea_id ?? null,
         startsAt: ms(r.starts_at) ?? 0, endsAt: ms(r.ends_at) ?? 0, url: r.url ?? null, free: !!r.free }));
     },
+    async nudges() {
+      await uid();
+      return ((await rpc('my_nudges')) as { on?: boolean } | null)?.on !== false;
+    },
+    async setNudges(on) {
+      await uid();
+      return ((await rpc('set_nudges', { p_on: on })) as { on?: boolean } | null)?.on !== false;
+    },
     async cityStanding() {
       await uid();
       return standingFrom(await rpc('my_city_standing'), '');
