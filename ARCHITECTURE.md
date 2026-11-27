@@ -550,6 +550,16 @@ last 14 days both answered and the streak; `couple_question_answer(body)` takes 
 Only `couple_on` couples reach either, so a block or an ending closes it. The tip of the day is
 `tipOf(day)` in `src/domain/daily.ts`, words in `daily.tips`; nothing is stored for it.
 
+### Daily relationship check-in
+
+`/check-in` (D126), reached from Couple mode's Today and from Self love. `checkin_save` stores one
+entry a day in `private.rel_checkins` (mood, two notes, `harm` from `private.mentions_harm`). The app
+then calls the `talk` Edge Function with `action: 'checkin'`: it claims today's entry with the
+service role (`checkin_ai_claim`), sends only the mood and the notes to Claude with the instructions
+in `supabase/functions/talk/checkin.ts`, and stores the answer (`checkin_ai_done`), once a day.
+Nothing of it is logged. The reminder is `private.queue_checkin_reminders()` on pg_cron at :03,
+kind `checkin_daily`, at the hour in `private.checkin_prefs`, only when there is no entry for the day.
+
 ### This week: plan ideas and city events
 
 Plans shows three ideas a week (D121), picked in the phone by `weeklyIdeas` in `src/domain/weekly.ts`

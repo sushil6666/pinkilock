@@ -135,6 +135,8 @@ export default function SelfLovePage() {
           add={t('selfLove.boundAdd')} empty={t('selfLove.boundEmpty')} busy={busy} run={run} />
       </View>
 
+      <Button kind="ghost" icon="edit-3" label={t('checkin.entryAny')} onPress={() => router.push('/check-in')} />
+
       <View style={[panel, styles.bounce]}>
         <View style={{ flexDirection: 'row', gap: space.md, alignItems: 'center' }}>
           <Feather name="sunrise" size={22} color={color.pink} />

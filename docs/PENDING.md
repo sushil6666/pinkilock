@@ -30,7 +30,8 @@ merge, **Supabase deploy** and **Web deploy** run on their own; check they go gr
 - [x] **#106** With friends in Couple mode (D123). Merged 2026-11-27.
 - [x] **#107** Gentle reminders, at most 3 pushes a week (D124). Merged 2026-11-27. The real push
       test on a phone (step 3) checks it too.
-- [ ] **Question of the day and tip of the day** in Couple mode (D125). Next.
+- [ ] **#109** Question of the day and tip of the day in Couple mode (D125). Next.
+- [ ] **Daily relationship check-in** with Saathi's ideas (D126). After #109.
 - [ ] **#104** This list. Any time.
 
 
@@ -154,7 +155,7 @@ One lawyer can take all of the legal briefs together. Each item's full question 
 - [ ] **O14** Spicy mode (IT Act and Rules, POCSO, store rules, whether an ID age check is needed),
       with **O20** Spicy calls on Pinkilock's own voice service.
 - [ ] **O21** Saathi's Flirty tone.
-- [ ] **O18** Talk mode with a mental-health adviser: Saathi's instructions and labels, the
+- [ ] **O18** Talk mode with a mental-health adviser: Saathi's instructions and labels (also the daily check-in's, D126), the
       self-harm hand-off, the listener code. The adviser also reads the Hindi version.
 - [ ] **O16** Wallet and money (closed-loop credits, GST, refunds, unused credits, the Spicy unlock
       fee; covers **O12**, the refundable stake), and **O17** with a CA: listener payouts by

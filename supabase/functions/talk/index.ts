@@ -6,6 +6,9 @@
  *                                                 talk_ai_turn checks and charges first (and runs the
  *                                                 self-harm check); then Claude answers. Nothing of
  *                                                 the chat is stored or logged. {chat, reply, harm, charged, paid_until}
+ *   POST {action: 'checkin'}                      signed in, checked in today (D126): Saathi's few
+ *                                                 ideas for today's relationship check-in, once a
+ *                                                 day, stored with the entry. Returns my_checkins.
  *   POST {action: 'voice', call}                  signed in, on a live call: a LiveKit token for the
  *                                                 call's room, microphone only, never recorded. {url, token}
  *   POST {action: 'kyc', pan, account, ifsc, holder, street, city, state, pin}
@@ -30,6 +33,7 @@
  */
 import Anthropic from 'npm:@anthropic-ai/sdk@1.9.0';
 import { systemFor, toMessages, type Turn } from './companion.ts';
+import { CHECKIN_SYSTEM, checkinMessage, type CheckinMood } from './checkin.ts';
 import { LK_URL, VOICE_ON, livekitToken } from '../_shared/livekit.ts';
 
 const BASE = (Deno.env.get('SUPABASE_URL') ?? '').replace(/\/$/, '');
@@ -215,6 +219,36 @@ Deno.serve(async (req) => {
     }
     console.log(JSON.stringify({ event: 'talk.ai', user: user.id, chat: turn.data.chat, harm, charged: turn.data.charged, trace }));
     return json({ chat: turn.data.chat, reply, harm, charged: turn.data.charged, paid_until: turn.data.paid_until });
+  }
+
+  if (body.action === 'checkin') {
+    if (!claude) return refuse('PL161');
+    const entry = await rpc<{ mood: CheckinMood; good: string; bad: string; harm: boolean }>('checkin_ai_claim', { p_user: user.id }, trace);
+    if (entry.error || !entry.data) return fromDb(entry.error ?? {});
+    let text = SAFE_REPLY;
+    let harm = entry.data.harm;
+    try {
+      const response = await claude.beta.messages.create({
+        model: MODEL,
+        max_tokens: 1024,
+        output_config: { effort: 'low' },
+        betas: ['server-side-fallback-2026-07-01'],
+        fallbacks: 'default',
+        system: [{ type: 'text', text: CHECKIN_SYSTEM, cache_control: { type: 'ephemeral' } }],
+        messages: [{ role: 'user', content: checkinMessage(entry.data.mood, entry.data.good, entry.data.bad) }],
+      });
+      const out = response.stop_reason === 'refusal' ? '' : response.content.flatMap((b) => (b.type === 'text' ? [b.text] : [])).join('').trim();
+      if (out) {
+        harm = harm || out.includes(HELP);
+        text = out.replaceAll(HELP, '').trim() || SAFE_REPLY;
+      }
+    } catch (e) {
+      console.log(JSON.stringify({ event: 'talk.checkin', user: user.id, result: 'model_failed', error: e instanceof Error ? e.name : 'error', trace }));
+    }
+    const done = await rpc('checkin_ai_done', { p_user: user.id, p_text: text, p_harm: harm }, trace);
+    if (done.error) return fromDb(done.error);
+    console.log(JSON.stringify({ event: 'talk.checkin', user: user.id, harm, trace }));
+    return json(done.data);
   }
 
   if (body.action === 'voice') {

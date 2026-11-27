@@ -343,6 +343,14 @@ test('Question of the day (D125): only inside a couple, never the answers table'
   refused(await signedOut.rpc('couple_question' as never), 'signed out, there is no question');
 });
 
+test('Daily check-in (D126): mine only; nobody else plays the AI part', async () => {
+  refused(await raw.schema('private' as 'public').from('rel_checkins').select('*'), 'reading anyone\'s check-ins');
+  refused(await raw.rpc('checkin_ai_claim' as never, { p_user: y.id } as never), 'claiming Y\'s check-in for the AI');
+  refused(await raw.rpc('checkin_ai_done' as never, { p_user: y.id, p_text: 'x', p_harm: false } as never), 'writing Saathi\'s ideas into Y\'s check-in');
+  assert.ok(Array.isArray((await x.backend.checkins()).entries), 'X reads X\'s own check-ins');
+  refused(await signedOut.rpc('my_checkins' as never), 'signed out, there are no check-ins');
+});
+
 test('Couple mode (D120): only after a match, and only for the two, over the API too', async () => {
   // X and Y never matched: no couple can start, and the tables are in `private`, which PostgREST does not serve.
   refused(await raw.rpc('couple_ask', { p_to: y.id }), 'starting Couple mode with Y without a match');

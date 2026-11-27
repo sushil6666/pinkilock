@@ -412,6 +412,11 @@ nudge_key, created_at, sent_at from notifications where nudge_key is not null or
 To stop them all at once in an emergency: `select cron.unschedule('pinkilock-nudges')` (a migration
 puts it back); one person turns theirs off on Me.
 
+Daily check-in reminders (D126) are kind `checkin_daily` from the `pinkilock-checkin-reminders` cron
+job at :03, only for people who picked an hour. Saathi's check-in ideas need the same
+`ANTHROPIC_API_KEY` as Saathi; without it the page shows the tip of the day. The notes are private:
+never read them in the SQL editor except to answer that person's own request.
+
 ### Trust scores are stale, or an `analytics-worker` issue is open
 
 Open the failing run.

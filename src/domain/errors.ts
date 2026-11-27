@@ -198,6 +198,11 @@ export const ERRORS = {
   // Question of the day (D125).
   PL235: 'Write an answer of up to 300 characters.',
   PL236: 'You have answered today\'s question. A new one comes tomorrow.',
+  // Daily relationship check-in (D126).
+  PL237: 'Pick how today felt.',
+  PL238: 'Keep each note to 500 characters.',
+  PL239: 'You have checked in today. Come back tomorrow.',
+  PL240: 'Pick a reminder time between 6 pm and 10 pm, or turn it off.',
 
   PA001: 'Phone sign-in is not switched on yet.',
   PA002: 'Email sign-in is not switched on yet.',
