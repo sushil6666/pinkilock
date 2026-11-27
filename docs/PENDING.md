@@ -26,13 +26,13 @@ merge, **Supabase deploy** and **Web deploy** run on their own; check they go gr
 - [x] **#101** Bring a friend: referral rewards (D118). Merged 2026-11-27.
 - [x] **#102** Couple mode after a match (D120). Merged 2026-11-27.
 - [x] **#103** This week on Plans: three plan ideas each Monday and city events (D121). Merged 2026-11-27.
-- [ ] **#105** Your record: kept-plan streak and private city standing (D122). Next.
-- [ ] **#106** With friends in Couple mode. After #105.
-- [ ] **#107** Gentle reminders, at most 3 pushes a week. After #106. The real push test on a phone
-      (step 3) checks it too.
-- [ ] **#104** This list. Any time.
+- [x] **#104** This list. Merged 2026-11-27.
+- [x] **#105** Your record: kept-plan streak and private city standing (D122). Merged 2026-11-27.
+- [x] **#106** With friends in Couple mode. Merged 2026-11-27.
+- [x] **#107** Gentle reminders, at most 3 pushes a week. Merged 2026-11-27. The real push test on a
+      phone (step 3) checks it too.
 
-#105, #106 and #107 are each built on the one before, so keep that order.
+Nothing is waiting to merge right now. New PRs from Claude threads get added here.
 
 How: open the PR on GitHub, "Merge pull request", "Confirm merge". If GitHub says the branch is out
 of date or has conflicts, tell the thread that made it; do not fix it in the browser.
@@ -183,6 +183,10 @@ One lawyer can take all of the legal briefs together. Each item's full question 
       in a new migration and switches wrong places off. Start with the 8 metros. Details:
       `OPERATIONS.md`, "Opening a country or a city".
 
+- [ ] **City events (D121).** Plans shows what is on in each city from `public.city_events`, which
+      is empty until the team adds checked events. Add each with the SQL in `OPERATIONS.md`,
+      "City events (D121)"; take one down with `active = false`, never delete it.
+
 ## 12. Decisions waiting for you
 
 Each is in `docs/decisions.md`. Tell a thread your pick and it records and builds it.
@@ -233,3 +237,4 @@ Moved here with the date when ticked.
 - 2026-11-17 Website live on Cloudflare Pages (pinkilock.pages.dev).
 - 2026-11-25 Repository public; Actions minutes problem gone (D100).
 - 2026-11-27 Pink Gold (#98) and the store listing text (#99) merged.
+- 2026-11-27 Payment pause, referrals and the retention work (#100 to #107) merged.
