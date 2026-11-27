@@ -24,6 +24,7 @@
 #                SMTP_PORT variables (email sign-in codes; until they exist email sign-in is off,
 #                because Supabase's own mailer only reaches the project's team). Set them as
 #                environment secrets and variables to give production a sender of its own.
+#                PAID_FEATURES variable: `on` takes payments; anything else, or unset, pauses them (D117).
 name: Supabase deploy
 
 on:
@@ -292,6 +293,19 @@ jobs:
           echo "select private.set_config('line_review', :'m')" \
             | psql "$(scripts/supabase-db-url.sh postgres "$SUPABASE_DB_PASSWORD")" -v ON_ERROR_STOP=1 -qAt -v m="$mode" >/dev/null
           echo "- Profile line review: $mode" >> "$GITHUB_STEP_SUMMARY"
+      - name: Payments switch (paid features), off unless PAID_FEATURES is on
+        # D117. Off by default: nothing is sold (packs, Pink Gold plans, Boost packs), Saathi has one
+        # free session a day, the Spicy unlock is free once a week, and paid listener calls and treats
+        # wait. The features stay. Set the repository (or environment) variable PAID_FEATURES to `on`
+        # and run this workflow to take payments again; no code change. OPERATIONS.md, "Paid features".
+        env:
+          PAID_FEATURES: ${{ vars.PAID_FEATURES }}
+        run: |
+          paid=false
+          [ "$PAID_FEATURES" = on ] && paid=true
+          echo "select private.set_config('paid', :'p')" \
+            | psql "$(scripts/supabase-db-url.sh postgres "$SUPABASE_DB_PASSWORD")" -v ON_ERROR_STOP=1 -qAt -v p="$paid" >/dev/null
+          if [ "$paid" = true ]; then echo "- Payments: on" >> "$GITHUB_STEP_SUMMARY"; else echo "- Payments: paused (set PAID_FEATURES to on to take payments)" >> "$GITHUB_STEP_SUMMARY"; fi
       - name: Connect Postgres to the push function
         # A fresh shared secret on every deploy, stored as a function secret and in Vault.
         run: scripts/push-config.sh remote "$(scripts/supabase-db-url.sh postgres "$SUPABASE_DB_PASSWORD")"

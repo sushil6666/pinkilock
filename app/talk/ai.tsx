@@ -76,7 +76,10 @@ export default function TalkAi() {
   const left = aiMinutesLeft(paidUntil, now);
   // A Pink Gold member's free session this month (D116) needs no credits.
   const goldFree = !!useStore((s) => s.wallet?.saathiFree);
-  const pack = goldFree ? undefined : packToContinue(state.balance);
+  // D117: while payments are paused, Saathi is free for one session a day, with nothing to buy.
+  const paused = !!state.paused;
+  const usedToday = paused && !!state.saathiUsedToday;
+  const pack = goldFree || paused ? undefined : packToContinue(state.balance);
 
   // Start, or continue, a session. The chat (and everything said in it) stays as it is.
   const session = async (topUp?: string) => {
@@ -112,7 +115,8 @@ export default function TalkAi() {
     }
     // No time paid: say so here. A message about self-harm still goes, and makes the chat free.
     if (!mayTalk && !mentionsHarm(body)) {
-      setError(t(paidUntil === null ? 'talk.sessionFirst' : 'talk.sessionOver', PRICE));
+      setError(paused ? t(usedToday ? 'paused.saathiUsed' : 'paused.saathiFirst', { m: AI_SESSION_MINUTES })
+        : t(paidUntil === null ? 'talk.sessionFirst' : 'talk.sessionOver', PRICE));
       return;
     }
     const before = turns;
@@ -145,10 +149,19 @@ export default function TalkAi() {
   };
 
   const cost = harm ? t('talk.aiFree') : pass ? `${t('talk.aiPassActive')} ${t('talk.aiPassOn', { time: until(pass) })}`
-    : paidUntil && left > 0 ? t('talk.sessionLeft', { count: left }) : t('talk.aiCost', PRICE);
+    : paidUntil && left > 0 ? t('talk.sessionLeft', { count: left }) : paused ? t('paused.saathiCost', { m: AI_SESSION_MINUTES }) : t('talk.aiCost', PRICE);
 
   // Before the first session, near the end of one, or after it: pay from the wallet, or add credits and go on.
-  const pay = mayContinue && state.open.ai ? (
+  const pay = mayContinue && state.open.ai && paused ? (
+    <View style={[panel, styles.pay]}>
+      {usedToday ? <T v="caption" c={color.textDim}>{t('paused.saathiUsed')}</T> : (
+        <>
+          <T v="caption" c={color.textDim}>{t('paused.saathiFirst', { m: AI_SESSION_MINUTES })}</T>
+          <Button icon="message-circle" busy={buying === 'session'} disabled={!!buying} label={t('paused.saathiStart')} onPress={() => session()} />
+        </>
+      )}
+    </View>
+  ) : mayContinue && state.open.ai ? (
     <View style={[panel, styles.pay]}>
       {goldFree ? <T v="caption" c={color.pink}>{t('gold.saathiFree', { m: AI_SESSION_MINUTES })}</T> : (
         <T v="caption" c={paidUntil === null ? color.textDim : color.gold}>
