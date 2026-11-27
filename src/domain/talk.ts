@@ -329,6 +329,9 @@ export interface Talk {
   /** A call that is ringing or on, either side; else the last one, if it just ended. */
   call: TalkCall | null;
   open: TalkOpen;
+  /** D117: payments are paused; Saathi then has one free session a day, used already today or not. */
+  paused?: boolean;
+  saathiUsedToday?: boolean;
 }
 
 export const emptyTalk = (): Talk => ({

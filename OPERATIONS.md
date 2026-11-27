@@ -622,6 +622,40 @@ A phone build made before this change has no voice module: build a new APK (EAS)
 To see a call's sessions in the SQL editor: `select user_id, joined_at, left_at from
 private.spicy_call_voice where call_id = '<id>' order by joined_at`.
 
+### Paid features
+
+Payments are **paused** (D117, Sushil 2026-11-27) until Pinkilock has a good number of users. The
+paid features stay on screen and keep working; only taking money stops. One switch decides it: the
+repository variable `PAID_FEATURES`. Unset (or anything but `on`), payments are paused.
+
+While paused:
+
+- Nothing can be bought: credit packs, Pink Gold plans and Boost packs are refused on the server
+  (PL188), the `wallet` function makes no Razorpay order, and the app and website show no prices and
+  no Pay buttons. An order paid before the pause is still credited.
+- Pink Gold, its badge and perks, and Boosts keep working for whoever has them. They can be given as
+  rewards (a referral programme will use the same calls):
+
+  ```sql
+  select private.pink_gold_gift('<user id>', 7, 'referral');       -- 7 more days (starts now if not a member)
+  select private.boost_gift('<user id>', 1, 'referral:<friend id>'); -- 1 Boost, once per reason, used within a month
+  ```
+- Saathi is free: one 15-minute session a day each (`private.saathi_free_days`), which keeps the
+  Claude bill small. A chat that mentions self-harm stays free and is never cut off.
+- Paid calls with listeners and Treat the plan wait (PL188). The free first call with a listener
+  (D109) still works.
+- Spicy mode's unlock is free, one new unlock per person per 7 days (PL190). Anything paid towards
+  a match before the pause goes back when it is unlocked for free.
+
+**To take payments again** (no code change): GitHub, **Settings, Secrets and variables, Actions,
+Variables, New repository variable** `PAID_FEATURES` = `on`, then run **Supabase deploy** (Actions).
+Its summary says "Payments: on". The app reads the switch when it opens, so people see prices again
+the next time they open it. The Razorpay keys ("Wallet", below) are still needed to take money. To
+pause again, set it to `off` and run the deploy. Production can have its own value as an
+environment variable of the `production` environment.
+
+To check it in the SQL editor: `select public.app_switches();`.
+
 ### Wallet
 
 Credits (D104) are a closed loop: nothing in the app or the database can pay a person, and

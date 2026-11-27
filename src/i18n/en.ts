@@ -72,6 +72,24 @@ export const en = {
     mine: 'You are a Pink Gold member',
   },
 
+  /** Payments paused (D117): the paid features stay, nothing is sold. */
+  paused: {
+    goldTitle: 'Not for sale right now',
+    goldBody: 'Pink Gold cannot be bought for now. Members keep every perk.',
+    boosts: 'Boosts cannot be bought for now. Any you have work as usual.',
+    wallet: 'Buying credits is paused for now. You can still earn credits and spend them here.',
+    saathiPrice: 'Free for now: one {m}-minute chat a day',
+    saathiCost: 'Free for now: one {m}-minute chat a day.',
+    saathiFirst: 'Start today\'s free chat, then talk for up to {m} minutes.',
+    saathiStart: 'Start today\'s free chat',
+    saathiUsed: 'You have had today\'s free chat with Saathi. Come back tomorrow.',
+    listeners: 'Paid calls with listeners open later. Your free first call works now.',
+    listenersLocked: 'Paid calls with listeners open later. You can still unlock your free first call.',
+    spicyBody: 'You both said yes. Unlocking is free for now: one new match a week for each of you. Nothing goes to {name}.',
+    spicyFree: 'Unlock for free',
+    spicyNext: 'You have used this week\'s free unlock. Your next one opens on {date}.',
+  },
+
   /** Pink Gold plans and Boosts (D116). */
   gold: {
     eyebrow: 'Membership',

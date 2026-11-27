@@ -5,7 +5,8 @@
  *
  * The app never sets a price and never says it was paid; this function and the database decide.
  *
- *   POST {action: 'status'}                         is Razorpay set up here? {open, key} (the key id is public)
+ *   POST {action: 'status'}                         is Razorpay set up here, and are payments on (D117)?
+ *                                                   {open, key, test, paused} (the key id is public)
  *   POST {action: 'order', pack}                    signed in: makes a Razorpay order for the pack's
  *                                                   price (wallet_pack_price) and files it for the
  *                                                   person (wallet_open_order). {order, key, paise, credits}
@@ -121,7 +122,14 @@ Deno.serve(async (req) => {
   if (req.headers.has('X-Razorpay-Signature')) return webhook(req, trace);
 
   const body = (await req.json().catch(() => ({}))) as { action?: string; pack?: string; order?: string; payment?: string; signature?: string };
-  if (body.action === 'status') return json({ open: OPEN, key: OPEN ? KEY_ID : null, test: KEY_ID.startsWith('rzp_test_') });
+  // D117: while payments are paused (public.app_switches, set by the deploy from PAID_FEATURES),
+  // top-ups and plans are closed whatever the keys, and no Razorpay order is made.
+  const paid = async () => (await rpc<{ paid?: boolean }>('app_switches', {}, trace)).data?.paid === true;
+  if (body.action === 'status') {
+    const on = await paid();
+    const open = OPEN && on;
+    return json({ open, key: open ? KEY_ID : null, test: KEY_ID.startsWith('rzp_test_'), paused: !on });
+  }
 
   const token = (req.headers.get('Authorization') ?? '').replace(/^Bearer /, '');
   const who = token ? await fetch(`${BASE}/auth/v1/user`, { headers: { apikey: SERVICE_KEY, Authorization: `Bearer ${token}` } }) : null;
@@ -130,6 +138,7 @@ Deno.serve(async (req) => {
   if (!OPEN) return json({ code: 'PL144', message: 'Top-ups are not open yet. You can still earn credits.' }, 400);
 
   if (body.action === 'order') {
+    if (!(await paid())) return json({ code: 'PL188', message: 'Paid features are paused for now. Everything else is free to use.' }, 400);
     const price = await rpc<number | null>('wallet_pack_price', { p_pack: body.pack ?? '' }, trace);
     if (price.error || !price.data) return json({ code: 'PL136', message: 'Pick a pack from the list.' }, 400);
     const made = await fetch(`${RAZORPAY}/orders`, {

@@ -32,6 +32,8 @@ interface State {
   wallet: Wallet | null;
   setWallet(w: Wallet): void;
   loadWallet(): Promise<Wallet>;
+  /** D117: payments are on. Off (the default, and on any error) the app shows no prices or Pay buttons. */
+  paid: boolean;
 
   boot(): Promise<void>;
   completeOnboarding(input: OnboardingInput): Promise<void>;
@@ -113,6 +115,7 @@ export const useStore = create<State>((set, get) => {
     notice: null,
     account: null,
     wallet: null,
+    paid: false,
     setWallet: (wallet) => set({ wallet }),
     async loadWallet() {
       const wallet = await backend.wallet();
@@ -130,6 +133,7 @@ export const useStore = create<State>((set, get) => {
         set({ ...fromSnapshot(snap), ready: true, bootError: null });
         // Today counts for the wallet streak (D104). Never in the way of the app opening.
         if (snap.me) backend.walletVisit().then((wallet) => set({ wallet }), quiet('wallet.visit'));
+        backend.switches().then((s) => set({ paid: s.paid }), quiet('switches'));
         // Which device this is, so a friend's sign-up counts once (D118).
         if (snap.me) void noteDevice(backend);
       } catch (e) {

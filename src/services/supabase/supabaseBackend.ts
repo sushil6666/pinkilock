@@ -18,6 +18,7 @@ import { log, quiet } from '../../lib/log';
 import { isMood, type NoteKind, type SelfLove } from '../../domain/selfLove';
 import { MAX_CALLS, isCallMinutes, noCall, type CallAnswer, type CallOutcome, type CallStatus, type SpicyCall } from '../../domain/calls';
 import { isBoundary, type Spicy, type SpicyPlan } from '../../domain/spicy';
+import { switchesFrom } from '../../domain/paid';
 import { SPICY_QUIZ, type QuizQuestion, type QuizResult, type SpicyTerms } from '../../domain/spicyQuiz';
 import {
   ACCEPTS, SEXES, TOPICS, WANTS, aiHistory, checkAiMessage, checkKyc, checkListener, emptyTalk, referralCode,
@@ -67,8 +68,11 @@ function quizResultFrom(raw: unknown): QuizResult {
 
 /** spicy_with() and spicy_yes(). */
 function spicyPlanFrom(raw: unknown): SpicyPlan {
-  const r = (raw ?? {}) as { open?: boolean; my_yes?: boolean; mutual?: boolean; their_boundaries?: string[]; unlock?: { mine?: number; theirs?: number; done?: boolean }; kept_call?: boolean; my_share?: boolean; discord?: string | null; telegram?: string | null; signal?: string | null };
-  const unlock = { mine: r.unlock?.mine ?? 0, theirs: r.unlock?.theirs ?? 0, done: !!r.unlock?.done };
+  const r = (raw ?? {}) as { open?: boolean; my_yes?: boolean; mutual?: boolean; their_boundaries?: string[]; unlock?: { mine?: number; theirs?: number; done?: boolean; free?: boolean; free_next?: string | null }; kept_call?: boolean; my_share?: boolean; discord?: string | null; telegram?: string | null; signal?: string | null };
+  const unlock = {
+    mine: r.unlock?.mine ?? 0, theirs: r.unlock?.theirs ?? 0, done: !!r.unlock?.done,
+    ...(r.unlock?.free ? { free: true, freeNext: r.unlock.free_next ? Date.parse(r.unlock.free_next) : null } : {}),
+  };
   return { open: !!r.open, myYes: !!r.my_yes, mutual: !!r.mutual, theirBoundaries: (r.their_boundaries ?? []).filter(isBoundary), unlock, keptCall: !!r.kept_call, myShare: !!r.my_share, discord: r.discord ?? null, telegram: r.telegram ?? null, signal: r.signal ?? null };
 }
 
@@ -102,7 +106,7 @@ function talkFrom(raw: unknown, open: TalkOpen): Talk {
   const r = (raw ?? {}) as {
     sex?: string | null; want?: string; pass_until?: string | null; ai_today?: number; free_call?: string; free_reason?: string | null;
     profile?: { face?: boolean; handle?: boolean; plans?: boolean }; referral_code?: string; friends_joined?: number; friends_verified?: number;
-    paid?: number; balance?: number; listener?: RawListener | null; call?: RawCall | null;
+    paid?: number; balance?: number; listener?: RawListener | null; call?: RawCall | null; paused?: boolean; saathi_used_today?: boolean;
   };
   const sex = (x: unknown): Sex => (SEXES.includes(x as Sex) ? (x as Sex) : 'unsaid');
   const l = r.listener;
@@ -127,6 +131,7 @@ function talkFrom(raw: unknown, open: TalkOpen): Talk {
       startedAt: ms(c.started_at), together: c.together ?? 0, theyHere: !!c.they_here, end: (c.end as TalkCallEnd | null) ?? null, charged: c.charged ?? 0, refunded: c.refunded ?? 0,
     } : null,
     open,
+    paused: r.paused === true, saathiUsedToday: r.saathi_used_today === true,
   };
 }
 
@@ -1078,9 +1083,14 @@ export function createSupabaseBackend(url: string, anonKey: string, storage: Ses
       await uid();
       return walletFrom(await rpc('wallet_visit'));
     },
+    async switches() {
+      await uid();
+      return switchesFrom(await rpc('app_switches'));
+    },
     async topUpStatus() {
       if (!topUpsHere(platform) || !checkout) return { open: false, test: false };
       try {
+        // The function says closed while payments are paused (D117), whatever the keys.
         const r = await walletFunction<{ open?: boolean; test?: boolean }>({ action: 'status' });
         return { open: !!r.open, test: !!r.test };
       } catch {

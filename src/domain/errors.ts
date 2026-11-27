@@ -172,7 +172,12 @@ export const ERRORS = {
   PL185: 'You have no Boosts left. Get one first.',
   PL186: 'You have a lot of Boosts waiting. Use some first.',
   PL187: 'You have 15 asks open. Wait for an answer first.',
-  // Bring a friend (D118). PL188 to PL191 are the payment pause (D117).
+  // Paid features paused (D117).
+  PL188: 'Paid features are paused for now. Everything else is free to use.',
+  PL189: 'You have had your free time with Saathi today. Come back tomorrow.',
+  PL190: 'Your free unlock for this week is used. The next one opens 7 days after it.',
+  PL191: 'Give 1 to 366 days of Pink Gold, or 1 to 12 Boosts with a reason.',
+  // Bring a friend (D118).
   PL192: 'This device could not be checked. Restart the app and try again.',
 
   PA001: 'Phone sign-in is not switched on yet.',
