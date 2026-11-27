@@ -406,3 +406,21 @@ test('Pink Gold (D115, D116): no making myself a member or buying without paying
   assert.equal(card.error, null, 'my card reads');
   assert.equal(card.data?.pink_gold, false, 'and says I am not Pink Gold');
 });
+
+test('Payments paused (D117): no turning payments on, no paid path around the switch, no gifts to myself, over the API too', async () => {
+  const sw = await raw.rpc('app_switches');
+  assert.equal(sw.error, null, 'the switches read');
+  assert.deepEqual(Object.keys(sw.data ?? {}), ['paid'], 'and say only whether payments are on');
+  refused(await signedOut.rpc('app_switches'), 'signed out, no switches to read');
+  refused(await raw.schema('private' as 'public').rpc('set_config', { p_key: 'paid', p_value: 'true' }), 'turning payments on');
+  refused(await raw.schema('private' as 'public').from('config').update({ value: 'true' }).eq('key', 'paid'), 'writing the switch');
+  refused(await raw.schema('private' as 'public').rpc('wallet_open_order_before_pause', { p_user: x.id, p_pack: 'g1', p_order: 'order_pause01' }), 'opening an order around the switch');
+  refused(await raw.schema('private' as 'public').rpc('spicy_pay_before_pause', { p_other: y.id, p_share: 'full' }), 'paying the unlock around the switch');
+  refused(await raw.schema('private' as 'public').rpc('talk_ai_session_before_pause', { p_chat: null }), 'a Saathi session around the switch');
+  refused(await raw.schema('private' as 'public').rpc('pink_gold_gift', { p_user: x.id, p_days: 30 }), 'giving myself Pink Gold days');
+  refused(await raw.schema('private' as 'public').rpc('boost_gift', { p_user: x.id, p_count: 6, p_ref: 'me' }), 'giving myself Boosts');
+  refused(await raw.schema('private' as 'public').from('saathi_free_days').delete().eq('user_id', x.id), 'clearing my free Saathi days');
+  if (sw.data?.paid === false) {
+    await assert.rejects(x.backend.treatPlan('00000000-0000-0000-0000-000000000000', 'any', 'coffee'), (e: unknown) => e instanceof AppError && e.code === 'PL188', 'no treat while paused');
+  }
+});

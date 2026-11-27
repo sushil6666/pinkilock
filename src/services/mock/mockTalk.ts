@@ -62,6 +62,8 @@ export interface MockTalkDb {
   aiDays: Record<string, number>;
   lastAi: number;
   chats: Record<string, { harm: boolean; minutes: number[]; messages: number; at: number; paidUntil?: number | null; sessions?: number }>;
+  /** D117: the days (YYYY-MM-DD) I had my free Saathi session while payments are paused. */
+  saathiDays?: string[];
   calls: MockTalkCall[];
   blocks: string[];
   reports: { call: string; reason: TalkReportReason; at: number }[];
@@ -86,6 +88,8 @@ export interface MockTalkContext {
   balance(): { paid: number; earned: number };
   /** A Pink Gold member's free Saathi session this month (D116): true once, and it is then used. */
   goldSaathi(): boolean;
+  /** D117: payments are on. Off, Saathi has one free session a day and paid listener calls wait. */
+  paid(): boolean;
   profileDone(): ProfileDone;
   linked(): boolean;
   age(): number;
@@ -162,6 +166,7 @@ export function createMockTalk(ctx: MockTalkContext): Pick<Backend,
       },
       call,
       open: { ai: true, voice: true, payouts: true },
+      paused: !ctx.paid(), saathiUsedToday: (tk.saathiDays ?? []).includes(dayOf(now)),
     };
   }
 
@@ -239,6 +244,15 @@ export function createMockTalk(ctx: MockTalkContext): Pick<Backend,
       const ch = tk.chats[id];
       if (ch.harm || (tk.passUntil !== null && tk.passUntil > now)) return { chat: id, paidUntil: ch.paidUntil ?? null, charged: 0, free: true };
       if (!aiMayContinue(ch.paidUntil ?? null, now)) fail('PL182');
+      if (!ctx.paid()) {
+        // D117: one free 15-minute session a day while payments are paused.
+        const day = dayOf(now);
+        if ((tk.saathiDays ?? []).includes(day)) fail('PL189');
+        tk.saathiDays = [...(tk.saathiDays ?? []).slice(-30), day];
+        Object.assign(ch, { paidUntil: Math.max(ch.paidUntil ?? now, now) + AI_SESSION_MS, sessions: (ch.sessions ?? 0) + 1, at: now });
+        ctx.save();
+        return { chat: id, paidUntil: ch.paidUntil!, charged: 0, free: false };
+      }
       const gift = ctx.goldSaathi();
       if (!gift) ctx.spend('talk_ai', AI_SESSION_CREDITS, `${id}:s${(ch.sessions ?? 0) + 1}`);
       Object.assign(ch, { paidUntil: Math.max(ch.paidUntil ?? now, now) + AI_SESSION_MS, sessions: (ch.sessions ?? 0) + 1, at: now });
@@ -256,6 +270,7 @@ export function createMockTalk(ctx: MockTalkContext): Pick<Backend,
     },
     talkCall: (listenerId, length, free) =>
       change((tk, now) => {
+        if (!ctx.paid() && !free) fail('PL188');
         if (!tk.sex) fail('PL158');
         const len = free ? FREE_CALL_MINUTES : length;
         if (!free && !(CALL_LENGTHS as readonly number[]).includes(length)) fail('PL160');
