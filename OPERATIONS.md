@@ -301,6 +301,12 @@ the SQL editor. A person's request about them is answered with their data downlo
 on Bounce back (Tele-MANAS 14416, `SUPPORT_LINES` in `src/domain/selfLove.ts`) should be checked
 before launch and when a country opens.
 
+**Couple mode data (D120).** Couples, date lists, special days and challenge ticks are in
+`private.couples`, `private.couple_ideas`, `private.couple_days` and `private.couple_weeks`. They are the
+two people's alone: nobody reads them in the SQL editor except to answer a report, and a request is
+answered with the data download (`couples`). Nothing to set up: it works once the migration is
+deployed.
+
 **Spicy mode data (D103).** Usernames, boundaries and yeses are in `private.spicy` and
 `private.spicy_yes`. Like Self love, nobody reads them in the SQL editor except to answer a report
 about that person, and a person's request is answered with their data download. Spicy mode should not

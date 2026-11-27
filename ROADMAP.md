@@ -107,6 +107,11 @@ someone, and delete their account, on both platforms, against the production pro
   plans, mood check-in with streak and gold badge, gratitude jar, boundaries) and, after a no, a kind
   note, a 3-day reset, a private journal, a pause from Discover and help lines (Tele-MANAS 14416).
 
+- [x] **Couple mode** (D120): after a match, a shared corner for the two of them: a date list of
+  catalogue ideas that becomes ordinary pinky promises, special days with anniversaries and day
+  counts, and a couple challenge each week with a streak badge. First of the "keep coming back after
+  a match" work; weekly plan ideas, city events, streaks and gentle pushes follow.
+
 - [x] **Spicy mode** (D103): an opt-in for two adults, off by default, with the safety rules, 18+
   and rules yeses, boundaries from a list, and from day one, with a yes from both, a hand-off to
   Discord (first), Telegram or Signal. Needs a lawyer's view before launch (O14). Since D105 a

@@ -311,6 +311,16 @@ test('Self love (D101): mine alone, over the API too', async () => {
   await assert.rejects(x.backend.pauseDiscover(30), (e: unknown) => e instanceof AppError && e.code === 'PL121', 'a pause is 1 to 14 days');
 });
 
+test('Couple mode (D120): only after a match, and only for the two, over the API too', async () => {
+  // X and Y never matched: no couple can start, and the tables are in `private`, which PostgREST does not serve.
+  refused(await raw.rpc('couple_ask', { p_to: y.id }), 'starting Couple mode with Y without a match');
+  refused(await raw.schema('private' as 'public').from('couples').select('*'), 'reading the couples table');
+  refused(await raw.schema('private' as 'public').from('couples').insert({ a: x.id, b: y.id, status: 'on' }), 'making a couple with Y by hand');
+  refused(await raw.rpc('couple_add_idea', { p_idea: 'boba_run' }), 'adding to a date list without a couple');
+  refused(await signedOut.rpc('my_couple'), 'signed out, there is no couple to read');
+  assert.equal((await x.backend.couple()).status, 'none', 'X has no couple');
+});
+
 test('Spicy mode (D103): nothing of anyone else\'s, over the API too', async () => {
   // The tables are in `private`, which PostgREST does not serve.
   refused(await raw.schema('private' as 'public').from('spicy').select('*'), 'reading the Spicy table');
