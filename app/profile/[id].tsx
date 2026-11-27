@@ -1,4 +1,5 @@
 /** Someone's profile: what they are up for, their record, and what stays locked until you both show. */
+import { Fold } from '@/components/ui/Fold';
 import { Feather } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
@@ -87,13 +88,10 @@ export default function ProfileScreen() {
       } right={
       <View style={{ gap: space.xl }}>
         <TrustBadge person={person} size="lg" />
-        {answersIn(person.answerMinutes) ? <T v="caption" c={color.textDim}>{answersIn(person.answerMinutes)}</T> : null}
 
         {person.tagline ? <T v="heading">{person.tagline}</T> : null}
         {me && me.id !== person.id ? <Spark me={me} person={person} /> : null}
         {me && me.id !== person.id ? <SpicyHandoff otherId={person.id} name={person.name} route="/profile/[id]" /> : null}
-        <Vouches person={person} />
-        {person.vibes.length > 0 && <View style={styles.wrap}>{person.vibes.map((v) => <Chip key={v} label={v} />)}</View>}
 
         <View style={{ gap: space.sm }}>
           <T v="label" c={color.textDim}>{t('profile.upFor')}</T>
@@ -108,15 +106,18 @@ export default function ProfileScreen() {
                 onPress={() => router.push({ pathname: '/invite/new', params: { to: person.id, idea: ideaId } })}
                 style={({ pressed }) => [styles.idea, pressed && { borderColor: color.pink }]}
               >
-                <T style={{ fontSize: 26, lineHeight: 34 }} maxFontSizeMultiplier={1}>{idea.emoji}</T>
-                <View style={{ flex: 1 }}>
-                  <T v="bodyBold">{idea.title}</T>
-                  <T v="caption" c={color.textDim}>{t('onboarding.ideaSub', { minutes: idea.minutes, blurb: idea.blurb })}</T>
-                </View>
+                <T style={{ fontSize: 22, lineHeight: 28 }} maxFontSizeMultiplier={1}>{idea.emoji}</T>
+                <T v="bodyBold" style={{ flex: 1 }}>{idea.title}</T>
+                <T v="caption" c={color.textDim}>{t('fold.minutes', { minutes: idea.minutes })}</T>
                 {shared.includes(ideaId) ? <Tag label={t('profile.youToo')} tone={color.gold} /> : !live ? <Feather name="arrow-up-right" size={18} color={color.textMute} /> : null}
               </Pressable>
             );
           })}
+          <Fold title={t('fold.more', { name: person.name })}>
+            {answersIn(person.answerMinutes) ? <T v="caption" c={color.textDim}>{answersIn(person.answerMinutes)}</T> : null}
+            <Vouches person={person} />
+            {person.vibes.length > 0 && <View style={styles.wrap}>{person.vibes.map((v) => <Chip key={v} label={v} />)}</View>}
+          </Fold>
         </View>
 
         <View style={{ gap: space.sm }}>
@@ -154,5 +155,5 @@ export default function ProfileScreen() {
 const styles = StyleSheet.create({
   hero: { height: 300, borderRadius: radius.card, overflow: 'hidden', borderWidth: 1, borderColor: color.line, justifyContent: 'flex-end' },
   wrap: { flexDirection: 'row', flexWrap: 'wrap', gap: space.sm },
-  idea: { flexDirection: 'row', alignItems: 'center', gap: space.md, borderWidth: 1, borderColor: color.line, borderRadius: radius.card, backgroundColor: color.surface, padding: space.md, minHeight: 64 },
+  idea: { flexDirection: 'row', alignItems: 'center', gap: space.md, borderWidth: 1, borderColor: color.line, borderRadius: radius.card, backgroundColor: color.surface, paddingHorizontal: space.md, paddingVertical: space.sm, minHeight: 52 },
 });

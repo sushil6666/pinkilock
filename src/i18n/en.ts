@@ -711,6 +711,9 @@ export const en = {
     on: 'On',
     minutes: '{minutes} min',
     more: 'More about {name}',
+    ideas: { one: '{count} idea', other: '{count} ideas' },
+    about: 'How it works',
+    perks: { one: '{count} perk', other: '{count} perks' },
   },
 
   discover: {
