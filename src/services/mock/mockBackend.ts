@@ -39,6 +39,10 @@ import {
 import { BOOST_VALID_MONTHS, MEMBER_FREE_BOOSTS, addMonths, boostPackOf, canBuy, goldUntilAfter, isShopId, istMonth, istMonthEnd, openAskCap, planOf } from '../../domain/pinkGold';
 import { t } from '../../i18n';
 import { createMockTalk, emptyMockTalk, type MockTalkDb } from './mockTalk';
+import { DEVICE_ID, REFERRAL_BOOSTS, REFERRAL_GOLD_DAYS, REFERRAL_MONTH_AT, REFERRAL_MONTH_DAYS, type MyReferrals } from '../../domain/referrals';
+
+/** The made-up friend who joins with my link counts this long after (D118). */
+const FRIEND_COUNTS_AFTER = 4000;
 
 const KEY = 'pinkilock.mock.v1';
 const LATENCY = 280;
@@ -84,6 +88,10 @@ interface Db {
   spicyCalls?: Record<string, MockCall[]>;
   /** Talk mode (D108), mine. */
   talk?: MockTalkDb;
+  /** Bring a friend (D118): the made-up friends who joined with my link, and when each counts. */
+  referrals?: { friends: { countsAt: number; counted?: boolean }[]; month?: boolean };
+  /** This app's device id, once noted. */
+  device?: string;
 }
 
 /** A call as private.spicy_calls holds it, from my side. The made-up person is always on time. */
@@ -132,7 +140,7 @@ interface MockWallet {
   /** Pink Gold (D115, D116): when mine ends; absent when I never had it. */
   goldUntil?: number;
   /** Boosts (D116): bought ones and a member's free ones, until used or lapsed. */
-  boosts?: { source: 'bought' | 'member'; ref: string; expires: number; used?: number }[];
+  boosts?: { source: 'bought' | 'member' | 'gift'; ref: string; expires: number; used?: number }[];
   /** Months (Indian time) in which my free Saathi session as a member was used. */
   saathiMonths?: string[];
 }
@@ -650,9 +658,65 @@ export function createMockBackend(options: { captcha?: () => Promise<string | un
     blocked: () => false,
   });
 
+  // --- Bring a friend (D118), as in supabase/migrations/20261127000002_referrals.sql. The made-up
+  // friend who joins with my link counts a few seconds later: we get the same rewards as live. ---
+  function settleReferrals(d: Db, now: number) {
+    const r = (d.referrals ??= { friends: [] });
+    const w = walletOf(d);
+    const gift = (days: number) => { w.goldUntil = Math.max(w.goldUntil ?? 0, now) + days * DAY; };
+    for (const f of r.friends) {
+      if (f.counted || f.countsAt > now) continue;
+      f.counted = true;
+      const n = r.friends.filter((x) => x.counted).length;
+      gift(REFERRAL_GOLD_DAYS);
+      for (let i = 0; i < REFERRAL_BOOSTS; i++) (w.boosts ??= []).push({ source: 'gift', ref: `gift:referral:${n}`, expires: addMonths(now, BOOST_VALID_MONTHS) });
+      if (n === REFERRAL_MONTH_AT && !r.month) { r.month = true; gift(REFERRAL_MONTH_DAYS); }
+    }
+  }
+  function referralsView(d: Db, now = Date.now()): MyReferrals {
+    settleReferrals(d, now);
+    const r = d.referrals!;
+    d.talk ??= emptyMockTalk();
+    const face = myFaceList.some((f) => f.status === 'approved' || now - f.at >= PHOTO_CHECK_MS);
+    return {
+      code: d.talk.code,
+      joined: r.friends.length,
+      counted: r.friends.filter((f) => f.counted).length,
+      month: !!r.month,
+      needsPhone: true,
+      mine: d.talk.referredBy
+        ? { phone: !!d.phone, face, plans: (d.me?.ideaIds.length ?? 0) > 0, device: !!d.device, counted: false, via: 'link' }
+        : null,
+    };
+  }
+
   return {
     kind: 'mock',
     ...talkPart,
+
+    async myReferrals() {
+      const d = await load();
+      await wait(LATENCY);
+      if (!d.me) fail('PL002');
+      const view = referralsView(d);
+      save();
+      return view;
+    },
+    async noteDevice(device) {
+      if (!DEVICE_ID.test(device)) fail('PL192');
+      const d = await load();
+      d.device = device;
+      save();
+    },
+    async demoReferral() {
+      const d = await load();
+      await wait(LATENCY);
+      if (!d.me) fail('PL002');
+      (d.referrals ??= { friends: [] }).friends.push({ countsAt: Date.now() + FRIEND_COUNTS_AFTER });
+      const view = referralsView(d);
+      save();
+      return view;
+    },
 
     async boot() {
       const d = await load();

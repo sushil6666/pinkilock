@@ -406,3 +406,17 @@ test('Pink Gold (D115, D116): no making myself a member or buying without paying
   assert.equal(card.error, null, 'my card reads');
   assert.equal(card.data?.pink_gold, false, 'and says I am not Pink Gold');
 });
+
+test('Bring a friend (D118): no rewards without the server\'s check, over the API too', async () => {
+  refused(await raw.schema('private' as 'public').from('devices').select('*'), 'reading devices');
+  refused(await raw.schema('private' as 'public').from('referral_rewards').select('*'), 'reading referral rewards');
+  refused(await raw.schema('private' as 'public').from('referral_rewards').insert({ friend: y.id, referrer: x.id, nth: 1 }), 'giving myself a reward');
+  refused(await raw.schema('private' as 'public').from('talk_referrals').insert({ friend: y.id, referrer: x.id }), 'making someone my friend');
+  refused(await raw.schema('private' as 'public').rpc('referral_settle', { p_friend: y.id }), 'settling a friend');
+  refused(await raw.schema('private' as 'public').rpc('pink_gold_gift', { p_user: x.id, p_days: 7 }), 'gifting myself Pink Gold days');
+  refused(await raw.schema('private' as 'public').rpc('boost_gift', { p_user: x.id, p_count: 1, p_ref: 'x' }), 'gifting myself Boosts');
+  refused(await raw.rpc('note_device', { p_device: 'x; drop table' }), 'noting a device id that is not one');
+  const mine = await raw.rpc('my_referrals');
+  assert.equal(mine.error, null, 'my referrals read');
+  assert.equal((mine.data as { counted: number }).counted, 0, 'and no friend of mine counts');
+});

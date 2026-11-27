@@ -172,6 +172,8 @@ export const ERRORS = {
   PL185: 'You have no Boosts left. Get one first.',
   PL186: 'You have a lot of Boosts waiting. Use some first.',
   PL187: 'You have 15 asks open. Wait for an answer first.',
+  // Bring a friend (D118). PL188 to PL191 are the payment pause (D117).
+  PL192: 'This device could not be checked. Restart the app and try again.',
 
   PA001: 'Phone sign-in is not switched on yet.',
   PA002: 'Email sign-in is not switched on yet.',

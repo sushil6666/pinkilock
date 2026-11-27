@@ -12,6 +12,7 @@ import { peopleOf } from '../domain/invites';
 import { shown } from '../lib/report';
 import { quiet } from '../lib/log';
 import { claimKeptReferral } from '../lib/referral';
+import { noteDevice } from '../lib/device';
 import type { Wallet } from '../domain/wallet';
 
 interface State {
@@ -129,6 +130,8 @@ export const useStore = create<State>((set, get) => {
         set({ ...fromSnapshot(snap), ready: true, bootError: null });
         // Today counts for the wallet streak (D104). Never in the way of the app opening.
         if (snap.me) backend.walletVisit().then((wallet) => set({ wallet }), quiet('wallet.visit'));
+        // Which device this is, so a friend's sign-up counts once (D118).
+        if (snap.me) void noteDevice(backend);
       } catch (e) {
         set({ ready: true, bootError: shown(e, '/boot', 'PC001') });
       }
@@ -136,6 +139,7 @@ export const useStore = create<State>((set, get) => {
 
     async completeOnboarding(input) {
       set(fromSnapshot(await backend.completeOnboarding(input)));
+      void noteDevice(backend);
       // A friend's invite link opened before the profile existed (D109).
       void claimKeptReferral(backend);
     },
