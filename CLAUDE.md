@@ -8,7 +8,8 @@ Read first: `README.md` (run and deploy), `ARCHITECTURE.md` (how it fits togethe
 `OPERATIONS.md` (secrets, workflows, shipping changes, health checks, fixing incidents),
 `docs/phase-3-checklist.md` (what Phase 3 still needs from accounts and phones),
 `docs/build-plan.md` (the hardening plan and its work packages), `docs/decisions.md` (what was
-decided, when and why).
+decided, when and why), `docs/PENDING.md` (every task still open, in order; tick or add to it
+in the same PR when your work closes or opens one).
 
 ## Commands
 
