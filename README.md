@@ -10,6 +10,7 @@ one Expo codebase.
 - `ROADMAP.md`: the phases, what each must prove, and what is next
 - `docs/phase-2-checklist.md`: the steps left to finish Phase 2 (accounts and real phones)
 - `docs/phase-3-checklist.md`: what Phase 3 needs from you (SMS provider, production project, phones)
+- `docs/store-listing.md`: Play Store listing, ad text and screenshot captions (English and Hindi)
 - `CLAUDE.md`: the project rules, for Claude Code sessions
 
 ## Run it on your phone (mock data, no accounts needed)
