@@ -10,6 +10,7 @@ import { useState } from 'react';
 import { Pressable, StyleSheet, TextInput, View } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { useCouple } from '@/components/Couple';
+import { Today } from '@/components/Daily';
 import { Portrait } from '@/components/Portrait';
 import { dayTime } from '@/components/SelfLove';
 import { Button } from '@/components/ui/Button';
@@ -90,6 +91,8 @@ export default function CouplePage() {
           {state.since ? <T v="caption" c={color.textDim}>{t('couple.sinceDate', { date: fmtDayMonth(state.since) })}</T> : null}
         </View>
       </Animated.View>
+
+      <Today partnerName={partner.name} today={state.today} />
 
       {week ? (
         <View style={[panel, styles.challenge]}>

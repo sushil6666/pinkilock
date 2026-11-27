@@ -26,13 +26,13 @@ merge, **Supabase deploy** and **Web deploy** run on their own; check they go gr
 - [x] **#101** Bring a friend: referral rewards (D118). Merged 2026-11-27.
 - [x] **#102** Couple mode after a match (D120). Merged 2026-11-27.
 - [x] **#103** This week on Plans: three plan ideas each Monday and city events (D121). Merged 2026-11-27.
-- [ ] **#105** Your record: kept-plan streak and private city standing (D122). Next.
-- [ ] **#106** With friends in Couple mode. After #105.
-- [ ] **#107** Gentle reminders, at most 3 pushes a week. After #106. The real push test on a phone
-      (step 3) checks it too.
+- [x] **#105** Your record: kept-plan streak and private city standing (D122). Merged 2026-11-27.
+- [x] **#106** With friends in Couple mode (D123). Merged 2026-11-27.
+- [x] **#107** Gentle reminders, at most 3 pushes a week (D124). Merged 2026-11-27. The real push
+      test on a phone (step 3) checks it too.
+- [ ] **Question of the day and tip of the day** in Couple mode (D125). Next.
 - [ ] **#104** This list. Any time.
 
-#105, #106 and #107 are each built on the one before, so keep that order.
 
 How: open the PR on GitHub, "Merge pull request", "Confirm merge". If GitHub says the branch is out
 of date or has conflicts, tell the thread that made it; do not fix it in the browser.

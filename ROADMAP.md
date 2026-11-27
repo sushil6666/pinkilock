@@ -119,6 +119,9 @@ someone, and delete their account, on both platforms, against the production pro
   single friend in with the referral link.
 - [x] **Gentle reminders** (D124): at most 3 pushes a week, 10:00 to 20:00, about Couple mode, the
   streak, Monday's ideas and Self love. One switch on Me turns them off.
+- [x] **Question of the day and tip of the day** (D125): in Couple mode, a daily question both answer
+  (seen once both have) and a relationship tip a day. Next: a daily relationship check-in with
+  Saathi, an expert tips tab, and festival packs.
 
 - [x] **Spicy mode** (D103): an opt-in for two adults, off by default, with the safety rules, 18+
   and rules yeses, boundaries from a list, and from day one, with a yes from both, a hand-off to

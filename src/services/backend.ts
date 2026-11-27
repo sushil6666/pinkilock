@@ -9,6 +9,7 @@ import type { Mood, NoteKind, SelfLove } from '../domain/selfLove';
 import type { CityEvent } from '../domain/weekly';
 import type { CityStanding } from '../domain/streaks';
 import type { Couple, DayKind } from '../domain/couple';
+import type { DailyQuestion } from '../domain/daily';
 import type { CallAnswer, CallMinutes, SpicyCall } from '../domain/calls';
 import type { Spicy, SpicyInput, SpicyPlan } from '../domain/spicy';
 import type { QuizResult, SpicyTerms } from '../domain/spicyQuiz';
@@ -212,6 +213,10 @@ export interface Backend {
   coupleRemoveDay(id: string): Promise<Couple>;
   /** I did this week's challenge, or take my tick back. */
   coupleChallenge(done: boolean): Promise<Couple>;
+  /** Question of the day (D125): today's question, my answer, theirs once I answered, the last 14 days both answered. */
+  coupleQuestion(): Promise<DailyQuestion>;
+  /** Answer today's question, once, 1 to 300 characters. */
+  coupleQuestionAnswer(body: string): Promise<DailyQuestion>;
 
   /**
    * Spicy mode (D103): off unless I turn it on. It needs a phone or an email on the account, the
