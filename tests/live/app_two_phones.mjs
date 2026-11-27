@@ -265,6 +265,8 @@ async function flow(A, B) {
 
   // A downloads their data, then deletes the account.
   await A.page.getByLabel('Me', { exact: true }).click();
+  // Account is one line with an arrow (D126): open it to reach the buttons.
+  await A.page.getByRole('button', { name: /^Account/ }).first().click();
   const [download] = await Promise.all([A.page.waitForEvent('download'), btn(A.page, 'Download my data').click()]);
   const exported = JSON.parse(await new Promise((resolve, reject) => {
     download.createReadStream().then((st) => { let t = ''; st.on('data', (c) => (t += c)); st.on('end', () => resolve(t)); st.on('error', reject); }, reject);
