@@ -135,6 +135,7 @@ function walletFrom(raw: unknown): Wallet {
   const r = (raw ?? {}) as {
     paid?: number; earned?: number; boost_until?: string | null; extra_asks?: number; stakes?: Record<string, number>; streak?: number; had?: string[];
     vouch_rewards?: number; kept_this_week?: number; treats?: RawTreat[]; history?: { id: number; kind: string; credits: number; reward: string | null; at: string }[];
+    gold?: boolean; gold_until?: string | null; boosts?: number; boost_lapses?: string | null; saathi_free?: boolean;
   };
   const isReward = (k: unknown): k is RewardKind => (REWARD_KINDS as readonly unknown[]).includes(k);
   return {
@@ -146,6 +147,7 @@ function walletFrom(raw: unknown): Wallet {
       partner: x.partner, code: x.code ?? null, until: ms(x.until ?? null),
     })),
     history: (r.history ?? []).map((h) => ({ id: String(h.id), kind: h.kind as LedgerKind, credits: h.credits, at: ms(h.at) ?? 0, reward: isReward(h.reward) ? h.reward : undefined })),
+    gold: !!r.gold, goldUntil: ms(r.gold_until ?? null), boosts: r.boosts ?? 0, boostLapses: ms(r.boost_lapses ?? null), saathiFree: !!r.saathi_free,
   };
 }
 
@@ -170,6 +172,7 @@ function toProfile(r: Row): Profile {
     vouchCount: r.vouch_count ?? 0,
     vouchPhrases: r.vouch_phrases ?? [],
     hasDuo: !!r.has_duo,
+    pinkGold: !!r.pink_gold,
   };
 }
 
@@ -1079,8 +1082,10 @@ export function createSupabaseBackend(url: string, anonKey: string, storage: Ses
       await uid();
       // Phone apps wait for Play Billing (O15): digital credits must be bought through the store there.
       if (!topUpsHere(platform) || !checkout) throw new AppError('PL144');
-      const order = await walletFunction<{ order: string; key: string; paise: number; credits: number }>({ action: 'order', pack: packId });
-      const paid = await checkout({ key: order.key, order: order.order, paise: order.paise, title: t('wallet.checkoutTitle'), about: t('wallet.checkoutAbout', { n: order.credits }) });
+      // The same order path buys credit packs, Pink Gold plans and Boosts (D116); the server prices each.
+      const order = await walletFunction<{ order: string; key: string; paise: number; credits: number; months?: number; boosts?: number }>({ action: 'order', pack: packId });
+      const about = order.months ? t('gold.checkoutPlan', { count: order.months }) : order.boosts ? t('gold.checkoutBoosts', { count: order.boosts }) : t('wallet.checkoutAbout', { n: order.credits });
+      const paid = await checkout({ key: order.key, order: order.order, paise: order.paise, title: t('wallet.checkoutTitle'), about });
       // Closed without paying: nothing was taken, and the wallet is as it was.
       if (paid) await walletFunction({ action: 'verify', order: paid.order, payment: paid.payment, signature: paid.signature });
       return walletFrom(await rpc('my_wallet'));

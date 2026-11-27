@@ -168,6 +168,10 @@ export const ERRORS = {
   PL181: 'Your time with Saathi is up. Continue for another 15 minutes to keep talking.',
   PL182: 'You still have time with Saathi. You can continue in the last 2 minutes.',
   PL183: 'The day pass is no longer sold. Start a 15-minute session instead.',
+  PL184: 'You have Pink Gold for a year already.',
+  PL185: 'You have no Boosts left. Get one first.',
+  PL186: 'You have a lot of Boosts waiting. Use some first.',
+  PL187: 'You have 15 asks open. Wait for an answer first.',
 
   PA001: 'Phone sign-in is not switched on yet.',
   PA002: 'Email sign-in is not switched on yet.',

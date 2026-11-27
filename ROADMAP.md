@@ -133,6 +133,11 @@ someone, and delete their account, on both platforms, against the production pro
   finished profile; the store review prompt (D110) shows after happy moments, with no reward. Built
   behind switches; waiting on LiveKit and Razorpay Route (O19), a CA's view (O17), and a lawyer's and
   a mental-health adviser's review (O18) before launch. The in-app voice client is `src/lib/voice.ts` (D111).
+- [x] **Pink Gold** (D115, D116): the paid membership, with a badge on members' cards (Discover,
+  profile, Me). Plans of 1, 3, 6 and 12 months and Boosts (1 or 6) through Razorpay on the website;
+  members get 15 open asks, 2 free Boosts a month and a place right after boosted cards. Phone apps
+  after Play Billing (O15). Members also see everyone who asked them at once and get early access to
+  cities marked `early`, and one free Saathi session each Indian month.
 
 - [x] **Photos behind the lock** (D088): up to three photos on Me, stored in a private Supabase
   Storage bucket by the `photo` Edge Function, which strips their metadata and draws the picture

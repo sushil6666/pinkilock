@@ -109,8 +109,11 @@ export function inCity(p: Profile, city: string, i: number): Profile {
   return { ...p, city, area: areas[(i * 7) % areas.length] };
 }
 
+/** Made-up Pink Gold members (D115), so the badge shows in the prototype. */
+export const SEED_PINK_GOLD: readonly string[] = ['aanya', 'meher', 'tara'];
+
 export function seedProfiles(): Profile[] {
-  return people.map(({ contact: _c, photos: _p, ...p }) => ({ ...p, city: 'Mumbai', hasDuo: p.id in SEED_DUOS }));
+  return people.map(({ contact: _c, photos: _p, ...p }) => ({ ...p, city: 'Mumbai', hasDuo: p.id in SEED_DUOS, pinkGold: SEED_PINK_GOLD.includes(p.id) }));
 }
 
 export function seedReveals(): Record<string, Reveal> {

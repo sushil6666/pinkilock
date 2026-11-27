@@ -84,6 +84,8 @@ export interface MockTalkContext {
   /** Earned first, then bought (PL132 when short). */
   spend(kind: LedgerKind, cost: number, ref?: string): void;
   balance(): { paid: number; earned: number };
+  /** A Pink Gold member's free Saathi session this month (D116): true once, and it is then used. */
+  goldSaathi(): boolean;
   profileDone(): ProfileDone;
   linked(): boolean;
   age(): number;
@@ -237,10 +239,11 @@ export function createMockTalk(ctx: MockTalkContext): Pick<Backend,
       const ch = tk.chats[id];
       if (ch.harm || (tk.passUntil !== null && tk.passUntil > now)) return { chat: id, paidUntil: ch.paidUntil ?? null, charged: 0, free: true };
       if (!aiMayContinue(ch.paidUntil ?? null, now)) fail('PL182');
-      ctx.spend('talk_ai', AI_SESSION_CREDITS, `${id}:s${(ch.sessions ?? 0) + 1}`);
+      const gift = ctx.goldSaathi();
+      if (!gift) ctx.spend('talk_ai', AI_SESSION_CREDITS, `${id}:s${(ch.sessions ?? 0) + 1}`);
       Object.assign(ch, { paidUntil: Math.max(ch.paidUntil ?? now, now) + AI_SESSION_MS, sessions: (ch.sessions ?? 0) + 1, at: now });
       ctx.save();
-      return { chat: id, paidUntil: ch.paidUntil!, charged: AI_SESSION_CREDITS, free: false };
+      return { chat: id, paidUntil: ch.paidUntil!, charged: gift ? 0 : AI_SESSION_CREDITS, free: false };
     },
     // No longer sold (D114); a pass already bought still runs its day.
     talkAiPass: () => change(() => fail('PL183')),

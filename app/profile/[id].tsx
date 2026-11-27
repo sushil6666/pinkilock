@@ -8,6 +8,7 @@ import { SpicyHandoff } from '@/components/Spicy';
 import { Portrait } from '@/components/Portrait';
 import { Spark } from '@/components/Spark';
 import { TrustBadge } from '@/components/TrustBadge';
+import { PinkGold } from '@/components/PinkGold';
 import { Button } from '@/components/ui/Button';
 import { Chip, Tag } from '@/components/ui/Chip';
 import { HoldButton } from '@/components/ui/HoldButton';
@@ -78,6 +79,7 @@ export default function ProfileScreen() {
       <View style={[styles.hero, desktop && { height: 560 }]}>
         <Portrait name={person.name} palette={person.palette} glyph={person.glyph} faceUrl={person.faceUrl} fill style={StyleSheet.absoluteFill} />
         <View style={{ padding: space.lg, gap: 4 }}>
+          <PinkGold person={person} />
           <T v="display" numberOfLines={1} adjustsFontSizeToFit>{t('profile.nameAge', { name: person.name, age: person.age })}</T>
           <T v="caption" c={color.textDim}>{[t('profile.areaCity', { area: person.area, city: person.city }), cardKm(me, person) ? fmtDistance(cardKm(me, person)!, me.country) : '', person.pronouns].filter(Boolean).join('  /  ')}</T>
         </View>

@@ -15,6 +15,7 @@ import { useEffect, useState } from 'react';
 import { Platform, Pressable, Share, StyleSheet, View } from 'react-native';
 import { Portrait } from '@/components/Portrait';
 import { TrustBadge } from '@/components/TrustBadge';
+import { PinkGold, PinkGoldEntry } from '@/components/PinkGold';
 import { Button } from '@/components/ui/Button';
 import { Chip, Tag } from '@/components/ui/Chip';
 import { HoldButton } from '@/components/ui/HoldButton';
@@ -47,6 +48,7 @@ import { openCities } from '@/domain/countries';
 
 export default function Me() {
   const me = useStore((s) => s.me);
+  const myWallet = useStore((s) => s.wallet);
   const updateMe = useStore((s) => s.updateMe);
   const saveAvailability = useStore((s) => s.saveAvailability);
   const duo = usePerson(useStore((s) => s.duoId) ?? undefined);
@@ -202,6 +204,7 @@ export default function Me() {
         <View style={{ flex: 1 }}>
           <T v="display" numberOfLines={1} adjustsFontSizeToFit>{me.name}</T>
           <T v="caption" c={color.textDim}>{[me.age, me.area ? t('profile.areaCity', { area: me.area, city: me.city }) : me.city, me.pronouns].filter(Boolean).join('  /  ')}</T>
+          {me.pinkGold ? <View style={{ marginTop: space.sm }}><PinkGold person={me} mine /></View> : null}
         </View>
       </View>
 
@@ -256,7 +259,7 @@ export default function Me() {
       {move ? (
         <View style={{ gap: space.lg, marginTop: space.lg }}>
           <T v="caption" c={color.textDim}>{t('me.moveBody')}</T>
-          <WherePicker city={move.city} area={move.area} onCity={(city) => setMove((m) => m && { ...m, city })} onArea={(area) => setMove((m) => m && { ...m, area })} />
+          <WherePicker early={!!me.pinkGold} city={move.city} area={move.area} onCity={(city) => setMove((m) => m && { ...m, city })} onArea={(area) => setMove((m) => m && { ...m, area })} />
           {moveError ? <ErrorText text={moveError} /> : null}
           <Button icon="map-pin" label={t('me.moveSave', { city: move.city })} onPress={saveMove} busy={busy === 'move'}
             disabled={(move.city === me.city && move.area === me.area) || !areaOk(move.city, move.area)} />
@@ -275,6 +278,7 @@ export default function Me() {
       </Pressable>
       <TalkEntry />
       <WalletEntry />
+      <PinkGoldEntry wallet={myWallet} />
       <SpicyEntry />
       <View style={{ marginTop: space.lg, gap: space.sm }}>
         <Vouches person={me} />

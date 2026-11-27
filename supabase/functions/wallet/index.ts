@@ -1,5 +1,7 @@
 /**
- * wallet: top-ups for the credits wallet (D104), through Razorpay (UPI, cards, net banking).
+ * wallet: top-ups for the credits wallet (D104), through Razorpay (UPI, cards, net banking), and the
+ * same path for Pink Gold plans and Boost packs (D116: `pack` is g1, g3, g6, g12, b1 or b6). The
+ * database prices each (wallet_pack_price) and, once paid, gives credits, months or Boosts.
  *
  * The app never sets a price and never says it was paid; this function and the database decide.
  *
