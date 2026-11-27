@@ -32,7 +32,8 @@ merge, **Supabase deploy** and **Web deploy** run on their own; check they go gr
       test on a phone (step 3) checks it too.
 - [ ] **#109** Question of the day and tip of the day in Couple mode (D125). Next.
 - [ ] **#111** Daily relationship check-in with Saathi's ideas (D126). After #109.
-- [ ] **Expert tips** and Join as an expert (D127). After #111.
+- [ ] **#112** Expert tips and Join as an expert (D127). After #111.
+- [ ] **Festive packs** for Christmas and New Year (D128). After #112, before 18 December.
 - [ ] **#104** This list. Any time.
 
 

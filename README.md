@@ -76,6 +76,8 @@ With no keys set, the app runs on ten made-up people who answer by themselves. A
     **Ask Zoya** (someone you kept a plan with who is up for it) or **Find someone**, and what is on in
     your city this fortnight (the mock makes two events from your city's places). **Plan it** opens an
     ask with the event's place picked.
+    From 18 December to 1 January a festive pack sits above it (Christmas, then New Year), and Couple
+    mode's **Today** shows a festive challenge.
 13. **Your record**: on **Me**, under your Trust Score: weeks in a row with a kept plan (a Steady
     badge at 3), and in the mock a made-up "top X% of promise keepers" in your city and how the city
     did this month. Only you see it.

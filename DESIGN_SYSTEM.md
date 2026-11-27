@@ -227,6 +227,9 @@ Font scaling is allowed up to 1.3x (`maxFontSizeMultiplier`) so layouts hold on 
   `surface` panel with `surfaceHi` tip cards. "Watch out for" is a `surface` panel edged `flare`, with
   `flare` crosses; the join card is `goldWash` edged `goldDeep`, like Self love's entry. An expert's tip
   shows a gold `check-circle`, their kind and credential in `textMute`, and a quiet "Report" button.
+- **Festive packs** (D128): on Plans, a `surface` panel edged `pink` above This week, a pink `label`,
+  the festival's emoji at 32 and a `title`, then This week's idea rows. In Couple mode's Today, a
+  `surfaceHi` card edged `pink` with the emoji, a pink `label` and the challenge.
 
 ## 5. Motion
 

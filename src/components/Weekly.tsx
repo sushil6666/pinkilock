@@ -7,7 +7,9 @@ import { Feather } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
 import { Linking, Pressable, StyleSheet, View } from 'react-native';
+import { festivalOn, festiveIdeas } from '../domain/festivals';
 import { keptWith, isOn, weeklyIdeas, type CityEvent } from '../domain/weekly';
+import type { MicroDateIdea } from '../domain/types';
 import { quiet } from '../lib/log';
 import { backend } from '../services';
 import { useStore } from '../state/store';
@@ -41,33 +43,48 @@ export function ThisWeek() {
   const ask = (to: (typeof people)[number] | undefined, ideaId: string | null, venueId?: string | null) =>
     to ? router.push({ pathname: '/invite/new', params: { to: to.id, ...(ideaId ? { idea: ideaId } : {}), ...(venueId ? { venue: venueId } : {}) } }) : router.push('/(tabs)');
 
+  const row = (i: MicroDateIdea) => {
+    const to = forIdea(i.id);
+    return (
+      <View key={i.id} style={styles.idea}>
+        <T style={{ fontSize: 28, lineHeight: 34 }} maxFontSizeMultiplier={1}>{i.emoji}</T>
+        <View style={{ flex: 1, gap: 2 }}>
+          <T v="bodyBold">{i.title}</T>
+          <T v="caption" c={color.textDim}>{i.blurb}</T>
+          <View style={{ flexDirection: 'row', gap: space.sm, flexWrap: 'wrap', marginTop: space.xs }}>
+            <Tag label={t('weekly.minutes', { minutes: i.minutes })} />
+            {i.cities ? <Tag label={t('weekly.local', { city: me.city })} tone={color.gold} /> : null}
+          </View>
+        </View>
+        <Pressable accessibilityRole="button" accessibilityLabel={to ? t('weekly.askSpoken', { name: to.name, idea: i.title }) : t('weekly.findSpoken', { idea: i.title })}
+          onPress={() => ask(to, i.id)} style={({ pressed }) => [styles.go, pressed && { backgroundColor: color.goldDeep }]}>
+          <Feather name={to ? 'send' : 'compass'} size={16} color={color.onGold} />
+          <T v="caption" c={color.onGold} numberOfLines={1}>{to ? t('weekly.ask', { name: to.name }) : t('weekly.find')}</T>
+        </Pressable>
+      </View>
+    );
+  };
+  const festival = festivalOn(now);
+  const festive = festival ? festiveIdeas(festival, me.country, me.city) : [];
+
   return (
     <View style={{ gap: space.lg, marginTop: space.x3 }}>
+      {festival && festive.length ? (
+        <View style={[styles.panel, styles.festive]}>
+          <T v="label" c={color.pink}>{t('festivals.label')}</T>
+          <View style={{ flexDirection: 'row', gap: space.md, alignItems: 'center' }}>
+            <T style={{ fontSize: 32, lineHeight: 40 }} maxFontSizeMultiplier={1}>{festival.emoji}</T>
+            <T v="title" style={{ flex: 1 }}>{t(`festivals.${festival.id}.title`)}</T>
+          </View>
+          <T v="caption" c={color.textDim}>{t(`festivals.${festival.id}.body`)}</T>
+          {festive.map(row)}
+        </View>
+      ) : null}
       <View style={styles.panel}>
         <T v="label" c={color.gold}>{t('weekly.label')}</T>
         <T v="title">{t('weekly.title')}</T>
         <T v="caption" c={color.textDim}>{t('weekly.body')}</T>
-        {ideas.map((i) => {
-          const to = forIdea(i.id);
-          return (
-          <View key={i.id} style={styles.idea}>
-            <T style={{ fontSize: 28, lineHeight: 34 }} maxFontSizeMultiplier={1}>{i.emoji}</T>
-            <View style={{ flex: 1, gap: 2 }}>
-              <T v="bodyBold">{i.title}</T>
-              <T v="caption" c={color.textDim}>{i.blurb}</T>
-              <View style={{ flexDirection: 'row', gap: space.sm, flexWrap: 'wrap', marginTop: space.xs }}>
-                <Tag label={t('weekly.minutes', { minutes: i.minutes })} />
-                {i.cities ? <Tag label={t('weekly.local', { city: me.city })} tone={color.gold} /> : null}
-              </View>
-            </View>
-            <Pressable accessibilityRole="button" accessibilityLabel={to ? t('weekly.askSpoken', { name: to.name, idea: i.title }) : t('weekly.findSpoken', { idea: i.title })}
-              onPress={() => ask(to, i.id)} style={({ pressed }) => [styles.go, pressed && { backgroundColor: color.goldDeep }]}>
-              <Feather name={to ? 'send' : 'compass'} size={16} color={color.onGold} />
-              <T v="caption" c={color.onGold} numberOfLines={1}>{to ? t('weekly.ask', { name: to.name }) : t('weekly.find')}</T>
-            </Pressable>
-          </View>
-          );
-        })}
+        {ideas.map(row)}
       </View>
 
       {events.length ? (
@@ -109,6 +126,7 @@ export function ThisWeek() {
 }
 
 const styles = StyleSheet.create({
+  festive: { borderColor: color.pink },
   panel: { borderWidth: 1, borderColor: color.line, borderRadius: radius.card, backgroundColor: color.surface, padding: space.lg, gap: space.md },
   idea: { flexDirection: 'row', alignItems: 'center', gap: space.md, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: color.line, paddingTop: space.md },
   go: { flexDirection: 'row', alignItems: 'center', gap: space.xs, minHeight: 44, maxWidth: 140, paddingHorizontal: space.md, borderRadius: radius.pill, backgroundColor: color.gold },

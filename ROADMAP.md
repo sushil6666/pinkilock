@@ -129,6 +129,8 @@ someone, and delete their account, on both platforms, against the production pro
   checked them (the team's general tips until then), a "watch out for" panel, reports, and a page
   for experts to ask to join. Next: paid sessions with experts (after O23), festival packs, and
   Cosmic match.
+- [x] **Festive packs** (D128): Christmas and New Year plan ideas on Plans and a festive challenge in
+  Couple mode, only on their days. Next: more festivals (Valentine's Day, Holi, Diwali), and Cosmic match.
 
 - [x] **Spicy mode** (D103): an opt-in for two adults, off by default, with the safety rules, 18+
   and rules yeses, boundaries from a list, and from day one, with a yes from both, a hand-off to
