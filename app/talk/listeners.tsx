@@ -100,7 +100,7 @@ export default function TalkListeners() {
   // On a call, the panel on the left carries the code; the help lines move here.
   const right = callOpen ? <HelpLines /> : (
     <>
-      <Fold icon="clock" title={t('talk.lengthTitle')} value={t('talk.lengthMinutes', { n: free ? FREE_CALL_MINUTES : length })} open={short}>
+      <Fold icon="clock" title={t('talk.lengthTitle')} value={t('talk.lengthMinutes', { n: free ? FREE_CALL_MINUTES : length })} open={short && !paused}>
         {state.freeCall === 'ready' ? (
           <Chip label={t('talk.useFree')} sub={t('talk.lengthMinutes', { n: FREE_CALL_MINUTES })} selected={free} onPress={() => setUseFree(!useFree)} />
         ) : null}
