@@ -107,6 +107,9 @@ someone, and delete their account, on both platforms, against the production pro
   plans, mood check-in with streak and gold badge, gratitude jar, boundaries) and, after a no, a kind
   note, a 3-day reset, a private journal, a pause from Discover and help lines (Tele-MANAS 14416).
 
+- [x] **This week on Plans** (D121): three fresh plan ideas every Monday and a team-written list of
+  city events, each one tap from an ask. Part of keeping people coming back after a match.
+
 - [x] **Spicy mode** (D103): an opt-in for two adults, off by default, with the safety rules, 18+
   and rules yeses, boundaries from a list, and from day one, with a yes from both, a hand-off to
   Discord (first), Telegram or Signal. Needs a lawyer's view before launch (O14). Since D105 a

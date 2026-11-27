@@ -6,6 +6,7 @@
  * to one rpc() or select() (ARCHITECTURE.md section 8) and `subscribe` to a Realtime channel.
  */
 import type { Mood, NoteKind, SelfLove } from '../domain/selfLove';
+import type { CityEvent } from '../domain/weekly';
 import type { CallAnswer, CallMinutes, SpicyCall } from '../domain/calls';
 import type { Spicy, SpicyInput, SpicyPlan } from '../domain/spicy';
 import type { QuizResult, SpicyTerms } from '../domain/spicyQuiz';
@@ -172,6 +173,9 @@ export interface Backend {
   startReset(): Promise<SelfLove>;
   /** Ticks a day of the reset; each opens on its own day. */
   doResetStep(day: number): Promise<SelfLove>;
+
+  /** What is on in my city now and in the next two weeks (D121), soonest first, at most 12. Written by the team. */
+  cityEvents(): Promise<CityEvent[]>;
 
   /**
    * Spicy mode (D103): off unless I turn it on. It needs a phone or an email on the account, the

@@ -510,6 +510,16 @@ asks already made carry on. The kind lines, the self-care steps and the solo ide
 `src/domain/selfLove.ts`). Nothing from Self love is logged or pushed. Bounce back is offered on an
 ask someone said no to or that ran out, and on Asks, Sent, for three days afterwards.
 
+### This week: plan ideas and city events
+
+Plans shows three ideas a week (D121), picked in the phone by `weeklyIdeas` in `src/domain/weekly.ts`
+from the ideas offered in the person's city: a per-person order of the catalogue, nine ideas a week,
+three of different kinds where it can, so none repeats the week after. Nothing is stored. City events
+are a team-written catalogue, `public.city_events` (no client role reads or writes the table), served
+by `city_events()`: the caller's city, from now to 14 days ahead, at most 12, a venue's name and area
+standing in for the place. Rows are added in SQL and switched off with `active`, never deleted. "Ask"
+and "Plan it" open the ordinary ask (`invite/new` takes `idea` and `venue`), so the promise rules apply.
+
 ### Spicy mode
 
 An opt-in for two adults (D103), off by default, reached from Me. `private.spicy` (one row while it

@@ -906,6 +906,28 @@ export const en = {
     allFourBody: 'All four showed. The reveal is open.',
   },
 
+  weekly: {
+    label: 'This week',
+    title: 'Your next plan',
+    body: 'Three fresh ideas, new every Monday. Pick one and ask.',
+    ask: 'Ask {name}',
+    find: 'Find someone',
+    askSpoken: 'Ask {name}: {idea}',
+    findSpoken: 'Find someone for {idea}',
+    minutes: '{minutes} min',
+    local: 'Only in {city}',
+    eventsTitle: 'On in {city}',
+    eventsBody: 'Things happening near you. Plan around one.',
+    now: 'On now',
+    free: 'Free',
+    planIt: 'Plan it with {name}',
+    planFind: 'Find someone to go with',
+    details: 'Details',
+    detailsSpoken: 'Details for {title}, opens a web page',
+    when: '{day}, {time}',
+    until: 'Until {day}',
+  },
+
   selfLove: {
     eyebrow: 'Just for you',
     title: 'Self love',
