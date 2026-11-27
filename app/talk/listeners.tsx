@@ -5,6 +5,7 @@
  * for the length are held and only the minutes we talk are charged; the free first call (D109)
  * holds nothing. Report and block are on the call and after it.
  */
+import { Fold } from '@/components/ui/Fold';
 import { Feather } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
@@ -65,8 +66,7 @@ export default function TalkListeners() {
   const toggle = (x: Topic) => setTopics(topics.includes(x) ? topics.filter((y) => y !== x) : [...topics, x]);
 
   const about = (
-    <View style={panel}>
-      <T v="heading">{t('talk.aboutTitle')}</T>
+    <Fold icon="user" title={t('talk.aboutTitle')} open={!state.sex}>
       <T v="caption" c={color.textDim}>{t('talk.aboutBody')}</T>
       <T v="label" c={color.textDim}>{t('talk.iAm')}</T>
       <View style={styles.chips}>
@@ -81,7 +81,7 @@ export default function TalkListeners() {
         <Button label={t('talk.save')} busy={busy === 'settings'} disabled={!sex || wantNeedsSex}
           onPress={() => sex && run('settings', () => backend.talkSettings(sex, want))} />
       ) : null}
-    </View>
+    </Fold>
   );
 
   const left = (
@@ -89,7 +89,6 @@ export default function TalkListeners() {
       <View style={{ gap: space.sm }}>
         <T v="label" c={color.gold}>{t('talk.personTitle')}</T>
         <T v="display">{t('talk.personOpen')}</T>
-        <T c={color.textDim}>{t('talk.personBody')}</T>
       </View>
       {state.call ? <CallPanel talk={state} busy={busy} error={callOpen ? error : ''} run={run} route={ROUTE} /> : null}
       {callOpen ? null : about}
@@ -101,8 +100,7 @@ export default function TalkListeners() {
   // On a call, the panel on the left carries the code; the help lines move here.
   const right = callOpen ? <HelpLines /> : (
     <>
-      <View style={panel}>
-        <T v="heading">{t('talk.lengthTitle')}</T>
+      <Fold icon="clock" title={t('talk.lengthTitle')} value={t('talk.lengthMinutes', { n: free ? FREE_CALL_MINUTES : length })} open={short}>
         {state.freeCall === 'ready' ? (
           <Chip label={t('talk.useFree')} sub={t('talk.lengthMinutes', { n: FREE_CALL_MINUTES })} selected={free} onPress={() => setUseFree(!useFree)} />
         ) : null}
@@ -125,7 +123,7 @@ export default function TalkListeners() {
         <View style={styles.chips}>
           {TOPICS.map((x) => <Chip key={x} label={t(`talk.topics.${x}`)} selected={topics.includes(x)} onPress={() => toggle(x)} />)}
         </View>
-      </View>
+      </Fold>
 
       <View style={panel}>
         <T v="heading">{t('talk.listenersTitle')}</T>
