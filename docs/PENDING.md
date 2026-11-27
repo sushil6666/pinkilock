@@ -22,7 +22,7 @@ Last checked against the repo and the deploy runs: 2026-11-27.
 Merge in this order, one at a time, and wait for **CI** to be green before each one. After each
 merge, **Supabase deploy** and **Web deploy** run on their own; check they go green.
 
-- [ ] **#100** Pause payments, keep the paid features (D117)
+- [x] **#100** Pause payments, keep the paid features (D117). Merged 2026-11-27.
 - [ ] **#101** Bring a friend: referral rewards (D118). Needs #100 first.
 - [ ] **#102** Couple mode after a match (D120). Needs #101 first.
 - [ ] Later retention PRs from the "Keep users coming back after a match" thread, in the order that
