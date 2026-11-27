@@ -82,7 +82,7 @@ Font scaling is allowed up to 1.3x (`maxFontSizeMultiplier`) so layouts hold on 
 - **HoldButton**: the same slab, drawn as a `depth`-thick bottom edge in its fill colour. Press and hold 900 ms to commit (send an ask, swear the promise, bail). A fill
   sweeps left to right; haptic ticks at 33% and 66%, medium impact on completion; letting go early
   drains the fill in 180 ms. Used wherever a tap would be too cheap.
-- **Fold** (D126): one line and one arrow. A `surface` card, 56 high, radius as a card: an optional
+- **Fold** (D130): one line and one arrow. A `surface` card, 56 high, radius as a card: an optional
   icon, the section's name in body bold, an optional short value on the right in a `textDim`
   caption (a count, the city, "On"), and a chevron down. Tapping the row opens the rest in place
   under it (fade in 180 ms) and turns the chevron up. `accent` gives it a `goldDeep` border for the
@@ -90,7 +90,7 @@ Font scaling is allowed up to 1.3x (`maxFontSizeMultiplier`) so layouts hold on 
   fixing (an error, a form not yet filled). Every section that has more than its main line uses
   one. Safety never does: helplines, the safety numbers button, Spicy's safety rules and terms,
   block and report stay on screen.
-- **Entry** (D126): a way into another screen as one line: icon, name, an optional short value, and
+- **Entry** (D130): a way into another screen as one line: icon, name, an optional short value, and
   a chevron right. `gold`, `pink` or plain. What is behind it is said on the screen it opens.
 - **Chip**: 40 high, radius 6, uppercase label. Selected is pink fill, indigo text.
 - **Plan option** (`IdeaChip`): a chip with the time and one-liner under the title, and a chevron on the right (48 wide) that opens What you do / Where / Cost / Why it works under a hairline. Headings are gold captions (indigo when selected). The row picks; only the chevron opens.

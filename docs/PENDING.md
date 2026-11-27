@@ -32,7 +32,10 @@ merge, **Supabase deploy** and **Web deploy** run on their own; check they go gr
 - [x] **#107** Gentle reminders, at most 3 pushes a week. Merged 2026-11-27. The real push test on a
       phone (step 3) checks it too.
 
-Nothing is waiting to merge right now. New PRs from Claude threads get added here.
+- [ ] **#110** One line and one arrow on every screen (D130). After #109; touches no files the
+      retention PRs change except `docs/decisions.md` and this list.
+
+New PRs from Claude threads get added here.
 
 How: open the PR on GitHub, "Merge pull request", "Confirm merge". If GitHub says the branch is out
 of date or has conflicts, tell the thread that made it; do not fix it in the browser.
