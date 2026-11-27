@@ -24,7 +24,7 @@ merge, **Supabase deploy** and **Web deploy** run on their own; check they go gr
 
 - [x] **#100** Pause payments, keep the paid features (D117). Merged 2026-11-27.
 - [x] **#101** Bring a friend: referral rewards (D118). Merged 2026-11-27.
-- [ ] **#102** Couple mode after a match (D120). Its thread is bringing it up to date with main first.
+- [ ] **#102** Couple mode after a match (D120). It has a conflict with main right now: its thread fixes that, then merge.
 - [ ] **#103** This week on Plans: three plan ideas each Monday and city events (D121). After #102.
 - [ ] **#104** This list. Any time.
 - [ ] Later retention PRs from the "Keep users coming back after a match" thread, in the order that
