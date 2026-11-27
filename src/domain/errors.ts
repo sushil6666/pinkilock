@@ -177,6 +177,8 @@ export const ERRORS = {
   PL189: 'You have had your free time with Saathi today. Come back tomorrow.',
   PL190: 'Your free unlock for this week is used. The next one opens 7 days after it.',
   PL191: 'Give 1 to 366 days of Pink Gold, or 1 to 12 Boosts with a reason.',
+  // Bring a friend (D118).
+  PL192: 'This device could not be checked. Restart the app and try again.',
 
   PA001: 'Phone sign-in is not switched on yet.',
   PA002: 'Email sign-in is not switched on yet.',

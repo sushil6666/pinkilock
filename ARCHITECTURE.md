@@ -593,6 +593,24 @@ session per local day, `private.saathi_free_days`, PL189) and `spicy_pay` (free,
 `EXPO_PUBLIC_MOCK_PAID=1` (off otherwise). Rules in `src/domain/paid.ts`, checks in
 `tests/db/paid_pause.sql`.
 
+### Bring a friend
+
+D118, `supabase/migrations/20261127000002_referrals.sql`. Built on Talk's referral tables
+(`private.talk_referral_codes`, `private.talk_referrals`, now with `via` = `link` or `duo`): a friend
+joins with `talk_claim_referral` (the `/r/CODE` link, kept on the phone through onboarding by
+`src/lib/referral.ts`) or by `join_duo` when their account is under 7 days old (the `/duo/TOKEN`
+page is open without a profile and keeps the token through onboarding the same way).
+`private.referral_check` says whether a friend has a verified phone (or a linked email with
+`referral_needs_phone` off, as it starts until phone sign-in is live), an approved face photo, a plan, and a device (`private.devices`, from
+`note_device`, a random id the app keeps, `src/lib/device.ts`) seen on no other account.
+`private.referral_settle` gives once per friend (`private.referral_rewards`): 7 days of Pink Gold each
+(`pink_gold_gift`), a Boost for the referrer (`boost_gift`, ref `referral:<friend>`), 30 more days
+at the 5th, at most 10 per referrer per 30 days. It runs from `public.my_referrals()` (counts and my
+own checklist, never who) and `private.referral_sweep()` (pg_cron, every 10 minutes, friends from
+the last 60 days). The download adds `app_devices` and `referral_rewards`. Rules mirrored in
+`src/domain/referrals.ts`; screen `app/friends.tsx`, entry on Me (`src/components/Friends.tsx`);
+checks in `tests/db/referrals.sql` and the attacker suites.
+
 ### Wallet
 
 A closed loop of credits (D104), reached from Me, on a plan, in the composer and in Spicy mode. No

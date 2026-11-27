@@ -27,6 +27,7 @@ import {
 import { REWARD_KINDS, TREAT_ITEMS, emptyWallet, topUpsHere, type LedgerKind, type RewardKind, type TreatItem, type TreatPartner, type Wallet } from '../../domain/wallet';
 import type { openCheckout } from '../../lib/razorpay';
 import type { Backend, BackendEvent, Changes, Notice, Snapshot } from '../backend';
+import type { MyReferrals } from '../../domain/referrals';
 import { t } from '../../i18n';
 import { activeTrace, tracedAll } from '../traceScope';
 
@@ -1065,6 +1066,14 @@ export function createSupabaseBackend(url: string, anonKey: string, storage: Ses
     },
     talkListenerAvailable: (on) => talkRpc('talk_listener_available', { p_on: on }),
     claimReferral: (code) => talkRpc('talk_claim_referral', { p_code: referralCode(code) }),
+    async myReferrals() {
+      await uid();
+      return referralsFrom(await rpc<Row>('my_referrals'));
+    },
+    async noteDevice(device) {
+      await uid();
+      await rpc('note_device', { p_device: device });
+    },
 
     async wallet() {
       await uid();
@@ -1217,4 +1226,17 @@ export function createSupabaseBackend(url: string, anonKey: string, storage: Ses
       throw new AppError('PC004', 'Prototype tools only work on mock data.');
     },
   });
+}
+
+/** my_referrals(), as the screens hold it. */
+export function referralsFrom(r: Row): MyReferrals {
+  const mine = r.mine as Row | null;
+  return {
+    code: String(r.code ?? ''),
+    joined: Number(r.joined ?? 0),
+    counted: Number(r.counted ?? 0),
+    month: !!r.month,
+    needsPhone: r.needs_phone !== false,
+    mine: mine ? { phone: !!mine.phone, face: !!mine.face, plans: !!mine.plans, device: !!mine.device, counted: !!mine.counted, via: mine.via === 'duo' ? 'duo' : 'link' } : null,
+  };
 }

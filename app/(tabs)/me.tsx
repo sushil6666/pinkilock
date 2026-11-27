@@ -40,6 +40,7 @@ import { FREE_WINDOWS } from '@/domain/freeWindows';
 import { Vouches } from '@/components/Vouches';
 import { WherePicker, areaOk } from '@/components/WherePicker';
 import { shareOrCopy } from '@/lib/shareOrCopy';
+import { FriendsEntry } from '@/components/Friends';
 import { openStorePage } from '@/lib/review';
 import * as Linking from 'expo-linking';
 import { t } from '@/i18n';
@@ -276,6 +277,7 @@ export default function Me() {
         </View>
         <Feather name="chevron-right" size={20} color={color.textDim} />
       </Pressable>
+      <FriendsEntry />
       <TalkEntry />
       <WalletEntry />
       <PinkGoldEntry wallet={myWallet} />

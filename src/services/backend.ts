@@ -10,6 +10,7 @@ import type { CallAnswer, CallMinutes, SpicyCall } from '../domain/calls';
 import type { Spicy, SpicyInput, SpicyPlan } from '../domain/spicy';
 import type { QuizResult, SpicyTerms } from '../domain/spicyQuiz';
 import type { SpicyShare, TopUpStatus, TreatItem, TreatPartner, Wallet } from '../domain/wallet';
+import type { MyReferrals } from '../domain/referrals';
 import type { Switches } from '../domain/paid';
 import type { AiReply, AiSession, AiTone, AiTurn, CallLength, KycInput, ListenerCard, ListenerInput, Sex, Talk, TalkOpen, TalkReportReason, Want } from '../domain/talk';
 import type { Account, BlockedPerson, ContactCheck, Invite, MyContact, MyPhoto, NewInvite, NewReport, OnboardingInput, CodeKind, CodeMode, PickedPhoto, Profile, Reveal } from '../domain/types';
@@ -316,6 +317,15 @@ export interface Backend {
   claimReferral(code: string): Promise<Talk>;
   /** Mock only: a made-up friend joins with my link and verifies a moment later. */
   demoFriendJoins?(): Promise<Talk>;
+  /**
+   * Bring a friend (D118): my link, how many friends joined and count, my rewards, and my own
+   * checklist if I joined with a link. Opening it gives any rewards that are due.
+   */
+  myReferrals(): Promise<MyReferrals>;
+  /** This app's own device id (src/lib/device.ts), so one phone cannot make many friends (PL192). */
+  noteDevice(device: string): Promise<void>;
+  /** Mock only: a made-up friend joins with my link and counts a moment later. */
+  demoReferral?(): Promise<MyReferrals>;
 
   subscribe(listener: (e: BackendEvent) => void): () => void;
 
