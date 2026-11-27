@@ -12,6 +12,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { Platform, StyleSheet, View } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { Button } from '@/components/ui/Button';
+import { Tag } from '@/components/ui/Chip';
 import { Columns } from '@/components/ui/Columns';
 import { ErrorText } from '@/components/ui/ErrorText';
 import { Screen } from '@/components/ui/Screen';
@@ -144,7 +145,7 @@ export default function BringAFriend() {
               <View key={k} style={styles.row}>
                 <Feather name={done ? 'check-circle' : 'circle'} size={18} color={done ? color.gold : color.textMute} />
                 <T style={{ flex: 1 }} c={done ? color.text : color.textDim}>{t(`friends.need.${k === 'phone' && !state.needsPhone ? 'linked' : k}`)}</T>
-                {!done && go ? <Button kind="ghost" label={t('friends.do')} onPress={() => router.push(go)} /> : null}
+                {!done && go ? <Tag label={t('friends.do')} tone={color.gold} onPress={() => router.push(go)} /> : null}
               </View>
             );
           })}

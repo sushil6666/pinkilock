@@ -98,6 +98,9 @@ With no keys set, the app runs on ten made-up people who answer by themselves. A
     unlock is free once a week, and paid listener calls and treats wait. To try the paid flows above,
     start the mock with `EXPO_PUBLIC_MOCK_PAID=1 npx expo start`. Live, the repository variable
     `PAID_FEATURES=on` and a Supabase deploy take payments again (`OPERATIONS.md`, "Paid features").
+16. **Bring a friend** (D118): in **Me**, tap **Bring a friend**. Share your link, or a Doubles
+    invite. In the mock, **Try it: a made-up friend joins** adds a friend who counts a few seconds
+    later: you get 7 days of Pink Gold and a free Boost, and the fifth friend gives a free month.
 
 ## Run the backend locally (Docker)
 

@@ -656,6 +656,23 @@ environment variable of the `production` environment.
 
 To check it in the SQL editor: `select public.app_switches();`.
 
+### Bring a friend
+
+Referral rewards (D118) need nothing set up beyond the payment pause's grant calls: they are given
+by the server, in `private.referral_settle`, when someone opens Bring a friend and every 10 minutes
+(pg_cron job `pinkilock-referrals`). A friend counts only with a **verified phone**, so until phone
+sign-in (Twilio, `docs/phase-3-checklist.md`) is on, nobody counts. To let a verified email count in
+the meantime, in the SQL editor:
+
+```sql
+select private.set_config('referral_needs_phone', 'false');   -- 'true' to need a phone again
+```
+
+To look at it: `select referrer, count(*) from private.referral_rewards group by 1 order by 2 desc;`
+(many from one person in a short time is worth a look; at most 10 count per 30 days anyway). A
+friend's checklist: `select private.referral_check('<user id>');`. To give a reward by hand, use the
+gift calls above with a ref like `referral:<friend id>`.
+
 ### Wallet
 
 Credits (D104) are a closed loop: nothing in the app or the database can pay a person, and
