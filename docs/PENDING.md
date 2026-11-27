@@ -24,11 +24,11 @@ merge, **Supabase deploy** and **Web deploy** run on their own; check they go gr
 
 - [x] **#100** Pause payments, keep the paid features (D117). Merged 2026-11-27.
 - [x] **#101** Bring a friend: referral rewards (D118). Merged 2026-11-27.
-- [ ] **#102** Couple mode after a match (D120). It has a conflict with main right now: its thread fixes that, then merge.
+- [ ] **#102** Couple mode after a match (D120). Up to date with main, tests pass: merge first.
 - [ ] **#103** This week on Plans: three plan ideas each Monday and city events (D121). After #102.
 - [ ] **#104** This list. Any time.
-- [ ] Later retention PRs from the "Keep users coming back after a match" thread, in the order that
-      thread gives.
+- [ ] Kept-plan streak and private city standing (D122), coming next from the "Keep users coming
+      back after a match" thread: after #103. More from that thread follow in the order it gives.
 
 How: open the PR on GitHub, "Merge pull request", "Confirm merge". If GitHub says the branch is out
 of date or has conflicts, tell the thread that made it; do not fix it in the browser.
