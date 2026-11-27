@@ -713,6 +713,7 @@ export const en = {
     more: 'More about {name}',
     ideas: { one: '{count} idea', other: '{count} ideas' },
     ways: { one: '{count} way', other: '{count} ways' },
+    talk: 'Something to talk about',
     about: 'How it works',
     perks: { one: '{count} perk', other: '{count} perks' },
   },
