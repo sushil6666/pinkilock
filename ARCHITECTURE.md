@@ -526,6 +526,8 @@ asker's city; its challenge is picked from `private.couple_challenge_ids()` (the
 couple at once; deleting an account cascades. Streaks, day counts and anniversaries are worked out in
 the app (`src/domain/couple.ts`). "Plan it" opens the usual ask, so every date is still a pinky
 promise. The screen reads the state again every 15 seconds while open; there are no pushes yet.
+With friends (D123): a double date opens the ordinary Doubles ask to the partner, and "Got a single
+friend?" opens Bring a friend (`/friends`); neither adds a server rule.
 
 ### This week: plan ideas and city events
 

@@ -213,6 +213,8 @@ Font scaling is allowed up to 1.3x (`maxFontSizeMultiplier`) so layouts hold on 
 - **Your record** (D122): one `surface` panel on Me under the Trust Score, gold `label`. The streak
   uses the same 44-point award ring as Couple mode (filled `gold` once Steady); the city badge is a
   `pinkWash` ring with a `pinkDeep` arrow. Everything else is `caption` text.
+- **With friends** (D123): one `surface` panel at the end of Couple mode, gold `label`; a gold `users`
+  icon for the double date and a pink `gift` icon for the friend, split by a hairline, ghost buttons.
 
 ## 5. Motion
 
