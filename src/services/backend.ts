@@ -187,6 +187,10 @@ export interface Backend {
    */
   cityStanding(): Promise<CityStanding>;
 
+  /** Gentle reminders (D124): at most 3 a week, on by default. Answers whether they are on. */
+  nudges(): Promise<boolean>;
+  setNudges(on: boolean): Promise<boolean>;
+
   /**
    * Couple mode (D120): only after a match (a kept plan for two, both want round two), and only the
    * two of us see it. Each call answers with the whole of it as it now stands.

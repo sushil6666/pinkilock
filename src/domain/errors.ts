@@ -193,6 +193,8 @@ export const ERRORS = {
   PL231: 'Your birthday is on the list already.',
   PL232: 'Twelve special days is the most. Remove one to add another.',
   PL233: 'That day is not yours to remove.',
+  // Gentle pushes (D124).
+  PL234: 'Turn reminders on or off.',
 
   PA001: 'Phone sign-in is not switched on yet.',
   PA002: 'Email sign-in is not switched on yet.',

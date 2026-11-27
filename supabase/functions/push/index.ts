@@ -7,7 +7,7 @@
  *
  * It trusts the outbox for what to say. Title and body were written in SQL from columns the
  * recipient can already read (supabase/migrations/..._push.sql); this function adds only the
- * invite id and the kind, so that a tap can open the right screen.
+ * invite id (none for a gentle reminder, D124) and the kind, so that a tap can open the right screen.
  *
  * It also asks Expo for the receipts of what it sent at least 15 minutes ago (push_tickets): a
  * device that turned out to be gone loses its token, and any other failure is written on the
@@ -42,7 +42,7 @@ const SERVICE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
 /** Expo accepts at most 100 messages per request. */
 const BATCH = 100;
 
-interface Row { id: number; recipient_id: string; invite_id: string; kind: string; title: string; body: string; trace: string | null }
+interface Row { id: number; recipient_id: string; invite_id: string | null; kind: string; title: string; body: string; trace: string | null }
 interface Ticket { status: 'ok' | 'error'; id?: string; message?: string; details?: { error?: string } }
 interface Receipt { status: 'ok' | 'error'; message?: string; details?: { error?: string } }
 interface Totals { claimed: number; sent: number; no_device: number; failed: number; tokens_removed: number; receipts: number; receipt_errors: number; photos_deleted: number }

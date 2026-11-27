@@ -73,6 +73,7 @@ With no keys set, the app runs on ten made-up people who answer by themselves. A
 13. **Your record**: on **Me**, under your Trust Score: weeks in a row with a kept plan (a Steady
     badge at 3), and in the mock a made-up "top X% of promise keepers" in your city and how the city
     did this month. Only you see it.
+    Under **Notifications** on **Me**, **Gentle reminders** can be turned off (the mock never pushes).
 14. **Spicy mode**: in **Me**, tap the pink **Spicy mode** card. Read the safety rules and the **Spicy
     terms**, agree, and pass the 5-question quiz (all five right; a miss shows what to read again,
     D107). Then tick 18+ and the rules, add a Discord username (or Telegram, or Signal) and pick boundaries; the mock account needs a
