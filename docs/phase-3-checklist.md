@@ -7,20 +7,20 @@ and phone sign-in and a production target in the workflows. These steps need you
 
 - [x] Merge the Phase 3 pull request (#3). The **Supabase deploy** run on `main` applied
       `20261117000001` to `20261117000003` to the preview project and the live tests passed there.
-- [ ] Merge the email sign-in pull request. Its deploy applies `20261117000004` (the export
+- [x] Merge the email sign-in pull request. Its deploy applies `20261117000004` (the export
       names the account's email) and sets up email sign-in if the `SMTP_*` settings exist. The
       safety test's email and phone parts run only on the local stack (local mailbox, test
       numbers), so nobody real is mailed or texted.
-- [ ] Check that **CI** and **Supabase deploy** are green on `main`, and that the deploy summary
+- [x] Check that **CI** and **Supabase deploy** are green on `main`, and that the deploy summary
       says "Email sign-in: on".
 
 ## 2. Email sign-in (free; do this first)
 
-- [ ] resend.com: sign up, Domains, add your domain and set the DNS records it shows until it
+- [x] resend.com: sign up, Domains, add your domain and set the DNS records it shows until it
       says Verified. Then API Keys, create one with "Sending access".
-- [ ] Repository variables: `SMTP_HOST` = `smtp.resend.com`, `SMTP_USER` = `resend`,
+- [x] Repository variables: `SMTP_HOST` = `smtp.resend.com`, `SMTP_USER` = `resend`,
       `SMTP_SENDER_EMAIL` = e.g. `codes@yourdomain`. Secret: `SMTP_PASSWORD` = the API key.
-- [ ] Run **Supabase deploy** (target `preview`). Its summary should say "Email sign-in: on".
+- [x] Run **Supabase deploy** (target `preview`). Its summary should say "Email sign-in: on".
 - [ ] On a phone: Me, Account, Add your email. Then Sign out, and "I already have an account"
       with the same email: the same profile and history come back.
 

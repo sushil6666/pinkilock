@@ -33,6 +33,8 @@ export default function PinkGoldPage() {
   const me = useStore((s) => s.me);
   const wallet = useMyWallet();
   const setWallet = useStore((s) => s.setWallet);
+  // D117: while payments are paused the perks stay and nothing is priced or sold.
+  const paid = useStore((s) => s.paid);
   const [status, setStatus] = useState<TopUpStatus>({ open: false, test: false });
   const [busy, setBusy] = useState('');
   const [error, setError] = useState('');
@@ -98,7 +100,16 @@ export default function PinkGoldPage() {
 
   const right = (
     <>
-      <View style={styles.panel}>
+      {paid ? null : (
+        <View style={styles.panel}>
+          <View style={styles.row}>
+            <Feather name="pause-circle" size={18} color={color.gold} />
+            <T v="heading" style={{ flex: 1 }}>{t('paused.goldTitle')}</T>
+          </View>
+          <T c={color.textDim}>{t('paused.goldBody')}</T>
+        </View>
+      )}
+      {paid ? <View style={styles.panel}>
         <T v="heading">{t('gold.plansTitle')}</T>
         <T v="caption" c={color.textDim}>{t('gold.plansBody')}</T>
         {payNote ? <T v="caption" c={canPay ? color.gold : color.textDim}>{payNote}</T> : null}
@@ -117,7 +128,7 @@ export default function PinkGoldPage() {
             </View>
           ))}
         </View>
-      </View>
+      </View> : null}
 
       <View style={styles.panel}>
         <T v="heading">{t('gold.boostsTitle')}</T>
@@ -130,7 +141,8 @@ export default function PinkGoldPage() {
           <Button icon="trending-up" label={t('gold.useBoost')} busy={busy === 'use'} disabled={boosted || !!busy}
             onPress={run('use', async () => setWallet(await backend.boost()))} />
         ) : null}
-        <View style={styles.grid}>
+        {paid ? null : <T v="caption" c={color.textDim}>{t('paused.boosts')}</T>}
+        {paid ? <View style={styles.grid}>
           {BOOST_PACKS.map((b) => (
             <View key={b.id} style={styles.plan}>
               <T v="bodyBold">{t('gold.boostPack', { count: b.boosts })}</T>
@@ -141,7 +153,7 @@ export default function PinkGoldPage() {
               ) : null}
             </View>
           ))}
-        </View>
+        </View> : null}
         {note ? <T v="caption" c={color.gold}>{note}</T> : null}
         {error ? <ErrorText text={error} /> : null}
       </View>

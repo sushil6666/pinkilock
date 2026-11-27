@@ -39,6 +39,20 @@ import {
 import { BOOST_VALID_MONTHS, MEMBER_FREE_BOOSTS, addMonths, boostPackOf, canBuy, goldUntilAfter, isShopId, istMonth, istMonthEnd, openAskCap, planOf } from '../../domain/pinkGold';
 import { t } from '../../i18n';
 import { createMockTalk, emptyMockTalk, type MockTalkDb } from './mockTalk';
+import { venuesFor } from '../../domain/venues';
+import type { CityEvent } from '../../domain/weekly';
+import { trustScore } from '../../domain/trust';
+import type { CityStanding } from '../../domain/streaks';
+import { spicyFreeNext } from '../../domain/paid';
+import { DEVICE_ID, REFERRAL_BOOSTS, REFERRAL_GOLD_DAYS, REFERRAL_MONTH_AT, REFERRAL_MONTH_DAYS, type MyReferrals } from '../../domain/referrals';
+
+/** D117: payments are paused in the mock too, unless the build sets EXPO_PUBLIC_MOCK_PAID=1. */
+const paidOn = () => process.env.EXPO_PUBLIC_MOCK_PAID === '1';
+
+/** The made-up friend who joins with my link counts this long after (D118). */
+const FRIEND_COUNTS_AFTER = 4000;
+import { createMockCouple, type MockCoupleDb } from './mockCouple';
+import { ideasFor } from '../../domain/ideas';
 
 const KEY = 'pinkilock.mock.v1';
 const LATENCY = 280;
@@ -84,6 +98,16 @@ interface Db {
   spicyCalls?: Record<string, MockCall[]>;
   /** Talk mode (D108), mine. */
   talk?: MockTalkDb;
+  /** Bring a friend (D118): the made-up friends who joined with my link, and when each counts. */
+  referrals?: { friends: { countsAt: number; counted?: boolean }[]; month?: boolean };
+  /** This app's device id, once noted. */
+  device?: string;
+  /** Plans (by id) where I said "see them again"; the made-up people always do too. */
+  roundTwo?: string[];
+  /** Gentle reminders turned off (D124). */
+  nudgesOff?: boolean;
+  /** Couple mode (D120), asked or on. */
+  couple?: MockCoupleDb | null;
 }
 
 /** A call as private.spicy_calls holds it, from my side. The made-up person is always on time. */
@@ -129,10 +153,12 @@ interface MockWallet {
   /** Spicy unlock (D105): what I paid towards each match. The made-up people never pay. */
   spicyPaid: Record<string, number>;
   spicyDone: string[];
+  /** D117: when I used a free unlock (payments paused), newest last. */
+  spicyFree?: number[];
   /** Pink Gold (D115, D116): when mine ends; absent when I never had it. */
   goldUntil?: number;
   /** Boosts (D116): bought ones and a member's free ones, until used or lapsed. */
-  boosts?: { source: 'bought' | 'member'; ref: string; expires: number; used?: number }[];
+  boosts?: { source: 'bought' | 'member' | 'gift'; ref: string; expires: number; used?: number }[];
   /** Months (Indian time) in which my free Saathi session as a member was used. */
   saathiMonths?: string[];
 }
@@ -356,6 +382,8 @@ export function createMockBackend(options: { captcha?: () => Promise<string | un
     if (profileId === ME_ID) fail('PL010');
     if (!isBlocked(d, profileId)) d.blocked = [...(d.blocked ?? []), { id: profileId, at: now }];
     callStop(d, profileId);
+    // A block ends Couple mode for good (D120).
+    if (d.couple?.partnerId === profileId) d.couple = null;
     const theirs = d.invites.filter((i) => rules.peopleOf(i).includes(profileId));
     for (const i of theirs) {
       put(d, rules.endForBlock(i, now));
@@ -424,7 +452,10 @@ export function createMockBackend(options: { captcha?: () => Promise<string | un
     const myYes = !!d.spicyYes?.includes(them);
     const w = walletOf(d);
     const done = myYes && w.spicyDone.includes(them);
-    const unlock = { mine: w.spicyPaid[them] ?? 0, theirs: 0, done: w.spicyDone.includes(them) };
+    const unlock = {
+      mine: w.spicyPaid[them] ?? 0, theirs: 0, done: w.spicyDone.includes(them),
+      ...(paidOn() ? {} : { free: true, freeNext: spicyFreeNext(w.spicyFree ?? [], Date.now()) }),
+    };
     // D111: the usernames wait for a kept call and for both to share (the made-up person always does).
     const keptCall = done && (d.spicyCalls?.[them] ?? []).some((c) => c.outcome === 'talked');
     const myShare = !!d.spicyShares?.includes(them);
@@ -648,11 +679,96 @@ export function createMockBackend(options: { captcha?: () => Promise<string | un
     linked: () => !!(talkDb?.phone || talkDb?.email),
     age: () => talkDb?.me?.age ?? 0,
     blocked: () => false,
+    paid: paidOn,
+  });
+
+  // --- Bring a friend (D118), as in supabase/migrations/20261127000002_referrals.sql. The made-up
+  // friend who joins with my link counts a few seconds later: we get the same rewards as live. ---
+  function settleReferrals(d: Db, now: number) {
+    const r = (d.referrals ??= { friends: [] });
+    const w = walletOf(d);
+    const gift = (days: number) => { w.goldUntil = Math.max(w.goldUntil ?? 0, now) + days * DAY; };
+    for (const f of r.friends) {
+      if (f.counted || f.countsAt > now) continue;
+      f.counted = true;
+      const n = r.friends.filter((x) => x.counted).length;
+      gift(REFERRAL_GOLD_DAYS);
+      for (let i = 0; i < REFERRAL_BOOSTS; i++) (w.boosts ??= []).push({ source: 'gift', ref: `gift:referral:${n}`, expires: addMonths(now, BOOST_VALID_MONTHS) });
+      if (n === REFERRAL_MONTH_AT && !r.month) { r.month = true; gift(REFERRAL_MONTH_DAYS); }
+    }
+  }
+  function referralsView(d: Db, now = Date.now()): MyReferrals {
+    settleReferrals(d, now);
+    const r = d.referrals!;
+    d.talk ??= emptyMockTalk();
+    const face = myFaceList.some((f) => f.status === 'approved' || now - f.at >= PHOTO_CHECK_MS);
+    return {
+      code: d.talk.code,
+      joined: r.friends.length,
+      counted: r.friends.filter((f) => f.counted).length,
+      month: !!r.month,
+      needsPhone: false,
+      mine: d.talk.referredBy
+        ? { phone: !!d.phone, face, plans: (d.me?.ideaIds.length ?? 0) > 0, device: !!d.device, counted: false, via: 'link' }
+        : null,
+    };
+  }
+  // --- Couple mode (D120), as in supabase/migrations/20261127000020_couple_mode.sql: see mockCouple.ts. ---
+  let coupleDb: Db | null = null;
+  const forTwo = (i: Invite) => i.status === 'kept' && !rules.isDouble(i);
+  const couplePart = createMockCouple({
+    async open() {
+      const d = await load();
+      await wait(LATENCY);
+      if (!d.me) fail('PL002');
+      coupleDb = d;
+      return { couple: d.couple ?? null, now: Date.now() };
+    },
+    put: (c) => {
+      if (coupleDb) coupleDb.couple = c;
+      save();
+    },
+    matches: () => {
+      const d = coupleDb!;
+      const ids = visible(d).invites.filter((i) => forTwo(i) && (d.roundTwo ?? []).includes(i.id)).map((i) => rules.otherId(i, ME_ID));
+      return [...new Set(ids)];
+    },
+    firstDate: (id) => {
+      const starts = visible(coupleDb!).invites.filter((i) => forTwo(i) && rules.otherId(i, ME_ID) === id).map((i) => i.startsAt);
+      return starts.length ? Math.min(...starts) : null;
+    },
+    offered: (ideaId) => ideasFor(coupleDb?.me?.country, coupleDb?.me?.city).some((i) => i.id === ideaId),
+    blocked: (id) => isBlocked(coupleDb!, id),
   });
 
   return {
     kind: 'mock',
     ...talkPart,
+    ...couplePart,
+
+    async myReferrals() {
+      const d = await load();
+      await wait(LATENCY);
+      if (!d.me) fail('PL002');
+      const view = referralsView(d);
+      save();
+      return view;
+    },
+    async noteDevice(device) {
+      if (!DEVICE_ID.test(device)) fail('PL192');
+      const d = await load();
+      d.device = device;
+      save();
+    },
+    async demoReferral() {
+      const d = await load();
+      await wait(LATENCY);
+      if (!d.me) fail('PL002');
+      (d.referrals ??= { friends: [] }).friends.push({ countsAt: Date.now() + FRIEND_COUNTS_AFTER });
+      const view = referralsView(d);
+      save();
+      return view;
+    },
 
     async boot() {
       const d = await load();
@@ -760,6 +876,53 @@ export function createMockBackend(options: { captcha?: () => Promise<string | un
         d.me = { ...d.me, freeWindows: FREE_WINDOWS.map((x) => x.id).filter((id) => windows.includes(id)) };
         return { me: d.me };
       }),
+
+    // City events (D121): the team writes them live; the mock makes two from my city's places so the
+    // card can be seen. i18n: data
+    async cityEvents(): Promise<CityEvent[]> {
+      const d = await load();
+      await wait(LATENCY);
+      if (!d.me) fail('PL002');
+      const places = venuesFor(d.me.city, d.me.area, d.me.area);
+      const market = places.find((v) => v.kind === 'market') ?? places[0];
+      const open = places.find((v) => v.kind === 'promenade' || v.kind === 'park') ?? places[1] ?? places[0];
+      if (!market) return [];
+      const day = new Date();
+      day.setHours(0, 0, 0, 0);
+      const at = (days: number, hour: number) => day.getTime() + days * rules.DAY + hour * 3_600_000;
+      return [
+        { id: 'mock_market', title: 'Weekend flea market', emoji: '🛍️', place: `${market.name}, ${market.area}`, venueId: market.id, ideaId: 'thrift_dare', startsAt: at(1, 10), endsAt: at(2, 20), url: null, free: true },
+        { id: 'mock_music', title: 'Sunset music, open air', emoji: '🎶', place: `${open.name}, ${open.area}`, venueId: open.id, ideaId: 'sunset_spot', startsAt: at(4, 17), endsAt: at(4, 20), url: 'https://example.com/events', free: false },
+      ];
+    },
+
+    // City standing (D122), as in supabase/migrations/20261127000022_city_standing.sql. The mock city
+    // is small, so it makes up the crowd: my bucket follows my own score; the city figure is fixed.
+    async cityStanding(): Promise<CityStanding> {
+      const d = await load();
+      await wait(LATENCY);
+      if (!d.me) fail('PL002');
+      const n = d.me.kept + d.me.flaked;
+      const score = trustScore(d.me.kept, d.me.flaked);
+      const top = n < 3 ? null : score >= 95 ? 5 : score >= 85 ? 10 : score >= 75 ? 25 : score >= 60 ? 50 : null;
+      return { city: d.me.city, ready: true, top, cityKeptPercent: 84 };
+    },
+
+    // Gentle reminders (D124): the switch only; the mock never pushes.
+    async nudges() {
+      const d = await load();
+      await wait(LATENCY);
+      if (!d.me) fail('PL002');
+      return !d.nudgesOff;
+    },
+    async setNudges(on: boolean) {
+      const d = await load();
+      await wait(LATENCY);
+      if (!d.me) fail('PL002');
+      d.nudgesOff = !on;
+      save();
+      return on;
+    },
 
     async selfLove() {
       const d = await load();
@@ -871,6 +1034,16 @@ export function createMockBackend(options: { captcha?: () => Promise<string | un
       if (!plan.open) fail('PL130');
       if (!plan.mutual) fail('PL146');
       const w = walletOf(d);
+      if (!paidOn()) {
+        // D117: free while payments are paused, one per 7 days; what I paid towards it comes back.
+        if (w.spicyDone.includes(profileId)) fail('PL145');
+        if (spicyFreeNext(w.spicyFree ?? [], Date.now()) !== null) fail('PL190');
+        spicyRefund(d, profileId);
+        w.spicyDone.push(profileId);
+        w.spicyFree = [...(w.spicyFree ?? []), Date.now()];
+        save();
+        return mockSpicyPlan(d, profileId);
+      }
       const mine = w.spicyPaid[profileId] ?? 0;
       const amount = spicyShare(w, share, mine, 0);
       move(w, 'spicy_unlock', -amount, 0, `${profileId}:${Date.now()}:${Math.random()}`);
@@ -977,11 +1150,15 @@ export function createMockBackend(options: { captcha?: () => Promise<string | un
         if (streakOf(w.visits, today) >= STREAK_DAYS && !w.ledger.some((l) => l.reward === 'week_streak' && l.at > now - 6 * DAY)) reward(w, 'week_streak', today);
       }),
     // The mock is Razorpay's test mode: a top-up is paid at once and no money moves.
+    async switches() {
+      return { paid: paidOn() };
+    },
     async topUpStatus() {
-      return { open: topUpsHere(Platform.OS), test: true };
+      return { open: topUpsHere(Platform.OS) && paidOn(), test: true };
     },
     topUp: (packId) =>
       walletChange((_d, w, now) => {
+        if (!paidOn()) fail('PL188');
         if (!topUpsHere(Platform.OS)) fail('PL144');
         if (isShopId(packId)) {
           // A Pink Gold plan or a Boost pack (D116): paid in rupees, never credits.
@@ -1026,6 +1203,7 @@ export function createMockBackend(options: { captcha?: () => Promise<string | un
     },
     treatPlan: (inviteId, partnerId, item) =>
       walletChange((d, w, now) => {
+        if (!paidOn()) fail('PL188');
         const inv = d.invites.find((i) => i.id === inviteId);
         if (!inv || inv.status !== 'locked' || inv.startsAt <= now || rules.isDouble(inv) || ideaOf(inv.ideaId).kind !== 'irl' || partnerId !== 'demo_partner' || !(item in TREATS)) fail('PL140');
         if (w.treats[inviteId]) fail('PL141');
@@ -1049,12 +1227,17 @@ export function createMockBackend(options: { captcha?: () => Promise<string | un
     async rateDate(inviteId, answer) {
       const d = await load();
       if (find(d, inviteId).status !== 'kept') fail('PL074');
-      if (!ratings.has(inviteId)) ratings.set(inviteId, answer.again);
+      if (!ratings.has(inviteId)) {
+        ratings.set(inviteId, answer.again);
+        if (answer.again && !answer.unsafe) d.roundTwo = [...(d.roundTwo ?? []), inviteId];
+        save();
+      }
       if (reward(walletOf(d), 'rated_date', inviteId)) save();
     },
 
     async dateFeedback(inviteId) {
-      const mine = ratings.get(inviteId);
+      const d = await load();
+      const mine = ratings.get(inviteId) ?? ((d.roundTwo ?? []).includes(inviteId) ? true : undefined);
       return { rated: mine !== undefined, roundTwo: mine === true };
     },
 
@@ -1338,6 +1521,10 @@ export function createMockBackend(options: { captcha?: () => Promise<string | un
         spicy: d.spicy ? { discord: d.spicy.discord, telegram: d.spicy.telegram, signal: d.spicy.signal, boundaries: d.spicy.boundaries, since: d.spicy.since ? new Date(d.spicy.since).toISOString() : null, yes: (d.spicyYes ?? []).map((who) => ({ with: who })),
           calls: Object.entries(d.spicyCalls ?? {}).flatMap(([who, list]) => list.map((c) => ({ with: who, my_times: c.mySlots.map((x) => new Date(x).toISOString()), my_minimum: c.myMinutes, starts_at: c.startsAt ? new Date(c.startsAt).toISOString() : null, minimum: c.minutes, my_minutes_on_timer: c.myMins.length, my_answer: c.myAnswer, outcome: c.outcome, counted_against_me: c.fault === 'me' || c.fault === 'both', credits_back: c.refunded }))) } : null,
         self_love: d.selfLove ? { moods: d.selfLove.moods, notes: d.selfLove.notes.map(({ kind, body, day, at }) => ({ kind, body, day, at: new Date(at).toISOString() })), paused_until: d.selfLove.pausedUntil, reset: d.selfLove.reset } : null,
+        couples: d.couple ? [{ status: d.couple.status, with: d.couple.partnerId, asked_at: new Date(d.couple.askedAt).toISOString(), since: d.couple.since ? new Date(d.couple.since).toISOString() : null,
+          date_list: d.couple.ideas.map((i) => ({ idea: i.ideaId, added_by_me: i.mine, my_heart: i.heartMe, done: i.done })),
+          special_days: d.couple.days.map((x) => ({ kind: x.kind, day: x.day, added_by_me: x.mine })),
+          challenges: d.couple.weeks.map((w) => ({ week: w.week, challenge: w.challenge, i_did_it: w.me })) }] : [],
       }, null, 2);
     },
 

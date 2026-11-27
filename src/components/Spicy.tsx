@@ -15,7 +15,7 @@ import { quiet } from '../lib/log';
 import { shown } from '../lib/report';
 import { backend } from '../services';
 import { color, radius, space } from '../theme/tokens';
-import { t, type Key } from '../i18n';
+import { fmtDay, t, type Key } from '../i18n';
 import { SpicyCallPanel } from './SpicyCall';
 import { Button } from './ui/Button';
 import { Tag } from './ui/Chip';
@@ -185,6 +185,17 @@ function Unlock({ plan, name, busy, onPay }: { plan: SpicyPlan; name: string; bu
   const half = SPICY_UNLOCK / 2;
   const rest = SPICY_UNLOCK - plan.unlock.mine - plan.unlock.theirs;
   const paidHalf = plan.unlock.mine >= half;
+  // D117: while payments are paused the unlock is free, one new match a week each.
+  if (plan.unlock.free) {
+    const next = plan.unlock.freeNext ?? null;
+    return (
+      <View style={{ gap: space.sm }}>
+        <T c={color.textDim}>{t('paused.spicyBody', { name })}</T>
+        {next ? <T v="caption" c={color.gold}>{t('paused.spicyNext', { date: fmtDay(next) })}</T> : null}
+        <Button icon="unlock" label={t('paused.spicyFree')} busy={busy} disabled={!!next} onPress={() => onPay('full')} />
+      </View>
+    );
+  }
   return (
     <View style={{ gap: space.sm }}>
       <T c={color.textDim}>{t('spicy.unlockBody', { total: SPICY_UNLOCK, half, name })}</T>

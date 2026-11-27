@@ -53,7 +53,8 @@ export default function TalkHub() {
         </View>
         <T c={color.textDim}>{t('talk.aiBody')}</T>
         <T v="caption" c={color.textDim}>
-          {pass ? t('talk.aiPassOn', { time: until(pass) }) : t('talk.aiPrice', { n: AI_SESSION_CREDITS, m: AI_SESSION_MINUTES })}
+          {pass ? t('talk.aiPassOn', { time: until(pass) }) : state.paused ? t('paused.saathiPrice', { m: AI_SESSION_MINUTES })
+            : t('talk.aiPrice', { n: AI_SESSION_CREDITS, m: AI_SESSION_MINUTES })}
         </T>
         <Button icon="message-circle" label={t('talk.aiOpen')} onPress={() => router.push('/talk/ai')} />
       </Animated.View>
@@ -65,7 +66,7 @@ export default function TalkHub() {
         </View>
         <T c={color.textDim}>{t('talk.personBody')}</T>
         <T v="caption" c={free ? color.pink : color.textDim}>
-          {free ? t('talk.personFree', { n: FREE_CALL_MINUTES }) : t('talk.personPrice', { n: LISTENER_PER_MINUTE })}
+          {free ? t('talk.personFree', { n: FREE_CALL_MINUTES }) : state.paused ? t('paused.listenersLocked') : t('talk.personPrice', { n: LISTENER_PER_MINUTE })}
         </T>
         <Button icon="phone" label={t('talk.personOpen')} onPress={() => router.push('/talk/listeners')} />
       </Animated.View>

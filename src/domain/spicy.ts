@@ -59,7 +59,11 @@ export interface SpicyPlan {
    * The unlock (D105): what each of us has paid towards the 600 credits, and whether it is done.
    * The usernames come only once it is done.
    */
-  unlock: { mine: number; theirs: number; done: boolean };
+  unlock: {
+    mine: number; theirs: number; done: boolean;
+    /** D117: payments are paused, so the unlock is free; my next free one opens then (null: now). */
+    free?: boolean; freeNext?: number | null;
+  };
   /**
    * D111: calls happen in Pinkilock now. The usernames wait for a call that counted as kept, and
    * for both of us to choose to share them. I am never told whether they chose to.

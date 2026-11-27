@@ -42,6 +42,9 @@ import { FREE_WINDOWS } from '@/domain/freeWindows';
 import { Vouches } from '@/components/Vouches';
 import { WherePicker, areaOk } from '@/components/WherePicker';
 import { shareOrCopy } from '@/lib/shareOrCopy';
+import { FriendsEntry } from '@/components/Friends';
+import { YourRecord } from '@/components/Record';
+import { Reminders } from '@/components/Reminders';
 import { openStorePage } from '@/lib/review';
 import * as Linking from 'expo-linking';
 import { t } from '@/i18n';
@@ -221,6 +224,9 @@ export default function Me() {
       ) : null}
 
       <View style={{ marginTop: space.lg }} />
+      <Fold icon="award" title={t('record.label')}>
+        <YourRecord />
+      </Fold>
       <Fold icon="map-pin" title={t('me.whereTitle')} value={me.area || me.city} open={!!move}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.md }}>
           <View style={{ flex: 1 }}>
@@ -277,6 +283,7 @@ export default function Me() {
 
       </>} right={<>
       <Entry tone="gold" icon={<Feather name="heart" size={20} color={color.gold} />} title={t('selfLove.meTitle')} spoken={t('selfLove.meOpen')} onPress={() => router.push('/self-love')} />
+      <FriendsEntry />
       <TalkEntry />
       <WalletEntry />
       <PinkGoldEntry wallet={myWallet} />
@@ -329,6 +336,7 @@ export default function Me() {
         <T v="caption" c={color.textDim}>{push.detail}</T>
         <T v="bodyBold" style={{ marginTop: space.sm }}>{t(live ? 'me.connected' : 'me.demoMode')}</T>
         <T v="caption" c={color.textDim}>{t(live ? 'me.connectedBody' : 'me.demoBody')}</T>
+        <Reminders />
       </Fold>
 
       <View style={{ marginTop: space.md }}>

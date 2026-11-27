@@ -34,7 +34,7 @@ test('titles name the screen and never the person', () => {
 
 test('only the gate, onboarding, sign-in, not-found, the terms, a friend\'s vouch or invite link and the safety page open without a profile', () => {
   const open = KNOWN_ROUTES.filter((r) => !needsProfile(r.split('/')));
-  assert.deepEqual(open.sort(), ['', '+not-found', 'account/sign-in', 'legal/[doc]', 'onboarding', 'r/[code]', 'safety', 'vouch/[token]']);
+  assert.deepEqual(open.sort(), ['', '+not-found', 'account/sign-in', 'duo/[token]', 'legal/[doc]', 'onboarding', 'r/[code]', 'safety', 'vouch/[token]']);
   // A route nobody has listed is shut, not open.
   assert.equal(needsProfile(['something', 'new']), true);
 });

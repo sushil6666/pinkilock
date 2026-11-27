@@ -53,6 +53,8 @@ export function WalletEntry() {
 export function PlanWallet({ inviteId, name, locked, route }: { inviteId: string; name: string; locked: boolean; route: string }) {
   const wallet = useMyWallet();
   const setWallet = useStore((s) => s.setWallet);
+  // D117: a treat is paid from bought credits, so it waits while payments are paused.
+  const paid = useStore((s) => s.paid);
   const [partners, setPartners] = useState<TreatPartner[]>([]);
   const [busy, setBusy] = useState('');
   const [error, setError] = useState('');
@@ -99,7 +101,7 @@ export function PlanWallet({ inviteId, name, locked, route }: { inviteId: string
 
       {treat ? <TreatState treat={treat} name={name} busy={busy === 'no'} onNo={run('no', async () => setWallet(await backend.declineTreat(inviteId)))} /> : null}
 
-      {!treat && locked && partners.map((p) => (
+      {!treat && locked && paid && partners.map((p) => (
         <View key={p.id} style={{ gap: space.sm }}>
           <T v="heading">{t('wallet.planTreatTitle', { name })}</T>
           <T v="caption" c={color.textDim}>{t('wallet.planTreatBody', { name, partner: p.name, items: p.items.map((i) => t(`wallet.items.${i}`).toLowerCase()).join(', ') })}</T>
@@ -111,7 +113,7 @@ export function PlanWallet({ inviteId, name, locked, route }: { inviteId: string
       ))}
 
       {error ? <ErrorText text={error} /> : null}
-      {short(COSTS.stake) && !staked && locked ? <Button kind="quiet" label={t('wallet.topUpFirst')} onPress={() => router.push('/wallet')} /> : null}
+      {paid && short(COSTS.stake) && !staked && locked ? <Button kind="quiet" label={t('wallet.topUpFirst')} onPress={() => router.push('/wallet')} /> : null}
     </View>
   );
 }

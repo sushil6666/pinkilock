@@ -201,6 +201,23 @@ Font scaling is allowed up to 1.3x (`maxFontSizeMultiplier`) so layouts hold on 
   reset steps, the gold-week badge filled `gold`), and Bounce back is pink (`pinkWash` behind
   `pinkDeep`). Mood buttons are slabs on `surfaceHi`, pink when picked; the week is seven rings.
 
+- **Couple mode** (D120): existing tokens only. The pair (both portraits overlapping, days together)
+  and the Plans entry card are pink (`pinkWash` behind `pinkDeep`); this week's challenge is gold
+  (`goldWash` behind `goldDeep`) with two tick rings that fill `gold` and the same award badge as Self
+  love. Date-list rows are `surfaceHi` cards, edged `pink` once both hearted; their actions are small
+  icon-and-word buttons (44-point targets) so a row stays one card on a phone.
+
+- **This week** (D121): one `surface` panel with a gold `label`; each idea is a row split by hairlines
+  with a gold pill button (`gold` behind `onGold` words) for the ask and `Tag`s for minutes and "Only
+  in {city}". Events are `surfaceHi` cards with small icon-and-word actions and a gold "Free" tag.
+- **Your record** (D122): one `surface` panel on Me under the Trust Score, gold `label`. The streak
+  uses the same 44-point award ring as Couple mode (filled `gold` once Steady); the city badge is a
+  `pinkWash` ring with a `pinkDeep` arrow. Everything else is `caption` text.
+- **With friends** (D123): one `surface` panel at the end of Couple mode, gold `label`; a gold `users`
+  icon for the double date and a pink `gift` icon for the friend, split by a hairline, ghost buttons.
+- **Gentle reminders** (D124): a `surface` row under the push status on Me, the same shape, with a
+  `sun` icon (gold when on) and a `Tag` to turn them off or on.
+
 ## 5. Motion
 
 | Token | Value | Use |

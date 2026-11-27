@@ -32,6 +32,7 @@ export default function WalletPage() {
   const me = useStore((s) => s.me);
   const wallet = useMyWallet();
   const setWallet = useStore((s) => s.setWallet);
+  const paid = useStore((s) => s.paid);
   const [status, setStatus] = useState<TopUpStatus>({ open: false, test: false });
   const [busy, setBusy] = useState('');
   const [error, setError] = useState('');
@@ -103,19 +104,19 @@ export default function WalletPage() {
             </View>
           </>
         ) : (
-          <T v="caption" c={color.textDim}>{t(Platform.OS === 'web' ? 'wallet.topOff' : 'wallet.topApp')}</T>
+          <T v="caption" c={color.textDim}>{paid ? t(Platform.OS === 'web' ? 'wallet.topOff' : 'wallet.topApp') : t('paused.wallet')}</T>
         )}
         {note ? <T v="caption" c={color.gold}>{note}</T> : null}
       </View>
 
       <View style={styles.panel}>
         <T v="heading">{t('wallet.spendTitle')}</T>
-        <Spend icon="trending-up" title={t('wallet.boostTitle')} body={boosted ? t('wallet.boostOn', { time: `${fmtDay(wallet.boostUntil!)}, ${fmtTime(wallet.boostUntil!)}` }) : `${t('wallet.boostBody')} ${t('gold.walletBoost')}`} />
+        <Spend icon="trending-up" title={t('wallet.boostTitle')} body={boosted ? t('wallet.boostOn', { time: `${fmtDay(wallet.boostUntil!)}, ${fmtTime(wallet.boostUntil!)}` }) : paid ? `${t('wallet.boostBody')} ${t('gold.walletBoost')}` : t('wallet.boostBody')} />
         <Button kind="quiet" icon="star" label={t('gold.walletBoostOpen')} onPress={() => router.push('/pink-gold')} />
         <Spend icon="send" title={t('wallet.extraTitle')} body={wallet.extraAsks ? `${t('wallet.extraBody')} ${t('wallet.extraHave', { n: wallet.extraAsks })}` : t('wallet.extraBody')}
           cost={COSTS.extra_ask} busy={busy === 'extra'} disabled={wallet.extraAsks >= MAX_EXTRA_ASKS || total < COSTS.extra_ask} onPress={run('extra', async () => setWallet(await backend.buyExtraAsk()))} />
         <Spend icon="shield" title={t('wallet.stakeTitle')} body={`${t('wallet.stakeBody', { n: COSTS.stake })} ${t('wallet.stakeWhere')}`} />
-        <Spend icon="coffee" title={t('wallet.treatTitle')} body={t('wallet.treatBody')} />
+        {paid ? <Spend icon="coffee" title={t('wallet.treatTitle')} body={t('wallet.treatBody')} /> : null}
         {error ? <ErrorText text={error} /> : null}
       </View>
     </>

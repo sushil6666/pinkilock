@@ -55,6 +55,10 @@ function open(data: unknown) {
   const kind = (data as { kind?: unknown } | null)?.kind;
   // The local after-date check (src/lib/safetyCheck.ts) leads to the Safety screen.
   if (kind === 'safety_check') return void router.push('/safety');
+  // Gentle reminders (D124) carry no invite.
+  if (kind === 'nudge_couple') return void router.push('/couple');
+  if (kind === 'nudge_week' || kind === 'nudge_streak') return void router.push('/plans');
+  if (kind === 'nudge_self') return void router.push('/self-love');
   if (typeof inviteId !== 'string') return;
   const isPlan = kind !== 'new_ask' && kind !== 'pinky_out';
   router.push(isPlan ? `/plan/${inviteId}` : `/invite/${inviteId}`);
