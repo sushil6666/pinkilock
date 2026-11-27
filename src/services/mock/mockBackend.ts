@@ -41,6 +41,8 @@ import { t } from '../../i18n';
 import { createMockTalk, emptyMockTalk, type MockTalkDb } from './mockTalk';
 import { venuesFor } from '../../domain/venues';
 import type { CityEvent } from '../../domain/weekly';
+import { trustScore } from '../../domain/trust';
+import type { CityStanding } from '../../domain/streaks';
 import { spicyFreeNext } from '../../domain/paid';
 import { DEVICE_ID, REFERRAL_BOOSTS, REFERRAL_GOLD_DAYS, REFERRAL_MONTH_AT, REFERRAL_MONTH_DAYS, type MyReferrals } from '../../domain/referrals';
 
@@ -890,6 +892,18 @@ export function createMockBackend(options: { captcha?: () => Promise<string | un
         { id: 'mock_market', title: 'Weekend flea market', emoji: '🛍️', place: `${market.name}, ${market.area}`, venueId: market.id, ideaId: 'thrift_dare', startsAt: at(1, 10), endsAt: at(2, 20), url: null, free: true },
         { id: 'mock_music', title: 'Sunset music, open air', emoji: '🎶', place: `${open.name}, ${open.area}`, venueId: open.id, ideaId: 'sunset_spot', startsAt: at(4, 17), endsAt: at(4, 20), url: 'https://example.com/events', free: false },
       ];
+    },
+
+    // City standing (D122), as in supabase/migrations/20261127000022_city_standing.sql. The mock city
+    // is small, so it makes up the crowd: my bucket follows my own score; the city figure is fixed.
+    async cityStanding(): Promise<CityStanding> {
+      const d = await load();
+      await wait(LATENCY);
+      if (!d.me) fail('PL002');
+      const n = d.me.kept + d.me.flaked;
+      const score = trustScore(d.me.kept, d.me.flaked);
+      const top = n < 3 ? null : score >= 95 ? 5 : score >= 85 ? 10 : score >= 75 ? 25 : score >= 60 ? 50 : null;
+      return { city: d.me.city, ready: true, top, cityKeptPercent: 84 };
     },
 
     async selfLove() {

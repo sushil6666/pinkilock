@@ -7,6 +7,7 @@
  */
 import type { Mood, NoteKind, SelfLove } from '../domain/selfLove';
 import type { CityEvent } from '../domain/weekly';
+import type { CityStanding } from '../domain/streaks';
 import type { Couple, DayKind } from '../domain/couple';
 import type { CallAnswer, CallMinutes, SpicyCall } from '../domain/calls';
 import type { Spicy, SpicyInput, SpicyPlan } from '../domain/spicy';
@@ -179,6 +180,12 @@ export interface Backend {
 
   /** What is on in my city now and in the next two weeks (D121), soonest first, at most 12. Written by the team. */
   cityEvents(): Promise<CityEvent[]>;
+
+  /**
+   * Where I stand in my city (D122): my top-percent bucket for keeping promises and the share of the
+   * city's plans kept this month. Only mine, never a name or a rank; nothing until the city has 20 people to compare.
+   */
+  cityStanding(): Promise<CityStanding>;
 
   /**
    * Couple mode (D120): only after a match (a kept plan for two, both want round two), and only the

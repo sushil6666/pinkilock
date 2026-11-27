@@ -493,6 +493,14 @@ select t.ok(t.fails('select * from public.city_events')
   and t.fails($$insert into public.city_events (id, city, title, place, starts_at, ends_at) values ('x_spam', 'Mumbai', 'Free money', 'Anywhere', now(), now() + interval '1 hour')$$)
   and t.fails($$update public.city_events set active = false$$), 'X cannot read, add or switch off city events');
 select t.ok(t.sqlstate('select * from city_events()') is null, 'but can read what is on in their city');
+-- D122: where I stand in my city is my own bucket. X's answer names nobody, and there is no table
+-- of ranks to read.
+set role authenticated;
+select t.as_user(:'x');
+select t.ok(t.sqlstate('select my_city_standing()') is null and not (my_city_standing()::text ~ '[0-9a-f]{8}-[0-9a-f]{4}'),
+  'X reads only a bucket, never anyone''s id');
+reset role;
+
 -- D120: Couple mode opens only after a match, and only the two of them see it. X cannot start it
 -- with Y without one, write a couple by hand, or reach the helpers.
 set role authenticated;

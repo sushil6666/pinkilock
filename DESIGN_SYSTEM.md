@@ -210,6 +210,9 @@ Font scaling is allowed up to 1.3x (`maxFontSizeMultiplier`) so layouts hold on 
 - **This week** (D121): one `surface` panel with a gold `label`; each idea is a row split by hairlines
   with a gold pill button (`gold` behind `onGold` words) for the ask and `Tag`s for minutes and "Only
   in {city}". Events are `surfaceHi` cards with small icon-and-word actions and a gold "Free" tag.
+- **Your record** (D122): one `surface` panel on Me under the Trust Score, gold `label`. The streak
+  uses the same 44-point award ring as Couple mode (filled `gold` once Steady); the city badge is a
+  `pinkWash` ring with a `pinkDeep` arrow. Everything else is `caption` text.
 
 ## 5. Motion
 

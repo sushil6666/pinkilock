@@ -949,6 +949,23 @@ export const en = {
     when: '{day}, {time}',
     until: 'Until {day}',
   },
+  record: {
+    label: 'Your record',
+    streak: { one: '{count} week in a row with a kept plan', other: '{count} weeks in a row with a kept plan' },
+    streakNone: 'Keep one plan this week to start a streak.',
+    steady: { one: 'Steady: {count} week in a row', other: 'Steady: {count} weeks in a row' },
+    badgeNext: { one: '{count} more week for the Steady badge', other: '{count} more weeks for the Steady badge' },
+    keepItGoing: 'Keep a plan this week to keep it going.',
+    keptThisWeek: 'This week is done. See you next week.',
+    best: { one: 'Your best: {count} week', other: 'Your best: {count} weeks' },
+    top: 'Top {top}% of promise keepers in {city}',
+    topHalf: 'In the top half of promise keepers in {city}',
+    topBody: 'Worked out from Trust Scores of people with 3 or more plans. Nobody sees a list.',
+    needThree: 'Keep 3 plans to see where you stand among promise keepers in {city}.',
+    notReady: 'Once 20 people in {city} have kept a few plans, you will see where you stand.',
+    city: '{city} kept {percent}% of its plans in the last 30 days.',
+    private: 'Only you see this. It never shows on your card.',
+  },
 
   couple: {
     eyebrow: 'Couple mode',

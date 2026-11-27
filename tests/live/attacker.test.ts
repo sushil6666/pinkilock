@@ -318,6 +318,14 @@ test('City events (D121): read through the function, written by the team only', 
   refused(await signedOut.rpc('city_events'), 'signed out, there are no events to read');
 });
 
+test('City standing (D122): only my own bucket, never a name, over the API too', async () => {
+  const mine = await x.backend.cityStanding();
+  assert.ok(mine.top === null || [1, 5, 10, 25, 50].includes(mine.top), 'X gets a bucket or nothing');
+  const { data } = await raw.rpc('my_city_standing' as never);
+  assert.ok(!JSON.stringify(data ?? {}).includes(y.id), 'the answer never names Y');
+  refused(await signedOut.rpc('my_city_standing' as never), 'signed out, there is no standing to read');
+});
+
 test('Couple mode (D120): only after a match, and only for the two, over the API too', async () => {
   // X and Y never matched: no couple can start, and the tables are in `private`, which PostgREST does not serve.
   refused(await raw.rpc('couple_ask', { p_to: y.id }), 'starting Couple mode with Y without a match');
