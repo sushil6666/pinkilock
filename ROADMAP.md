@@ -144,8 +144,9 @@ someone, and delete their account, on both platforms, against the production pro
   Supabase deploy take payments again (OPERATIONS.md, "Paid features").
 - [x] **Bring a friend** (D118): a friend who joins with my link or Doubles invite, verifies a phone
   and finishes their profile gives us both a week of Pink Gold and me a free Boost; five friends give
-  me a free month. One device per account, no self-referral, never for a rating. Counts need phone
-  sign-in (Twilio) unless `referral_needs_phone` is switched off (OPERATIONS.md, "Bring a friend").
+  me a free month. One device per account, no self-referral, never for a rating. A verified email
+  counts until phone sign-in (Twilio) is live; then set `referral_needs_phone` on (OPERATIONS.md,
+  "Bring a friend").
 
 - [x] **Photos behind the lock** (D088): up to three photos on Me, stored in a private Supabase
   Storage bucket by the `photo` Edge Function, which strips their metadata and draws the picture

@@ -39,13 +39,13 @@ export interface MyReferrals {
   counted: number;
   /** My free month has been given. */
   month: boolean;
-  /** A verified phone is needed (the server's `referral_needs_phone`); else an email does too. */
+  /** A verified phone is needed (the server's `referral_needs_phone`, off until phone sign-in is live); else an email does too. */
   needsPhone: boolean;
   /** I joined with someone's link: my own checklist. */
   mine: (ReferralNeeds & { counted: boolean; via: 'link' | 'duo' }) | null;
 }
 
-export const emptyReferrals = (): MyReferrals => ({ code: '', joined: 0, counted: 0, month: false, needsPhone: true, mine: null });
+export const emptyReferrals = (): MyReferrals => ({ code: '', joined: 0, counted: 0, month: false, needsPhone: false, mine: null });
 
 /** What my friends who count have given me so far. */
 export function referralRewards(counted: number): { goldDays: number; boosts: number; month: boolean } {

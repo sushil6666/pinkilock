@@ -787,7 +787,7 @@ export const en = {
     pitch: 'As a duo, you and {name} can ask two other friends out on a double: four people, one plan, and everyone keeps their own promise.',
     private: 'Only the two of you see who your duo is. Other people see that you have one.',
     setUpFirst: 'Set up my profile, then join',
-    newHere: 'New to Pinkilock? Set up your profile and verify your phone, and you and your friend both get {days} days of Pink Gold.',
+    newHere: 'New to Pinkilock? Set up your profile and verify your account, and you and your friend both get {days} days of Pink Gold.',
   },
 
   asks: {
@@ -1645,13 +1645,13 @@ export const en = {
     joined: 'Done. Your friend will be glad.',
     start: 'Set up my profile',
     home: 'Go to Pinkilock',
-    gold: 'And once you verify your phone, add a face photo and pick a plan, you both get {days} days of Pink Gold, free.',
+    gold: 'And once you verify your account, add a face photo and pick a plan, you both get {days} days of Pink Gold, free.',
   },
 
   friends: {
     eyebrow: 'Bring a friend',
     title: 'Bring a friend',
-    intro: 'Share your link. When a friend joins, verifies their phone and finishes their profile, you both get {days} days of Pink Gold, free.',
+    intro: 'Share your link. When a friend joins, verifies their account and finishes their profile, you both get {days} days of Pink Gold, free.',
     share: 'Share my link',
     copied: 'Link copied. Send it to a friend.',
     shareText: 'Join me on Pinkilock, the app where a date is a pinky promise. Sign up with my link and we both get {days} days of Pink Gold: {url}',
@@ -1680,7 +1680,7 @@ export const en = {
     joined: 'Joined',
     counted: 'Count',
     waiting: 'Waiting',
-    waitingBody: 'A friend counts once they have verified their phone, added a face photo and picked a plan. We never show you who they are.',
+    waitingBody: 'A friend counts once they have verified their account, added a face photo and picked a plan. We never show you who they are.',
     gotSoFar: { one: 'So far: {days} days of Pink Gold and {count} Boost.', other: 'So far: {days} days of Pink Gold and {count} Boosts.' },
     seeGold: 'See Pink Gold',
     mineTitle: 'You joined with a friend\'s link. Do these and you both get {days} days of Pink Gold:',

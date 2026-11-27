@@ -42,8 +42,14 @@ grant execute on function t.gold_days(uuid), t.gift_boosts(uuid) to authenticate
 set role authenticated;
 select t.as_user(:'r');
 select t.ok((my_referrals() ->> 'code') ~ '^[ABCDEFGHJKMNPQRSTUVWXYZ23456789]{8}$' and (my_referrals() ->> 'joined')::int = 0
-  and (my_referrals() ->> 'counted')::int = 0 and my_referrals() -> 'mine' = 'null'::jsonb and (my_referrals() ->> 'needs_phone')::boolean,
-  'Rani has a link, no friends yet, and joined with nobody''s link; a phone is needed by default');
+  and (my_referrals() ->> 'counted')::int = 0 and my_referrals() -> 'mine' = 'null'::jsonb and not (my_referrals() ->> 'needs_phone')::boolean,
+  'Rani has a link, no friends yet, and joined with nobody''s link; until phone sign-in is on, an email does');
+reset role;
+-- From here on the phone rule is on, as it will be once Twilio is live.
+select private.set_config('referral_needs_phone', 'true');
+set role authenticated;
+select t.as_user(:'r');
+select t.ok((my_referrals() ->> 'needs_phone')::boolean, 'with the switch on, the page says a phone is needed');
 select t.ok(t.sqlstate($$select note_device('short')$$) = 'PL192' and t.sqlstate($$select note_device(null)$$) = 'PL192', 'a device id that is not one (PL192)');
 select note_device('rani-phone-0000000001');
 select note_device('rani-phone-0000000001');

@@ -660,13 +660,15 @@ To check it in the SQL editor: `select public.app_switches();`.
 
 Referral rewards (D118) need nothing set up beyond the payment pause's grant calls: they are given
 by the server, in `private.referral_settle`, when someone opens Bring a friend and every 10 minutes
-(pg_cron job `pinkilock-referrals`). A friend counts only with a **verified phone**, so until phone
-sign-in (Twilio, `docs/phase-3-checklist.md`) is on, nobody counts. To let a verified email count in
-the meantime, in the SQL editor:
+(pg_cron job `pinkilock-referrals`). **For now a verified email counts** as well as a verified
+phone (Sushil, 2026-11-27), because phone sign-in (Twilio, `docs/phase-3-checklist.md`) is not on
+yet. **Once phone sign-in works**, make a phone the rule, in the SQL editor:
 
 ```sql
-select private.set_config('referral_needs_phone', 'false');   -- 'true' to need a phone again
+select private.set_config('referral_needs_phone', 'true');    -- 'false' lets an email count again
 ```
+
+The app's checklist and rules follow the switch by themselves.
 
 To look at it: `select referrer, count(*) from private.referral_rewards group by 1 order by 2 desc;`
 (many from one person in a short time is worth a look; at most 10 count per 30 days anyway). A

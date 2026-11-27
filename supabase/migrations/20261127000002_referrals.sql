@@ -7,8 +7,9 @@
 --     The link is used within 7 days of the friend's account being made, once, never my own, as
 --     in D109.
 --   * The friend "counts" once all of these are true (private.referral_check):
---       - a verified phone number (auth.users.phone_confirmed_at). With `referral_needs_phone` set to
---         'false' in private.config, a verified email does too (OPERATIONS.md has the line);
+--       - a verified phone number (auth.users.phone_confirmed_at), or, while `referral_needs_phone` is
+--         'false' in private.config, a verified email. It starts 'false' (Sushil, 2026-11-27: until
+--         phone sign-in is on, an email counts); set it to 'true' once Twilio is live (OPERATIONS.md);
 --       - a finished profile: a face photo the check approved and at least one plan they are up for;
 --       - one device per account: their app has told the server about its device (note_device) and
 --         no device of theirs has been seen on any other account, mine included;
@@ -25,7 +26,7 @@
 --   * Rewards are settled when either of us opens Bring a friend (my_referrals) and by pg_cron
 --     every 10 minutes (private.referral_sweep), for friends who joined in the last 60 days.
 
-insert into private.config (key, value) values ('referral_needs_phone', 'true') on conflict (key) do nothing;
+insert into private.config (key, value) values ('referral_needs_phone', 'false') on conflict (key) do nothing;
 
 -- How the friend came: the link from Bring a friend or Talk, or a Doubles invite.
 alter table private.talk_referrals add column via text not null default 'link' check (via in ('link', 'duo'));

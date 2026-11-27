@@ -601,7 +601,7 @@ joins with `talk_claim_referral` (the `/r/CODE` link, kept on the phone through 
 `src/lib/referral.ts`) or by `join_duo` when their account is under 7 days old (the `/duo/TOKEN`
 page is open without a profile and keeps the token through onboarding the same way).
 `private.referral_check` says whether a friend has a verified phone (or a linked email with
-`referral_needs_phone` off), an approved face photo, a plan, and a device (`private.devices`, from
+`referral_needs_phone` off, as it starts until phone sign-in is live), an approved face photo, a plan, and a device (`private.devices`, from
 `note_device`, a random id the app keeps, `src/lib/device.ts`) seen on no other account.
 `private.referral_settle` gives once per friend (`private.referral_rewards`): 7 days of Pink Gold each
 (`pink_gold_gift`), a Boost for the referrer (`boost_gift`, ref `referral:<friend>`), 30 more days

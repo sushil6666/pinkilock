@@ -693,7 +693,7 @@ export function createMockBackend(options: { captcha?: () => Promise<string | un
       joined: r.friends.length,
       counted: r.friends.filter((f) => f.counted).length,
       month: !!r.month,
-      needsPhone: true,
+      needsPhone: false,
       mine: d.talk.referredBy
         ? { phone: !!d.phone, face, plans: (d.me?.ideaIds.length ?? 0) > 0, device: !!d.device, counted: false, via: 'link' }
         : null,
