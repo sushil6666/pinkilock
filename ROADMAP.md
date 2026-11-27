@@ -115,6 +115,8 @@ someone, and delete their account, on both platforms, against the production pro
   city events, each one tap from an ask. Part of keeping people coming back after a match.
 - [x] **Your record on Me** (D122): a kept-plan streak in weeks with a Steady badge, and a private
   "top X% of promise keepers in your city" badge plus how the city did this month. No public leaderboard.
+- [x] **With friends in Couple mode** (D123): a double date with both duos, and a nudge to bring a
+  single friend in with the referral link.
 
 - [x] **Spicy mode** (D103): an opt-in for two adults, off by default, with the safety rules, 18+
   and rules yeses, boundaries from a list, and from day one, with a yes from both, a hand-off to

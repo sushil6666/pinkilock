@@ -30,7 +30,7 @@ import type { Profile } from '@/domain/types';
 import { haptic } from '@/lib/haptics';
 import { aria } from '@/lib/web';
 import { backend } from '@/services';
-import { useStore } from '@/state/store';
+import { usePerson, useStore } from '@/state/store';
 import { color, radius, space } from '@/theme/tokens';
 import { fmtDayMonth, t } from '@/i18n';
 
@@ -124,6 +124,7 @@ export default function CouplePage() {
   const right = (
     <>
       <DateList state={state} me={me} partner={partner} busy={busy} run={run} />
+      <WithFriends partner={partner} />
       <ErrorText text={error} />
       <Button kind="quiet" label={t('couple.endTitle')} onPress={() => setEnding(true)} />
     </>
@@ -351,7 +352,46 @@ function DateList({ state, me, partner, busy, run }: { state: ReturnType<typeof 
   );
 }
 
+/**
+ * Friends, after a match (D123): a double date with both duos (the usual Doubles ask, so every rule
+ * still applies), and a nudge to bring a single friend in with my referral link (D118). The friend
+ * gift is the referral screen's: the reward comes when the friend joins and counts, never before.
+ */
+function WithFriends({ partner }: { partner: Profile }) {
+  const duo = usePerson(useStore((s) => s.duoId) ?? undefined);
+  const canDouble = !!duo && !!partner.hasDuo;
+  return (
+    <View style={panel}>
+      <T v="label" c={color.gold}>{t('couple.friendsLabel')}</T>
+      <View style={styles.friendRow}>
+        <Feather name="users" size={20} color={color.gold} />
+        <View style={{ flex: 1, gap: 2 }}>
+          <T v="bodyBold">{t('couple.doubleTitle')}</T>
+          <T v="caption" c={color.textDim}>
+            {canDouble ? t('couple.doubleBody', { friend: duo!.name, name: partner.name }) : !duo ? t('couple.doubleNoDuo', { name: partner.name }) : t('couple.doubleTheirDuo', { name: partner.name })}
+          </T>
+        </View>
+      </View>
+      {canDouble ? (
+        <Button icon="users" label={t('couple.doublePlan')} onPress={() => router.push({ pathname: '/invite/new', params: { to: partner.id, double: '1' } })} />
+      ) : !duo ? (
+        <Button kind="ghost" icon="user-plus" label={t('couple.doublePick')} onPress={() => router.push('/(tabs)/me')} />
+      ) : null}
+      <View style={[styles.friendRow, styles.friendSplit]}>
+        <Feather name="gift" size={20} color={color.pink} />
+        <View style={{ flex: 1, gap: 2 }}>
+          <T v="bodyBold">{t('couple.giftTitle')}</T>
+          <T v="caption" c={color.textDim}>{t('couple.giftBody')}</T>
+        </View>
+      </View>
+      <Button kind="ghost" icon="gift" label={t('couple.giftOpen')} onPress={() => router.push('/friends')} />
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
+  friendRow: { flexDirection: 'row', gap: space.md, alignItems: 'flex-start' },
+  friendSplit: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: color.line, paddingTop: space.md, marginTop: space.xs },
   privateRow: { flexDirection: 'row', gap: space.sm },
   hero: { flexDirection: 'row', alignItems: 'center', gap: space.lg, borderWidth: 1, borderColor: color.pinkDeep, backgroundColor: color.pinkWash, borderRadius: radius.card, padding: space.lg },
   pair: { flexDirection: 'row' },
