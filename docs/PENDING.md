@@ -23,8 +23,10 @@ Merge in this order, one at a time, and wait for **CI** to be green before each 
 merge, **Supabase deploy** and **Web deploy** run on their own; check they go green.
 
 - [x] **#100** Pause payments, keep the paid features (D117). Merged 2026-11-27.
-- [ ] **#101** Bring a friend: referral rewards (D118). Needs #100 first.
-- [ ] **#102** Couple mode after a match (D120). Needs #101 first.
+- [x] **#101** Bring a friend: referral rewards (D118). Merged 2026-11-27.
+- [ ] **#102** Couple mode after a match (D120). Its thread is bringing it up to date with main first.
+- [ ] **#103** This week on Plans: three plan ideas each Monday and city events (D121). After #102.
+- [ ] **#104** This list. Any time.
 - [ ] Later retention PRs from the "Keep users coming back after a match" thread, in the order that
       thread gives.
 
