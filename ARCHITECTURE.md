@@ -594,6 +594,40 @@ Usernames: `private.spicy_with_for` is now a wrapper over `private.spicy_with_ba
 Discord, Telegram and Signal only after a call with outcome `talked` and when both have a row in
 `private.spicy_shares` (`spicy_share`); triggers drop shares on Spicy off, a yes taken back or a block.
 
+### Paid features switch
+
+D117: one switch, `paid` in `private.config`, decides whether Pinkilock takes money. It is off by
+default; the Supabase deploy sets it from the repository variable `PAID_FEATURES`. The app reads it
+once at boot through `public.app_switches()` (`Backend.switches()`, `paid` in the store; any error
+reads as off) and hides prices and Pay buttons; the server enforces it. Each money path is a thin
+wrapper over the function as it was, renamed into `private` (`*_before_pause`): `wallet_open_order`
+(PL188), `treat_plan` (PL188), `talk_call` for paid calls (PL188), `talk_ai_session` (one free
+session per local day, `private.saathi_free_days`, PL189) and `spicy_pay` (free, one per person per
+7 days, `spicy_unlocks.free_by`, PL190). `private.talk_state` adds `paused` and `saathi_used_today`;
+`private.spicy_with_for` adds `unlock.free` and `unlock.free_next`. `private.pink_gold_gift` and
+`private.boost_gift` (source `gift`) give the paid perks as rewards, callable only from SQL. The
+`wallet` function answers `open: false` and makes no order while paused. The mock follows
+`EXPO_PUBLIC_MOCK_PAID=1` (off otherwise). Rules in `src/domain/paid.ts`, checks in
+`tests/db/paid_pause.sql`.
+
+### Bring a friend
+
+D118, `supabase/migrations/20261127000002_referrals.sql`. Built on Talk's referral tables
+(`private.talk_referral_codes`, `private.talk_referrals`, now with `via` = `link` or `duo`): a friend
+joins with `talk_claim_referral` (the `/r/CODE` link, kept on the phone through onboarding by
+`src/lib/referral.ts`) or by `join_duo` when their account is under 7 days old (the `/duo/TOKEN`
+page is open without a profile and keeps the token through onboarding the same way).
+`private.referral_check` says whether a friend has a verified phone (or a linked email with
+`referral_needs_phone` off, as it starts until phone sign-in is live), an approved face photo, a plan, and a device (`private.devices`, from
+`note_device`, a random id the app keeps, `src/lib/device.ts`) seen on no other account.
+`private.referral_settle` gives once per friend (`private.referral_rewards`): 7 days of Pink Gold each
+(`pink_gold_gift`), a Boost for the referrer (`boost_gift`, ref `referral:<friend>`), 30 more days
+at the 5th, at most 10 per referrer per 30 days. It runs from `public.my_referrals()` (counts and my
+own checklist, never who) and `private.referral_sweep()` (pg_cron, every 10 minutes, friends from
+the last 60 days). The download adds `app_devices` and `referral_rewards`. Rules mirrored in
+`src/domain/referrals.ts`; screen `app/friends.tsx`, entry on Me (`src/components/Friends.tsx`);
+checks in `tests/db/referrals.sql` and the attacker suites.
+
 ### Wallet
 
 A closed loop of credits (D104), reached from Me, on a plan, in the composer and in Spicy mode. No

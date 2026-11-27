@@ -172,6 +172,13 @@ export const ERRORS = {
   PL185: 'You have no Boosts left. Get one first.',
   PL186: 'You have a lot of Boosts waiting. Use some first.',
   PL187: 'You have 15 asks open. Wait for an answer first.',
+  // Paid features paused (D117).
+  PL188: 'Paid features are paused for now. Everything else is free to use.',
+  PL189: 'You have had your free time with Saathi today. Come back tomorrow.',
+  PL190: 'Your free unlock for this week is used. The next one opens 7 days after it.',
+  PL191: 'Give 1 to 366 days of Pink Gold, or 1 to 12 Boosts with a reason.',
+  // Bring a friend (D118).
+  PL192: 'This device could not be checked. Restart the app and try again.',
   PL220: 'Couple mode opens once you both want to meet again.',
   PL221: 'Couple mode is not on any more.',
   PL222: 'You already have Couple mode open. End it first.',

@@ -39,6 +39,14 @@ import {
 import { BOOST_VALID_MONTHS, MEMBER_FREE_BOOSTS, addMonths, boostPackOf, canBuy, goldUntilAfter, isShopId, istMonth, istMonthEnd, openAskCap, planOf } from '../../domain/pinkGold';
 import { t } from '../../i18n';
 import { createMockTalk, emptyMockTalk, type MockTalkDb } from './mockTalk';
+import { spicyFreeNext } from '../../domain/paid';
+import { DEVICE_ID, REFERRAL_BOOSTS, REFERRAL_GOLD_DAYS, REFERRAL_MONTH_AT, REFERRAL_MONTH_DAYS, type MyReferrals } from '../../domain/referrals';
+
+/** D117: payments are paused in the mock too, unless the build sets EXPO_PUBLIC_MOCK_PAID=1. */
+const paidOn = () => process.env.EXPO_PUBLIC_MOCK_PAID === '1';
+
+/** The made-up friend who joins with my link counts this long after (D118). */
+const FRIEND_COUNTS_AFTER = 4000;
 import { createMockCouple, type MockCoupleDb } from './mockCouple';
 import { ideasFor } from '../../domain/ideas';
 
@@ -86,6 +94,10 @@ interface Db {
   spicyCalls?: Record<string, MockCall[]>;
   /** Talk mode (D108), mine. */
   talk?: MockTalkDb;
+  /** Bring a friend (D118): the made-up friends who joined with my link, and when each counts. */
+  referrals?: { friends: { countsAt: number; counted?: boolean }[]; month?: boolean };
+  /** This app's device id, once noted. */
+  device?: string;
   /** Plans (by id) where I said "see them again"; the made-up people always do too. */
   roundTwo?: string[];
   /** Couple mode (D120), asked or on. */
@@ -135,10 +147,12 @@ interface MockWallet {
   /** Spicy unlock (D105): what I paid towards each match. The made-up people never pay. */
   spicyPaid: Record<string, number>;
   spicyDone: string[];
+  /** D117: when I used a free unlock (payments paused), newest last. */
+  spicyFree?: number[];
   /** Pink Gold (D115, D116): when mine ends; absent when I never had it. */
   goldUntil?: number;
   /** Boosts (D116): bought ones and a member's free ones, until used or lapsed. */
-  boosts?: { source: 'bought' | 'member'; ref: string; expires: number; used?: number }[];
+  boosts?: { source: 'bought' | 'member' | 'gift'; ref: string; expires: number; used?: number }[];
   /** Months (Indian time) in which my free Saathi session as a member was used. */
   saathiMonths?: string[];
 }
@@ -432,7 +446,10 @@ export function createMockBackend(options: { captcha?: () => Promise<string | un
     const myYes = !!d.spicyYes?.includes(them);
     const w = walletOf(d);
     const done = myYes && w.spicyDone.includes(them);
-    const unlock = { mine: w.spicyPaid[them] ?? 0, theirs: 0, done: w.spicyDone.includes(them) };
+    const unlock = {
+      mine: w.spicyPaid[them] ?? 0, theirs: 0, done: w.spicyDone.includes(them),
+      ...(paidOn() ? {} : { free: true, freeNext: spicyFreeNext(w.spicyFree ?? [], Date.now()) }),
+    };
     // D111: the usernames wait for a kept call and for both to share (the made-up person always does).
     const keptCall = done && (d.spicyCalls?.[them] ?? []).some((c) => c.outcome === 'talked');
     const myShare = !!d.spicyShares?.includes(them);
@@ -656,8 +673,40 @@ export function createMockBackend(options: { captcha?: () => Promise<string | un
     linked: () => !!(talkDb?.phone || talkDb?.email),
     age: () => talkDb?.me?.age ?? 0,
     blocked: () => false,
+    paid: paidOn,
   });
 
+  // --- Bring a friend (D118), as in supabase/migrations/20261127000002_referrals.sql. The made-up
+  // friend who joins with my link counts a few seconds later: we get the same rewards as live. ---
+  function settleReferrals(d: Db, now: number) {
+    const r = (d.referrals ??= { friends: [] });
+    const w = walletOf(d);
+    const gift = (days: number) => { w.goldUntil = Math.max(w.goldUntil ?? 0, now) + days * DAY; };
+    for (const f of r.friends) {
+      if (f.counted || f.countsAt > now) continue;
+      f.counted = true;
+      const n = r.friends.filter((x) => x.counted).length;
+      gift(REFERRAL_GOLD_DAYS);
+      for (let i = 0; i < REFERRAL_BOOSTS; i++) (w.boosts ??= []).push({ source: 'gift', ref: `gift:referral:${n}`, expires: addMonths(now, BOOST_VALID_MONTHS) });
+      if (n === REFERRAL_MONTH_AT && !r.month) { r.month = true; gift(REFERRAL_MONTH_DAYS); }
+    }
+  }
+  function referralsView(d: Db, now = Date.now()): MyReferrals {
+    settleReferrals(d, now);
+    const r = d.referrals!;
+    d.talk ??= emptyMockTalk();
+    const face = myFaceList.some((f) => f.status === 'approved' || now - f.at >= PHOTO_CHECK_MS);
+    return {
+      code: d.talk.code,
+      joined: r.friends.length,
+      counted: r.friends.filter((f) => f.counted).length,
+      month: !!r.month,
+      needsPhone: false,
+      mine: d.talk.referredBy
+        ? { phone: !!d.phone, face, plans: (d.me?.ideaIds.length ?? 0) > 0, device: !!d.device, counted: false, via: 'link' }
+        : null,
+    };
+  }
   // --- Couple mode (D120), as in supabase/migrations/20261127000020_couple_mode.sql: see mockCouple.ts. ---
   let coupleDb: Db | null = null;
   const forTwo = (i: Invite) => i.status === 'kept' && !rules.isDouble(i);
@@ -690,6 +739,30 @@ export function createMockBackend(options: { captcha?: () => Promise<string | un
     kind: 'mock',
     ...talkPart,
     ...couplePart,
+
+    async myReferrals() {
+      const d = await load();
+      await wait(LATENCY);
+      if (!d.me) fail('PL002');
+      const view = referralsView(d);
+      save();
+      return view;
+    },
+    async noteDevice(device) {
+      if (!DEVICE_ID.test(device)) fail('PL192');
+      const d = await load();
+      d.device = device;
+      save();
+    },
+    async demoReferral() {
+      const d = await load();
+      await wait(LATENCY);
+      if (!d.me) fail('PL002');
+      (d.referrals ??= { friends: [] }).friends.push({ countsAt: Date.now() + FRIEND_COUNTS_AFTER });
+      const view = referralsView(d);
+      save();
+      return view;
+    },
 
     async boot() {
       const d = await load();
@@ -908,6 +981,16 @@ export function createMockBackend(options: { captcha?: () => Promise<string | un
       if (!plan.open) fail('PL130');
       if (!plan.mutual) fail('PL146');
       const w = walletOf(d);
+      if (!paidOn()) {
+        // D117: free while payments are paused, one per 7 days; what I paid towards it comes back.
+        if (w.spicyDone.includes(profileId)) fail('PL145');
+        if (spicyFreeNext(w.spicyFree ?? [], Date.now()) !== null) fail('PL190');
+        spicyRefund(d, profileId);
+        w.spicyDone.push(profileId);
+        w.spicyFree = [...(w.spicyFree ?? []), Date.now()];
+        save();
+        return mockSpicyPlan(d, profileId);
+      }
       const mine = w.spicyPaid[profileId] ?? 0;
       const amount = spicyShare(w, share, mine, 0);
       move(w, 'spicy_unlock', -amount, 0, `${profileId}:${Date.now()}:${Math.random()}`);
@@ -1014,11 +1097,15 @@ export function createMockBackend(options: { captcha?: () => Promise<string | un
         if (streakOf(w.visits, today) >= STREAK_DAYS && !w.ledger.some((l) => l.reward === 'week_streak' && l.at > now - 6 * DAY)) reward(w, 'week_streak', today);
       }),
     // The mock is Razorpay's test mode: a top-up is paid at once and no money moves.
+    async switches() {
+      return { paid: paidOn() };
+    },
     async topUpStatus() {
-      return { open: topUpsHere(Platform.OS), test: true };
+      return { open: topUpsHere(Platform.OS) && paidOn(), test: true };
     },
     topUp: (packId) =>
       walletChange((_d, w, now) => {
+        if (!paidOn()) fail('PL188');
         if (!topUpsHere(Platform.OS)) fail('PL144');
         if (isShopId(packId)) {
           // A Pink Gold plan or a Boost pack (D116): paid in rupees, never credits.
@@ -1063,6 +1150,7 @@ export function createMockBackend(options: { captcha?: () => Promise<string | un
     },
     treatPlan: (inviteId, partnerId, item) =>
       walletChange((d, w, now) => {
+        if (!paidOn()) fail('PL188');
         const inv = d.invites.find((i) => i.id === inviteId);
         if (!inv || inv.status !== 'locked' || inv.startsAt <= now || rules.isDouble(inv) || ideaOf(inv.ideaId).kind !== 'irl' || partnerId !== 'demo_partner' || !(item in TREATS)) fail('PL140');
         if (w.treats[inviteId]) fail('PL141');

@@ -43,6 +43,7 @@ const TITLES: Record<string, Key | null> = {
   'talk/listeners': 'titles.talkListeners',
   'talk/listen': 'titles.talkListen',
   'r/[code]': 'titles.invite',
+  friends: 'titles.friends',
   '+not-found': 'titles.notFound',
 };
 
@@ -53,8 +54,10 @@ const TITLES: Record<string, Key | null> = {
  * fixed list of phrases, and nothing else), and the safety page, which the terms point to and which
  * holds the emergency numbers: someone in danger should never be asked to sign in first. A friend's
  * invite link (r/[code]) opens too: it keeps the code for after onboarding and shows nothing about the friend.
+ * So does a friend's Doubles invite (duo/[token], D118): it shows the friend's first name, as a vouch
+ * link does, and keeps the link for after onboarding; joining needs a profile.
  */
-const OPEN = new Set(['', 'onboarding', 'account/sign-in', '+not-found', 'legal/[doc]', 'vouch/[token]', 'safety', 'r/[code]']);
+const OPEN = new Set(['', 'onboarding', 'account/sign-in', '+not-found', 'legal/[doc]', 'vouch/[token]', 'safety', 'r/[code]', 'duo/[token]']);
 
 const key = (segments: readonly string[]) => segments.join('/');
 

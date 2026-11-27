@@ -143,6 +143,15 @@ someone, and delete their account, on both platforms, against the production pro
   members get 15 open asks, 2 free Boosts a month and a place right after boosted cards. Phone apps
   after Play Billing (O15). Members also see everyone who asked them at once and get early access to
   cities marked `early`, and one free Saathi session each Indian month.
+- [x] **Payments paused** (D117): until there are enough users, nothing is sold and no prices show;
+  the paid features stay and can be given as rewards. Saathi is free for one session a day, the
+  Spicy unlock is free once a week, paid listener calls and treats wait. `PAID_FEATURES=on` and a
+  Supabase deploy take payments again (OPERATIONS.md, "Paid features").
+- [x] **Bring a friend** (D118): a friend who joins with my link or Doubles invite, verifies a phone
+  and finishes their profile gives us both a week of Pink Gold and me a free Boost; five friends give
+  me a free month. One device per account, no self-referral, never for a rating. A verified email
+  counts until phone sign-in (Twilio) is live; then set `referral_needs_phone` on (OPERATIONS.md,
+  "Bring a friend").
 
 - [x] **Photos behind the lock** (D088): up to three photos on Me, stored in a private Supabase
   Storage bucket by the `photo` Edge Function, which strips their metadata and draws the picture
