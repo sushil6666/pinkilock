@@ -3,6 +3,8 @@
  * their city, a mood check-in with the week and a streak, the gratitude jar, their boundaries, and
  * the way into Bounce back. Nobody else can read any of it (RLS and definer functions, not the UI).
  */
+import { Fold } from '@/components/ui/Fold';
+import { Entry } from '@/components/ui/Entry';
 import { Feather } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useState } from 'react';
@@ -72,7 +74,9 @@ export default function SelfLovePage() {
           })}
         </View>
         {today ? <T v="caption" c={color.gold}>{t('selfLove.moodSaved')}</T> : null}
-        <T v="label" c={color.textMute}>{t('selfLove.moodWeek')}</T>
+      </View>
+
+      <Fold icon="award" title={t('selfLove.moodWeek')} value={days ? t('selfLove.streak', { count: days }) : undefined}>
         <View style={styles.week}>
           {week.map((d) => (
             <View key={d.day} style={styles.weekDay} accessible accessibilityLabel={t('selfLove.moodDay', { day: fmtDayMonth(dayTime(d.day)), mood: d.mood ? t(`selfLove.moods.${d.mood}`) : t('selfLove.moodNone') })}>
@@ -90,12 +94,10 @@ export default function SelfLovePage() {
             <T v="caption" c={color.textDim}>{days >= STREAK_BADGE ? t('selfLove.badge') : t('selfLove.badgeNext', { count: STREAK_BADGE - days })}</T>
           </View>
         </View>
-      </View>
+      </Fold>
 
-      <View style={panel}>
-        <T v="heading">{t('selfLove.jarTitle')}</T>
+      <Fold icon="heart" title={t('selfLove.jarTitle')} value={t('selfLove.jarToday', { count: jarCount, max: GRATITUDE_PER_DAY })}>
         <T v="caption" c={color.textDim}>{t(jarCount >= GRATITUDE_PER_DAY ? 'selfLove.jarFull' : 'selfLove.jarBody')}</T>
-        <T v="label" c={color.gold}>{t('selfLove.jarToday', { count: jarCount, max: GRATITUDE_PER_DAY })}</T>
         <SelfNotes kind="gratitude" notes={state.notes} open={jarCount < GRATITUDE_PER_DAY} placeholder={t('selfLove.jarPlaceholder')} label={t('selfLove.jarLabel')}
           add={t('selfLove.jarAdd')} empty={t('selfLove.jarEmpty')} busy={busy} run={run} show={5} />
         {jar.length > 1 ? <Button kind="quiet" icon="shuffle" label={t('selfLove.jarPick')} onPress={pickFromJar} /> : null}
@@ -105,16 +107,15 @@ export default function SelfLovePage() {
             <T v="caption" c={color.textMute}>{t('selfLove.jarPicked', { date: fmtDayMonth(dayTime(fromJar.day)) })}</T>
           </View>
         ) : null}
-      </View>
+      </Fold>
     </>
   );
 
   const right = (
     <>
-      <View style={{ gap: space.sm }}>
-        <T v="heading">{t('selfLove.soloTitle', { city: me.city })}</T>
-        <T v="caption" c={color.textDim}>{t('selfLove.soloBody')}</T>
-      </View>
+      <Entry tone="pink" icon={<Feather name="sunrise" size={20} color={color.pink} />} title={t('selfLove.bounceTitle')} spoken={t('selfLove.bounceOpen')} onPress={() => router.push('/self-love/bounce-back')} />
+      <Fold icon="map" title={t('selfLove.soloTitle', { city: me.city })} value={String(soloPlans(me.city, state.today).length)}>
+      <T v="caption" c={color.textDim}>{t('selfLove.soloBody')}</T>
       <Grid>
         {soloPlans(me.city, state.today).map((v) => (
           <View key={v.id} style={styles.solo}>
@@ -127,22 +128,13 @@ export default function SelfLovePage() {
           </View>
         ))}
       </Grid>
+      </Fold>
 
-      <View style={panel}>
-        <T v="heading">{t('selfLove.boundTitle')}</T>
+      <Fold icon="shield" title={t('selfLove.boundTitle')}>
         <T v="caption" c={color.textDim}>{t('selfLove.boundBody')}</T>
         <SelfNotes kind="boundary" notes={state.notes} placeholder={t('selfLove.boundPlaceholder')} label={t('selfLove.boundLabel')}
           add={t('selfLove.boundAdd')} empty={t('selfLove.boundEmpty')} busy={busy} run={run} />
-      </View>
-
-      <View style={[panel, styles.bounce]}>
-        <View style={{ flexDirection: 'row', gap: space.md, alignItems: 'center' }}>
-          <Feather name="sunrise" size={22} color={color.pink} />
-          <T v="heading" style={{ flex: 1 }}>{t('selfLove.bounceTitle')}</T>
-        </View>
-        <T c={color.textDim}>{t('selfLove.bounceBody')}</T>
-        <Button kind="ghost" icon="arrow-right" label={t('selfLove.bounceOpen')} onPress={() => router.push('/self-love/bounce-back')} />
-      </View>
+      </Fold>
       <SelfError text={error} />
     </>
   );
@@ -164,10 +156,9 @@ const styles = StyleSheet.create({
   weekDay: { alignItems: 'center', gap: space.xs },
   dot: { width: 36, height: 36, borderRadius: radius.pill, borderWidth: 1, borderColor: color.line, alignItems: 'center', justifyContent: 'center' },
   dotOn: { backgroundColor: color.surfaceHi, borderColor: color.textMute },
-  streak: { flexDirection: 'row', alignItems: 'center', gap: space.md, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: color.line, paddingTop: space.md },
+  streak: { flexDirection: 'row', alignItems: 'center', gap: space.md, paddingTop: space.md },
   badge: { width: 44, height: 44, borderRadius: radius.pill, borderWidth: 1, borderColor: color.line, alignItems: 'center', justifyContent: 'center' },
   badgeOn: { backgroundColor: color.gold, borderColor: color.goldDeep },
   picked: { borderLeftWidth: 3, borderLeftColor: color.gold, paddingLeft: space.md, gap: 2 },
   solo: { flexDirection: 'row', gap: space.md, borderWidth: 1, borderColor: color.line, borderRadius: radius.card, backgroundColor: color.surface, padding: space.lg },
-  bounce: { borderColor: color.pinkDeep, backgroundColor: color.pinkWash },
 });

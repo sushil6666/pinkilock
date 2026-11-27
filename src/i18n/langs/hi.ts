@@ -697,6 +697,7 @@ export const hi: Translation = {
     minutes: '{minutes} मिनट',
     more: '{name} के बारे में और',
     ideas: { one: '{count} आइडिया', other: '{count} आइडिया' },
+    ways: { one: '{count} तरीका', other: '{count} तरीके' },
     about: 'यह कैसे काम करता है',
     perks: { one: '{count} फ़ायदा', other: '{count} फ़ायदे' },
   },
