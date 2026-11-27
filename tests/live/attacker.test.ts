@@ -351,6 +351,15 @@ test('Daily check-in (D126): mine only; nobody else plays the AI part', async ()
   refused(await signedOut.rpc('my_checkins' as never), 'signed out, there are no check-ins');
 });
 
+test('Expert tips (D127): the team lists experts; nobody reads reports or applications', async () => {
+  refused(await raw.from('experts' as never).insert({ name: 'Guaranteed Guru', kind: 'spiritual', credential: 'none' } as never), 'listing a made-up expert');
+  refused(await raw.from('expert_tips' as never).insert({ topic: 'dating', title: 'x', body: 'x' } as never), 'adding a tip by hand');
+  refused(await raw.schema('private' as 'public').from('expert_reports').select('*'), 'reading reports about experts');
+  refused(await raw.schema('private' as 'public').from('expert_applications').select('*'), 'reading anyone\'s request to join');
+  assert.ok(Array.isArray(await x.backend.expertTips(null)), 'X reads the tips');
+  refused(await signedOut.rpc('expert_tips_list' as never), 'signed out, there are no tips');
+});
+
 test('Couple mode (D120): only after a match, and only for the two, over the API too', async () => {
   // X and Y never matched: no couple can start, and the tables are in `private`, which PostgREST does not serve.
   refused(await raw.rpc('couple_ask', { p_to: y.id }), 'starting Couple mode with Y without a match');

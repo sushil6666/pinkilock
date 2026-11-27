@@ -124,6 +124,11 @@ someone, and delete their account, on both platforms, against the production pro
   Saathi, an expert tips tab, and festival packs.
 - [x] **Daily relationship check-in** (D126): what was good, what went badly, and a few ideas from
   Saathi (AI), private, with help lines first when needed and an opt-in reminder.
+- [x] **Expert tips** (D127): dating advice, pre-marital prep, resolving conflict and healing from a
+  breakup, from therapists, coaches, intimacy counsellors and spiritual guides once the team has
+  checked them (the team's general tips until then), a "watch out for" panel, reports, and a page
+  for experts to ask to join. Next: paid sessions with experts (after O23), festival packs, and
+  Cosmic match.
 
 - [x] **Spicy mode** (D103): an opt-in for two adults, off by default, with the safety rules, 18+
   and rules yeses, boundaries from a list, and from day one, with a yes from both, a hand-off to

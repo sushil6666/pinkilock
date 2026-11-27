@@ -223,6 +223,10 @@ Font scaling is allowed up to 1.3x (`maxFontSizeMultiplier`) so layouts hold on 
 - **Daily check-in** (D126): two columns on desktop. Moods as Self love's mood buttons (`pink` when
   picked); notes in `surfaceHi` cards; Saathi's ideas in a `surface` panel edged `moon`, with a `moon`
   label and a muted AI note; the 112 and 181 panel is always there; `HelpLines` strong goes first on harm.
+- **Expert tips** (D127): two columns on desktop (3 to 2). Topic `Chip`s with an emoji; each topic a
+  `surface` panel with `surfaceHi` tip cards. "Watch out for" is a `surface` panel edged `flare`, with
+  `flare` crosses; the join card is `goldWash` edged `goldDeep`, like Self love's entry. An expert's tip
+  shows a gold `check-circle`, their kind and credential in `textMute`, and a quiet "Report" button.
 
 ## 5. Motion
 

@@ -69,6 +69,9 @@ With no keys set, the app runs on ten made-up people who answer by themselves. A
     (pick your duo in **Me** first) or opens **Bring a friend**.
     **How was today with Zoya? Check in** (also in **Self love**) opens the daily check-in: pick a mood,
     write what was good and what was not, and the mock's Saathi answers with a few ideas.
+    Under it, **Expert tips for the two of you** opens Expert tips (also on **Me**): pick a topic, read the
+    team's general tips and the **Watch out for** panel. No expert is listed in the mock, as on the server until
+    the team checks one. **Join as an expert** opens the pitch and the form.
 12. **This week**: on **Plans**, under your next plan, three plan ideas that change every Monday, each with
     **Ask Zoya** (someone you kept a plan with who is up for it) or **Find someone**, and what is on in
     your city this fortnight (the mock makes two events from your city's places). **Plan it** opens an

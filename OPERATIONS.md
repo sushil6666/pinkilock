@@ -814,6 +814,32 @@ select pack, status, count(*), sum(paise) / 100 as rupees from private.wallet_or
 Running the grant again changes the end date. The note is only for the team; nobody sees it in the
 app or in their download.
 
+### Experts
+
+Expert tips (D127) start with general tips from the team only. An expert shows in the app only after
+the team has checked them, with the database URL (the `postgres` role), never from the app:
+
+1. Read new requests: `select id, user_id, name, kind, credential, city, contact, note, at from
+   private.expert_applications where status = 'new' order by at`. The contact is for the team only.
+2. Check the credential: for a therapist or psychologist, the RCI register (or the state medical
+   council for a psychiatrist); for a coach or counsellor, the certificate and the body that gave it;
+   for a spiritual guide, who they are and what they teach. Search their name for any promise of a
+   "guaranteed soulmate", manipulation or pickup courses, or paid remedies, rituals, gemstones or
+   mystical cures: any of these is a no.
+3. Talk with them (`update private.expert_applications set status = 'talking' where id = ...`),
+   and have them agree to the rules again in writing.
+4. List them and add their tips:
+   `insert into public.experts (name, kind, credential, city, languages, bio) values (...) returning id;`
+   then `insert into public.expert_tips (expert_id, topic, title, body, lang) values (...)`, and set the
+   request to `listed` (or `declined`).
+5. Reports: `select r.*, e.name from private.expert_reports r join public.experts e on e.id = r.expert_id
+   order by r.at desc`. A report that holds up takes them off at once: `update public.experts set
+   active = false where id = ...` (never delete the row). One tip: `update public.expert_tips set
+   active = false where id = ...`.
+
+Before the first expert is listed, the lawyer reads the wording and the rules (O22). Paid sessions
+are not built; they wait for O23.
+
 ### Retention
 
 `private.retention()` runs daily (pg_cron): finished plans lose their place and line after 90 days,

@@ -43,6 +43,7 @@ import { venuesFor } from '../../domain/venues';
 import type { CityEvent } from '../../domain/weekly';
 import { trustScore } from '../../domain/trust';
 import type { CityStanding } from '../../domain/streaks';
+import { REPORT_REASONS as EXPERT_REPORT_REASONS, checkApply, type ExpertApplication, type ExpertTip } from '../../domain/experts';
 import { CHECKIN_NOTE_MAX, REMINDER_HOURS, checkCheckin, type Checkin, type Checkins } from '../../domain/checkin';
 import { mentionsHarm } from '../../domain/talk';
 
@@ -116,6 +117,11 @@ interface Db {
   checkins?: { entries: Checkin[]; hour: number | null };
   /** Gentle reminders turned off (D124). */
   nudgesOff?: boolean;
+  /** Expert tips (D127). Empty, as on the server until the team vets someone; a demo can put some here. */
+  expertTips?: ExpertTip[];
+  /** My request to join as an expert, and the experts I reported. */
+  expertApplication?: ExpertApplication | null;
+  expertReports?: Record<string, string>;
   /** Couple mode (D120), asked or on. */
   couple?: MockCoupleDb | null;
 }
@@ -963,6 +969,40 @@ export function createMockBackend(options: { captcha?: () => Promise<string | un
       (d.checkins ??= { entries: [], hour: null }).hour = hour;
       save();
       return checkinsOf(d);
+    },
+
+    // Expert tips (D127), as in supabase/migrations/20261127000026_experts.sql.
+    async expertTips(topic) {
+      const d = await load();
+      await wait(LATENCY);
+      if (!d.me) fail('PL002');
+      return (d.expertTips ?? []).filter((x) => !topic || x.topic === topic);
+    },
+    async reportExpert(expertId, reason) {
+      const d = await load();
+      await wait(LATENCY);
+      if (!d.me) fail('PL002');
+      if (!(d.expertTips ?? []).some((x) => x.expert.id === expertId)) fail('PL242');
+      if (!(EXPERT_REPORT_REASONS as readonly string[]).includes(reason)) fail('PL243');
+      (d.expertReports ??= {})[expertId] = reason;
+      save();
+    },
+    async expertApply(f) {
+      const d = await load();
+      await wait(LATENCY);
+      if (!d.me) fail('PL002');
+      const code = checkApply(f);
+      if (code) fail(code);
+      if (d.expertApplication && d.expertApplication.status !== 'new') return d.expertApplication;
+      d.expertApplication = { kind: f.kind!, status: 'new' };
+      save();
+      return d.expertApplication;
+    },
+    async myExpertApplication() {
+      const d = await load();
+      await wait(LATENCY);
+      if (!d.me) fail('PL002');
+      return d.expertApplication ?? null;
     },
 
     // Gentle reminders (D124): the switch only; the mock never pushes.

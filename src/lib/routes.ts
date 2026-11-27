@@ -36,6 +36,8 @@ const TITLES: Record<string, Key | null> = {
   'self-love/bounce-back': 'titles.bounceBack',
   couple: 'titles.couple',
   'check-in': 'titles.checkIn',
+  experts: 'titles.experts',
+  'experts/join': 'titles.expertsJoin',
   spicy: 'titles.spicy',
   wallet: 'titles.wallet',
   'pink-gold': 'titles.pinkGold',

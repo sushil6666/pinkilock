@@ -31,7 +31,8 @@ merge, **Supabase deploy** and **Web deploy** run on their own; check they go gr
 - [x] **#107** Gentle reminders, at most 3 pushes a week (D124). Merged 2026-11-27. The real push
       test on a phone (step 3) checks it too.
 - [ ] **#109** Question of the day and tip of the day in Couple mode (D125). Next.
-- [ ] **Daily relationship check-in** with Saathi's ideas (D126). After #109.
+- [ ] **#111** Daily relationship check-in with Saathi's ideas (D126). After #109.
+- [ ] **Expert tips** and Join as an expert (D127). After #111.
 - [ ] **#104** This list. Any time.
 
 
@@ -155,6 +156,10 @@ One lawyer can take all of the legal briefs together. Each item's full question 
 - [ ] **O14** Spicy mode (IT Act and Rules, POCSO, store rules, whether an ID age check is needed),
       with **O20** Spicy calls on Pinkilock's own voice service.
 - [ ] **O21** Saathi's Flirty tone.
+- [ ] **O22** Expert tips (D127), before the first expert is listed: the not-therapy wording,
+      intimacy counselling kept educational, spiritual guides (no paid remedies or cures), how
+      credentials are checked, and the terms experts agree to. **O23** with a CA, later: paid
+      sessions with experts.
 - [ ] **O18** Talk mode with a mental-health adviser: Saathi's instructions and labels (also the daily check-in's, D126), the
       self-harm hand-off, the listener code. The adviser also reads the Hindi version.
 - [ ] **O16** Wallet and money (closed-loop credits, GST, refunds, unused credits, the Spicy unlock
@@ -183,6 +188,10 @@ One lawyer can take all of the legal briefs together. Each item's full question 
       local check. Someone who lives in each city reads its areas and places; a thread fixes names
       in a new migration and switches wrong places off. Start with the 8 metros. Details:
       `OPERATIONS.md`, "Opening a country or a city".
+
+- [ ] **Experts.** Pitch counsellors, therapists, coaches and guides you know and point them to
+      **Join as an expert** in the app; then check each request and list them as in `OPERATIONS.md`,
+      "Experts". Nothing shows until you do.
 
 ## 12. Decisions waiting for you
 
