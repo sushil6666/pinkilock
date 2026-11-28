@@ -540,6 +540,16 @@ Self love, and keeps to 3 in 7 days and 1 in 20 hours. In order: a Couple mode a
 our couple challenge not ticked by Thursday, the kept-plan streak at the weekend, Monday's ideas,
 a Wednesday Self love check-in. A tap opens Couple mode, Plans or Self love (`src/lib/push.ts`).
 
+### Couple mode's Today: question and tip of the day
+
+At the top of Couple mode (D125). `private.couple_answers` holds one answer per person per day; the
+day is the asker's city day and the question is `private.couple_question_of(couple, day)`, walking
+`private.couple_question_ids()` (the same list as `COUPLE_QUESTIONS`) from a per-couple start.
+`couple_question()` answers with today's question, my answer, theirs only once I have answered, the
+last 14 days both answered and the streak; `couple_question_answer(body)` takes one answer a day.
+Only `couple_on` couples reach either, so a block or an ending closes it. The tip of the day is
+`tipOf(day)` in `src/domain/daily.ts`, words in `daily.tips`; nothing is stored for it.
+
 ### This week: plan ideas and city events
 
 Plans shows three ideas a week (D121), picked in the phone by `weeklyIdeas` in `src/domain/weekly.ts`

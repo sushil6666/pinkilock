@@ -195,6 +195,9 @@ export const ERRORS = {
   PL233: 'That day is not yours to remove.',
   // Gentle pushes (D124).
   PL234: 'Turn reminders on or off.',
+  // Question of the day (D125).
+  PL235: 'Write an answer of up to 300 characters.',
+  PL236: 'You have answered today\'s question. A new one comes tomorrow.',
 
   PA001: 'Phone sign-in is not switched on yet.',
   PA002: 'Email sign-in is not switched on yet.',

@@ -335,6 +335,14 @@ test('Gentle reminders (D124): my own switch only; nobody can queue a push', asy
   refused(await signedOut.rpc('set_nudges' as never, { p_on: false } as never), 'signed out, there is no switch');
 });
 
+test('Question of the day (D125): only inside a couple, never the answers table', async () => {
+  // X and Y are no couple: there is no question to read or answer, and the table is in `private`.
+  refused(await raw.rpc('couple_question' as never), 'reading a question without a couple');
+  refused(await raw.rpc('couple_question_answer' as never, { p_body: 'hi' } as never), 'answering without a couple');
+  refused(await raw.schema('private' as 'public').from('couple_answers').select('*'), 'reading anyone\'s answers');
+  refused(await signedOut.rpc('couple_question' as never), 'signed out, there is no question');
+});
+
 test('Couple mode (D120): only after a match, and only for the two, over the API too', async () => {
   // X and Y never matched: no couple can start, and the tables are in `private`, which PostgREST does not serve.
   refused(await raw.rpc('couple_ask', { p_to: y.id }), 'starting Couple mode with Y without a match');

@@ -28,12 +28,12 @@ merge, **Supabase deploy** and **Web deploy** run on their own; check they go gr
 - [x] **#103** This week on Plans: three plan ideas each Monday and city events (D121). Merged 2026-11-27.
 - [x] **#104** This list. Merged 2026-11-27.
 - [x] **#105** Your record: kept-plan streak and private city standing (D122). Merged 2026-11-27.
-- [x] **#106** With friends in Couple mode. Merged 2026-11-27.
-- [x] **#107** Gentle reminders, at most 3 pushes a week. Merged 2026-11-27. The real push test on a
-      phone (step 3) checks it too.
-
-- [ ] **#110** One line and one arrow on every screen (D130). After #109; touches no files the
-      retention PRs change except `docs/decisions.md` and this list.
+- [x] **#106** With friends in Couple mode (D123). Merged 2026-11-27.
+- [x] **#107** Gentle reminders, at most 3 pushes a week (D124). Merged 2026-11-27. The real push
+      test on a phone (step 3) checks it too.
+- [x] **#109** Question of the day and tip of the day in Couple mode (D125). Merged 2026-11-28.
+- [ ] **#110** One line and one arrow on every screen (D130). Next. Touches no files the other
+      open PRs change except `docs/decisions.md` and this list.
 
 New PRs from Claude threads get added here.
 
