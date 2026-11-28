@@ -4,6 +4,7 @@
  * and using a Boost. Paid in rupees, never with credits. The server prices and decides everything
  * (wallet_open_order, wallet_paid, wallet_boost); this page shows what my_wallet says.
  */
+import { Fold } from '@/components/ui/Fold';
 import { Feather } from '@expo/vector-icons';
 import { useEffect, useState } from 'react';
 import { Platform, StyleSheet, View } from 'react-native';
@@ -77,7 +78,6 @@ export default function PinkGoldPage() {
         <T v="label" c={color.gold}>{t('gold.eyebrow')}</T>
         <PinkGold person={{ name: me.name, pinkGold: true }} mine={!!wallet.gold} />
         <T v="display">{t('pinkGold.name')}</T>
-        <T c={color.textDim}>{t('gold.intro')}</T>
         {wallet.gold ? (
           <View style={styles.row}>
             <Feather name="check-circle" size={16} color={color.gold} />
@@ -86,28 +86,24 @@ export default function PinkGoldPage() {
         ) : null}
       </Animated.View>
 
-      <View style={styles.panel}>
-        <T v="heading">{t('gold.perksTitle')}</T>
+      <Fold icon="star" accent title={t('gold.perksTitle')} value={t('fold.perks', { count: PERKS.length })}>
+        <T c={color.textDim}>{t('gold.intro')}</T>
         {PERKS.map(([icon, key]) => (
           <View key={key} style={styles.perk}>
             <View style={styles.perkIcon}><Feather name={icon} size={16} color={color.onPink} /></View>
             <T style={{ flex: 1 }}>{t(`gold.perks.${key}`)}</T>
           </View>
         ))}
-      </View>
+      </Fold>
     </>
   );
 
   const right = (
     <>
       {paid ? null : (
-        <View style={styles.panel}>
-          <View style={styles.row}>
-            <Feather name="pause-circle" size={18} color={color.gold} />
-            <T v="heading" style={{ flex: 1 }}>{t('paused.goldTitle')}</T>
-          </View>
+        <Fold icon="pause-circle" title={t('paused.goldTitle')}>
           <T c={color.textDim}>{t('paused.goldBody')}</T>
-        </View>
+        </Fold>
       )}
       {paid ? <View style={styles.panel}>
         <T v="heading">{t('gold.plansTitle')}</T>
@@ -130,8 +126,7 @@ export default function PinkGoldPage() {
         </View>
       </View> : null}
 
-      <View style={styles.panel}>
-        <T v="heading">{t('gold.boostsTitle')}</T>
+      <Fold icon="trending-up" title={t('gold.boostsTitle')} value={String(boosts)} open={boosted || !!note || !!error}>
         <T v="caption" c={color.textDim}>{t('gold.boostsBody')}</T>
         {boosted ? <T v="bodyBold" c={color.gold}>{t('gold.boostOn', { time: `${fmtDay(wallet.boostUntil!)}, ${fmtTime(wallet.boostUntil!)}` })}</T> : null}
         <T c={boosts ? color.text : color.textDim}>
@@ -156,7 +151,7 @@ export default function PinkGoldPage() {
         </View> : null}
         {note ? <T v="caption" c={color.gold}>{note}</T> : null}
         {error ? <ErrorText text={error} /> : null}
-      </View>
+      </Fold>
     </>
   );
 

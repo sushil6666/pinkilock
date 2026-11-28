@@ -698,6 +698,26 @@ export const en = {
     neverMind: 'Never mind',
   },
 
+  /** One line and one arrow per section (D121): the short names and values those lines show. */
+  fold: {
+    tags: 'My tags',
+    upFor: 'I am up for',
+    picked: { one: '{count} picked', other: '{count} picked' },
+    free: 'When I am free',
+    duo: 'My duo',
+    vouches: 'Friends vouching',
+    unlocks: 'Unlocks after a kept promise',
+    none: 'None yet',
+    on: 'On',
+    minutes: '{minutes} min',
+    more: 'More about {name}',
+    ideas: { one: '{count} idea', other: '{count} ideas' },
+    ways: { one: '{count} way', other: '{count} ways' },
+    talk: 'Something to talk about',
+    about: 'How it works',
+    perks: { one: '{count} perk', other: '{count} perks' },
+  },
+
   discover: {
     title: 'Discover',
     emptyTitle: "That's\neveryone\nfor now.",

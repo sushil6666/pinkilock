@@ -7,7 +7,7 @@ import { Feather } from '@expo/vector-icons';
 import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
-import { CHALLENGE_EMOJI, daysTogether, emptyCouple, isoDay, thisWeek, type Couple } from '../domain/couple';
+import { daysTogether, emptyCouple, isoDay, thisWeek, type Couple } from '../domain/couple';
 import { shown } from '../lib/report';
 import { quiet } from '../lib/log';
 import { backend } from '../services';
@@ -72,9 +72,7 @@ export function CoupleEntry() {
       style={({ pressed }) => [styles.entry, pressed && { backgroundColor: color.surfaceHi }]}>
       <Portrait {...person} size={48} />
       <View style={{ flex: 1, gap: 2 }}>
-        <T v="label" c={color.pink}>{t('couple.eyebrow')}</T>
         <T v="bodyBold" numberOfLines={2}>{title}</T>
-        <T v="caption" c={color.textDim} numberOfLines={2}>{state.status === 'on' && week ? `${CHALLENGE_EMOJI[week.challenge]}  ${body}` : body}</T>
       </View>
       <Feather name="arrow-right" size={20} color={color.pink} />
     </Pressable>

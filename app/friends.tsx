@@ -5,6 +5,7 @@
  * counts and gives everything (my_referrals); nobody is ever named, and nothing is ever given for a
  * rating or a review.
  */
+import { Fold } from '@/components/ui/Fold';
 import { Feather } from '@expo/vector-icons';
 import * as Linking from 'expo-linking';
 import { router } from 'expo-router';
@@ -88,31 +89,25 @@ export default function BringAFriend() {
         ) : null}
       </Animated.View>
 
-      <View style={styles.panel}>
-        <T v="heading">{t('friends.rewardsTitle')}</T>
+      <Fold icon="gift" accent title={t('friends.rewardsTitle')} value={t('fold.perks', { count: 4 })}>
         <Reward icon="award" title={t('friends.goldTitle', { days: REFERRAL_GOLD_DAYS })} body={t('friends.goldBody', { days: REFERRAL_GOLD_DAYS })} />
         <Reward icon="trending-up" title={t('friends.boostTitle', { count: REFERRAL_BOOSTS })} body={t('friends.boostBody')} />
         <Reward icon="gift" title={t('friends.monthTitle', { count: REFERRAL_MONTH_AT })} body={t('friends.monthBody', { count: REFERRAL_MONTH_AT, days: REFERRAL_MONTH_DAYS })} />
         <Reward icon="phone-call" title={t('friends.callTitle')} body={t('friends.callBody')} />
-      </View>
+      </Fold>
 
-      <View style={styles.panel}>
-        <View style={styles.row}>
-          <Feather name="users" size={20} color={color.moon} />
-          <T v="heading" style={{ flex: 1 }}>{t('friends.duoTitle')}</T>
-        </View>
+      <Fold icon="users" title={t('friends.duoTitle')} open={copied === 'duo'}>
         <T c={color.textDim}>{t('friends.duoBody')}</T>
         <Button kind="ghost" icon="user-plus" label={t('friends.duoShare')} busy={busy === 'duo'} disabled={!!duoId || !!busy} onPress={shareDuo} />
         {duoId ? <T v="caption" c={color.textDim}>{t('friends.duoHave')}</T> : null}
         {copied === 'duo' ? <T v="caption" c={color.gold}>{t('friends.copied')}</T> : null}
-      </View>
+      </Fold>
     </>
   );
 
   const right = (
     <>
-      <View style={styles.panel}>
-        <T v="heading">{t('friends.progressTitle')}</T>
+      <Fold icon="bar-chart-2" title={t('friends.progressTitle')} value={`${Math.min(state.counted, REFERRAL_MONTH_AT)} / ${REFERRAL_MONTH_AT}`}>
         <View style={styles.dots} accessibilityLabel={t('friends.progressLabel', { count: Math.min(state.counted, REFERRAL_MONTH_AT), max: REFERRAL_MONTH_AT })}>
           {Array.from({ length: REFERRAL_MONTH_AT }, (_, i) => (
             <View key={i} style={[styles.dot, i < state.counted && styles.dotOn]}>
@@ -133,7 +128,7 @@ export default function BringAFriend() {
         ) : null}
         {waiting ? <T v="caption" c={color.textDim}>{t('friends.waitingBody')}</T> : null}
         <Button kind="ghost" icon="award" label={t('friends.seeGold')} onPress={() => router.push('/pink-gold')} />
-      </View>
+      </Fold>
 
       {state.mine ? (
         <View style={[styles.panel, state.mine.counted && styles.hero]}>
@@ -152,8 +147,7 @@ export default function BringAFriend() {
         </View>
       ) : null}
 
-      <View style={styles.panel}>
-        <T v="heading">{t('friends.rulesTitle')}</T>
+      <Fold icon="list" title={t('friends.rulesTitle')}>
         {(['rules.counts', 'rules.week', 'rules.device', 'rules.self', 'rules.cap', 'rules.never'] as const).map((k) => (
           <View key={k} style={styles.rule}>
             <Feather name="check" size={14} color={color.gold} />
@@ -162,7 +156,7 @@ export default function BringAFriend() {
             </T>
           </View>
         ))}
-      </View>
+      </Fold>
       {error ? <ErrorText text={error} /> : null}
     </>
   );
