@@ -11,6 +11,7 @@ import { StyleSheet, TextInput, View } from 'react-native';
 import { Portrait } from '@/components/Portrait';
 import { Button } from '@/components/ui/Button';
 import { Columns } from '@/components/ui/Columns';
+import { Fold } from '@/components/ui/Fold';
 import { ErrorText } from '@/components/ui/ErrorText';
 import { inputStyle } from '@/components/ui/input';
 import { Screen } from '@/components/ui/Screen';
@@ -84,8 +85,7 @@ export default function CosmicPage() {
       </View>
 
       {!loaded ? null : m.on && m.moon !== null && !editing ? (
-        <View style={[panel, styles.mine]}>
-          <Line label={t('cosmic.yourStar')} value={t(`cosmic.stars.${NAKSHATRAS[nakshatraOf(m.moon)]}`)} />
+        <Fold icon="moon" title={t('cosmic.yourStar')} value={t(`cosmic.stars.${NAKSHATRAS[nakshatraOf(m.moon)]}`)}>
           <Line label={t('cosmic.yourSign')} value={t(`cosmic.signs.${RASHIS[rashiOf(m.moon)]}`)} />
           {m.birthDate ? <Line label={t('cosmic.yourNumber')} value={t(`cosmic.numbers.n${lifePath(m.birthDate)}` as 'cosmic.numbers.n1')} /> : null}
           {!m.birthTime ? <T v="caption" c={color.textMute}>{t('cosmic.timeNote')}</T> : null}
@@ -93,7 +93,7 @@ export default function CosmicPage() {
             <Button kind="ghost" icon="edit-3" label={t('cosmic.change')} onPress={edit} />
             <Button kind="quiet" wrap icon="trash-2" label={t('cosmic.off')} busy={busy === 'off'} onPress={() => run('off', () => backend.cosmicOff())} />
           </View>
-        </View>
+        </Fold>
       ) : (
         <View style={panel}>
           <T v="heading">{t('cosmic.formTitle')}</T>
@@ -154,7 +154,6 @@ function Line({ label, value }: { label: string; value: string }) {
 type Person = ReturnType<typeof useStore.getState>['profiles'][number];
 
 function PairCard({ pair, person }: { pair: CosmicPair; person: Person | undefined }) {
-  const [open, setOpen] = useState(false);
   const name = person?.name ?? '';
   return (
     <View style={styles.pair}>
@@ -172,15 +171,14 @@ function PairCard({ pair, person }: { pair: CosmicPair; person: Person | undefin
             <View style={[styles.fill, { width: `${(pair.score / GUNA_MAX) * 100}%` }]} />
           </View>
           {pair.myNumber && pair.theirNumber ? <T v="caption" c={color.textDim}>{t('cosmic.numbersLine', { mine: pair.myNumber, theirs: pair.theirNumber })}</T> : null}
-          <Button kind="quiet" icon={open ? 'chevron-up' : 'chevron-down'} label={t('cosmic.kootasTitle')} onPress={() => setOpen(!open)} />
-          {open
-            ? KOOTAS.map((k) => (
-                <View key={k} style={styles.koota}>
-                  <T v="caption" style={{ flex: 1 }}>{t(`cosmic.kootas.${k}`)}</T>
-                  <T v="caption" c={color.textDim}>{`${pair.kootas![k]} / ${KOOTA_MAX[k]}`}</T>
-                </View>
-              ))
-            : null}
+          <Fold title={t('cosmic.kootasTitle')}>
+            {KOOTAS.map((k) => (
+              <View key={k} style={styles.koota}>
+                <T v="caption" style={{ flex: 1 }}>{t(`cosmic.kootas.${k}`)}</T>
+                <T v="caption" c={color.textDim}>{`${pair.kootas![k]} / ${KOOTA_MAX[k]}`}</T>
+              </View>
+            ))}
+          </Fold>
         </>
       ) : null}
     </View>
@@ -190,7 +188,6 @@ function PairCard({ pair, person }: { pair: CosmicPair; person: Person | undefin
 const styles = StyleSheet.create({
   row: { flexDirection: 'row', gap: space.sm, alignItems: 'flex-start' },
   fun: { flexDirection: 'row', gap: space.xs, alignItems: 'center', alignSelf: 'flex-start', borderWidth: 1, borderColor: color.moon, borderRadius: radius.pill, paddingHorizontal: space.md, paddingVertical: space.xs },
-  mine: { borderColor: color.moon },
   pair: { borderRadius: radius.card, backgroundColor: color.surfaceHi, padding: space.md, gap: space.sm },
   pairHead: { flexDirection: 'row', gap: space.md, alignItems: 'center' },
   bar: { height: 8, borderRadius: radius.pill, backgroundColor: color.line, overflow: 'hidden' },
