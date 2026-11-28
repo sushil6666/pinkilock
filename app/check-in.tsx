@@ -14,7 +14,7 @@ import { Chip } from '@/components/ui/Chip';
 import { Columns } from '@/components/ui/Columns';
 import { Fold } from '@/components/ui/Fold';
 import { ErrorText } from '@/components/ui/ErrorText';
-import { inputStyle } from '@/components/ui/input';
+import { textAreaStyle } from '@/components/ui/input';
 import { Screen } from '@/components/ui/Screen';
 import { T } from '@/components/ui/T';
 import { CHECKIN_FACE, CHECKIN_MOODS, CHECKIN_NOTE_MAX, REMINDER_HOURS, checkCheckin, emptyCheckins, todayOf, type CheckinMood, type Checkins } from '@/domain/checkin';
@@ -125,10 +125,10 @@ export default function CheckInPage() {
           </View>
           <T v="bodyBold">{t('checkin.goodTitle')}</T>
           <TextInput value={good} onChangeText={setGood} placeholder={t('checkin.goodPlaceholder')} placeholderTextColor={color.textMute} accessibilityLabel={t('checkin.goodTitle')}
-            multiline maxLength={CHECKIN_NOTE_MAX} style={[inputStyle, styles.input]} />
+            multiline maxLength={CHECKIN_NOTE_MAX} style={textAreaStyle} />
           <T v="bodyBold">{t('checkin.badTitle')}</T>
           <TextInput value={bad} onChangeText={setBad} placeholder={t('checkin.badPlaceholder')} placeholderTextColor={color.textMute} accessibilityLabel={t('checkin.badTitle')}
-            multiline maxLength={CHECKIN_NOTE_MAX} style={[inputStyle, styles.input]} />
+            multiline maxLength={CHECKIN_NOTE_MAX} style={textAreaStyle} />
           <Button icon="check" label={t('checkin.save')} busy={busy === 'save'} disabled={!mood} onPress={save} />
         </View>
       )}
@@ -218,7 +218,6 @@ const styles = StyleSheet.create({
   moods: { flexDirection: 'row', gap: space.sm },
   mood: { flex: 1, minWidth: 0, minHeight: 72, borderRadius: radius.card, borderWidth: 1, borderColor: color.line, backgroundColor: color.surfaceHi, alignItems: 'center', justifyContent: 'center', paddingVertical: space.sm, gap: 2 },
   moodOn: { backgroundColor: color.pink, borderColor: color.pinkDeep },
-  input: { minHeight: 72, textAlignVertical: 'top' },
   ai: { borderColor: color.moon },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: space.sm },
   note: { borderRadius: radius.card, backgroundColor: color.surfaceHi, padding: space.md, gap: 2 },

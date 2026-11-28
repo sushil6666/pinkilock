@@ -15,7 +15,7 @@ import { backend } from '../services';
 import { color, radius, space } from '../theme/tokens';
 import { Button } from './ui/Button';
 import { ErrorText } from './ui/ErrorText';
-import { inputStyle } from './ui/input';
+import { textAreaStyle } from './ui/input';
 import { T } from './ui/T';
 import { t } from '../i18n';
 
@@ -90,7 +90,7 @@ export function Today({ partnerName, today }: { partnerName: string; today: stri
             <>
               <T v="caption" c={color.textDim}>{q.theyAnswered ? t('daily.theyWaiting', { name: partnerName }) : t('daily.questionBody', { name: partnerName })}</T>
               <TextInput value={text} onChangeText={(v) => { setText(v); setError(''); }} placeholder={t('daily.placeholder')} placeholderTextColor={color.textMute}
-                accessibilityLabel={t('daily.answerSpoken')} multiline maxLength={ANSWER_MAX} style={[inputStyle, { minHeight: 72, textAlignVertical: 'top' }]} />
+                accessibilityLabel={t('daily.answerSpoken')} multiline maxLength={ANSWER_MAX} style={textAreaStyle} />
               <Button icon="send" label={t('daily.send')} busy={busy} disabled={!!checkAnswer(text)} onPress={send} />
             </>
           )}

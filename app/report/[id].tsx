@@ -8,7 +8,7 @@ import { Pressable, StyleSheet, TextInput, View } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { Button } from '@/components/ui/Button';
 import { HoldButton } from '@/components/ui/HoldButton';
-import { inputStyle } from '@/components/ui/input';
+import { textAreaStyle } from '@/components/ui/input';
 import { Screen, backToDiscover } from '@/components/ui/Screen';
 import { T } from '@/components/ui/T';
 import { REPORT_DETAIL_MAX, REPORT_REASONS } from '@/domain/safety';
@@ -106,7 +106,7 @@ export default function Report() {
             multiline
             placeholder={t('report.placeholder')}
             placeholderTextColor={color.textMute}
-            style={[inputStyle, { minHeight: 120, paddingTop: space.md, textAlignVertical: 'top' }]}
+            style={[textAreaStyle, { minHeight: 120 }]}
             accessibilityLabel={t('report.detailLabel')}
           />
           <T v="caption" c={color.textMute} style={{ textAlign: 'right' }}>{t('report.count', { n: detail.length, max: REPORT_DETAIL_MAX })}</T>

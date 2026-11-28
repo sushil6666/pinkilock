@@ -129,7 +129,9 @@ export default function TalkListeners() {
         <T v="heading">{t('talk.listenersTitle')}</T>
         {!state.open.voice ? <T v="caption" c={color.textDim}>{t('talk.voiceOff')}</T> : null}
         {listError ? <ErrorText text={listError} /> : null}
-        {!state.sex ? null : sorted && !sorted.length ? (
+        {!state.sex ? <T c={color.textDim}>{t('talk.listenersAboutFirst')}</T>
+          : !sorted && !listError ? <T c={color.textDim}>{t('talk.listenersLoading')}</T>
+          : sorted && !sorted.length ? (
           <>
             <T c={color.textDim}>{t('talk.listenersNone')}</T>
             <Button kind="ghost" icon="cpu" label={t('talk.aiOpen')} onPress={() => router.push('/talk/ai')} />

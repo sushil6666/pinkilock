@@ -15,7 +15,7 @@ import { Columns } from '@/components/ui/Columns';
 import { Entry } from '@/components/ui/Entry';
 import { Fold } from '@/components/ui/Fold';
 import { ErrorText } from '@/components/ui/ErrorText';
-import { inputStyle } from '@/components/ui/input';
+import { textAreaStyle } from '@/components/ui/input';
 import { Screen } from '@/components/ui/Screen';
 import { T } from '@/components/ui/T';
 import { EXPERT_KINDS, EXPERT_TOPICS, GENERAL_TIPS, REPORT_REASONS, TOPIC_EMOJI, isTopic, type ExpertReportReason, type ExpertTip, type ExpertTopic } from '@/domain/experts';
@@ -158,7 +158,7 @@ function ExpertTipCard({ tip }: { tip: ExpertTip }) {
             {REPORT_REASONS.map((r) => <Choice key={r} label={t(`experts.reasons.${r}`)} selected={reason === r} onPress={() => setReason(r)} />)}
           </View>
           <TextInput value={detail} onChangeText={setDetail} placeholder={t('experts.reportDetail')} placeholderTextColor={color.textMute}
-            accessibilityLabel={t('experts.reportDetail')} multiline maxLength={500} style={[inputStyle, { minHeight: 60, textAlignVertical: 'top' }]} />
+            accessibilityLabel={t('experts.reportDetail')} multiline maxLength={500} style={textAreaStyle} />
           <View style={styles.chips}>
             <Button icon="flag" label={t('experts.reportSend')} busy={busy} disabled={!reason} onPress={send} />
             <Button kind="quiet" label={t('common.cancel')} onPress={() => setOpen(false)} />

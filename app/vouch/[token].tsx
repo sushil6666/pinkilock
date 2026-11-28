@@ -45,8 +45,10 @@ export default function Vouch() {
   if (name === null) {
     return (
       <Screen desk="form" back="close">
-        <T v="display">{t('duo.expiredTitle')}</T>
-        <ErrorText text={error || t('vouch.expiredBody')} tone={color.textDim} />
+        <View style={{ gap: space.lg }}>
+          <T v="display">{t('duo.expiredTitle')}</T>
+          <ErrorText text={error || t('vouch.expiredBody')} tone={color.textDim} />
+        </View>
       </Screen>
     );
   }

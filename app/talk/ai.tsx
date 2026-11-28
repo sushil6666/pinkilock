@@ -21,7 +21,7 @@ import { Chip } from '@/components/ui/Chip';
 import { ErrorText } from '@/components/ui/ErrorText';
 import { Screen } from '@/components/ui/Screen';
 import { T } from '@/components/ui/T';
-import { inputStyle } from '@/components/ui/input';
+import { textAreaStyle } from '@/components/ui/input';
 import { AppError } from '@/domain/errors';
 import {
   AI_MESSAGES_PER_DAY, AI_MESSAGE_MAX, AI_SESSION_CREDITS, AI_SESSION_MINUTES, AI_TONES, aiHistory, aiMayContinue, aiMayTalk, aiMinutesLeft, aiToneFor, checkAiMessage, mentionsHarm,
@@ -197,7 +197,7 @@ export default function TalkAi() {
       {state.open.ai ? (
         <View style={styles.compose}>
           <TextInput value={text} onChangeText={setText} placeholder={t('talk.aiPlaceholder')} placeholderTextColor={color.textMute} maxLength={AI_MESSAGE_MAX}
-            multiline style={[inputStyle, styles.input]} accessibilityLabel={t('talk.aiPlaceholder')} onSubmitEditing={send} blurOnSubmit={false} />
+            multiline style={[textAreaStyle, styles.input]} accessibilityLabel={t('talk.aiPlaceholder')} onSubmitEditing={send} blurOnSubmit={false} />
           <Button icon="send" label={t('talk.aiSend')} busy={sending} disabled={!text.trim()} onPress={send} />
         </View>
       ) : <T v="caption" c={color.textDim}>{t('talk.aiOff')}</T>}

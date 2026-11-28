@@ -12,7 +12,7 @@ import { Button } from '@/components/ui/Button';
 import { Columns } from '@/components/ui/Columns';
 import { Fold } from '@/components/ui/Fold';
 import { ErrorText } from '@/components/ui/ErrorText';
-import { inputStyle } from '@/components/ui/input';
+import { inputStyle, textAreaStyle } from '@/components/ui/input';
 import { Screen } from '@/components/ui/Screen';
 import { T } from '@/components/ui/T';
 import { EXPERT_KINDS, checkApply, type ExpertApplication, type ExpertApply } from '@/domain/experts';
@@ -20,7 +20,7 @@ import { haptic } from '@/lib/haptics';
 import { shown } from '@/lib/report';
 import { aria } from '@/lib/web';
 import { backend } from '@/services';
-import { color, radius, space } from '@/theme/tokens';
+import { color, radius, space, type } from '@/theme/tokens';
 import { t } from '@/i18n';
 
 const ROUTE = '/experts/join';
@@ -67,7 +67,7 @@ export default function JoinExpertPage() {
     <View style={{ gap: space.xs }}>
       <T v="bodyBold">{t(`experts.join.${k}`)}</T>
       <TextInput value={form[k]} onChangeText={(v) => set(k, v)} placeholder={t(`experts.join.${k}Hint`)} placeholderTextColor={color.textMute}
-        accessibilityLabel={t(`experts.join.${k}`)} maxLength={max} multiline={multiline} style={[inputStyle, multiline && { minHeight: 72, textAlignVertical: 'top' }]} />
+        accessibilityLabel={t(`experts.join.${k}`)} maxLength={max} multiline={multiline} style={multiline ? textAreaStyle : [inputStyle, type.body]} />
     </View>
   );
 

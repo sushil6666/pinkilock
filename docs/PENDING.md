@@ -33,10 +33,12 @@ merge, **Supabase deploy** and **Web deploy** run on their own; check they go gr
       test on a phone (step 3) checks it too.
 - [x] **#109** Question of the day and tip of the day in Couple mode (D125). Merged 2026-11-28.
 - [x] **#110** One line and one arrow on every screen (D130). Merged 2026-11-28.
-- [ ] **#111** Daily relationship check-in with Saathi's ideas (D126). Next.
-- [ ] **#112** Expert tips and Join as an expert (D127). After #111.
-- [ ] **#113** Festive packs for Christmas and New Year (D128). After #112, before 18 December.
-- [ ] **#114** Cosmic match (D129). After #113.
+- [x] **#111** Daily relationship check-in with Saathi's ideas (D126). Merged 2026-11-28.
+- [x] **#112** Expert tips and Join as an expert (D127). Merged 2026-11-28.
+- [x] **#113** Festive packs for Christmas and New Year (D128). Merged 2026-11-28.
+- [x] **#114** Cosmic match (D129). Merged 2026-11-28.
+- [ ] **#115** Reviewer polish (no new features): button words never cut off, sentence-sized text
+      boxes, the listener list says why it is empty. Next.
 
 New PRs from Claude threads get added here.
 
@@ -236,7 +238,25 @@ Payments are paused (D117). None of this is needed until you want to take money.
 - [ ] Push checked on real phones on Android and iOS (`docs/phase-2-checklist.md`, step 4),
       including the gentle reminders from #107.
 
-## 15. Optional
+## 15. Polish a reviewer would still flag (Code)
+
+Found in the reviewer pass of 2026-11-28 and not fixed yet. Small, one PR each or grouped.
+
+- [ ] On a 320-wide phone the "Glowing" mood on Self love is cut to "Glow...".
+- [ ] Tags (`Tag`) are 24 high. On a phone `hitSlop` makes them 44, but the website ignores
+      `hitSlop`, so they are small to click there.
+- [ ] Discover's spark says "1 lines up" and a profile says "3 line up": correct, but it reads like a
+      typo. Something like "1 in common" would read better (Sushil to pick the words).
+- [ ] The ticket on an ask cuts its top line at phone width ("ASKED YOU / 21H 59M ..." next to
+      "IN PERSON / 25 MIN").
+- [ ] Ask someone, When: on a phone the fifth day (Wed) wraps alone onto a second row.
+- [ ] A plan more than a day away shows "3   :16 :49": the days have no colon and a wide gap.
+- [ ] Join as an expert and Bring a friend still open with a long paragraph under the title; D130
+      would put it in a fold.
+- [ ] The last onboarding step asks to agree that "Pinkilock may use my dating preferences", but no
+      step asks who you want to date. Check the words are still right.
+
+## 16. Optional
 
 - [ ] Buy pinkilock.in and redirect it to pinkilock.com (Cloudflare, a redirect rule).
 - [ ] GitHub secret `EXPO_ACCESS_TOKEN` (not set today): turns on Expo's extra push security.
