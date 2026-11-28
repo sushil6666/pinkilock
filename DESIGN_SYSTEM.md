@@ -82,6 +82,16 @@ Font scaling is allowed up to 1.3x (`maxFontSizeMultiplier`) so layouts hold on 
 - **HoldButton**: the same slab, drawn as a `depth`-thick bottom edge in its fill colour. Press and hold 900 ms to commit (send an ask, swear the promise, bail). A fill
   sweeps left to right; haptic ticks at 33% and 66%, medium impact on completion; letting go early
   drains the fill in 180 ms. Used wherever a tap would be too cheap.
+- **Fold** (D130): one line and one arrow. A `surface` card, 56 high, radius as a card: an optional
+  icon, the section's name in body bold, an optional short value on the right in a `textDim`
+  caption (a count, the city, "On"), and a chevron down. Tapping the row opens the rest in place
+  under it (fade in 180 ms) and turns the chevron up. `accent` gives it a `goldDeep` border for the
+  one section that matters most on a screen. A fold opens by itself when something in it needs
+  fixing (an error, a form not yet filled). Every section that has more than its main line uses
+  one. Safety never does: helplines, the safety numbers button, Spicy's safety rules and terms,
+  block and report stay on screen.
+- **Entry** (D130): a way into another screen as one line: icon, name, an optional short value, and
+  a chevron right. `gold`, `pink` or plain. What is behind it is said on the screen it opens.
 - **Chip**: 40 high, radius 6, uppercase label. Selected is pink fill, indigo text.
 - **Plan option** (`IdeaChip`): a chip with the time and one-liner under the title, and a chevron on the right (48 wide) that opens What you do / Where / Cost / Why it works under a hairline. Headings are gold captions (indigo when selected). The row picks; only the chevron opens.
 - **InviteCard**: a ticket. Eyebrow with status, the idea in display type, time row, note in quotes,
@@ -222,13 +232,15 @@ Font scaling is allowed up to 1.3x (`maxFontSizeMultiplier`) so layouts hold on 
   cards, theirs edged `pink`; the streak is a gold `zap` and caption.
 - **Daily check-in** (D126): two columns on desktop. Moods as Self love's mood buttons (`pink` when
   picked); notes in `surfaceHi` cards; Saathi's ideas in a `surface` panel edged `moon`, with a `moon`
-  label and a muted AI note; the 112 and 181 panel is always there; `HelpLines` strong goes first on harm.
-- **Expert tips** (D127): two columns on desktop (3 to 2). Topic `Chip`s with an emoji; each topic a
-  `surface` panel with `surfaceHi` tip cards. "Watch out for" is a `surface` panel edged `flare`, with
-  `flare` crosses; the join card is `goldWash` edged `goldDeep`, like Self love's entry. An expert's tip
+  label and a muted AI note; the 112 and 181 panel is always there; `HelpLines` strong goes first on harm. The reminder
+  and earlier check-ins sit behind a `Fold` (D130); the safety panel never does.
+- **Expert tips** (D127): two columns on desktop (3 to 2). Topic `Chip`s with an emoji; each topic's
+  team tips sit behind a `Fold` (open for the picked topic), with `surfaceHi` tip cards, and so do the
+  kinds of expert (D130). "Watch out for" is a `surface` panel edged `flare`, with `flare` crosses, and
+  never folds; joining is a gold `Entry`, and the join screen's "why" a gold `Fold`. An expert's tip
   shows a gold `check-circle`, their kind and credential in `textMute`, and a quiet "Report" button.
-- **Festive packs** (D128): on Plans, a `surface` panel edged `pink` above This week, a pink `label`,
-  the festival's emoji at 32 and a `title`, then This week's idea rows. In Couple mode's Today, a
+- **Festive packs** (D128): on Plans, a gold `Fold` above This week's (D130), the festival's emoji
+  and name as its line and the idea count beside it; inside, This week's idea rows. In Couple mode's Today, a
   `surfaceHi` card edged `pink` with the emoji, a pink `label` and the challenge.
 
 ## 5. Motion

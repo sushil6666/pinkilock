@@ -4,6 +4,7 @@
  * my link, or a finished profile. Never a rating. The help lines are always on the page. Nothing
  * here is shown to anyone else, and nothing links to Spicy mode.
  */
+import { Fold } from '@/components/ui/Fold';
 import { Feather } from '@expo/vector-icons';
 import * as Linking from 'expo-linking';
 import { router } from 'expo-router';
@@ -42,7 +43,6 @@ export default function TalkHub() {
       <View style={{ gap: space.sm }}>
         <T v="label" c={color.moon}>{t('talk.eyebrow')}</T>
         <T v="display">{t('talk.title')}</T>
-        <T c={color.textDim}>{t('talk.intro')}</T>
       </View>
 
       <Animated.View entering={FadeInDown.duration(320)} style={[panel, styles.ai]}>
@@ -51,7 +51,6 @@ export default function TalkHub() {
           <T v="heading" style={{ flex: 1 }}>{t('talk.aiTitle')}</T>
           <View style={styles.badge}><T v="label" c={color.moon}>{t('talk.aiLabel')}</T></View>
         </View>
-        <T c={color.textDim}>{t('talk.aiBody')}</T>
         <T v="caption" c={color.textDim}>
           {pass ? t('talk.aiPassOn', { time: until(pass) }) : state.paused ? t('paused.saathiPrice', { m: AI_SESSION_MINUTES })
             : t('talk.aiPrice', { n: AI_SESSION_CREDITS, m: AI_SESSION_MINUTES })}
@@ -64,7 +63,6 @@ export default function TalkHub() {
           <Feather name="phone" size={20} color={color.gold} />
           <T v="heading" style={{ flex: 1 }}>{t('talk.personTitle')}</T>
         </View>
-        <T c={color.textDim}>{t('talk.personBody')}</T>
         <T v="caption" c={free ? color.pink : color.textDim}>
           {free ? t('talk.personFree', { n: FREE_CALL_MINUTES }) : state.paused ? t('paused.listenersLocked') : t('talk.personPrice', { n: LISTENER_PER_MINUTE })}
         </T>
@@ -72,17 +70,19 @@ export default function TalkHub() {
       </Animated.View>
 
       {error ? <ErrorText text={error} /> : null}
+      {/* Helplines stay on screen, never behind an arrow. */}
       <HelpLines />
+      <Fold icon="info" title={t('fold.about')}>
+        <T c={color.textDim}>{t('talk.intro')}</T>
+        <T c={color.textDim}>{t('talk.aiBody')}</T>
+        <T c={color.textDim}>{t('talk.personBody')}</T>
+      </Fold>
     </>
   );
 
   const right = (
     <>
-      <View style={panel}>
-        <View style={styles.row}>
-          <Feather name={state.freeCall === 'locked' ? 'gift' : 'check-circle'} size={20} color={state.freeCall === 'locked' ? color.pink : color.gold} />
-          <T v="heading" style={{ flex: 1 }}>{t('talk.freeTitle')}</T>
-        </View>
+      <Fold icon={state.freeCall === 'locked' ? 'gift' : 'check-circle'} accent title={t('talk.freeTitle')} open={state.freeCall === 'ready'}>
         {state.freeCall === 'ready' ? (
           <>
             <T c={color.gold}>{t('talk.freeReady', { n: FREE_CALL_MINUTES })}</T>
@@ -111,16 +111,12 @@ export default function TalkHub() {
             <Step done={state.profile.plans} label={t('talk.freePlans')} onPress={() => router.push('/(tabs)/me')} />
           </>
         )}
-      </View>
+      </Fold>
 
-      <View style={panel}>
-        <View style={styles.row}>
-          <Feather name="headphones" size={20} color={color.gold} />
-          <T v="heading" style={{ flex: 1 }}>{t('talk.listenTitle')}</T>
-        </View>
+      <Fold icon="headphones" title={t('talk.listenTitle')}>
         <T c={color.textDim}>{t('talk.listenBody')}</T>
         <Button kind="ghost" label={t('talk.listenOpen')} onPress={() => router.push('/talk/listen')} />
-      </View>
+      </Fold>
 
       <View style={styles.note}>
         <Feather name="lock" size={14} color={color.gold} style={{ marginTop: 2 }} />

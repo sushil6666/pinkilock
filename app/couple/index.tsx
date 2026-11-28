@@ -4,6 +4,7 @@
  * with both ticks and the streak, what is coming up (birthdays, the first date, day counts), and our
  * date list, where an idea becomes an ordinary pinky promise. Only the two of us see any of it.
  */
+import { Fold } from '@/components/ui/Fold';
 import { Feather } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useState } from 'react';
@@ -244,8 +245,7 @@ function ComingUp({ state, partner, busy, run }: { state: ReturnType<typeof useC
     }
   };
   return (
-    <View style={panel}>
-      <T v="heading">{t('couple.daysTitle')}</T>
+    <Fold icon="calendar" title={t('couple.daysTitle')} value={list.length ? String(list.length) : undefined}>
       {list.length ? list.map((u) => {
         const label = upcomingLabel(u, partner);
         const mineId = u.mine ? idOf(u) : undefined;
@@ -280,7 +280,7 @@ function ComingUp({ state, partner, busy, run }: { state: ReturnType<typeof useC
           <Button kind="ghost" icon="plus" label={t('couple.addDay')} busy={busy === 'day'} disabled={!text.trim()} onPress={add} />
         </View>
       ) : null}
-    </View>
+    </Fold>
   );
 }
 
@@ -325,8 +325,7 @@ function DateList({ state, me, partner, busy, run }: { state: ReturnType<typeof 
   };
 
   return (
-    <View style={panel}>
-      <T v="heading">{t('couple.listTitle')}</T>
+    <Fold icon="heart" accent title={t('couple.listTitle')} value={String(open.length)} open={both.length > 0}>
       <T v="caption" c={color.textDim}>{t('couple.listBody')}</T>
       {both.length ? <T v="label" c={color.pink}>{t('couple.bothWant')}</T> : null}
       {both.map(row)}
@@ -351,7 +350,7 @@ function DateList({ state, me, partner, busy, run }: { state: ReturnType<typeof 
           {done.map(row)}
         </>
       ) : null}
-    </View>
+    </Fold>
   );
 }
 
@@ -364,8 +363,7 @@ function WithFriends({ partner }: { partner: Profile }) {
   const duo = usePerson(useStore((s) => s.duoId) ?? undefined);
   const canDouble = !!duo && !!partner.hasDuo;
   return (
-    <View style={panel}>
-      <T v="label" c={color.gold}>{t('couple.friendsLabel')}</T>
+    <Fold icon="users" title={t('couple.friendsLabel')}>
       <View style={styles.friendRow}>
         <Feather name="users" size={20} color={color.gold} />
         <View style={{ flex: 1, gap: 2 }}>
@@ -388,7 +386,7 @@ function WithFriends({ partner }: { partner: Profile }) {
         </View>
       </View>
       <Button kind="ghost" icon="gift" label={t('couple.giftOpen')} onPress={() => router.push('/friends')} />
-    </View>
+    </Fold>
   );
 }
 

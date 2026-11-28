@@ -3,6 +3,7 @@
  * note and one small step, the 3-day reset, a private journal, a pause from Discover, and help for
  * a heavier day. Opened with `?after=no` or `?after=expired&invite=<id>` from an ask that ended.
  */
+import { Fold } from '@/components/ui/Fold';
 import { Feather } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Linking, StyleSheet, View } from 'react-native';
@@ -94,19 +95,17 @@ export default function BounceBack() {
         )}
       </View>
 
-      <View style={panel}>
-        <T v="heading">{t('bounce.journalTitle')}</T>
+      <Fold icon="book" title={t('bounce.journalTitle')}>
         <T v="caption" c={color.textDim}>{t('bounce.journalBody')}</T>
         <SelfNotes kind="journal" notes={state.notes} placeholder={t('bounce.journalPlaceholder')} label={t('bounce.journalLabel')}
           add={t('bounce.journalAdd')} empty={t('bounce.journalEmpty')} busy={busy} run={run} />
-      </View>
+      </Fold>
     </>
   );
 
   const right = (
     <>
-      <View style={panel}>
-        <T v="heading">{t('bounce.pauseTitle')}</T>
+      <Fold icon="pause-circle" title={t('bounce.pauseTitle')} open={!!state.pausedUntil}>
         <T v="caption" c={color.textDim}>{t('bounce.pauseBody')}</T>
         {state.pausedUntil ? (
           <>
@@ -121,8 +120,9 @@ export default function BounceBack() {
             {PAUSE_DAYS.map((n) => <Chip key={n} label={t('bounce.pauseFor', { count: n })} disabled={busy === 'pause'} onPress={() => run('pause', () => backend.pauseDiscover(n))} />)}
           </View>
         )}
-      </View>
+      </Fold>
 
+      {/* Help stays on screen, never behind an arrow. */}
       <View style={[panel, styles.help]}>
         <View style={{ flexDirection: 'row', gap: space.md, alignItems: 'center' }}>
           <Feather name="life-buoy" size={20} color={color.moon} />
