@@ -35,6 +35,7 @@ merge, **Supabase deploy** and **Web deploy** run on their own; check they go gr
 - [x] **#110** One line and one arrow on every screen (D130). Merged 2026-11-28.
 - [ ] **#111** Daily relationship check-in with Saathi's ideas (D126). Next.
 - [ ] **#112** Expert tips and Join as an expert (D127). After #111.
+- [ ] **#113** Festive packs for Christmas and New Year (D128). After #112, before 18 December.
 
 New PRs from Claude threads get added here.
 

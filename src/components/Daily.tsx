@@ -6,6 +6,7 @@ import { Feather } from '@expo/vector-icons';
 import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { Pressable, StyleSheet, TextInput, View } from 'react-native';
+import { festivalOn } from '../domain/festivals';
 import { ANSWER_MAX, checkAnswer, emptyDaily, tipOf, type DailyAnswer, type DailyQuestion } from '../domain/daily';
 import { haptic } from '../lib/haptics';
 import { quiet } from '../lib/log';
@@ -60,9 +61,19 @@ export function Today({ partnerName, today }: { partnerName: string; today: stri
 
   const q = daily.today;
   const tip = tipOf(q?.day ?? today);
+  const festival = festivalOn(Date.now());
 
   return (
     <View style={styles.panel}>
+      {festival ? (
+        <View style={styles.festive}>
+          <T style={{ fontSize: 26, lineHeight: 32 }} maxFontSizeMultiplier={1}>{festival.emoji}</T>
+          <View style={{ flex: 1, gap: 2 }}>
+            <T v="label" c={color.pink}>{t(`festivals.${festival.id}.coupleLabel`)}</T>
+            <T v="body">{t(`festivals.${festival.id}.challenge`, { name: partnerName })}</T>
+          </View>
+        </View>
+      ) : null}
       <T v="label" c={color.gold}>{t('daily.tipLabel')}</T>
       <View style={styles.tip}>
         <Feather name="sun" size={18} color={color.gold} style={{ marginTop: 2 }} />
@@ -133,6 +144,7 @@ function Answers({ a, partnerName }: { a: DailyAnswer; partnerName: string }) {
 }
 
 const styles = StyleSheet.create({
+  festive: { flexDirection: 'row', gap: space.md, alignItems: 'flex-start', borderWidth: 1, borderColor: color.pink, borderRadius: radius.card, backgroundColor: color.surfaceHi, padding: space.md },
   panel: { borderWidth: 1, borderColor: color.line, borderRadius: radius.card, backgroundColor: color.surface, padding: space.lg, gap: space.md },
   tip: { flexDirection: 'row', gap: space.md, alignItems: 'flex-start' },
   split: { gap: space.md, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: color.line, paddingTop: space.md },

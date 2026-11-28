@@ -570,6 +570,13 @@ written only by the team (no client role can read or write them; the function re
 `private.expert_applications`, which no client reads; my own request comes back from
 `my_expert_application`, and both are in my data download. `/experts/join` is the pitch and form.
 
+### Festive packs
+
+`festivalOn(now)` in `src/domain/festivals.ts` (D128) names the festival whose days include today in
+India's time. Plans' This week (`src/components/Weekly.tsx`) then shows its pack: up to three of its
+ideas offered in my city (`festiveIdeas`), with the same Ask buttons; Couple mode's Today shows its
+challenge. Words are in `festivals.<id>`. Nothing is stored or pushed.
+
 ### This week: plan ideas and city events
 
 Plans shows three ideas a week (D121), picked in the phone by `weeklyIdeas` in `src/domain/weekly.ts`

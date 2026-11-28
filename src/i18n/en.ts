@@ -1254,6 +1254,20 @@ export const en = {
       stay_in_scope: "Stay in your field, and point people to a doctor, a lawyer or a help line when they need one.",
     },
   },
+  festivals: {
+    christmas: {
+      title: "Christmas plans",
+      body: "Lights, cake and a little magic. Three plan ideas for the season, until 26 December.",
+      coupleLabel: "Christmas challenge",
+      challenge: "Swap one small gift with {name}, homemade or under ₹200, that says something only the two of you get.",
+    },
+    new_year: {
+      title: "New Year plans",
+      body: "See the year out or start the new one with a plan. Three ideas, until 1 January.",
+      coupleLabel: "New Year challenge",
+      challenge: "Tell {name} your favourite moment of the year together, and one plan you want for the next.",
+    },
+  },
   reminders: {
     on: 'Gentle reminders: on',
     off: 'Gentle reminders: off',

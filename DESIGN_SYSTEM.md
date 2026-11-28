@@ -239,6 +239,9 @@ Font scaling is allowed up to 1.3x (`maxFontSizeMultiplier`) so layouts hold on 
   kinds of expert (D130). "Watch out for" is a `surface` panel edged `flare`, with `flare` crosses, and
   never folds; joining is a gold `Entry`, and the join screen's "why" a gold `Fold`. An expert's tip
   shows a gold `check-circle`, their kind and credential in `textMute`, and a quiet "Report" button.
+- **Festive packs** (D128): on Plans, a gold `Fold` above This week's (D130), the festival's emoji
+  and name as its line and the idea count beside it; inside, This week's idea rows. In Couple mode's Today, a
+  `surfaceHi` card edged `pink` with the emoji, a pink `label` and the challenge.
 
 ## 5. Motion
 
