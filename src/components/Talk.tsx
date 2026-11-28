@@ -4,6 +4,7 @@
  * decided on the server (talk_state and its siblings); this file only shows what it says. Nothing
  * here links to Spicy mode, and nothing here is logged but codes and routes.
  */
+import { Entry } from './ui/Entry';
 import { Feather } from '@expo/vector-icons';
 import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -87,17 +88,7 @@ export function HelpLines({ strong }: { strong?: boolean }) {
 
 /** On Me, next to Self love. */
 export function TalkEntry() {
-  return (
-    <Pressable accessibilityRole="button" accessibilityLabel={t('talk.meOpen')} onPress={() => router.push('/talk')} style={({ pressed }) => [styles.entry, pressed && { opacity: 0.85 }]}>
-      <Feather name="message-circle" size={22} color={color.moon} />
-      <View style={{ flex: 1, gap: 2 }}>
-        <T v="label" c={color.moon}>{t('talk.eyebrow')}</T>
-        <T v="heading">{t('talk.meTitle')}</T>
-        <T v="caption" c={color.textDim}>{t('talk.meBody')}</T>
-      </View>
-      <Feather name="chevron-right" size={20} color={color.textDim} />
-    </Pressable>
-  );
+  return <Entry icon={<Feather name="message-circle" size={20} color={color.moon} />} title={t('talk.meTitle')} spoken={t('talk.meOpen')} onPress={() => router.push('/talk')} />;
 }
 
 /** The listener code, as both sides see it. */

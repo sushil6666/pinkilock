@@ -3,6 +3,7 @@
  * Only yes or no comes from the server (`Profile.pinkGold`); the badge says nothing else and changes
  * nothing else. It sits on a portrait, so it has the dark backing every badge on a photo has.
  */
+import { Entry } from './ui/Entry';
 import { Feather } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { Pressable, StyleSheet, View } from 'react-native';
@@ -32,19 +33,7 @@ export function PinkGold({ person, mine }: Props) {
 
 /** The way in, on Me (D116): what Pink Gold gives, or until when mine is on. */
 export function PinkGoldEntry({ wallet }: { wallet: Wallet | null }) {
-  const on = !!wallet?.gold;
-  const body = on ? (wallet?.goldUntil ? t('gold.meOn', { date: fmtDay(wallet.goldUntil) }) : t('gold.onForever')) : t('gold.meBody');
-  return (
-    <Pressable accessibilityRole="button" accessibilityLabel={t('gold.meOpen')} onPress={() => router.push('/pink-gold')} style={({ pressed }) => [styles.entry, pressed && { opacity: 0.85 }]}>
-      <View style={[styles.gem, styles.gemBig]}><Feather name="star" size={18} color={color.onPink} /></View>
-      <View style={{ flex: 1, gap: 2 }}>
-        <T v="label" c={color.pink}>{t('gold.eyebrow')}</T>
-        <T v="heading">{t('pinkGold.name')}</T>
-        <T v="caption" c={color.textDim}>{body}</T>
-      </View>
-      <Feather name="chevron-right" size={20} color={color.textDim} />
-    </Pressable>
-  );
+  return <Entry tone="pink" icon={<View style={[styles.gem, styles.gemBig]}><Feather name="star" size={14} color={color.onPink} /></View>} title={t('pinkGold.name')} value={wallet?.gold ? t('fold.on') : undefined} spoken={t('gold.meOpen')} onPress={() => router.push('/pink-gold')} />;
 }
 
 const styles = StyleSheet.create({
@@ -54,6 +43,6 @@ const styles = StyleSheet.create({
     paddingLeft: 5, paddingRight: space.md, paddingVertical: 5, backgroundColor: color.onPhoto,
   },
   entry: { flexDirection: 'row', alignItems: 'center', gap: space.md, borderWidth: 1, borderColor: color.gold, borderRadius: radius.card, backgroundColor: color.pinkWash, padding: space.lg, marginTop: space.md },
-  gemBig: { width: 40, height: 40, borderRadius: 20, borderWidth: 2 },
+  gemBig: { width: 26, height: 26, borderRadius: 13, borderWidth: 2 },
   gem: { width: 20, height: 20, borderRadius: 10, alignItems: 'center', justifyContent: 'center', backgroundColor: color.pink, borderWidth: 1.5, borderColor: color.moon },
 });

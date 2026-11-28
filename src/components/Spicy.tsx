@@ -3,6 +3,7 @@
  * entry on Me, and the hand-off on a card or a plan. What shows comes from the server (spicy_with): this
  * file never decides that two people may see each other's usernames.
  */
+import { Entry } from './ui/Entry';
 import { Feather } from '@expo/vector-icons';
 import * as Linking from 'expo-linking';
 import { router, useFocusEffect } from 'expo-router';
@@ -56,17 +57,7 @@ export function useMySpicy() {
 /** The way in, on Me. Says whether it is on, nothing more. */
 export function SpicyEntry() {
   const [state] = useMySpicy();
-  return (
-    <Pressable accessibilityRole="button" accessibilityLabel={t('spicy.meOpen')} onPress={() => router.push('/spicy')} style={({ pressed }) => [styles.entry, pressed && { opacity: 0.85 }]}>
-      <Feather name="zap" size={22} color={color.pink} />
-      <View style={{ flex: 1, gap: 2 }}>
-        <T v="label" c={color.pink}>{t('spicy.eyebrow')}</T>
-        <T v="heading">{t('spicy.title')}</T>
-        <T v="caption" c={color.textDim}>{t(state.on ? 'spicy.meBodyOn' : 'spicy.meBodyOff')}</T>
-      </View>
-      <Feather name="chevron-right" size={20} color={color.textDim} />
-    </Pressable>
-  );
+  return <Entry icon={<Feather name="zap" size={20} color={color.pink} />} title={t('spicy.title')} value={state.on ? t('fold.on') : undefined} spoken={t('spicy.meOpen')} onPress={() => router.push('/spicy')} />;
 }
 
 /**
