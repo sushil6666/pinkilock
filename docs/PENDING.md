@@ -38,7 +38,7 @@ merge, **Supabase deploy** and **Web deploy** run on their own; check they go gr
 - [x] **#113** Festive packs for Christmas and New Year (D128). Merged 2026-11-28.
 - [x] **#114** Cosmic match (D129). Merged 2026-11-28.
 - [x] **#115** Reviewer polish (no new features). Merged 2026-11-28.
-- [ ] **Reviewer polish, part 2**: the leftovers from section 15. Next.
+- [ ] **#116** Reviewer polish, part 2: the leftovers from section 15. Next.
 
 New PRs from Claude threads get added here.
 
