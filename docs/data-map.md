@@ -31,6 +31,8 @@ a processor or a kind of data updates this file in the same pull request.
 | Friend vouches: who vouched, the phrases | `vouches` | Until either account is deleted | No client; the card shows a count and the top phrases |
 | Duo: who my duo partner is, and the links made to join | `duos`, `private.duo_links` | Until left, blocked or deleted | The two people in the duo; others see only that a card has one |
 | When my phone was last asked to look again (no content) | `feed_nudges` | Until the account is deleted | Only me |
+| Request to join as an expert: name, kind, licence or training, city, how to reach them, note, status | `private.expert_applications` | Until the account is deleted | The person (kind and status); operators |
+| Reports about an expert: reason, optional detail | `private.expert_reports` | Until the reporter's account is deleted | Operators only |
 | Check-in codes | `private.checkin_codes` | Deleted when the plan ends | The person (their own code) |
 | Flags on a contact handle: who flagged whose handle, on which plan, and when the handle was verified | `contact_reports`, `events` (`bad_contact`), `profile_private.contact_verified_at` | Until either account is deleted | The flagged person sees a count only (`my_contact_flags`). The flagger's export lists the flags they made; the flagged person's export leaves them out, since a plan names the flagger |
 

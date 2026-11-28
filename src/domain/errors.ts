@@ -203,6 +203,12 @@ export const ERRORS = {
   PL238: 'Keep each note to 500 characters.',
   PL239: 'You have checked in today. Come back tomorrow.',
   PL240: 'Pick a reminder time between 6 pm and 10 pm, or turn it off.',
+  // Expert tips (D127).
+  PL241: 'Pick a topic from the list.',
+  PL242: 'That expert is not listed.',
+  PL243: 'Pick a reason from the list.',
+  PL244: 'Read and agree to the rules for experts first.',
+  PL245: 'Fill in your name, what you do, your licence or training, your city and how we can reach you.',
 
   PA001: 'Phone sign-in is not switched on yet.',
   PA002: 'Email sign-in is not switched on yet.',

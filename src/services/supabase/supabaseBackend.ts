@@ -20,6 +20,7 @@ import { isChallenge, isDayKind, type Couple, type CoupleStatus } from '../../do
 import { standingFrom } from '../../domain/streaks';
 import { dailyFrom } from '../../domain/daily';
 import { checkinsFrom } from '../../domain/checkin';
+import { applicationFrom, expertTipsFrom } from '../../domain/experts';
 import { MAX_CALLS, isCallMinutes, noCall, type CallAnswer, type CallOutcome, type CallStatus, type SpicyCall } from '../../domain/calls';
 import { isBoundary, type Spicy, type SpicyPlan } from '../../domain/spicy';
 import { switchesFrom } from '../../domain/paid';
@@ -32,7 +33,7 @@ import { REWARD_KINDS, TREAT_ITEMS, emptyWallet, topUpsHere, type LedgerKind, ty
 import type { openCheckout } from '../../lib/razorpay';
 import type { Backend, BackendEvent, Changes, Notice, Snapshot } from '../backend';
 import type { MyReferrals } from '../../domain/referrals';
-import { t } from '../../i18n';
+import { language, t } from '../../i18n';
 import { activeTrace, tracedAll } from '../traceScope';
 
 type Row = Record<string, any>;
@@ -1048,6 +1049,23 @@ export function createSupabaseBackend(url: string, anonKey: string, storage: Ses
     async checkinReminder(hour) {
       await uid();
       return checkinsFrom(await rpc('checkin_reminder', { p_hour: hour }));
+    },
+    async expertTips(topic) {
+      await uid();
+      return expertTipsFrom(await rpc('expert_tips_list', { p_topic: topic, p_lang: language().split('-')[0] }));
+    },
+    async reportExpert(expertId, reason, detail) {
+      await uid();
+      await rpc('report_expert', { p_expert: expertId, p_reason: reason, p_detail: detail });
+    },
+    async expertApply(f) {
+      await uid();
+      return applicationFrom(await rpc('expert_apply', { p_name: f.name, p_kind: f.kind, p_credential: f.credential, p_city: f.city,
+        p_contact: f.contact, p_note: f.note, p_agree: f.agree }));
+    },
+    async myExpertApplication() {
+      await uid();
+      return applicationFrom(await rpc('my_expert_application'));
     },
     async coupleChallenge(done) {
       await uid();

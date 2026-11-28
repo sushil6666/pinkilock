@@ -11,6 +11,7 @@ import type { CityStanding } from '../domain/streaks';
 import type { Couple, DayKind } from '../domain/couple';
 import type { DailyQuestion } from '../domain/daily';
 import type { CheckinMood, Checkins } from '../domain/checkin';
+import type { ExpertApplication, ExpertApply, ExpertReportReason, ExpertTip, ExpertTopic } from '../domain/experts';
 import type { CallAnswer, CallMinutes, SpicyCall } from '../domain/calls';
 import type { Spicy, SpicyInput, SpicyPlan } from '../domain/spicy';
 import type { QuizResult, SpicyTerms } from '../domain/spicyQuiz';
@@ -227,6 +228,15 @@ export interface Backend {
   checkinSuggest(): Promise<Checkins>;
   /** A daily reminder at 18 to 22 in my city's time, or null for none. */
   checkinReminder(hour: number | null): Promise<Checkins>;
+
+  /** Expert tips (D127): tips from vetted experts, for a topic or all, my language first. Empty until the team lists someone. */
+  expertTips(topic: ExpertTopic | null): Promise<ExpertTip[]>;
+  /** Report an expert to the team (PL242, PL243). Once per expert; again changes the reason. */
+  reportExpert(expertId: string, reason: ExpertReportReason, detail: string): Promise<void>;
+  /** Ask to join as an expert (PL244, PL245). Editable while the team has not answered. */
+  expertApply(form: ExpertApply): Promise<ExpertApplication | null>;
+  /** My request to join as an expert, or null. */
+  myExpertApplication(): Promise<ExpertApplication | null>;
 
   /**
    * Spicy mode (D103): off unless I turn it on. It needs a phone or an email on the account, the

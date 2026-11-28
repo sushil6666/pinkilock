@@ -108,6 +108,11 @@ export function Today({ partnerName, today }: { partnerName: string; today: stri
         <T v="bodyBold" style={{ flex: 1 }}>{t('checkin.entry', { name: partnerName })}</T>
         <Feather name="chevron-right" size={18} color={color.textDim} />
       </Pressable>
+      <Pressable accessibilityRole="button" onPress={() => router.push('/experts')} style={({ pressed }) => [styles.checkin, pressed && { opacity: 0.85 }]}>
+        <Feather name="book-open" size={18} color={color.gold} />
+        <T v="bodyBold" style={{ flex: 1 }}>{t('experts.coupleLink')}</T>
+        <Feather name="chevron-right" size={18} color={color.textDim} />
+      </Pressable>
     </View>
   );
 }

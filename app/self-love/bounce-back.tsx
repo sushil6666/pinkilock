@@ -135,6 +135,7 @@ export default function BounceBack() {
         <Button kind="danger" icon="phone" label={t('bounce.emergency', { number: country.emergency })} onPress={() => call(country.emergency)} />
         <Button kind="quiet" icon="shield" label={t('bounce.safetyPage')} onPress={() => router.push('/safety')} />
       </View>
+      <Button kind="ghost" icon="book-open" label={t('experts.bounceLink')} onPress={() => router.push('/experts?topic=breakup')} />
       <SelfError text={error} />
     </>
   );

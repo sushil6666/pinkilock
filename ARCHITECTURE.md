@@ -560,6 +560,16 @@ in `supabase/functions/talk/checkin.ts`, and stores the answer (`checkin_ai_done
 Nothing of it is logged. The reminder is `private.queue_checkin_reminders()` on pg_cron at :03,
 kind `checkin_daily`, at the hour in `private.checkin_prefs`, only when there is no entry for the day.
 
+### Expert tips
+
+`/experts` (D127) shows the team's general tips (`GENERAL_TIPS` in `src/domain/experts.ts`, words in
+`experts.tips`) by topic, then tips from vetted experts from `public.expert_tips_list(topic, lang)`:
+active experts and tips only, my language first. `public.experts` and `public.expert_tips` are
+written only by the team (no client role can read or write them; the function reads them).
+`report_expert` and `expert_apply` write to `private.expert_reports` and
+`private.expert_applications`, which no client reads; my own request comes back from
+`my_expert_application`, and both are in my data download. `/experts/join` is the pitch and form.
+
 ### This week: plan ideas and city events
 
 Plans shows three ideas a week (D121), picked in the phone by `weeklyIdeas` in `src/domain/weekly.ts`
