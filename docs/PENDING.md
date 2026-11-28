@@ -35,6 +35,7 @@ merge, **Supabase deploy** and **Web deploy** run on their own; check they go gr
 - [ ] **#111** Daily relationship check-in with Saathi's ideas (D126). After #109.
 - [ ] **#112** Expert tips and Join as an expert (D127). After #111.
 - [ ] **#113** Festive packs for Christmas and New Year (D128). After #112, before 18 December.
+- [ ] **#114** Cosmic match (D129). After #113.
 
 How: open the PR on GitHub, "Merge pull request", "Confirm merge". If GitHub says the branch is out
 of date or has conflicts, tell the thread that made it; do not fix it in the browser.
