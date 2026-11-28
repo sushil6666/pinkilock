@@ -5,7 +5,7 @@
 import { Feather } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useMemo, useState, type ReactNode } from 'react';
-import { StyleSheet, TextInput, View } from 'react-native';
+import { ScrollView, StyleSheet, TextInput, View } from 'react-native';
 import { Portrait } from '@/components/Portrait';
 import { TrustBadge } from '@/components/TrustBadge';
 import { Chip, Tag } from '@/components/ui/Chip';
@@ -159,11 +159,12 @@ export default function NewInvite() {
       </Section>
 
       <Section n="02" label={t('compose.when')}>
-        <View style={styles.wrap}>
+        {/* One row of days that slides sideways, so a narrow phone never leaves one day alone on a second row. */}
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.days}>
           {days.map((option) => (
             <Chip key={option.id} label={option.label} sub={option.sub} selected={option.id === dayId} onPress={() => { setDayId(option.id); setStartsAt(null); }} />
           ))}
-        </View>
+        </ScrollView>
         {person.freeWindows?.length ? <T v="caption" c={color.textDim}>{t('compose.usuallyFreeAt', { name: person.name, when: windowsLabel(person.freeWindows) })}</T> : null}
         <View style={styles.wrap}>
           {slots.map((at) => (
@@ -233,4 +234,5 @@ function Section({ n, label, children }: { n: string; label: string; children: R
 const styles = StyleSheet.create({
   to: { flexDirection: 'row', alignItems: 'center', gap: space.md },
   wrap: { flexDirection: 'row', flexWrap: 'wrap', gap: space.sm },
+  days: { flexDirection: 'row', gap: space.sm },
 });

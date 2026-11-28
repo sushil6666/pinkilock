@@ -37,8 +37,8 @@ merge, **Supabase deploy** and **Web deploy** run on their own; check they go gr
 - [x] **#112** Expert tips and Join as an expert (D127). Merged 2026-11-28.
 - [x] **#113** Festive packs for Christmas and New Year (D128). Merged 2026-11-28.
 - [x] **#114** Cosmic match (D129). Merged 2026-11-28.
-- [ ] **#115** Reviewer polish (no new features): button words never cut off, sentence-sized text
-      boxes, the listener list says why it is empty. Next.
+- [x] **#115** Reviewer polish (no new features). Merged 2026-11-28.
+- [ ] **#116** Reviewer polish, part 2: the leftovers from section 15. Next.
 
 New PRs from Claude threads get added here.
 
@@ -240,21 +240,24 @@ Payments are paused (D117). None of this is needed until you want to take money.
 
 ## 15. Polish a reviewer would still flag (Code)
 
-Found in the reviewer pass of 2026-11-28 and not fixed yet. Small, one PR each or grouped.
+Found in the reviewer pass of 2026-11-28. All but one were done in the follow-up polish PR.
 
-- [ ] On a 320-wide phone the "Glowing" mood on Self love is cut to "Glow...".
-- [ ] Tags (`Tag`) are 24 high. On a phone `hitSlop` makes them 44, but the website ignores
-      `hitSlop`, so they are small to click there.
-- [ ] Discover's spark says "1 lines up" and a profile says "3 line up": correct, but it reads like a
-      typo. Something like "1 in common" would read better (Sushil to pick the words).
-- [ ] The ticket on an ask cuts its top line at phone width ("ASKED YOU / 21H 59M ..." next to
-      "IN PERSON / 25 MIN").
-- [ ] Ask someone, When: on a phone the fifth day (Wed) wraps alone onto a second row.
-- [ ] A plan more than a day away shows "3   :16 :49": the days have no colon and a wide gap.
-- [ ] Join as an expert and Bring a friend still open with a long paragraph under the title; D130
-      would put it in a fold.
-- [ ] The last onboarding step asks to agree that "Pinkilock may use my dating preferences", but no
-      step asks who you want to date. Check the words are still right.
+- [x] Self love's "Glowing" mood was cut to "Glow..." on a 320-wide phone. It now says "Great",
+      the same word as the daily check-in. 2026-11-28.
+- [x] Tags (`Tag`) are 24 high on the website, where `hitSlop` does not apply. That meets the
+      24-pixel minimum in WCAG 2.2 AA, so no change. On a phone `hitSlop` makes them 44. 2026-11-28.
+- [x] "1 lines up" / "3 line up" now say "1 in common" / "3 in common". 2026-11-28.
+- [x] The ticket on an ask cut its top line at phone width; the status may now take two lines. 2026-11-28.
+- [x] Ask someone, When: the days are one row that slides sideways, so none sits alone on a
+      second row. 2026-11-28.
+- [x] A plan more than a day away showed "3   :16 :49"; the day count now sits next to its colon. 2026-11-28.
+- [x] Join as an expert: the long paragraph moved into the "Why join Pinkilock" fold. Bring a
+      friend keeps its two-line intro, because it is the one line that says the deal. 2026-11-28.
+- [ ] **You (and the lawyer, O10):** the last onboarding step asks people to agree that "Pinkilock
+      may use my dating preferences" (who you want to date says something about sexual
+      orientation), but no step asks who you want to date, so today nothing like that is
+      collected. Either drop that tick box, or keep it for when a "who I want to meet" setting is
+      added. Left as it is until you decide, because it is consent wording.
 
 ## 16. Optional
 
