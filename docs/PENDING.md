@@ -28,11 +28,10 @@ merge, **Supabase deploy** and **Web deploy** run on their own; check they go gr
 - [x] **#103** This week on Plans: three plan ideas each Monday and city events (D121). Merged 2026-11-27.
 - [x] **#104** This list. Merged 2026-11-27.
 - [x] **#105** Your record: kept-plan streak and private city standing (D122). Merged 2026-11-27.
-- [x] **#106** With friends in Couple mode. Merged 2026-11-27.
-- [x] **#107** Gentle reminders, at most 3 pushes a week. Merged 2026-11-27. The real push test on a
-      phone (step 3) checks it too.
-
-Nothing is waiting to merge right now. New PRs from Claude threads get added here.
+- [x] **#106** With friends in Couple mode (D123). Merged 2026-11-27.
+- [x] **#107** Gentle reminders, at most 3 pushes a week (D124). Merged 2026-11-27. The real push
+      test on a phone (step 3) checks it too.
+- [ ] **#109** Question of the day and tip of the day in Couple mode (D125). Next.
 
 How: open the PR on GitHub, "Merge pull request", "Confirm merge". If GitHub says the branch is out
 of date or has conflicts, tell the thread that made it; do not fix it in the browser.

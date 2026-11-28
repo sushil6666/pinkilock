@@ -217,6 +217,9 @@ Font scaling is allowed up to 1.3x (`maxFontSizeMultiplier`) so layouts hold on 
   icon for the double date and a pink `gift` icon for the friend, split by a hairline, ghost buttons.
 - **Gentle reminders** (D124): a `surface` row under the push status on Me, the same shape, with a
   `sun` icon (gold when on) and a `Tag` to turn them off or on.
+- **Today in Couple mode** (D125): one `surface` panel under the pair. The tip has a gold `label` and
+  `sun` icon; the question, after a hairline, a pink `label`, a `heading` and answers in `surfaceHi`
+  cards, theirs edged `pink`; the streak is a gold `zap` and caption.
 
 ## 5. Motion
 

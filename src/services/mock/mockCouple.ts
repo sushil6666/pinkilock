@@ -7,12 +7,16 @@ import {
   checkCoupleIdea, checkDay, emptyCouple, isoDay, pickChallenge, weekStart,
   type ChallengeId, type Couple, type CoupleWeek, type DayKind, type SpecialDay,
 } from '../../domain/couple';
+import { COUPLE_QUESTIONS, checkAnswer, type DailyAnswer, type DailyQuestion, type QuestionId } from '../../domain/daily';
 import { fail } from '../../domain/errors';
 import type { Backend } from '../backend';
 
 const SAYS_YES_AFTER = 2500;
 const HEARTS_AFTER = 4000;
 const TICKS_AFTER = 5000;
+const ANSWERS_AFTER = 3000;
+/** The made-up partner's answers, one picked by the day. i18n: data */
+const THEIR_ANSWERS = ['Honestly? You, on a slow Sunday.', 'Chai at the corner stall, every time.', 'That one song from the car ride. You know which.', 'Still thinking about it. Ask me tonight.'];
 
 export interface MockCoupleDb {
   partnerId: string;
@@ -22,6 +26,8 @@ export interface MockCoupleDb {
   ideas: { id: string; ideaId: string; mine: boolean; heartMe: boolean; heartThem: boolean; done: boolean; at: number }[];
   days: SpecialDay[];
   weeks: (CoupleWeek & { myAt?: number })[];
+  /** Question of the day (D125). */
+  answers?: { day: string; question: QuestionId; mine: string | null; theirs: string | null; myAt?: number }[];
 }
 
 export interface MockCoupleContext {
@@ -41,7 +47,7 @@ let seq = 0;
 const newId = () => `cp_${Date.now().toString(36)}${(seq++).toString(36)}`;
 
 export function createMockCouple(ctx: MockCoupleContext): Pick<Backend,
-  'couple' | 'coupleAsk' | 'coupleAnswer' | 'coupleEnd' | 'coupleAddIdea' | 'coupleIdea' | 'coupleAddDay' | 'coupleRemoveDay' | 'coupleChallenge'> {
+  'couple' | 'coupleAsk' | 'coupleAnswer' | 'coupleEnd' | 'coupleAddIdea' | 'coupleIdea' | 'coupleAddDay' | 'coupleRemoveDay' | 'coupleChallenge' | 'coupleQuestion' | 'coupleQuestionAnswer'> {
   /** What the made-up partner and the clock did since the last read. */
   function tick(c: MockCoupleDb, now: number): void {
     if (c.status === 'asked' && now - c.askedAt >= SAYS_YES_AFTER) Object.assign(c, { status: 'on', since: c.askedAt + SAYS_YES_AFTER });
@@ -54,6 +60,29 @@ export function createMockCouple(ctx: MockCoupleContext): Pick<Backend,
       c.weeks = [...c.weeks, { week: wk, challenge: pickChallenge(c.partnerId, wk, (last?.challenge as ChallengeId) ?? null), me: false, them: false }].slice(-12);
     }
     for (const w of c.weeks) if (w.me && !w.them && w.myAt && now - w.myAt >= TICKS_AFTER) w.them = true;
+    const answers = (c.answers ??= []);
+    if (!answers.some((a) => a.day === today)) {
+      const n = Math.round(Date.parse(`${today}T00:00:00Z`) / 86_400_000);
+      let h = 0;
+      for (const ch of c.partnerId) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
+      answers.push({ day: today, question: COUPLE_QUESTIONS[(h + n) % COUPLE_QUESTIONS.length], mine: null, theirs: null });
+    }
+    for (const a of answers) if (a.mine && !a.theirs && a.myAt && now - a.myAt >= ANSWERS_AFTER) a.theirs = THEIR_ANSWERS[a.day.charCodeAt(9) % THEIR_ANSWERS.length];
+    c.answers = answers.slice(-30);
+  }
+
+  function dailyView(c: MockCoupleDb, now: number): DailyQuestion {
+    const today = isoDay(now);
+    const both = (c.answers ?? []).filter((a) => a.mine && a.theirs);
+    const days = new Set(both.map((a) => a.day));
+    let streak = 0;
+    const d = new Date(`${today}T00:00:00Z`);
+    if (!days.has(today)) d.setUTCDate(d.getUTCDate() - 1);
+    while (days.has(d.toISOString().slice(0, 10))) { streak++; d.setUTCDate(d.getUTCDate() - 1); }
+    const shown = (a: NonNullable<MockCoupleDb['answers']>[number]): DailyAnswer =>
+      ({ day: a.day, question: a.question, mine: a.mine, theirs: a.mine ? a.theirs : null, theyAnswered: !!a.theirs });
+    const t = (c.answers ?? []).find((a) => a.day === today);
+    return { today: t ? shown(t) : null, past: both.filter((a) => a.day < today).reverse().slice(0, 14).map(shown), streak };
   }
 
   function view(c: MockCoupleDb | null, now: number): Couple {
@@ -143,6 +172,26 @@ export function createMockCouple(ctx: MockCoupleContext): Pick<Backend,
       if (!c.days.some((d) => d.id === id && d.mine)) fail('PL233');
       c.days = c.days.filter((d) => d.id !== id);
     }),
+
+    async coupleQuestion() {
+      const { c, now } = await read();
+      if (!c || c.status !== 'on') fail('PL221');
+      ctx.put(c);
+      return dailyView(c, now);
+    },
+
+    async coupleQuestionAnswer(body) {
+      const { c, now } = await read();
+      if (!c || c.status !== 'on') fail('PL221');
+      const code = checkAnswer(body);
+      if (code) fail(code);
+      const a = c.answers!.find((x) => x.day === isoDay(now))!;
+      if (a.mine) fail('PL236');
+      a.mine = body.trim();
+      a.myAt = now;
+      ctx.put(c);
+      return dailyView(c, now);
+    },
 
     coupleChallenge: (done) => onChange((c, now) => {
       const w = c.weeks.find((x) => x.week === weekStart(isoDay(now)));

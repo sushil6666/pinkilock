@@ -18,6 +18,7 @@ import { log, quiet } from '../../lib/log';
 import { isMood, type NoteKind, type SelfLove } from '../../domain/selfLove';
 import { isChallenge, isDayKind, type Couple, type CoupleStatus } from '../../domain/couple';
 import { standingFrom } from '../../domain/streaks';
+import { dailyFrom } from '../../domain/daily';
 import { MAX_CALLS, isCallMinutes, noCall, type CallAnswer, type CallOutcome, type CallStatus, type SpicyCall } from '../../domain/calls';
 import { isBoundary, type Spicy, type SpicyPlan } from '../../domain/spicy';
 import { switchesFrom } from '../../domain/paid';
@@ -1022,6 +1023,14 @@ export function createSupabaseBackend(url: string, anonKey: string, storage: Ses
     async coupleRemoveDay(id) {
       await uid();
       return coupleFrom(await rpc('couple_remove_day', { p_id: Number(id) }));
+    },
+    async coupleQuestion() {
+      await uid();
+      return dailyFrom(await rpc('couple_question'));
+    },
+    async coupleQuestionAnswer(body) {
+      await uid();
+      return dailyFrom(await rpc('couple_question_answer', { p_body: body }));
     },
     async coupleChallenge(done) {
       await uid();
