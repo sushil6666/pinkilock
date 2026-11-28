@@ -698,6 +698,26 @@ export const en = {
     neverMind: 'Never mind',
   },
 
+  /** One line and one arrow per section (D121): the short names and values those lines show. */
+  fold: {
+    tags: 'My tags',
+    upFor: 'I am up for',
+    picked: { one: '{count} picked', other: '{count} picked' },
+    free: 'When I am free',
+    duo: 'My duo',
+    vouches: 'Friends vouching',
+    unlocks: 'Unlocks after a kept promise',
+    none: 'None yet',
+    on: 'On',
+    minutes: '{minutes} min',
+    more: 'More about {name}',
+    ideas: { one: '{count} idea', other: '{count} ideas' },
+    ways: { one: '{count} way', other: '{count} ways' },
+    talk: 'Something to talk about',
+    about: 'How it works',
+    perks: { one: '{count} perk', other: '{count} perks' },
+  },
+
   discover: {
     title: 'Discover',
     emptyTitle: "That's\neveryone\nfor now.",
@@ -1085,7 +1105,6 @@ export const en = {
     call112: 'Call 112',
     call181: 'Call 181',
     past: { one: 'Earlier check-in ({count})', other: 'Earlier check-ins ({count})' },
-    hidePast: 'Hide earlier check-ins',
   },
   experts: {
     eyebrow: "Expert tips",
@@ -1143,7 +1162,6 @@ export const en = {
     watchBody: "Real experts never do these, online or off. If you see it here, report them.",
     notTherapy: "Tips are not therapy or medical advice. In a crisis, call Tele-MANAS on 14416 (free, all day and night) or 112.",
     joinTitle: "Are you an expert?",
-    joinBody: "Therapists, coaches, counsellors and guides: share your tips with people here. Sessions come later.",
     joinOpen: "Join as an expert",
     tipTitles: {
       slow_start: "Start slow",
@@ -1193,6 +1211,7 @@ export const en = {
       eyebrow: "Join as an expert",
       title: "Share what you know",
       pitch: "Pinkilock helps people meet in real life, one plan at a time, and many of them want good advice on dating, getting ready for marriage, conflict and healing. Share short tips here, in your own words, under your name and credential.",
+      whyTitle: "Why join Pinkilock",
       why: {
         reach: "Reach people in Indian cities who want healthy relationships.",
         free: "Free to join. We take no fee for your tips.",
@@ -1236,7 +1255,6 @@ export const en = {
     },
   },
   festivals: {
-    label: "Festive pack",
     christmas: {
       title: "Christmas plans",
       body: "Lights, cake and a little magic. Three plan ideas for the season, until 26 December.",

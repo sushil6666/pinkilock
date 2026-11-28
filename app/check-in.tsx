@@ -12,6 +12,7 @@ import { HelpLines } from '@/components/Talk';
 import { Button } from '@/components/ui/Button';
 import { Chip } from '@/components/ui/Chip';
 import { Columns } from '@/components/ui/Columns';
+import { Fold } from '@/components/ui/Fold';
 import { ErrorText } from '@/components/ui/ErrorText';
 import { inputStyle } from '@/components/ui/input';
 import { Screen } from '@/components/ui/Screen';
@@ -39,7 +40,6 @@ export default function CheckInPage() {
   const [busy, setBusy] = useState('');
   const [error, setError] = useState('');
   const [aiOff, setAiOff] = useState(false);
-  const [older, setOlder] = useState(false);
 
   useFocusEffect(
     useCallback(() => {
@@ -160,8 +160,7 @@ export default function CheckInPage() {
         </View>
       ) : null}
 
-      <View style={panel}>
-        <T v="heading">{t('checkin.reminderTitle')}</T>
+      <Fold icon="bell" title={t('checkin.reminderTitle')} value={state.reminderHour === null ? t('checkin.reminderOff') : t('checkin.hour', { hour: state.reminderHour - 12 })}>
         <T v="caption" c={color.textDim}>{t('checkin.reminderBody')}</T>
         <View style={styles.chips}>
           <Chip label={t('checkin.reminderOff')} selected={state.reminderHour === null} onPress={() => run('hour', () => backend.checkinReminder(null))} />
@@ -169,7 +168,7 @@ export default function CheckInPage() {
             <Chip key={h} label={t('checkin.hour', { hour: h - 12 })} selected={state.reminderHour === h} onPress={() => run('hour', () => backend.checkinReminder(h))} />
           ))}
         </View>
-      </View>
+      </Fold>
 
       <View style={panel}>
         <View style={styles.row}>
@@ -184,19 +183,16 @@ export default function CheckInPage() {
       </View>
 
       {past.length ? (
-        <View style={panel}>
-          <Button kind="quiet" icon={older ? 'chevron-up' : 'chevron-down'} label={t(older ? 'checkin.hidePast' : 'checkin.past', { count: past.length })} onPress={() => setOlder(!older)} />
-          {older
-            ? past.map((e) => (
-                <View key={e.day} style={styles.pastRow}>
-                  <T v="bodyBold">{`${CHECKIN_FACE[e.mood]}  ${fmtDayMonth(dayTime(e.day))}`}</T>
-                  {e.good ? <Note label={t('checkin.goodLabel')} text={e.good} /> : null}
-                  {e.bad ? <Note label={t('checkin.badLabel')} text={e.bad} /> : null}
-                  {e.suggestion ? <Note label={t('checkin.aiLabel')} text={e.suggestion} /> : null}
-                </View>
-              ))
-            : null}
-        </View>
+        <Fold icon="clock" title={t('checkin.past', { count: past.length })}>
+          {past.map((e) => (
+            <View key={e.day} style={styles.pastRow}>
+              <T v="bodyBold">{`${CHECKIN_FACE[e.mood]}  ${fmtDayMonth(dayTime(e.day))}`}</T>
+              {e.good ? <Note label={t('checkin.goodLabel')} text={e.good} /> : null}
+              {e.bad ? <Note label={t('checkin.badLabel')} text={e.bad} /> : null}
+              {e.suggestion ? <Note label={t('checkin.aiLabel')} text={e.suggestion} /> : null}
+            </View>
+          ))}
+        </Fold>
       ) : null}
     </>
   );

@@ -15,6 +15,7 @@ import { backend } from '../services';
 import { useStore } from '../state/store';
 import { color, radius, space } from '../theme/tokens';
 import { Tag } from './ui/Chip';
+import { Fold } from './ui/Fold';
 import { T } from './ui/T';
 import { fmtDay, fmtTime, t } from '../i18n';
 
@@ -50,11 +51,7 @@ export function ThisWeek() {
         <T style={{ fontSize: 28, lineHeight: 34 }} maxFontSizeMultiplier={1}>{i.emoji}</T>
         <View style={{ flex: 1, gap: 2 }}>
           <T v="bodyBold">{i.title}</T>
-          <T v="caption" c={color.textDim}>{i.blurb}</T>
-          <View style={{ flexDirection: 'row', gap: space.sm, flexWrap: 'wrap', marginTop: space.xs }}>
-            <Tag label={t('weekly.minutes', { minutes: i.minutes })} />
-            {i.cities ? <Tag label={t('weekly.local', { city: me.city })} tone={color.gold} /> : null}
-          </View>
+          <T v="caption" c={color.textDim}>{t('weekly.minutes', { minutes: i.minutes })}</T>
         </View>
         <Pressable accessibilityRole="button" accessibilityLabel={to ? t('weekly.askSpoken', { name: to.name, idea: i.title }) : t('weekly.findSpoken', { idea: i.title })}
           onPress={() => ask(to, i.id)} style={({ pressed }) => [styles.go, pressed && { backgroundColor: color.goldDeep }]}>
@@ -68,28 +65,20 @@ export function ThisWeek() {
   const festive = festival ? festiveIdeas(festival, me.country, me.city) : [];
 
   return (
-    <View style={{ gap: space.lg, marginTop: space.x3 }}>
+    <View style={{ marginTop: space.lg }}>
       {festival && festive.length ? (
-        <View style={[styles.panel, styles.festive]}>
-          <T v="label" c={color.pink}>{t('festivals.label')}</T>
-          <View style={{ flexDirection: 'row', gap: space.md, alignItems: 'center' }}>
-            <T style={{ fontSize: 32, lineHeight: 40 }} maxFontSizeMultiplier={1}>{festival.emoji}</T>
-            <T v="title" style={{ flex: 1 }}>{t(`festivals.${festival.id}.title`)}</T>
-          </View>
+        <Fold icon="gift" accent title={`${festival.emoji}  ${t(`festivals.${festival.id}.title`)}`} value={t('fold.ideas', { count: festive.length })}>
           <T v="caption" c={color.textDim}>{t(`festivals.${festival.id}.body`)}</T>
           {festive.map(row)}
-        </View>
+        </Fold>
       ) : null}
-      <View style={styles.panel}>
-        <T v="label" c={color.gold}>{t('weekly.label')}</T>
-        <T v="title">{t('weekly.title')}</T>
+      <Fold icon="calendar" accent title={t('weekly.title')} value={t('fold.ideas', { count: ideas.length })}>
         <T v="caption" c={color.textDim}>{t('weekly.body')}</T>
         {ideas.map(row)}
-      </View>
+      </Fold>
 
       {events.length ? (
-        <View style={styles.panel}>
-          <T v="title">{t('weekly.eventsTitle', { city: me.city })}</T>
+        <Fold icon="map" title={t('weekly.eventsTitle', { city: me.city })} value={String(events.length)}>
           <T v="caption" c={color.textDim}>{t('weekly.eventsBody')}</T>
           {events.map((e) => (
             <View key={e.id} style={styles.event}>
@@ -119,15 +108,13 @@ export function ThisWeek() {
               </View>
             </View>
           ))}
-        </View>
+        </Fold>
       ) : null}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  festive: { borderColor: color.pink },
-  panel: { borderWidth: 1, borderColor: color.line, borderRadius: radius.card, backgroundColor: color.surface, padding: space.lg, gap: space.md },
   idea: { flexDirection: 'row', alignItems: 'center', gap: space.md, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: color.line, paddingTop: space.md },
   go: { flexDirection: 'row', alignItems: 'center', gap: space.xs, minHeight: 44, maxWidth: 140, paddingHorizontal: space.md, borderRadius: radius.pill, backgroundColor: color.gold },
   event: { borderWidth: 1, borderColor: color.line, borderRadius: radius.card, backgroundColor: color.surfaceHi, padding: space.md, gap: space.sm },

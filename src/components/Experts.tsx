@@ -4,6 +4,7 @@
 import { Feather } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { Pressable, StyleSheet, View } from 'react-native';
+import { Entry } from '@/components/ui/Entry';
 import { T } from '@/components/ui/T';
 import { aria } from '@/lib/web';
 import { EXPERT_RULES, WATCH_OUT } from '@/domain/experts';
@@ -12,17 +13,7 @@ import { t } from '@/i18n';
 
 /** On Me, under Talk. */
 export function ExpertsEntry() {
-  return (
-    <Pressable accessibilityRole="button" accessibilityLabel={t('experts.meOpen')} onPress={() => router.push('/experts')} style={({ pressed }) => [styles.entry, pressed && { opacity: 0.85 }]}>
-      <Feather name="book-open" size={22} color={color.gold} />
-      <View style={{ flex: 1, gap: 2 }}>
-        <T v="label" c={color.gold}>{t('experts.eyebrow')}</T>
-        <T v="heading">{t('experts.meTitle')}</T>
-        <T v="caption" c={color.textDim}>{t('experts.meBody')}</T>
-      </View>
-      <Feather name="chevron-right" size={20} color={color.textDim} />
-    </Pressable>
-  );
+  return <Entry icon={<Feather name="book-open" size={20} color={color.gold} />} title={t('experts.meTitle')} spoken={t('experts.meOpen')} onPress={() => router.push('/experts')} />;
 }
 
 /** Cosmic match (D129), on Me under Expert tips. */
@@ -89,7 +80,6 @@ export function Choice({ label, selected, onPress }: { label: string; selected: 
 const styles = StyleSheet.create({
   choice: { flexDirection: 'row', alignItems: 'center', gap: space.sm, borderWidth: 1, borderColor: color.line, borderRadius: radius.card, backgroundColor: color.surfaceHi, paddingVertical: space.sm, paddingHorizontal: space.md, minHeight: 44 },
   choiceOn: { borderColor: color.pink },
-  entry: { flexDirection: 'row', alignItems: 'center', gap: space.md, borderWidth: 1, borderColor: color.line, borderRadius: radius.card, backgroundColor: color.surface, padding: space.lg, marginTop: space.md },
   box: { borderWidth: 1, borderColor: color.line, borderRadius: radius.card, backgroundColor: color.surface, padding: space.lg, gap: space.sm },
   watch: { borderColor: color.flare },
   row: { flexDirection: 'row', gap: space.sm, alignItems: 'flex-start' },

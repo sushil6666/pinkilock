@@ -10,6 +10,7 @@ import { Pressable, StyleSheet, TextInput, View } from 'react-native';
 import { Choice, ExpertRules } from '@/components/Experts';
 import { Button } from '@/components/ui/Button';
 import { Columns } from '@/components/ui/Columns';
+import { Fold } from '@/components/ui/Fold';
 import { ErrorText } from '@/components/ui/ErrorText';
 import { inputStyle } from '@/components/ui/input';
 import { Screen } from '@/components/ui/Screen';
@@ -77,14 +78,14 @@ export default function JoinExpertPage() {
         <T v="display">{t('experts.join.title')}</T>
         <T c={color.textDim}>{t('experts.join.pitch')}</T>
       </View>
-      <View style={panel}>
+      <Fold icon="star" accent title={t('experts.join.whyTitle')}>
         {WHY.map((k) => (
           <View key={k} style={styles.row}>
             <Feather name={k === 'reach' ? 'users' : k === 'free' ? 'gift' : 'calendar'} size={18} color={color.gold} />
             <T v="body" style={{ flex: 1 }}>{t(`experts.join.why.${k}`)}</T>
           </View>
         ))}
-      </View>
+      </Fold>
       <ExpertRules />
     </>
   );

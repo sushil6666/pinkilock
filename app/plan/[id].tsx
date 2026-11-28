@@ -2,6 +2,7 @@
  * A locked plan: the countdown, check-in when the window opens, the way out (bail, at a cost),
  * and after you both show, the reveal.
  */
+import { Fold } from '@/components/ui/Fold';
 import { Feather } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
@@ -171,22 +172,17 @@ export default function PlanScreen() {
         )}
 
         {locked && (
-          <View style={{ gap: space.sm }}>
+          <Fold icon="message-circle" title={t('fold.talk')}>
             <T v="label" c={color.textDim}>{t('plan.iceTitle')}</T>
             <T v="heading">{openerOf(idea.id)}</T>
             <T v="caption" c={color.textDim}>{t('plan.iceBody')}</T>
-          </View>
-        )}
-
-        {locked && (
-          <View style={{ gap: space.sm }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
               <T v="label" c={color.pink}>{t('plan.dareTitle')}</T>
               <Tag label={t('plan.another')} tone={color.textDim} onPress={() => setDare((n) => n + 1)} />
             </View>
             <T v="heading">{dares[dare % dares.length]}</T>
             <T v="caption" c={color.textDim}>{t('plan.dareBody')}</T>
-          </View>
+          </Fold>
         )}
 
         {(flaked || myFlake) && (
@@ -208,7 +204,7 @@ export default function PlanScreen() {
             <LockedReveal person={other} reveal={reveal} hint={t('plan.revealHint', { name })} onFlag={flaggable ? () => backend.reportBadContact(invite.id, other.id) : undefined} />
           </View>
         )}
-        {!double && <PlanWallet inviteId={invite.id} name={name} locked={locked && invite.startsAt > Date.now()} route="/plan/[id]" />}
+        {!double && <Fold icon="star" title={t('wallet.title')}><PlanWallet inviteId={invite.id} name={name} locked={locked && invite.startsAt > Date.now()} route="/plan/[id]" /></Fold>}
         {!flaked && !myFlake && !double && <SpicyHandoff otherId={other.id} name={name} route="/plan/[id]" />}
         {!flaked && double && [other, theirFriend].map((p, k) => p ? (
           <View key={p.id} style={{ gap: space.sm }}>

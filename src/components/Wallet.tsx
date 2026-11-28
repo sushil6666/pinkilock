@@ -3,6 +3,7 @@
  * entry on Me, the stake and treat panel on a plan, and the voucher. What can happen is decided on
  * the server (wallet_stake, treat_plan, treat_options); this file only shows what it says.
  */
+import { Entry } from './ui/Entry';
 import { Feather } from '@expo/vector-icons';
 import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
@@ -42,17 +43,7 @@ export function Credits({ n, size = 'title' }: { n: number; size?: 'title' | 'di
 /** The way in, on Me. */
 export function WalletEntry() {
   const wallet = useMyWallet();
-  return (
-    <Pressable accessibilityRole="button" accessibilityLabel={t('wallet.meOpen')} onPress={() => router.push('/wallet')} style={({ pressed }) => [styles.entry, pressed && { opacity: 0.85 }]}>
-      <View style={styles.coinEntry}><Feather name="star" size={20} color={color.onGold} /></View>
-      <View style={{ flex: 1, gap: 2 }}>
-        <T v="label" c={color.gold}>{t('wallet.eyebrow')}</T>
-        <T v="heading">{t('wallet.title')}</T>
-        <T v="caption" c={color.textDim}>{t('wallet.meBody', { n: fmtNumber(wallet ? balance(wallet) : 0) })}</T>
-      </View>
-      <Feather name="chevron-right" size={20} color={color.textDim} />
-    </Pressable>
-  );
+  return <Entry icon={<Feather name="star" size={20} color={color.gold} />} title={t('wallet.title')} value={fmtNumber(wallet ? balance(wallet) : 0)} spoken={t('wallet.meOpen')} onPress={() => router.push('/wallet')} />;
 }
 
 /**
