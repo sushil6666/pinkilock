@@ -32,12 +32,6 @@ merge, **Supabase deploy** and **Web deploy** run on their own; check they go gr
 - [x] **#107** Gentle reminders, at most 3 pushes a week (D124). Merged 2026-11-27. The real push
       test on a phone (step 3) checks it too.
 - [ ] **#109** Question of the day and tip of the day in Couple mode (D125). Next.
-- [x] **#104** This list. Merged 2026-11-27.
-- [x] **#105** Your record: kept-plan streak and private city standing (D122). Merged 2026-11-27.
-- [x] **#106** With friends in Couple mode (D123). Merged 2026-11-27.
-- [x] **#107** Gentle reminders, at most 3 pushes a week (D124). Merged 2026-11-27. The real push
-      test on a phone (step 3) checks it too.
-- [ ] **#109** Question of the day and tip of the day in Couple mode (D125). Next.
 - [ ] **#111** Daily relationship check-in with Saathi's ideas (D126). After #109.
 
 How: open the PR on GitHub, "Merge pull request", "Confirm merge". If GitHub says the branch is out
