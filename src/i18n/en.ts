@@ -142,7 +142,7 @@ export const en = {
     one: 'A spark',
     click: 'You two click',
     rare: 'Rare one',
-    linesUp: { one: '{count} lines up', other: '{count} line up' },
+    linesUp: { one: '{count} in common', other: '{count} in common' },
     spoken: { one: '{title}. {count} thing lines up with {name}: {summary}', other: '{title}. {count} things line up with {name}: {summary}' },
     oppositeSpoken: 'opposites: you are {mine}, {name} is {theirs}',
     opposite: 'Opposites attract: you are {mine}, {name} is {theirs}.',
@@ -1506,7 +1506,7 @@ export const en = {
     badge: 'Seven days in a row. That is showing up for yourself.',
     badgeTitle: 'Gold week',
     badgeNext: { one: '{count} more day to your gold week', other: '{count} more days to your gold week' },
-    moods: { glowing: 'Glowing', good: 'Good', okay: 'Okay', low: 'Low', rough: 'Rough' },
+    moods: { glowing: 'Great', good: 'Good', okay: 'Okay', low: 'Low', rough: 'Rough' },
     soloTitle: 'Solo plans in {city}',
     soloBody: 'A date with yourself counts. A new few every day.',
     solo: {

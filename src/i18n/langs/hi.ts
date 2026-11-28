@@ -1486,7 +1486,7 @@ export const hi: Translation = {
     badge: 'लगातार सात दिन। यही है अपने लिए हाज़िर होना।',
     badgeTitle: 'सुनहरा हफ़्ता',
     badgeNext: { one: 'सुनहरे हफ़्ते तक {count} दिन और', other: 'सुनहरे हफ़्ते तक {count} दिन और' },
-    moods: { glowing: 'चमकते हुए', good: 'अच्छा', okay: 'ठीक-ठाक', low: 'उदास', rough: 'मुश्किल' },
+    moods: { glowing: 'बहुत अच्छा', good: 'अच्छा', okay: 'ठीक-ठाक', low: 'उदास', rough: 'मुश्किल' },
     soloTitle: '{city} में अकेले के प्लान',
     soloBody: 'खुद के साथ डेट भी गिनी जाती है। हर दिन कुछ नए।',
     solo: {

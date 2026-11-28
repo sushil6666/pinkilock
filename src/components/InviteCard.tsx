@@ -93,7 +93,7 @@ export function InviteCard({ invite, meId, other, now, onPress, compact }: Props
       style={({ pressed }) => [styles.card, hot && styles.hot, !compact && elevation('raised'), closed && { opacity: 0.55 }, pressed && { backgroundColor: color.surfaceHi }]}
     >
       <View style={styles.top}>
-        <T v="label" c={status.tone} style={{ flex: 1 }} numberOfLines={1}>{status.text}</T>
+        <T v="label" c={status.tone} style={{ flex: 1 }} numberOfLines={2}>{status.text}</T>
         <T v="label" c={color.textMute}>{compact ? t('ticket.minutes', { minutes: invite.minutes }) : t('ticket.kindMinutes', { kind: KIND_LABEL[idea.kind], minutes: invite.minutes })}</T>
       </View>
 
@@ -142,7 +142,7 @@ export function InviteCard({ invite, meId, other, now, onPress, compact }: Props
 const styles = StyleSheet.create({
   card: { backgroundColor: color.surface, borderRadius: radius.card, borderWidth: 1, borderColor: color.line, padding: space.lg, gap: space.md },
   hot: { borderColor: color.pink },
-  top: { flexDirection: 'row', alignItems: 'center', gap: space.sm },
+  top: { flexDirection: 'row', alignItems: 'flex-start', gap: space.sm },
   meta: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   note: { borderLeftWidth: 3, borderLeftColor: color.pink, paddingLeft: space.md },
   perforation: { flexDirection: 'row', justifyContent: 'space-between', overflow: 'hidden', marginHorizontal: -space.lg, paddingHorizontal: space.lg },

@@ -14,7 +14,7 @@ export function Countdown({ target, now, tone = color.text }: { target: number; 
   return (
     <View style={styles.row} accessible accessibilityRole="timer" accessibilityLabel={spoken}>
       {cells.map(([value, unit], i) => (
-        <View key={unit} style={styles.cell}>
+        <View key={unit} style={[styles.cell, value.length < 2 && styles.hug]}>
           <T v="mega" c={tone}>{value}</T>
           <T v="label" c={color.textMute}>{unit}</T>
           {i < cells.length - 1 && <T v="mega" c={color.line} style={styles.colon}>:</T>}
@@ -27,5 +27,7 @@ export function Countdown({ target, now, tone = color.text }: { target: number; 
 const styles = StyleSheet.create({
   row: { flexDirection: 'row', gap: space.xxl },
   cell: { alignItems: 'flex-start', minWidth: 72 },
+  // A one-digit day count hugs its digit, so its colon sits next to it rather than across a gap.
+  hug: { minWidth: 0 },
   colon: { position: 'absolute', right: -space.xl, top: -3 },
 });

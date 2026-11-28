@@ -76,9 +76,9 @@ export default function JoinExpertPage() {
       <View style={{ gap: space.sm }}>
         <T v="label" c={color.gold}>{t('experts.join.eyebrow')}</T>
         <T v="display">{t('experts.join.title')}</T>
-        <T c={color.textDim}>{t('experts.join.pitch')}</T>
       </View>
       <Fold icon="star" accent title={t('experts.join.whyTitle')}>
+        <T c={color.textDim}>{t('experts.join.pitch')}</T>
         {WHY.map((k) => (
           <View key={k} style={styles.row}>
             <Feather name={k === 'reach' ? 'users' : k === 'free' ? 'gift' : 'calendar'} size={18} color={color.gold} />
