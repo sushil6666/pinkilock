@@ -1087,7 +1087,6 @@ export const hi: Translation = {
     call112: '112 पर कॉल करें',
     call181: '181 पर कॉल करें',
     past: { one: 'पिछला चेक-इन ({count})', other: 'पिछले चेक-इन ({count})' },
-    hidePast: 'पिछले चेक-इन छुपाएँ',
   },
   reminders: {
     on: 'हल्के रिमाइंडर: चालू',

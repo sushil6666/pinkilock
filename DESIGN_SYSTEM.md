@@ -232,7 +232,8 @@ Font scaling is allowed up to 1.3x (`maxFontSizeMultiplier`) so layouts hold on 
   cards, theirs edged `pink`; the streak is a gold `zap` and caption.
 - **Daily check-in** (D126): two columns on desktop. Moods as Self love's mood buttons (`pink` when
   picked); notes in `surfaceHi` cards; Saathi's ideas in a `surface` panel edged `moon`, with a `moon`
-  label and a muted AI note; the 112 and 181 panel is always there; `HelpLines` strong goes first on harm.
+  label and a muted AI note; the 112 and 181 panel is always there; `HelpLines` strong goes first on harm. The reminder
+  and earlier check-ins sit behind a `Fold` (D130); the safety panel never does.
 
 ## 5. Motion
 
