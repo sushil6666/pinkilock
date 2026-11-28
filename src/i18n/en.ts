@@ -1105,7 +1105,6 @@ export const en = {
     call112: 'Call 112',
     call181: 'Call 181',
     past: { one: 'Earlier check-in ({count})', other: 'Earlier check-ins ({count})' },
-    hidePast: 'Hide earlier check-ins',
   },
   experts: {
     eyebrow: "Expert tips",
