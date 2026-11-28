@@ -31,6 +31,10 @@ merge, **Supabase deploy** and **Web deploy** run on their own; check they go gr
 - [x] **#106** With friends in Couple mode (D123). Merged 2026-11-27.
 - [x] **#107** Gentle reminders, at most 3 pushes a week (D124). Merged 2026-11-27. The real push
       test on a phone (step 3) checks it too.
+- [ ] **#109** Question of the day and tip of the day in Couple mode (D125). Next.
+- [ ] **#111** Daily relationship check-in with Saathi's ideas (D126). After #109.
+- [ ] **#112** Expert tips and Join as an expert (D127). After #111.
+- [ ] **#113** Festive packs for Christmas and New Year (D128). After #112, before 18 December.
 
 How: open the PR on GitHub, "Merge pull request", "Confirm merge". If GitHub says the branch is out
 of date or has conflicts, tell the thread that made it; do not fix it in the browser.
