@@ -21,6 +21,7 @@ import { standingFrom } from '../../domain/streaks';
 import { dailyFrom } from '../../domain/daily';
 import { checkinsFrom } from '../../domain/checkin';
 import { applicationFrom, expertTipsFrom } from '../../domain/experts';
+import { cosmicFrom, moonAtBirth } from '../../domain/cosmic';
 import { MAX_CALLS, isCallMinutes, noCall, type CallAnswer, type CallOutcome, type CallStatus, type SpicyCall } from '../../domain/calls';
 import { isBoundary, type Spicy, type SpicyPlan } from '../../domain/spicy';
 import { switchesFrom } from '../../domain/paid';
@@ -1066,6 +1067,19 @@ export function createSupabaseBackend(url: string, anonKey: string, storage: Ses
     async myExpertApplication() {
       await uid();
       return applicationFrom(await rpc('my_expert_application'));
+    },
+    async cosmic() {
+      await uid();
+      return cosmicFrom(await rpc('my_cosmic'));
+    },
+    async cosmicSave(date, time) {
+      await uid();
+      // Only my own Moon leaves the phone with the date; the server never sends anyone else's.
+      return cosmicFrom(await rpc('cosmic_save', { p_date: date, p_time: time, p_moon: moonAtBirth(date, time) }));
+    },
+    async cosmicOff() {
+      await uid();
+      return cosmicFrom(await rpc('cosmic_off'));
     },
     async coupleChallenge(done) {
       await uid();

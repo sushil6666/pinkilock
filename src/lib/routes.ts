@@ -38,6 +38,7 @@ const TITLES: Record<string, Key | null> = {
   'check-in': 'titles.checkIn',
   experts: 'titles.experts',
   'experts/join': 'titles.expertsJoin',
+  cosmic: 'titles.cosmic',
   spicy: 'titles.spicy',
   wallet: 'titles.wallet',
   'pink-gold': 'titles.pinkGold',

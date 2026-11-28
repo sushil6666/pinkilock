@@ -209,6 +209,9 @@ export const ERRORS = {
   PL243: 'Pick a reason from the list.',
   PL244: 'Read and agree to the rules for experts first.',
   PL245: 'Fill in your name, what you do, your licence or training, your city and how we can reach you.',
+  PL246: 'That birth date does not look right.',
+  PL247: 'Your birth date does not match the age on your card.',
+  PL248: 'Pick a birth time like 08:30, or leave it empty.',
 
   PA001: 'Phone sign-in is not switched on yet.',
   PA002: 'Email sign-in is not switched on yet.',

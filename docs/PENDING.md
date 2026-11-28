@@ -36,9 +36,9 @@ merge, **Supabase deploy** and **Web deploy** run on their own; check they go gr
 - [x] **#111** Daily relationship check-in with Saathi's ideas (D126). Merged 2026-11-28.
 - [x] **#112** Expert tips and Join as an expert (D127). Merged 2026-11-28.
 - [x] **#113** Festive packs for Christmas and New Year (D128). Merged 2026-11-28.
-- [ ] **#114** Cosmic match (D129). Next.
-- [ ] **Reviewer polish** (no new features): button words never cut off, sentence-sized text
-      boxes, the listener list says why it is empty. Any order with #114.
+- [x] **#114** Cosmic match (D129). Merged 2026-11-28.
+- [ ] **#115** Reviewer polish (no new features): button words never cut off, sentence-sized text
+      boxes, the listener list says why it is empty. Next.
 
 New PRs from Claude threads get added here.
 
@@ -202,6 +202,9 @@ One lawyer can take all of the legal briefs together. Each item's full question 
       is empty until the team adds checked events. Add each with the SQL in `OPERATIONS.md`,
       "City events (D121)"; take one down with `active = false`, never delete it.
 
+- [ ] **Cosmic match tables.** Someone who reads kundlis compares a few real pairs' scores with
+      the app's (`src/domain/cosmic.ts`), and says whether any table should change.
+
 ## 12. Decisions waiting for you
 
 Each is in `docs/decisions.md`. Tell a thread your pick and it records and builds it.
@@ -239,8 +242,6 @@ Payments are paused (D117). None of this is needed until you want to take money.
 
 Found in the reviewer pass of 2026-11-28 and not fixed yet. Small, one PR each or grouped.
 
-- [ ] The question of the day box (Couple mode, `Daily.tsx`) still uses the big heading-size text;
-      switch it to `textAreaStyle` once #114 is merged (it touches the same file).
 - [ ] On a 320-wide phone the "Glowing" mood on Self love is cut to "Glow...".
 - [ ] Tags (`Tag`) are 24 high. On a phone `hitSlop` makes them 44, but the website ignores
       `hitSlop`, so they are small to click there.

@@ -246,6 +246,10 @@ Font scaling is allowed up to 1.3x (`maxFontSizeMultiplier`) so layouts hold on 
 - **Festive packs** (D128): on Plans, a gold `Fold` above This week's (D130), the festival's emoji
   and name as its line and the idea count beside it; inside, This week's idea rows. In Couple mode's Today, a
   `surfaceHi` card edged `pink` with the emoji, a pink `label` and the challenge.
+- **Cosmic match** (D129): `moon` is its colour: the eyebrow, a pill "For fun and tradition" edged
+  `moon`, my moon star as a `Fold` with the star beside it (D130), and each match's score as a `moon`
+  `title` with a thin `moon` bar out of 36 on `line`. The eight parts sit behind a `Fold`, one hairline
+  row each. On Me it is one `Entry` line with a `moon` icon.
 
 ## 5. Motion
 
