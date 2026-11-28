@@ -32,8 +32,8 @@ merge, **Supabase deploy** and **Web deploy** run on their own; check they go gr
 - [x] **#107** Gentle reminders, at most 3 pushes a week (D124). Merged 2026-11-27. The real push
       test on a phone (step 3) checks it too.
 - [x] **#109** Question of the day and tip of the day in Couple mode (D125). Merged 2026-11-28.
-- [ ] **#110** One line and one arrow on every screen (D130). Next. Touches no files the other
-      open PRs change except `docs/decisions.md` and this list.
+- [x] **#110** One line and one arrow on every screen (D130). Merged 2026-11-28.
+- [ ] **#111** Daily relationship check-in with Saathi's ideas (D126). Next.
 
 New PRs from Claude threads get added here.
 
@@ -157,7 +157,7 @@ One lawyer can take all of the legal briefs together. Each item's full question 
 - [ ] **O14** Spicy mode (IT Act and Rules, POCSO, store rules, whether an ID age check is needed),
       with **O20** Spicy calls on Pinkilock's own voice service.
 - [ ] **O21** Saathi's Flirty tone.
-- [ ] **O18** Talk mode with a mental-health adviser: Saathi's instructions and labels, the
+- [ ] **O18** Talk mode with a mental-health adviser: Saathi's instructions and labels (also the daily check-in's, D126), the
       self-harm hand-off, the listener code. The adviser also reads the Hindi version.
 - [ ] **O16** Wallet and money (closed-loop credits, GST, refunds, unused credits, the Spicy unlock
       fee; covers **O12**, the refundable stake), and **O17** with a CA: listener payouts by

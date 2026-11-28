@@ -114,6 +114,7 @@ export default function SelfLovePage() {
   const right = (
     <>
       <Entry tone="pink" icon={<Feather name="sunrise" size={20} color={color.pink} />} title={t('selfLove.bounceTitle')} spoken={t('selfLove.bounceOpen')} onPress={() => router.push('/self-love/bounce-back')} />
+      <Entry icon={<Feather name="edit-3" size={20} color={color.moon} />} title={t('checkin.entryAny')} spoken={t('checkin.entryAny')} onPress={() => router.push('/check-in')} />
       <Fold icon="map" title={t('selfLove.soloTitle', { city: me.city })} value={String(soloPlans(me.city, state.today).length)}>
       <T v="caption" c={color.textDim}>{t('selfLove.soloBody')}</T>
       <Grid>

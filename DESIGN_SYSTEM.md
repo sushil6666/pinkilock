@@ -230,6 +230,10 @@ Font scaling is allowed up to 1.3x (`maxFontSizeMultiplier`) so layouts hold on 
 - **Today in Couple mode** (D125): one `surface` panel under the pair. The tip has a gold `label` and
   `sun` icon; the question, after a hairline, a pink `label`, a `heading` and answers in `surfaceHi`
   cards, theirs edged `pink`; the streak is a gold `zap` and caption.
+- **Daily check-in** (D126): two columns on desktop. Moods as Self love's mood buttons (`pink` when
+  picked); notes in `surfaceHi` cards; Saathi's ideas in a `surface` panel edged `moon`, with a `moon`
+  label and a muted AI note; the 112 and 181 panel is always there; `HelpLines` strong goes first on harm. The reminder
+  and earlier check-ins sit behind a `Fold` (D130); the safety panel never does.
 
 ## 5. Motion
 

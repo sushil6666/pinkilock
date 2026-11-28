@@ -3,9 +3,9 @@
  * answers in their own words; the other's answer shows once both have answered. Private to the two.
  */
 import { Feather } from '@expo/vector-icons';
-import { useFocusEffect } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { StyleSheet, TextInput, View } from 'react-native';
+import { Pressable, StyleSheet, TextInput, View } from 'react-native';
 import { ANSWER_MAX, checkAnswer, emptyDaily, tipOf, type DailyAnswer, type DailyQuestion } from '../domain/daily';
 import { haptic } from '../lib/haptics';
 import { quiet } from '../lib/log';
@@ -103,6 +103,11 @@ export function Today({ partnerName, today }: { partnerName: string; today: stri
             : null}
         </View>
       ) : null}
+      <Pressable accessibilityRole="button" onPress={() => router.push('/check-in')} style={({ pressed }) => [styles.checkin, pressed && { opacity: 0.85 }]}>
+        <Feather name="edit-3" size={18} color={color.moon} />
+        <T v="bodyBold" style={{ flex: 1 }}>{t('checkin.entry', { name: partnerName })}</T>
+        <Feather name="chevron-right" size={18} color={color.textDim} />
+      </Pressable>
     </View>
   );
 }
@@ -129,5 +134,6 @@ const styles = StyleSheet.create({
   answer: { borderRadius: radius.card, backgroundColor: color.surfaceHi, padding: space.md, gap: 2 },
   theirs: { borderWidth: 1, borderColor: color.pink },
   streak: { flexDirection: 'row', gap: space.sm, alignItems: 'center' },
+  checkin: { flexDirection: 'row', alignItems: 'center', gap: space.md, minHeight: 48, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: color.line, paddingTop: space.md },
   past: { gap: space.sm, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: color.line, paddingTop: space.md },
 });

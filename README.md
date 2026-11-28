@@ -67,6 +67,8 @@ With no keys set, the app runs on ten made-up people who answer by themselves. A
     The card at the top of **Plans** leads back in. At the top, **Today** has a tip and a question: answer it, and
     Zoya's answer shows a few seconds later. Under the date list, **With friends** plans a double date
     (pick your duo in **Me** first) or opens **Bring a friend**.
+    **How was today with Zoya? Check in** (also in **Self love**) opens the daily check-in: pick a mood,
+    write what was good and what was not, and the mock's Saathi answers with a few ideas.
 12. **This week**: on **Plans**, under your next plan, three plan ideas that change every Monday, each with
     **Ask Zoya** (someone you kept a plan with who is up for it) or **Find someone**, and what is on in
     your city this fortnight (the mock makes two events from your city's places). **Plan it** opens an

@@ -19,6 +19,7 @@ import { isMood, type NoteKind, type SelfLove } from '../../domain/selfLove';
 import { isChallenge, isDayKind, type Couple, type CoupleStatus } from '../../domain/couple';
 import { standingFrom } from '../../domain/streaks';
 import { dailyFrom } from '../../domain/daily';
+import { checkinsFrom } from '../../domain/checkin';
 import { MAX_CALLS, isCallMinutes, noCall, type CallAnswer, type CallOutcome, type CallStatus, type SpicyCall } from '../../domain/calls';
 import { isBoundary, type Spicy, type SpicyPlan } from '../../domain/spicy';
 import { switchesFrom } from '../../domain/paid';
@@ -1031,6 +1032,22 @@ export function createSupabaseBackend(url: string, anonKey: string, storage: Ses
     async coupleQuestionAnswer(body) {
       await uid();
       return dailyFrom(await rpc('couple_question_answer', { p_body: body }));
+    },
+    async checkins() {
+      await uid();
+      return checkinsFrom(await rpc('my_checkins'));
+    },
+    async checkinSave(mood, good, bad) {
+      await uid();
+      return checkinsFrom(await rpc('checkin_save', { p_mood: mood, p_good: good, p_bad: bad }));
+    },
+    async checkinSuggest() {
+      await uid();
+      return checkinsFrom(await talkFunction({ action: 'checkin' }));
+    },
+    async checkinReminder(hour) {
+      await uid();
+      return checkinsFrom(await rpc('checkin_reminder', { p_hour: hour }));
     },
     async coupleChallenge(done) {
       await uid();

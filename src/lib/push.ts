@@ -59,6 +59,7 @@ function open(data: unknown) {
   if (kind === 'nudge_couple') return void router.push('/couple');
   if (kind === 'nudge_week' || kind === 'nudge_streak') return void router.push('/plans');
   if (kind === 'nudge_self') return void router.push('/self-love');
+  if (kind === 'checkin_daily') return void router.push('/check-in');
   if (typeof inviteId !== 'string') return;
   const isPlan = kind !== 'new_ask' && kind !== 'pinky_out';
   router.push(isPlan ? `/plan/${inviteId}` : `/invite/${inviteId}`);

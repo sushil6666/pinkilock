@@ -10,6 +10,7 @@ import type { CityEvent } from '../domain/weekly';
 import type { CityStanding } from '../domain/streaks';
 import type { Couple, DayKind } from '../domain/couple';
 import type { DailyQuestion } from '../domain/daily';
+import type { CheckinMood, Checkins } from '../domain/checkin';
 import type { CallAnswer, CallMinutes, SpicyCall } from '../domain/calls';
 import type { Spicy, SpicyInput, SpicyPlan } from '../domain/spicy';
 import type { QuizResult, SpicyTerms } from '../domain/spicyQuiz';
@@ -217,6 +218,15 @@ export interface Backend {
   coupleQuestion(): Promise<DailyQuestion>;
   /** Answer today's question, once, 1 to 300 characters. */
   coupleQuestionAnswer(body: string): Promise<DailyQuestion>;
+
+  /** Daily relationship check-in (D126): mine only, the last 14 and the reminder hour. */
+  checkins(): Promise<Checkins>;
+  /** Today's check-in, once a day. */
+  checkinSave(mood: CheckinMood, good: string, bad: string): Promise<Checkins>;
+  /** Saathi's ideas for today's check-in (AI, once a day). PL161 while the AI is off. */
+  checkinSuggest(): Promise<Checkins>;
+  /** A daily reminder at 18 to 22 in my city's time, or null for none. */
+  checkinReminder(hour: number | null): Promise<Checkins>;
 
   /**
    * Spicy mode (D103): off unless I turn it on. It needs a phone or an email on the account, the

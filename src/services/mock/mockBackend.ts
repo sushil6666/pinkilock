@@ -43,6 +43,14 @@ import { venuesFor } from '../../domain/venues';
 import type { CityEvent } from '../../domain/weekly';
 import { trustScore } from '../../domain/trust';
 import type { CityStanding } from '../../domain/streaks';
+import { CHECKIN_NOTE_MAX, REMINDER_HOURS, checkCheckin, type Checkin, type Checkins } from '../../domain/checkin';
+import { mentionsHarm } from '../../domain/talk';
+
+/** What Saathi says in the mock, by how the day felt. Live, the AI writes it from the notes. i18n: data */
+const MOCK_CHECKIN_IDEAS: Record<string, string> = {
+  good: 'Sounds like a warm day, and the good part is worth saying out loud.\n- Tell them tonight the one moment you liked most.\n- Plan a small repeat of it this week.',
+  hard: 'That sounds like a tiring day, and it is good you noted it.\n- Ask one calm question about what happened before you explain your side.\n- Pick a time tomorrow to talk, when you are both rested.\n- Name one thing that went right, so the hard part is not the whole day.',
+};
 import { spicyFreeNext } from '../../domain/paid';
 import { DEVICE_ID, REFERRAL_BOOSTS, REFERRAL_GOLD_DAYS, REFERRAL_MONTH_AT, REFERRAL_MONTH_DAYS, type MyReferrals } from '../../domain/referrals';
 
@@ -104,6 +112,8 @@ interface Db {
   device?: string;
   /** Plans (by id) where I said "see them again"; the made-up people always do too. */
   roundTwo?: string[];
+  /** Daily relationship check-ins (D126), newest last, and the reminder hour. */
+  checkins?: { entries: Checkin[]; hour: number | null };
   /** Gentle reminders turned off (D124). */
   nudgesOff?: boolean;
   /** Couple mode (D120), asked or on. */
@@ -416,6 +426,11 @@ export function createMockBackend(options: { captcha?: () => Promise<string | un
     const changes = fn(d, Date.now());
     save();
     return changes;
+  }
+
+  function checkinsOf(d: Db): Checkins {
+    const c = d.checkins ?? { entries: [], hour: null };
+    return { today: dayOf(Date.now()), reminderHour: c.hour, entries: [...c.entries].reverse().slice(0, 14) };
   }
 
   /** Self love as the server would answer: today where I am, the last 60 days of moods, a pause only while it lasts. */
@@ -906,6 +921,48 @@ export function createMockBackend(options: { captcha?: () => Promise<string | un
       const score = trustScore(d.me.kept, d.me.flaked);
       const top = n < 3 ? null : score >= 95 ? 5 : score >= 85 ? 10 : score >= 75 ? 25 : score >= 60 ? 50 : null;
       return { city: d.me.city, ready: true, top, cityKeptPercent: 84 };
+    },
+
+    // Daily relationship check-in (D126), as in supabase/migrations/20261127000025_daily_checkin.sql.
+    async checkins(): Promise<Checkins> {
+      const d = await load();
+      await wait(LATENCY);
+      if (!d.me) fail('PL002');
+      return checkinsOf(d);
+    },
+    async checkinSave(mood, good, bad) {
+      const d = await load();
+      await wait(LATENCY);
+      if (!d.me) fail('PL002');
+      const code = checkCheckin(mood, good, bad);
+      if (code) fail(code);
+      const c = (d.checkins ??= { entries: [], hour: null });
+      const today = dayOf(Date.now());
+      if (c.entries.some((e) => e.day === today)) fail('PL239');
+      const [g, b] = [good.trim().slice(0, CHECKIN_NOTE_MAX), bad.trim().slice(0, CHECKIN_NOTE_MAX)];
+      c.entries = [...c.entries, { day: today, mood, good: g, bad: b, suggestion: null, harm: mentionsHarm(`${g} ${b}`) }].slice(-30);
+      save();
+      return checkinsOf(d);
+    },
+    async checkinSuggest() {
+      const d = await load();
+      await wait(LATENCY * 3);
+      if (!d.me) fail('PL002');
+      const e = d.checkins?.entries.find((x) => x.day === dayOf(Date.now()));
+      if (!e) fail('PL237');
+      if (e.suggestion !== null) fail('PL239');
+      e.suggestion = e.harm ? '' : MOCK_CHECKIN_IDEAS[e.mood === 'great' || e.mood === 'good' ? 'good' : 'hard'];
+      save();
+      return checkinsOf(d);
+    },
+    async checkinReminder(hour) {
+      const d = await load();
+      await wait(LATENCY);
+      if (!d.me) fail('PL002');
+      if (hour !== null && !(REMINDER_HOURS as readonly number[]).includes(hour)) fail('PL240');
+      (d.checkins ??= { entries: [], hour: null }).hour = hour;
+      save();
+      return checkinsOf(d);
     },
 
     // Gentle reminders (D124): the switch only; the mock never pushes.

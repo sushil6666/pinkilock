@@ -122,6 +122,8 @@ someone, and delete their account, on both platforms, against the production pro
 - [x] **Question of the day and tip of the day** (D125): in Couple mode, a daily question both answer
   (seen once both have) and a relationship tip a day. Next: a daily relationship check-in with
   Saathi, an expert tips tab, and festival packs.
+- [x] **Daily relationship check-in** (D126): what was good, what went badly, and a few ideas from
+  Saathi (AI), private, with help lines first when needed and an opt-in reminder.
 
 - [x] **Spicy mode** (D103): an opt-in for two adults, off by default, with the safety rules, 18+
   and rules yeses, boundaries from a list, and from day one, with a yes from both, a hand-off to
