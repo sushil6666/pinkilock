@@ -62,7 +62,7 @@ export default function ExpertsPage() {
       </View>
 
       {topic === 'breakup' ? (
-        <Entry tone="pink" icon={<Feather name="sunrise" size={20} color={color.pink} />} title={t('experts.bounceLink')} spoken={t('experts.bounceLink')} onPress={() => router.push('/self-love/bounce-back')} />
+        <Entry tone="pink" icon={<Feather name="sunrise" size={20} color={color.pink} />} title={t('selfLove.bounceTitle')} spoken={t('selfLove.bounceOpen')} onPress={() => router.push('/self-love/bounce-back')} />
       ) : null}
 
       <View style={panel}>
@@ -72,7 +72,8 @@ export default function ExpertsPage() {
       </View>
 
       {topics.map((k) => (
-        <Fold key={`${k}-${topic ?? 'all'}`} title={`${TOPIC_EMOJI[k]}  ${t(`experts.topics.${k}`)}`} value={t('experts.teamLabel')} open={topic === k}>
+        <Fold key={`${k}-${topic ?? 'all'}`} title={`${TOPIC_EMOJI[k]}  ${t(`experts.topics.${k}`)}`} open={topic === k}>
+          <T v="caption" c={color.textMute}>{t('experts.teamLabel')}</T>
           {GENERAL_TIPS[k].map((g) => (
             <View key={g} style={styles.tip}>
               <T v="bodyBold">{t(`experts.tipTitles.${g}`)}</T>
