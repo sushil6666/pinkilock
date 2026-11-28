@@ -12,6 +12,8 @@ import { Choice, WatchOut } from '@/components/Experts';
 import { Button } from '@/components/ui/Button';
 import { Chip } from '@/components/ui/Chip';
 import { Columns } from '@/components/ui/Columns';
+import { Entry } from '@/components/ui/Entry';
+import { Fold } from '@/components/ui/Fold';
 import { ErrorText } from '@/components/ui/ErrorText';
 import { inputStyle } from '@/components/ui/input';
 import { Screen } from '@/components/ui/Screen';
@@ -60,7 +62,7 @@ export default function ExpertsPage() {
       </View>
 
       {topic === 'breakup' ? (
-        <Button kind="ghost" icon="sunrise" label={t('experts.bounceLink')} onPress={() => router.push('/self-love/bounce-back')} />
+        <Entry tone="pink" icon={<Feather name="sunrise" size={20} color={color.pink} />} title={t('experts.bounceLink')} spoken={t('experts.bounceLink')} onPress={() => router.push('/self-love/bounce-back')} />
       ) : null}
 
       <View style={panel}>
@@ -70,21 +72,14 @@ export default function ExpertsPage() {
       </View>
 
       {topics.map((k) => (
-        <View key={k} style={panel}>
-          <View style={styles.row}>
-            <T v="title">{TOPIC_EMOJI[k]}</T>
-            <View style={{ flex: 1 }}>
-              <T v="heading">{t(`experts.topics.${k}`)}</T>
-              <T v="caption" c={color.textMute}>{t('experts.teamLabel')}</T>
-            </View>
-          </View>
+        <Fold key={`${k}-${topic ?? 'all'}`} title={`${TOPIC_EMOJI[k]}  ${t(`experts.topics.${k}`)}`} value={t('experts.teamLabel')} open={topic === k}>
           {GENERAL_TIPS[k].map((g) => (
             <View key={g} style={styles.tip}>
               <T v="bodyBold">{t(`experts.tipTitles.${g}`)}</T>
               <T v="body" c={color.textDim}>{t(`experts.tips.${g}`)}</T>
             </View>
           ))}
-        </View>
+        </Fold>
       ))}
       <T v="caption" c={color.textMute}>{t('experts.teamNote')}</T>
     </>
@@ -93,26 +88,21 @@ export default function ExpertsPage() {
   const right = (
     <>
       <WatchOut />
-      <View style={panel}>
-        <T v="heading">{t('experts.kindsTitle')}</T>
+      <Fold icon="users" title={t('experts.kindsTitle')} value={String(EXPERT_KINDS.length)}>
         {EXPERT_KINDS.map((k) => (
           <View key={k} style={{ gap: 2 }}>
             <T v="bodyBold">{t(`experts.kinds.${k}`)}</T>
             <T v="caption" c={color.textDim}>{t(`experts.kindsBody.${k}`)}</T>
           </View>
         ))}
-      </View>
+      </Fold>
       <View style={panel}>
         <View style={styles.row}>
           <Feather name="life-buoy" size={18} color={color.gold} />
           <T v="caption" c={color.textDim} style={{ flex: 1 }}>{t('experts.notTherapy')}</T>
         </View>
       </View>
-      <View style={[panel, styles.join]}>
-        <T v="heading">{t('experts.joinTitle')}</T>
-        <T v="caption" c={color.textDim}>{t('experts.joinBody')}</T>
-        <Button kind="ghost" icon="award" label={t('experts.joinOpen')} onPress={() => router.push('/experts/join')} />
-      </View>
+      <Entry tone="gold" icon={<Feather name="award" size={20} color={color.gold} />} title={t('experts.joinTitle')} spoken={t('experts.joinOpen')} onPress={() => router.push('/experts/join')} />
     </>
   );
 
@@ -186,5 +176,4 @@ const styles = StyleSheet.create({
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: space.sm },
   tip: { borderRadius: radius.card, backgroundColor: color.surfaceHi, padding: space.md, gap: space.xs },
   by: { flexDirection: 'row', gap: space.sm, alignItems: 'flex-start', marginTop: space.xs },
-  join: { borderColor: color.goldDeep, backgroundColor: color.goldWash },
 });

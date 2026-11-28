@@ -1162,7 +1162,6 @@ export const en = {
     watchBody: "Real experts never do these, online or off. If you see it here, report them.",
     notTherapy: "Tips are not therapy or medical advice. In a crisis, call Tele-MANAS on 14416 (free, all day and night) or 112.",
     joinTitle: "Are you an expert?",
-    joinBody: "Therapists, coaches, counsellors and guides: share your tips with people here. Sessions come later.",
     joinOpen: "Join as an expert",
     tipTitles: {
       slow_start: "Start slow",
@@ -1212,6 +1211,7 @@ export const en = {
       eyebrow: "Join as an expert",
       title: "Share what you know",
       pitch: "Pinkilock helps people meet in real life, one plan at a time, and many of them want good advice on dating, getting ready for marriage, conflict and healing. Share short tips here, in your own words, under your name and credential.",
+      whyTitle: "Why join Pinkilock",
       why: {
         reach: "Reach people in Indian cities who want healthy relationships.",
         free: "Free to join. We take no fee for your tips.",
