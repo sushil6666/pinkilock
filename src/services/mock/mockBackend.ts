@@ -43,6 +43,7 @@ import { venuesFor } from '../../domain/venues';
 import type { CityEvent } from '../../domain/weekly';
 import { trustScore } from '../../domain/trust';
 import type { CityStanding } from '../../domain/streaks';
+import { checkBirth, gunaScore, kootas, lifePath, moonAtBirth, type Cosmic } from '../../domain/cosmic';
 import { REPORT_REASONS as EXPERT_REPORT_REASONS, checkApply, type ExpertApplication, type ExpertTip } from '../../domain/experts';
 import { CHECKIN_NOTE_MAX, REMINDER_HOURS, checkCheckin, type Checkin, type Checkins } from '../../domain/checkin';
 import { mentionsHarm } from '../../domain/talk';
@@ -122,6 +123,8 @@ interface Db {
   /** My request to join as an expert, and the experts I reported. */
   expertApplication?: ExpertApplication | null;
   expertReports?: Record<string, string>;
+  /** Cosmic match (D129): my birth details while on. */
+  cosmic?: { date: string; time: string | null } | null;
   /** Couple mode (D120), asked or on. */
   couple?: MockCoupleDb | null;
 }
@@ -432,6 +435,23 @@ export function createMockBackend(options: { captcha?: () => Promise<string | un
     const changes = fn(d, Date.now());
     save();
     return changes;
+  }
+
+  function cosmicOf(d: Db): Cosmic {
+    const mine = d.cosmic ?? null;
+    const moon = mine ? moonAtBirth(mine.date, mine.time) : null;
+    const matched = [...new Set(visible(d).invites.filter((i) => i.status === 'kept' && !rules.isDouble(i) && (d.roundTwo ?? []).includes(i.id)).map((i) => rules.otherId(i, ME_ID)))];
+    return {
+      me: { on: !!mine, birthDate: mine?.date ?? null, birthTime: mine?.time ?? null, moon },
+      pairs: matched.map((id) => {
+        if (moon === null) return { profileId: id, score: null, kootas: null, myNumber: null, theirNumber: null };
+        let h = 0;
+        for (const ch of id) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
+        const theirDate = new Date(Date.UTC(1997, 0, 1) + (h % 1500) * 86_400_000).toISOString().slice(0, 10);
+        const k = kootas(moon, moonAtBirth(theirDate, null));
+        return { profileId: id, score: gunaScore(k), kootas: k, myNumber: lifePath(mine!.date), theirNumber: lifePath(theirDate) };
+      }),
+    };
   }
 
   function checkinsOf(d: Db): Checkins {
@@ -969,6 +989,33 @@ export function createMockBackend(options: { captcha?: () => Promise<string | un
       (d.checkins ??= { entries: [], hour: null }).hour = hour;
       save();
       return checkinsOf(d);
+    },
+
+    // Cosmic match (D129), as in supabase/migrations/20261127000027_cosmic.sql. The made-up people
+    // I matched with always have it on, with a made-up birthday from their id.
+    async cosmic() {
+      const d = await load();
+      await wait(LATENCY);
+      if (!d.me) fail('PL002');
+      return cosmicOf(d);
+    },
+    async cosmicSave(date, time) {
+      const d = await load();
+      await wait(LATENCY);
+      if (!d.me) fail('PL002');
+      const code = checkBirth(date, time, d.me.age, dayOf(Date.now()));
+      if (code) fail(code);
+      d.cosmic = { date, time };
+      save();
+      return cosmicOf(d);
+    },
+    async cosmicOff() {
+      const d = await load();
+      await wait(LATENCY);
+      if (!d.me) fail('PL002');
+      d.cosmic = null;
+      save();
+      return cosmicOf(d);
     },
 
     // Expert tips (D127), as in supabase/migrations/20261127000026_experts.sql.

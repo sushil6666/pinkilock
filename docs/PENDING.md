@@ -36,6 +36,7 @@ merge, **Supabase deploy** and **Web deploy** run on their own; check they go gr
 - [ ] **#111** Daily relationship check-in with Saathi's ideas (D126). Next.
 - [ ] **#112** Expert tips and Join as an expert (D127). After #111.
 - [ ] **#113** Festive packs for Christmas and New Year (D128). After #112, before 18 December.
+- [ ] **#114** Cosmic match (D129). After #113.
 
 New PRs from Claude threads get added here.
 
@@ -198,6 +199,9 @@ One lawyer can take all of the legal briefs together. Each item's full question 
 - [ ] **City events (D121).** Plans shows what is on in each city from `public.city_events`, which
       is empty until the team adds checked events. Add each with the SQL in `OPERATIONS.md`,
       "City events (D121)"; take one down with `active = false`, never delete it.
+
+- [ ] **Cosmic match tables.** Someone who reads kundlis compares a few real pairs' scores with
+      the app's (`src/domain/cosmic.ts`), and says whether any table should change.
 
 ## 12. Decisions waiting for you
 

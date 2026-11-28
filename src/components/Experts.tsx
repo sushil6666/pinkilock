@@ -16,6 +16,11 @@ export function ExpertsEntry() {
   return <Entry icon={<Feather name="book-open" size={20} color={color.gold} />} title={t('experts.meTitle')} spoken={t('experts.meOpen')} onPress={() => router.push('/experts')} />;
 }
 
+/** Cosmic match (D129), on Me under Expert tips. */
+export function CosmicEntry() {
+  return <Entry icon={<Feather name="moon" size={20} color={color.moon} />} title={t('cosmic.meTitle')} spoken={t('cosmic.meOpen')} onPress={() => router.push('/cosmic')} />;
+}
+
 /** The warning signs, shown to everyone on the tips page (D127). */
 export function WatchOut() {
   return (
