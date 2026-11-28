@@ -26,17 +26,34 @@ merge, **Supabase deploy** and **Web deploy** run on their own; check they go gr
 - [x] **#101** Bring a friend: referral rewards (D118). Merged 2026-11-27.
 - [x] **#102** Couple mode after a match (D120). Merged 2026-11-27.
 - [x] **#103** This week on Plans: three plan ideas each Monday and city events (D121). Merged 2026-11-27.
+- [x] **#104** This list. Merged 2026-11-27.
+- [x] **#105** Your record: kept-plan streak and private city standing (D122). Merged 2026-11-27.
+- [x] **#106** With friends in Couple mode (D123). Merged 2026-11-27.
+- [x] **#107** Gentle reminders, at most 3 pushes a week (D124). Merged 2026-11-27. The real push
+      test on a phone (step 3) checks it too.
+- [ ] **#109** Question of the day and tip of the day in Couple mode (D125). Next.
+<<<<<<< HEAD
+- [ ] **#111** Daily relationship check-in with Saathi's ideas (D126). After #109.
+- [ ] **Expert tips** and Join as an expert (D127). After #111.
+- [ ] **#104** This list. Any time.
+
+=======
+- [x] **#104** This list. Merged 2026-11-27.
 - [x] **#105** Your record: kept-plan streak and private city standing (D122). Merged 2026-11-27.
 - [x] **#106** With friends in Couple mode (D123). Merged 2026-11-27.
 - [x] **#107** Gentle reminders, at most 3 pushes a week (D124). Merged 2026-11-27. The real push
       test on a phone (step 3) checks it too.
 - [ ] **#109** Question of the day and tip of the day in Couple mode (D125). Next.
 - [ ] **#111** Daily relationship check-in with Saathi's ideas (D126). After #109.
+<<<<<<< HEAD
 - [ ] **#112** Expert tips and Join as an expert (D127). After #111.
 - [ ] **#113** Festive packs for Christmas and New Year (D128). After #112, before 18 December.
 - [ ] **Cosmic match** (D129). After #113.
 - [ ] **#104** This list. Any time.
 
+=======
+>>>>>>> claude/project-thread-r2zp22-checkin
+>>>>>>> claude/project-thread-r2zp22-experts
 
 How: open the PR on GitHub, "Merge pull request", "Confirm merge". If GitHub says the branch is out
 of date or has conflicts, tell the thread that made it; do not fix it in the browser.
@@ -191,9 +208,15 @@ One lawyer can take all of the legal briefs together. Each item's full question 
       in a new migration and switches wrong places off. Start with the 8 metros. Details:
       `OPERATIONS.md`, "Opening a country or a city".
 
+<<<<<<< HEAD
 - [ ] **Experts.** Pitch counsellors, therapists, coaches and guides you know and point them to
       **Join as an expert** in the app; then check each request and list them as in `OPERATIONS.md`,
       "Experts". Nothing shows until you do.
+=======
+- [ ] **City events (D121).** Plans shows what is on in each city from `public.city_events`, which
+      is empty until the team adds checked events. Add each with the SQL in `OPERATIONS.md`,
+      "City events (D121)"; take one down with `active = false`, never delete it.
+>>>>>>> claude/project-thread-r2zp22-checkin
 
 - [ ] **Cosmic match tables.** Someone who reads kundlis compares a few real pairs' scores with
       the app's (`src/domain/cosmic.ts`), and says whether any table should change.
@@ -248,3 +271,4 @@ Moved here with the date when ticked.
 - 2026-11-17 Website live on Cloudflare Pages (pinkilock.pages.dev).
 - 2026-11-25 Repository public; Actions minutes problem gone (D100).
 - 2026-11-27 Pink Gold (#98) and the store listing text (#99) merged.
+- 2026-11-27 Payment pause, referrals and the retention work (#100 to #107) merged.
