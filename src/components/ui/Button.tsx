@@ -17,7 +17,10 @@ interface Props {
   busy?: boolean;
   style?: StyleProp<ViewStyle>;
   accessibilityHint?: string;
-  /** Let a long label take two lines instead of cutting it short (words that must be read whole). */
+  /**
+   * Extra room above and below a label that is expected to take two lines. Every label may wrap to
+   * two lines on a narrow phone rather than be cut short (a helpline number must be read whole).
+   */
   wrap?: boolean;
 }
 
@@ -65,7 +68,7 @@ export function Button({ label, onPress, kind = 'primary', icon, disabled, busy,
         {busy ? <ActivityIndicator color={fg} /> : (
           <>
             {icon && <Feather name={icon} size={18} color={fg} />}
-            <T v="bodyBold" c={fg} numberOfLines={wrap ? 2 : 1} style={wrap ? { flexShrink: 1, textAlign: 'center', paddingVertical: space.sm } : undefined}>{label}</T>
+            <T v="bodyBold" c={fg} numberOfLines={2} style={[{ flexShrink: 1, textAlign: 'center' }, wrap ? { paddingVertical: space.sm } : null]}>{label}</T>
           </>
         )}
       </Animated.View>

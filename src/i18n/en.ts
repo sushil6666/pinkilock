@@ -1999,6 +1999,8 @@ export const en = {
     wantUnsaid: '"Opposite" and "same" need you to say who you are.',
     save: 'Save',
     listenersTitle: 'Listeners free now',
+    listenersAboutFirst: 'Save who you are, and the listeners free for you show here.',
+    listenersLoading: 'Looking for who is free…',
     listenersNone: 'Nobody who matches is free right now. Try "Anyone", or come back soon. Saathi is here meanwhile.',
     listenerCalls: { one: '{count} call', other: '{count} calls' },
     lengthTitle: 'Longest call',
@@ -2064,7 +2066,10 @@ export const en = {
     },
 
     // Becoming a listener
+    applyEyebrow: 'Give your time',
     applyTitle: 'Become a listener',
+    applyPayTitle: 'How you are paid',
+    applyPayValue: '60% to you',
     applyBody: 'Listeners are verified adults. You choose whom you take calls from and what you can talk about. You are paid 60% of each call; Pinkilock keeps 40%, with GST on its part, and TDS (0.1%) is held from your payout. Payouts go to your bank through Razorpay, a week after each call.',
     firstName: 'Your first name',
     firstNameHint: 'One word. Callers see only this.',

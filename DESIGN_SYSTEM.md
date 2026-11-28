@@ -78,7 +78,11 @@ Font scaling is allowed up to 1.3x (`maxFontSizeMultiplier`) so layouts hold on 
   and sinks onto it in 70 ms under a finger, a mouse or a key, then springs back; light haptic on
   press in. `primary` is a gold face on `goldDeep` with `onGold` text; `ghost` a `surface` face with a 1px line on
   `line`; `danger` a `surface` face with a flare outline on `flare`; `quiet` is text only. A button
-  that cannot be pressed sits sunk, level with its block. No glow.
+  that cannot be pressed sits sunk, level with its block. No glow. A label never gets cut short:
+  on a narrow phone it wraps to a second line, centred (a helpline number must be read whole).
+- **Text boxes**: one look (`inputStyle`). A short answer (a name, a city, a code) is `heading`
+  size; anything written as a sentence (a note, a report, a message, a long hint) uses
+  `textAreaStyle`: `body` size, at least 96 high, text from the top.
 - **HoldButton**: the same slab, drawn as a `depth`-thick bottom edge in its fill colour. Press and hold 900 ms to commit (send an ask, swear the promise, bail). A fill
   sweeps left to right; haptic ticks at 33% and 66%, medium impact on completion; letting go early
   drains the fill in 180 ms. Used wherever a tap would be too cheap.
@@ -91,7 +95,7 @@ Font scaling is allowed up to 1.3x (`maxFontSizeMultiplier`) so layouts hold on 
   one. Safety never does: helplines, the safety numbers button, Spicy's safety rules and terms,
   block and report stay on screen.
 - **Entry** (D130): a way into another screen as one line: icon, name, an optional short value, and
-  a chevron right. `gold`, `pink` or plain. What is behind it is said on the screen it opens.
+  a chevron right. On a narrow phone a long name may take a second line, as in a Fold. `gold`, `pink` or plain. What is behind it is said on the screen it opens.
 - **Chip**: 40 high, radius 6, uppercase label. Selected is pink fill, indigo text.
 - **Plan option** (`IdeaChip`): a chip with the time and one-liner under the title, and a chevron on the right (48 wide) that opens What you do / Where / Cost / Why it works under a hairline. Headings are gold captions (indigo when selected). The row picks; only the chevron opens.
 - **InviteCard**: a ticket. Eyebrow with status, the idea in display type, time row, note in quotes,

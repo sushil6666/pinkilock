@@ -24,7 +24,7 @@ export function Entry({ icon, title, value, spoken, onPress, tone = 'plain' }: P
   return (
     <Pressable accessibilityRole="button" accessibilityLabel={spoken} onPress={onPress} style={({ pressed }) => [styles.entry, styles[tone], focusRing, pressed && { opacity: 0.85 }]}>
       {icon}
-      <T v="bodyBold" style={{ flex: 1 }} numberOfLines={1}>{title}</T>
+      <T v="bodyBold" style={{ flex: 1 }} numberOfLines={2}>{title}</T>
       {value ? <T v="caption" c={tone === 'plain' ? color.textDim : color.gold} numberOfLines={1}>{value}</T> : null}
       <Feather name="chevron-right" size={20} color={color.textDim} />
     </Pressable>

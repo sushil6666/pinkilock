@@ -12,6 +12,7 @@ import { Button } from '@/components/ui/Button';
 import { Chip } from '@/components/ui/Chip';
 import { Columns } from '@/components/ui/Columns';
 import { ErrorText } from '@/components/ui/ErrorText';
+import { Fold } from '@/components/ui/Fold';
 import { Screen } from '@/components/ui/Screen';
 import { T } from '@/components/ui/T';
 import { inputStyle } from '@/components/ui/input';
@@ -45,10 +46,12 @@ export default function TalkListen() {
   const left = (
     <>
       <View style={{ gap: space.sm }}>
-        <T v="label" c={color.gold}>{t('talk.eyebrow')}</T>
+        <T v="label" c={color.gold}>{t('talk.applyEyebrow')}</T>
         <T v="display">{t('talk.applyTitle')}</T>
-        <T c={color.textDim}>{t('talk.applyBody')}</T>
       </View>
+      <Fold icon="credit-card" title={t('talk.applyPayTitle')} value={t('talk.applyPayValue')}>
+        <T c={color.textDim}>{t('talk.applyBody')}</T>
+      </Fold>
       {state.call ? <CallPanel talk={state} busy={busy} error={onCall ? error : ''} run={run} route={ROUTE} /> : null}
       {!me ? <Apply busy={busy === 'apply'} error={onCall ? '' : error} run={run} />
         : me.status === 'applied' ? <Kyc open={state.open.payouts} busy={busy === 'kyc'} error={onCall ? '' : error} run={run} />
