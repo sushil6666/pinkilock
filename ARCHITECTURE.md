@@ -50,7 +50,7 @@ app/                         Routes only. A route file wires state to components
 src/
   theme/                     tokens.ts (colour, type, space, motion), elevation.ts
   components/
-    ui/                      T, Button, HoldButton, Chip, Screen, Sheet, input
+    ui/                      T, Button, HoldButton, Chip, Screen, Sheet, Fold, Entry, input
     PinkyLock.tsx            The gesture surface (DESIGN_SYSTEM.md section 6)
     PinkyFinger.tsx          The two SVG pinkies
     InviteCard, TrustBadge, Portrait, LockedReveal, Countdown, NoticeBanner

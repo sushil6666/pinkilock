@@ -11,6 +11,7 @@ import { Portrait } from '@/components/Portrait';
 import { Button } from '@/components/ui/Button';
 import { Columns } from '@/components/ui/Columns';
 import { Screen } from '@/components/ui/Screen';
+import { Fold } from '@/components/ui/Fold';
 import { T } from '@/components/ui/T';
 import { ideaOf } from '@/domain/ideas';
 import { checkInPhase, isDone, otherId } from '@/domain/invites';
@@ -74,8 +75,7 @@ export default function Plans() {
         ))}
       </View>
 
-      {history.length > 0 && <T v="label" c={color.textDim} style={styles.section}>{t('plans.record')}</T>}
-      <View style={{ gap: space.sm }}>
+      {history.length > 0 ? <Fold icon="clock" title={t('plans.record')} value={String(history.length)}>
         {history.map((i, k) => {
           const s = statusLine(i, meId, who(i)?.name ?? 'They', now);
           return (
@@ -84,7 +84,7 @@ export default function Plans() {
             </Animated.View>
           );
         })}
-      </View>
+      </Fold> : null}
       </>} />
     </Screen>
   );

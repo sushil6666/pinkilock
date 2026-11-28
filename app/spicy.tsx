@@ -4,6 +4,7 @@
  * username, and boundaries from a list. On, it can be edited, and one tap turns it off and wipes
  * it. The server checks all of it again (save_spicy); this page never decides who sees what.
  */
+import { Fold } from '@/components/ui/Fold';
 import { Feather } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
@@ -97,7 +98,6 @@ export default function SpicyPage() {
       <View style={{ gap: space.sm }}>
         <T v="label" c={color.pink}>{t('spicy.eyebrow')}</T>
         <T v="display">{t('spicy.title')}</T>
-        <T c={color.textDim}>{t('spicy.intro')}</T>
       </View>
 
       {state.on ? (
@@ -111,16 +111,17 @@ export default function SpicyPage() {
         </Animated.View>
       ) : null}
 
-      <View style={styles.panel}>
-        <T v="heading">{t('spicy.howTitle')}</T>
+      <Fold icon="info" title={t('spicy.howTitle')}>
+        <T c={color.textDim}>{t('spicy.intro')}</T>
         {(['how1', 'how2', 'how3', 'how4'] as const).map((k, i) => (
           <View key={k} style={styles.step}>
             <View style={styles.num}><T v="bodyBold" c={color.onPink} center>{i + 1}</T></View>
             <T style={{ flex: 1 }}>{t(`spicy.${k}`)}</T>
           </View>
         ))}
-      </View>
+      </Fold>
 
+      {/* The safety rules stay on screen, never behind an arrow. */}
       <View style={[styles.panel, styles.rules]}>
         <T v="heading">{t('spicy.rulesTitle')}</T>
         <T v="caption" c={color.textDim}>{t('spicy.rulesBody')}</T>

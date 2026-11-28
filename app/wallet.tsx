@@ -4,6 +4,7 @@
  * earn them, and the history. Credits are never cash: the page says so, and nothing here can send
  * them to anybody. The server decides every number (my_wallet); this page shows it.
  */
+import { Fold } from '@/components/ui/Fold';
 import { Feather } from '@expo/vector-icons';
 import { useEffect, useState } from 'react';
 import { router } from 'expo-router';
@@ -64,7 +65,6 @@ export default function WalletPage() {
       <View style={{ gap: space.sm }}>
         <T v="label" c={color.gold}>{t('wallet.eyebrow')}</T>
         <T v="display">{t('wallet.title')}</T>
-        <T c={color.textDim}>{t('wallet.intro')}</T>
       </View>
 
       <Animated.View entering={FadeInDown.duration(320)} style={[styles.panel, styles.balance]}>
@@ -81,8 +81,7 @@ export default function WalletPage() {
         </View>
       </Animated.View>
 
-      <View style={styles.panel}>
-        <T v="heading">{t('wallet.topTitle')}</T>
+      <Fold icon="plus-circle" title={t('wallet.topTitle')} open={!!note}>
         {status.open ? (
           <>
             <T v="caption" c={color.textDim}>{t('wallet.topBody')}</T>
@@ -107,10 +106,10 @@ export default function WalletPage() {
           <T v="caption" c={color.textDim}>{paid ? t(Platform.OS === 'web' ? 'wallet.topOff' : 'wallet.topApp') : t('paused.wallet')}</T>
         )}
         {note ? <T v="caption" c={color.gold}>{note}</T> : null}
-      </View>
+      </Fold>
 
-      <View style={styles.panel}>
-        <T v="heading">{t('wallet.spendTitle')}</T>
+      <Fold icon="shopping-bag" title={t('wallet.spendTitle')} open={!!error}>
+        <T v="caption" c={color.textDim}>{t('wallet.intro')}</T>
         <Spend icon="trending-up" title={t('wallet.boostTitle')} body={boosted ? t('wallet.boostOn', { time: `${fmtDay(wallet.boostUntil!)}, ${fmtTime(wallet.boostUntil!)}` }) : paid ? `${t('wallet.boostBody')} ${t('gold.walletBoost')}` : t('wallet.boostBody')} />
         <Button kind="quiet" icon="star" label={t('gold.walletBoostOpen')} onPress={() => router.push('/pink-gold')} />
         <Spend icon="send" title={t('wallet.extraTitle')} body={wallet.extraAsks ? `${t('wallet.extraBody')} ${t('wallet.extraHave', { n: wallet.extraAsks })}` : t('wallet.extraBody')}
@@ -118,7 +117,7 @@ export default function WalletPage() {
         <Spend icon="shield" title={t('wallet.stakeTitle')} body={`${t('wallet.stakeBody', { n: COSTS.stake })} ${t('wallet.stakeWhere')}`} />
         {paid ? <Spend icon="coffee" title={t('wallet.treatTitle')} body={t('wallet.treatBody')} /> : null}
         {error ? <ErrorText text={error} /> : null}
-      </View>
+      </Fold>
     </>
   );
 
@@ -133,8 +132,7 @@ export default function WalletPage() {
 
   const right = (
     <>
-      <View style={styles.panel}>
-        <T v="heading">{t('wallet.earnTitle')}</T>
+      <Fold icon="gift" accent title={t('wallet.earnTitle')} value={t('fold.ways', { count: REWARD_KINDS.length })}>
         <T v="caption" c={color.textDim}>{t('wallet.earnBody')}</T>
         {REWARD_KINDS.map((k) => (
           <View key={k} style={styles.reward}>
@@ -146,10 +144,9 @@ export default function WalletPage() {
             <T v="bodyBold" c={color.gold}>{t('wallet.reward', { n: REWARDS[k] })}</T>
           </View>
         ))}
-      </View>
+      </Fold>
 
-      <View style={styles.panel}>
-        <T v="heading">{t('wallet.historyTitle')}</T>
+      <Fold icon="clock" title={t('wallet.historyTitle')} value={String(wallet.history.length)}>
         {wallet.history.length ? wallet.history.slice(0, 20).map((h) => (
           <View key={h.id} style={styles.reward}>
             <View style={{ flex: 1 }}>
@@ -159,7 +156,7 @@ export default function WalletPage() {
             <T v="bodyBold" c={h.credits > 0 ? color.gold : h.credits < 0 ? color.textDim : color.textMute}>{h.credits > 0 ? `+${fmtNumber(h.credits)}` : fmtNumber(h.credits)}</T>
           </View>
         )) : <T v="caption" c={color.textDim}>{t('wallet.historyEmpty')}</T>}
-      </View>
+      </Fold>
     </>
   );
 

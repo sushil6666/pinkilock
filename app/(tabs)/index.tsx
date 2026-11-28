@@ -17,6 +17,7 @@ import { Tag } from '@/components/ui/Chip';
 import { Columns } from '@/components/ui/Columns';
 import { useDesktop } from '@/lib/desktop';
 import { Screen } from '@/components/ui/Screen';
+import { Fold } from '@/components/ui/Fold';
 import { T } from '@/components/ui/T';
 import { ideaOf } from '@/domain/ideas';
 import { isLive, otherId, peopleOf } from '@/domain/invites';
@@ -106,31 +107,12 @@ export default function Discover() {
               <Feather name="map-pin" size={14} color={color.textDim} />
               <T v="caption" c={color.textDim}>{[person.area, cardKm(me, person) ? fmtDistance(cardKm(me, person)!, me.country) : '', person.pronouns].filter(Boolean).join('  /  ')}</T>
             </View>
-            {person.hasDuo ? (
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                <Feather name="users" size={14} color={color.textDim} />
-                <T v="caption" c={color.textDim}>{t(duoId ? 'discover.duoAsk' : 'discover.duoOpen')}</T>
-              </View>
-            ) : null}
-            {answersIn(person.answerMinutes) ? (
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                <Feather name="clock" size={14} color={color.textDim} />
-                <T v="caption" c={color.textDim}>{answersIn(person.answerMinutes)}</T>
-              </View>
-            ) : null}
           </View>
         </Pressable>
 
         {person.tagline ? <T v="heading">{person.tagline}</T> : null}
         </>} right={<>
         <Spark me={me} person={person} />
-        <Vouches person={person} />
-
-        {person.vibes.length > 0 && (
-          <View style={styles.vibes}>
-            {person.vibes.map((v) => <Tag key={v} label={v} tone={me.vibes.includes(v) ? color.gold : color.textDim} />)}
-          </View>
-        )}
 
         <View style={{ gap: space.sm }}>
           <T v="label" c={color.textDim}>{t('discover.upFor')}</T>
@@ -144,17 +126,36 @@ export default function Discover() {
                   onPress={() => router.push({ pathname: '/invite/new', params: { to: person.id, idea: id } })}
                   style={({ pressed }) => [styles.idea, pressed && { backgroundColor: color.surfaceHi, borderColor: color.pink }]}
                 >
-                  <T style={{ fontSize: 26, lineHeight: 34 }} maxFontSizeMultiplier={1}>{idea.emoji}</T>
-                  <View style={{ flex: 1 }}>
-                    <T v="bodyBold">{idea.title}</T>
-                    <T v="caption" c={color.textDim}>{t('onboarding.ideaSub', { minutes: idea.minutes, blurb: idea.blurb })}</T>
-                  </View>
+                  <T style={{ fontSize: 22, lineHeight: 28 }} maxFontSizeMultiplier={1}>{idea.emoji}</T>
+                  <T v="bodyBold" style={{ flex: 1 }}>{idea.title}</T>
+                  <T v="caption" c={color.textDim}>{t('fold.minutes', { minutes: idea.minutes })}</T>
                   {shared.includes(id) ? <Tag label={t('profile.youToo')} tone={color.gold} /> : <Feather name="arrow-up-right" size={18} color={color.textMute} />}
                 </Pressable>
               </Animated.View>
             );
           })}
         </View>
+
+        <Fold title={t('fold.more', { name: person.name })}>
+          {person.hasDuo ? (
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+              <Feather name="users" size={14} color={color.textDim} />
+              <T v="caption" c={color.textDim}>{t(duoId ? 'discover.duoAsk' : 'discover.duoOpen')}</T>
+            </View>
+          ) : null}
+          {answersIn(person.answerMinutes) ? (
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+              <Feather name="clock" size={14} color={color.textDim} />
+              <T v="caption" c={color.textDim}>{answersIn(person.answerMinutes)}</T>
+            </View>
+          ) : null}
+          <Vouches person={person} />
+          {person.vibes.length > 0 && (
+            <View style={styles.vibes}>
+              {person.vibes.map((v) => <Tag key={v} label={v} tone={me.vibes.includes(v) ? color.gold : color.textDim} />)}
+            </View>
+          )}
+        </Fold>
 
         <View style={{ flexDirection: 'row', gap: space.md }}>
           <Button kind="ghost" icon="x" label={t('ask.pass')} onPress={() => pass(person.id)} style={{ flex: 1 }} />
@@ -172,5 +173,5 @@ const styles = StyleSheet.create({
   cardBody: { padding: space.lg, gap: space.sm },
   badges: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: space.sm },
   vibes: { flexDirection: 'row', flexWrap: 'wrap', gap: space.sm },
-  idea: { flexDirection: 'row', alignItems: 'center', gap: space.md, borderWidth: 1, borderColor: color.line, borderRadius: radius.card, backgroundColor: color.surface, padding: space.md, minHeight: 64 },
+  idea: { flexDirection: 'row', alignItems: 'center', gap: space.md, borderWidth: 1, borderColor: color.line, borderRadius: radius.card, backgroundColor: color.surface, paddingHorizontal: space.md, paddingVertical: space.sm, minHeight: 52 },
 });
